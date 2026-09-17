@@ -97,5 +97,5 @@ if ('IntersectionObserver' in window) {
       });
     }
   }, { rootMargin: '-100px 0px -65% 0px', threshold: 0 });
-  document.querySelectorAll('.lesson').forEach(s => observer.observe(s));
+  document.querySelectorAll('.lesson, .chapter-review').forEach(s => observer.observe(s));
 }

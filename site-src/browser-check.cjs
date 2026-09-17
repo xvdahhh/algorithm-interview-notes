@@ -54,6 +54,28 @@ const chapters = JSON.parse(fs.readFileSync(path.join(__dirname, 'chapters.json'
     await open('index.html');
     assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false);
     await page.screenshot({ path: path.join(out, 'mobile-home.png') });
+    // Chapter 1 deep dive: answers remain visible and wide tables stay scrollable.
+    await open(path.join(chapters[0].dir, 'index.html'));
+    assert.equal(await page.locator('.answer-list dt').count(), 29);
+    assert.equal(await page.locator('a[download][href*="detail-"]').count(), 7);
+    assert.equal(await page.locator('.chapter-outline a').count(), 5);
+    await page.setViewportSize({ width: 1440, height: 1000 });
+    await page.screenshot({ path: path.join(out, 'chapter01-desktop.png') });
+    await page.locator('#s3-before-2').scrollIntoViewIfNeeded();
+    await page.screenshot({ path: path.join(out, 'chapter01-proof.png') });
+    for (const width of [390, 320]) {
+      await page.setViewportSize({ width, height: 844 });
+      assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false);
+      const table = page.locator('.study-table').first();
+      await table.scrollIntoViewIfNeeded();
+      assert.ok(await table.evaluate(el => el.scrollWidth > el.clientWidth));
+    }
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.locator('#s1-before-2').scrollIntoViewIfNeeded();
+    await page.screenshot({ path: path.join(out, 'chapter01-mobile-table.png') });
+    await page.locator('.chapter-review .answer-list').scrollIntoViewIfNeeded();
+    assert.ok(await page.locator('.chapter-review .answer-list dd').first().isVisible());
+    await page.screenshot({ path: path.join(out, 'chapter01-mobile-answers.png') });
     assert.deepEqual(errors, []);
     console.log('PASS: all 16 pages open offline; search, copy, progress, mobile menu and mobile width checks pass.');
     console.log('Screenshots: ' + out);

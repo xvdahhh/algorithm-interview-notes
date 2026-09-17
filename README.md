@@ -8,7 +8,8 @@
 - 各章有小节导航、代码复制、`.cpp` 下载和本地掌握进度勾选。
 - 页面无需联网，支持电脑、手机宽度与打印。
 - 代码统一为 C++17。各章 `examples/` 中每份源文件已附标准头文件，独立使用；不含 `main` 的示例需要补充调用与测试后运行。
-- `site-src/chapters.json` 保存完整讲义内容；编辑后执行 `python algorithm-interview-notes/site-src/build.py` 重新生成 HTML 和示例（命令在工作区根目录运行）。共享样式与交互在 `assets/`。
+- `site-src/chapters.json` 保存基础讲义内容，各章可用 `detail.json` 补充深入推导、表格和问答；编辑后执行 `python algorithm-interview-notes/site-src/build.py` 重新生成 HTML 和示例（命令在工作区根目录运行）。共享样式与交互在 `assets/`。
+- 第一章已加入 29 个关键问答与自测解析、7 份补充 C++ 示例以及前缀和综合例题；全站现有 70 份 C++ 源文件。
 - 原有 Markdown 摘要保留在各章 `README.md`，适合快速复习。
 
 这套笔记面向计算机专业秋招，以“能识别题型、能独立写出、能解释复杂度、能处理边界”为目标。每章先掌握知识摘要，再用自己的主力语言补齐模板和题目复盘。

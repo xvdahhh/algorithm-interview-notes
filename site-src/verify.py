@@ -1,5 +1,6 @@
 """Check generated local links, anchors, section coverage, and example parity."""
 from html.parser import HTMLParser
+from html import escape
 from pathlib import Path
 from urllib.parse import unquote, urlsplit
 import json
@@ -35,6 +36,8 @@ for p, page in pages.items():
             assert unquote(url.fragment) in pages[target].ids, f'bad anchor: {link}'
         links += 1
 chapters = json.loads((ROOT/'site-src/chapters.json').read_text(encoding='utf-8'))
+extra_examples = 0
+answer_count = 0
 for c in chapters:
     path = ROOT/c['dir']
     assert pages[(path/'index.html').resolve()].lessons == len(c['sections'])
@@ -42,5 +45,29 @@ for c in chapters:
         assert len(s) == 9 and all(isinstance(v,str) and v.strip() for v in s)
         cpp = (path/'examples'/f'{i+1:02d}.cpp').read_text(encoding='utf-8')
         assert cpp.endswith(s[4]+'\n'), f'example differs: {c["dir"]}/{i+1}'
+    if (path/'detail.json').exists():
+        detail = json.loads((path/'detail.json').read_text(encoding='utf-8'))
+        generated = (path/'index.html').read_text(encoding='utf-8')
+        blocks = detail.get('intro', []) + detail.get('outro', [])
+        answers = []
+        for key, section in detail.get('sections', {}).items():
+            assert 1 <= int(key) <= len(c['sections'])
+            blocks += section.get('before', []) + section.get('after', [])
+            answers += section.get('answers', [])
+        for block in blocks:
+            assert escape(block['title'], quote=True) in generated
+            if block['type'] == 'code':
+                cpp = (path/'examples'/block['file']).read_text(encoding='utf-8')
+                assert cpp.endswith(block['code']+'\n'), f'detail example differs: {block["file"]}'
+                extra_examples += 1
+            elif block['type'] == 'table':
+                assert all(len(row) == len(block['columns']) for row in block['rows'])
+            elif block['type'] == 'qa':
+                answers += block['items']
+        for item in answers:
+            assert item['answer'] and all(p.strip() for p in item['answer'])
+            assert escape(item['question'], quote=True) in generated
+            assert all(escape(p, quote=True) in generated for p in item['answer'])
+            answer_count += 1
 assert len(pages) == len(chapters)+1
-print(f'PASS: {len(pages)} HTML pages, {sum(p.lessons for p in pages.values())} lessons, {links} local references; all C++ downloads match source.')
+print(f'PASS: {len(pages)} HTML pages, {sum(p.lessons for p in pages.values())} lessons, {links} local references; {extra_examples} extra C++ examples and {answer_count} complete answers; all C++ downloads match source.')
