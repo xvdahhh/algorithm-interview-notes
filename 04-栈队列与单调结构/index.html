@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="description" content="秋招算法手撕学习讲义：知识推导、经典考点、C++17 示例与面试训练。">
+<title>栈、队列与单调结构 · 算法手撕讲义</title><link rel="stylesheet" href="../assets/style.css"><script src="../assets/app.js" defer></script></head>
+<body><a class="skip" href="#main">跳到正文</a><header class="topbar"><a class="brand" href="../index.html"><span class="brand-mark">a[i]</span><span>算法手撕讲义<small>秋招学习工作区 / C++17</small></span></a><button type="button" class="nav-toggle" aria-expanded="false" aria-controls="chapter-nav">章节目录</button><a class="home-link" href="../index.html">全部章节 ↗</a></header>
+<div class="layout"><aside class="sidebar" id="chapter-nav" aria-label="章节导航"><p class="rail-label">LEARNING PATH · 学习路径</p><nav><a class="chapter-link"  href="../01-复杂度与解题方法/index.html"><span>01</span>复杂度与解题方法</a><a class="chapter-link"  href="../02-数组字符串与矩阵/index.html"><span>02</span>数组、字符串与矩阵</a><a class="chapter-link"  href="../03-链表/index.html"><span>03</span>链表</a><a class="chapter-link active" aria-current=page href="../04-栈队列与单调结构/index.html"><span>04</span>栈、队列与单调结构</a><a class="chapter-link"  href="../05-哈希集合与位运算/index.html"><span>05</span>哈希、集合与位运算</a><a class="chapter-link"  href="../06-排序与二分查找/index.html"><span>06</span>排序与二分查找</a><a class="chapter-link"  href="../07-树与二叉搜索树/index.html"><span>07</span>树与二叉搜索树</a><a class="chapter-link"  href="../08-堆与优先队列/index.html"><span>08</span>堆与优先队列</a><a class="chapter-link"  href="../09-递归回溯与分治/index.html"><span>09</span>递归、回溯与分治</a><a class="chapter-link"  href="../10-图论/index.html"><span>10</span>图论</a><a class="chapter-link"  href="../11-贪心/index.html"><span>11</span>贪心</a><a class="chapter-link"  href="../12-动态规划/index.html"><span>12</span>动态规划</a><a class="chapter-link"  href="../13-并查集与高级数据结构/index.html"><span>13</span>并查集与高级数据结构</a><a class="chapter-link"  href="../14-高频技巧与综合题型/index.html"><span>14</span>高频技巧与综合题型</a><a class="chapter-link"  href="../15-面试表达与训练计划/index.html"><span>15</span>面试表达与训练计划</a></nav><div class="sidebar-note">读懂不变量，独立写代码。<br>共 15 章 · 63 个小节<br>无需联网，浏览器直接打开。</div></aside><main id="main"><header class="chapter-header"><p class="eyebrow">CHAPTER 04 / 15</p><h1>栈、队列与单调结构</h1><p class="lead">从后进先出与先进先出出发，理解什么时候应该保留历史候选，什么时候可以永久淘汰它。单调结构的核心就是这种淘汰依据。</p><div class="chapter-meta"><span>4 个小节</span><span>C++17 示例</span><a href="README.md">原始知识摘要 ↗</a></div></header><div class="reading-guide"><strong>本章怎么学</strong><p>先读原理与不变量，遮住代码手推例子，再独立实现。最后用面试追问检查理解，按练习条目做变式。</p></div><details class="environment"><summary>代码使用说明与通用头文件</summary><p>示例统一采用 C++17。页面展示核心函数或类，下载的 .cpp 已包含以下头文件，可独立编译。不同小节可能重用类型名，应分别编译；含 main 的示例可直接运行，其余需自行补充调用与测试。复制按钮复制当前代码块。</p><div class="codebox"><div class="codebar"><span>C++17</span><div><button type="button" class="copy">复制代码</button></div></div><pre tabindex="0" aria-label="C++17 代码"><code>#include &lt;algorithm&gt;
+#include &lt;array&gt;
+#include &lt;cassert&gt;
+#include &lt;climits&gt;
+#include &lt;cstdint&gt;
+#include &lt;cstdlib&gt;
+#include &lt;deque&gt;
+#include &lt;functional&gt;
+#include &lt;iostream&gt;
+#include &lt;list&gt;
+#include &lt;numeric&gt;
+#include &lt;optional&gt;
+#include &lt;queue&gt;
+#include &lt;random&gt;
+#include &lt;stack&gt;
+#include &lt;stdexcept&gt;
+#include &lt;string&gt;
+#include &lt;tuple&gt;
+#include &lt;unordered_map&gt;
+#include &lt;unordered_set&gt;
+#include &lt;utility&gt;
+#include &lt;vector&gt;
+<span class="keyword">using</span> <span class="keyword">namespace</span> std;
+</code></pre></div><p>检查单个示例：<code>g++ -std=c++17 -Wall -Wextra -c sample.cpp</code>。这只检查编译；验证结果还需要调用函数并覆盖边界输入。代码按题目约束编写，各节明确其适用前提。</p></details><section class="lesson" id="s1"><div class="lesson-heading"><span class="lesson-number">04.01</span><h2>括号匹配与栈中的待解决问题</h2></div>
+<h3>知识与适用场景</h3><p>栈保存尚未匹配的左括号。右括号只能与最近的未匹配左括号配对，天然符合后进先出。表达式求值、函数调用和嵌套结构解析都沿用同样的层级思想。</p><div class="invariant"><span>推导 / 不变量</span><p>扫描到右括号时先检查栈是否为空，再检查类型。扫描完成后栈必须为空，否则仍有未闭合括号。下面约定输入只允许六种括号字符。</p></div>
+<h3>手推一个例子</h3><p>输入 ([)]：栈依次为 (、([；读到 ) 时栈顶是 [，立即失败，不能跨过它与更早的 ( 配对。</p><div class="codebox"><div class="codebar"><span>C++17</span><div><a href="examples/01.cpp" download>下载 .cpp</a><button type="button" class="copy">复制代码</button></div></div><pre tabindex="0" aria-label="C++17 代码"><code><span class="keyword">bool</span> validBrackets(<span class="keyword">const</span> string&amp; s) {
+    vector&lt;<span class="keyword">char</span>&gt; st;
+    <span class="keyword">for</span> (<span class="keyword">char</span> c : s) {
+        <span class="keyword">if</span> (c == &#x27;(&#x27; || c == &#x27;[&#x27; || c == &#x27;{&#x27;) st.push_back(c);
+        <span class="keyword">else</span> {
+            <span class="keyword">char</span> need = c == &#x27;)&#x27; ? &#x27;(&#x27; : c == &#x27;]&#x27; ? &#x27;[&#x27; : c == &#x27;}&#x27; ? &#x27;{&#x27; : <span class="number">0</span>;
+            <span class="keyword">if</span> (!need || st.empty() || st.back() != need) <span class="keyword">return</span> <span class="keyword">false</span>;
+            st.pop_back();
+        }
+    }
+    <span class="keyword">return</span> st.empty();
+}</code></pre></div>
+<dl class="analysis-grid"><div><dt>复杂度</dt><dd>时间 O(n)，最坏额外空间 O(n)。</dd></div><div><dt>易错点与边界</dt><dd>最小栈要保存每一层对应的最小值；重复最小值不能只记录一次。表达式中的一元负号与二元减法需要区分。</dd></div></dl>
+<div class="practice"><h3>经典考点与练习</h3><p>练习：LeetCode 20 有效的括号、155 最小栈、150 逆波兰表达式求值。</p><details><summary>面试官可能继续问什么？</summary><p>如何用一个辅助栈 O(1) 查询当前最小值？遇到非括号字符应忽略还是报错？</p><p class="muted">先用自己的话回答，再回到本节的前提、不变量和边界检查论证。</p></details></div>
+<label class="learned"><input type="checkbox" data-progress="04-01">我能独立实现，并解释正确性与边界</label></section><section class="lesson" id="s2"><div class="lesson-heading"><span class="lesson-number">04.02</span><h2>单调栈：下一个更大元素</h2></div>
+<h3>知识与适用场景</h3><p>对每个位置寻找右侧第一个更大值，暴力会重复扫描。单调栈保存还没有找到答案的下标，新值出现时可以一次解决多个较小值。</p><div class="invariant"><span>推导 / 不变量</span><p>保持栈中温度非递增。若当前温度大于栈顶温度，则当前下标就是栈顶的第一个更高温度：之前扫描过的位置都没能弹出它。</p></div>
+<h3>手推一个例子</h3><p>[73,71,72,75]：72 解决 71；75 依次解决 72 与 73。对应等待天数 [3,1,1,0]。</p><div class="codebox"><div class="codebar"><span>C++17</span><div><a href="examples/02.cpp" download>下载 .cpp</a><button type="button" class="copy">复制代码</button></div></div><pre tabindex="0" aria-label="C++17 代码"><code>vector&lt;<span class="keyword">int</span>&gt; dailyTemperatures(<span class="keyword">const</span> vector&lt;<span class="keyword">int</span>&gt;&amp; t) {
+    vector&lt;<span class="keyword">int</span>&gt; ans(t.size(), <span class="number">0</span>), st;
+    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; (<span class="keyword">int</span>)t.size(); ++i) {
+        <span class="keyword">while</span> (!st.empty() &amp;&amp; t[i] &gt; t[st.back()]) {
+            <span class="keyword">int</span> j = st.back();
+            st.pop_back();
+            ans[j] = i - j;
+        }
+        st.push_back(i);
+    }
+    <span class="keyword">return</span> ans;
+}</code></pre></div>
+<dl class="analysis-grid"><div><dt>复杂度</dt><dd>时间 O(n)，空间 O(n)；每个下标入栈出栈至多一次。</dd></div><div><dt>易错点与边界</dt><dd>严格更大使用 &gt;，大于等于使用 &gt;=。柱状图求面积时，弹出元素后新的栈顶代表左侧边界，宽度不能用两端下标直接相减。</dd></div></dl>
+<div class="practice"><h3>经典考点与练习</h3><p>练习：LeetCode 739 每日温度、496 下一个更大元素 I、84 柱状图中最大的矩形。</p><details><summary>面试官可能继续问什么？</summary><p>为什么相同温度不弹出？如何寻找左侧第一个更小元素？</p><p class="muted">先用自己的话回答，再回到本节的前提、不变量和边界检查论证。</p></details></div>
+<label class="learned"><input type="checkbox" data-progress="04-02">我能独立实现，并解释正确性与边界</label></section><section class="lesson" id="s3"><div class="lesson-heading"><span class="lesson-number">04.03</span><h2>单调队列：窗口最大值</h2></div>
+<h3>知识与适用场景</h3><p>堆能解决窗口最值，但需要处理过期元素。单调队列利用固定的时间顺序，把将来永远不可能成为最大值的候选提前删除。</p><div class="invariant"><span>推导 / 不变量</span><p>队列保存下标，对应值递减。新值 x 到来时，队尾所有 &lt;=x 的旧值都可淘汰：x 更大且更晚过期。查询前移除下标 &lt;= i-k 的元素。</p></div>
+<h3>手推一个例子</h3><p>[1,3,-1,-3,5]，k=3：3 淘汰 1；5 到来时移除过期的 3，并从尾部淘汰 -3、-1，窗口最大值依次为 3、3、5。</p><div class="codebox"><div class="codebar"><span>C++17</span><div><a href="examples/03.cpp" download>下载 .cpp</a><button type="button" class="copy">复制代码</button></div></div><pre tabindex="0" aria-label="C++17 代码"><code>vector&lt;<span class="keyword">int</span>&gt; maxSlidingWindow(<span class="keyword">const</span> vector&lt;<span class="keyword">int</span>&gt;&amp; a, <span class="keyword">int</span> k) {
+    <span class="keyword">if</span> (k &lt;= <span class="number">0</span> || k &gt; (<span class="keyword">int</span>)a.size()) <span class="keyword">return</span> {};
+    deque&lt;<span class="keyword">int</span>&gt; q;
+    vector&lt;<span class="keyword">int</span>&gt; ans;
+    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; (<span class="keyword">int</span>)a.size(); ++i) {
+        <span class="keyword">while</span> (!q.empty() &amp;&amp; q.front() &lt;= i-k) q.pop_front();
+        <span class="keyword">while</span> (!q.empty() &amp;&amp; a[q.back()] &lt;= a[i]) q.pop_back();
+        q.push_back(i);
+        <span class="keyword">if</span> (i &gt;= k-<span class="number">1</span>) ans.push_back(a[q.front()]);
+    }
+    <span class="keyword">return</span> ans;
+}</code></pre></div>
+<dl class="analysis-grid"><div><dt>复杂度</dt><dd>时间 O(n)，辅助空间 O(k)，输出空间 O(n-k+1)。</dd></div><div><dt>易错点与边界</dt><dd>队列中存值会失去精确过期信息；若使用值，需要另行处理重复值及其数量。</dd></div></dl>
+<div class="practice"><h3>经典考点与练习</h3><p>练习：LeetCode 239 滑动窗口最大值、862 和至少为 K 的最短子数组。</p><details><summary>面试官可能继续问什么？</summary><p>为什么删除队尾旧的小值是安全的？窗口最小值改哪个比较符？</p><p class="muted">先用自己的话回答，再回到本节的前提、不变量和边界检查论证。</p></details></div>
+<label class="learned"><input type="checkbox" data-progress="04-03">我能独立实现，并解释正确性与边界</label></section><section class="lesson" id="s4"><div class="lesson-heading"><span class="lesson-number">04.04</span><h2>两个栈实现队列与均摊分析</h2></div>
+<h3>知识与适用场景</h3><p>输入栈接收新元素，输出栈负责弹出最旧元素。当输出栈为空时，把输入栈全部倒入，顺序就被反转。输出栈非空时不能把新元素混入。</p><div class="invariant"><span>推导 / 不变量</span><p>每个元素最多压入输入栈一次、转入输出栈一次、弹出一次。虽然某次 pop 可能耗时 O(n)，一串 n 次操作的总成本是 O(n)。</p></div>
+<h3>手推一个例子</h3><p>push(1)、push(2)、pop()：倒入输出栈后栈顶为 1；再 push(3) 不影响输出栈中的 2，下一次 pop 仍返回 2。</p><div class="codebox"><div class="codebar"><span>C++17</span><div><a href="examples/04.cpp" download>下载 .cpp</a><button type="button" class="copy">复制代码</button></div></div><pre tabindex="0" aria-label="C++17 代码"><code><span class="keyword">class</span> TwoStackQueue {
+    stack&lt;<span class="keyword">int</span>&gt; in, out;
+    <span class="keyword">void</span> transfer() {
+        <span class="keyword">if</span> (out.empty()) {
+            <span class="keyword">while</span> (!in.empty()) { out.push(in.top()); in.pop(); }
+        }
+    }
+<span class="keyword">public</span>:
+    <span class="keyword">void</span> push(<span class="keyword">int</span> x) { in.push(x); }
+    <span class="keyword">bool</span> empty() <span class="keyword">const</span> { <span class="keyword">return</span> in.empty() &amp;&amp; out.empty(); }
+    <span class="keyword">int</span> pop() {
+        transfer();
+        <span class="keyword">if</span> (out.empty()) <span class="keyword">throw</span> out_of_range(<span class="string">&quot;empty queue&quot;</span>);
+        <span class="keyword">int</span> x = out.top(); out.pop(); <span class="keyword">return</span> x;
+    }
+    <span class="keyword">int</span> front() {
+        transfer();
+        <span class="keyword">if</span> (out.empty()) <span class="keyword">throw</span> out_of_range(<span class="string">&quot;empty queue&quot;</span>);
+        <span class="keyword">return</span> out.top();
+    }
+};</code></pre></div>
+<dl class="analysis-grid"><div><dt>复杂度</dt><dd>push 最坏 O(1)；pop/front 均摊 O(1)、单次最坏 O(n)；空间 O(n)。</dd></div><div><dt>易错点与边界</dt><dd>空队列行为要与接口约定一致。使用队列做 BFS 时入队就标记，防止重复入队。</dd></div></dl>
+<div class="practice"><h3>经典考点与练习</h3><p>练习：LeetCode 232 用栈实现队列、225 用队列实现栈。</p><details><summary>面试官可能继续问什么？</summary><p>单次最坏和均摊有什么区别？为什么不能每次 pop 都执行倒栈？</p><p class="muted">先用自己的话回答，再回到本节的前提、不变量和边界检查论证。</p></details></div>
+<label class="learned"><input type="checkbox" data-progress="04-04">我能独立实现，并解释正确性与边界</label></section><nav class="chapter-pager" aria-label="相邻章节"><a href="../03-链表/index.html"><small>上一章</small>← 链表</a><a href="../05-哈希集合与位运算/index.html"><small>下一章</small>哈希、集合与位运算 →</a></nav><footer>秋招算法学习讲义 · C++17<br>例题编号供检索；难度与覆盖范围按学习顺序组织。</footer></main><aside class="toc" aria-label="本页目录"><p class="rail-label">本章小节</p><a href="#s1"><span>01</span>括号匹配与栈中的待解决问题</a><a href="#s2"><span>02</span>单调栈：下一个更大元素</a><a href="#s3"><span>03</span>单调队列：窗口最大值</a><a href="#s4"><span>04</span>两个栈实现队列与均摊分析</a></aside></div><div class="toast" role="status" aria-live="polite"></div></body></html>

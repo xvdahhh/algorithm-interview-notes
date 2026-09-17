@@ -1,0 +1,800 @@
+[
+  {
+    "dir": "01-复杂度与解题方法",
+    "title": "复杂度与解题方法",
+    "intro": "先建立分析问题的尺度。能写出代码只是起点：你还要判断它能否在约束内运行，并解释为什么不会漏解。",
+    "sections": [
+      [
+        "复杂度：统计操作，而不是数循环层数",
+        "分析时间时先确定输入规模；图常有 V、E 两个维度，矩阵有行数与列数。顺序代码的成本相加，嵌套代码要统计真实执行次数。两个嵌套循环并不必然是 O(n²)：如果内层指针全程只前进 n 次，总成本仍是 O(n)。",
+        "维护窗口中每个字符的最后位置。left 只前进，不回退；每个 right 只访问一次。循环不变量是 [left,right] 中没有重复字符，且 left 是当前可用的最靠左边界。",
+        "对 \"abba\"：依次得到窗口 a、ab、b、ba。读到最后的 a 时，不能把 left 从 2 退回 1，否则窗口又包含重复的 b。",
+        "int longestUnique(const string& s) {\n    array<int, 256> last;\n    last.fill(-1);\n    int left = 0, ans = 0;\n    for (int right = 0; right < (int)s.size(); ++right) {\n        unsigned char c = s[right];\n        left = max(left, last[c] + 1);\n        last[c] = right;\n        ans = max(ans, right - left + 1);\n    }\n    return ans;\n}",
+        "时间 O(n)，额外空间 O(Σ)，这里 Σ=256。示例按字节处理字符串，中文 Unicode 字符需先解码。",
+        "不要把平均、最坏、均摊复杂度混为一谈。哈希平均 O(1) 依赖散列表现；单调栈总 O(n) 来自每个元素最多入栈、出栈一次。",
+        "为什么 left 要取 max？如果字符集无限大如何改写？",
+        "练习：LeetCode 3 无重复字符的最长子串；用两个循环版本重新证明总成本。"
+      ],
+      [
+        "递归复杂度与栈空间",
+        "递归要分开分析总调用量与最大同时存活调用数。斐波那契朴素递归的调用树指数增长，但栈深只有 O(n)。归并排序每层处理 O(n) 个元素，层数 O(log n)，总时间 O(n log n)。",
+        "平衡分治的层数来自每次规模减半；退化快排每次只减少一个元素，深度可达 n。下面用迭代快速幂展示另一种规模减半：每轮丢弃指数最低二进制位。",
+        "计算 3^13：13 的二进制是 1101。依次考察 1、0、1、1，选取 3、81、6561 相乘；模运算保持结果大小受控。",
+        "long long modPow(long long a, long long e, long long mod) {\n    // 前提：e >= 0，1 <= mod <= 1e9，保证乘法不溢出。\n    long long ans = 1 % mod;\n    a = (a % mod + mod) % mod;\n    while (e > 0) {\n        if (e & 1LL) ans = ans * a % mod;\n        a = a * a % mod;\n        e >>= 1;\n    }\n    return ans;\n}",
+        "时间 O(log(e+1))，额外空间 O(1)。递归版本需要 O(log(e+1)) 栈空间。",
+        "深递归可能先触发栈溢出，再遇到时间限制。输出所有方案时，复制答案的成本也必须计入。",
+        "如果指数是 0、模数是 1，结果是什么？归并排序为什么不是 O(log n)？",
+        "练习：LeetCode 50 Pow(x,n)，特别处理最小负整数取反溢出。"
+      ],
+      [
+        "正确性：让不变量贯穿代码",
+        "不变量是每轮循环前后始终成立的陈述。证明通常包含初始化、保持、终止三步。二分尤其依赖区间约定；先定义目标是第一个不小于 x 的位置，再选择边界更新。",
+        "保持 [0,left) 中所有值 < x，[right,n) 中所有值 >= x，未知区域为 [left,right)。当未知区域为空时 left 就是唯一边界。",
+        "[1,2,2,5] 查找 2：初始 [0,4)，mid=2 满足条件，right=2；mid=1 满足，right=1；mid=0 不满足，left=1，返回 1。",
+        "int lowerBound(const vector<int>& a, int x) {\n    int left = 0, right = (int)a.size();\n    while (left < right) {\n        int mid = left + (right - left) / 2;\n        if (a[mid] >= x) right = mid;\n        else left = mid + 1;\n    }\n    return left; // 允许等于 a.size()，表示所有元素都小于 x\n}",
+        "时间 O(log(n+1))，额外空间 O(1)。输入必须按非降序排列。",
+        "闭区间与半开区间模板不能拼接使用。返回下标等于 n 时不可直接读取 a[index]。",
+        "为什么 right=mid 不会死循环？如何改成第一个大于 x 的位置？",
+        "练习：LeetCode 35 搜索插入位置、34 在排序数组中查找元素的第一个和最后一个位置。"
+      ],
+      [
+        "C++ 面试基础与输入输出",
+        "统一使用 C++17。熟悉 vector、string、array、unordered_map、set、queue、priority_queue，以及 sort、lower_bound、reverse。vector 的 size() 返回无符号类型，混合负数比较要谨慎；引用参数避免无意义复制。",
+        "ACM 模式要写 main 并读取输入；函数模式只实现题目约定的函数或类。优先用 long long 存储累加结果。只有明确需要清空缓冲区时才使用 endl，普通换行使用 '\\n'。",
+        "输入 3 和 1000000000 1000000000 1000000000，若使用 int 累加会溢出，long long 得到 3000000000。",
+        "int main() {\n    ios::sync_with_stdio(false);\n    cin.tie(nullptr);\n    int n;\n    if (!(cin >> n) || n < 0) return 0;\n    vector<long long> a(n);\n    long long sum = 0;\n    for (auto& x : a) {\n        cin >> x;\n        sum += x;\n    }\n    cout << sum << '\\n';\n    return 0;\n}",
+        "读取并存储 n 个数：时间 O(n)，空间 O(n)。如果只求和，可以边读边加，空间降为 O(1)。",
+        "不要返回局部变量的引用；vector 扩容会使已有迭代器/引用失效。accumulate 的初值使用 0LL 才能以 long long 累加。",
+        "函数参数何时使用 const vector<int>&？为什么 1LL*a*b 比 (long long)(a*b) 更安全？",
+        "练习：分别用 ACM 和函数模式实现区间求和；为后续代码建立主力语言模板。"
+      ]
+    ]
+  },
+  {
+    "dir": "02-数组字符串与矩阵",
+    "title": "数组、字符串与矩阵",
+    "intro": "掌握连续存储上的四个基础动作：移动指针、维护窗口、累积前缀信息、按坐标遍历。它们也是许多中等题的优化入口。",
+    "sections": [
+      [
+        "相向双指针与三数之和",
+        "有序性让一次比较能够排除一批候选。两数之和小于目标时，固定右端点并减小左值不可能成功，因此必须增大左端点。三数之和先固定一个数，再把剩余问题变成两数之和。",
+        "先排序，枚举 i；在 (i,n) 内维护 l、r。和小于 0 移动 l，大于 0 移动 r；找到解后跳过两侧重复值。枚举层也要跳过重复的 a[i]。",
+        "[-1,0,1,2,-1,-4] 排序为 [-4,-1,-1,0,1,2]。固定 -1 后可得到 [-1,-1,2] 和 [-1,0,1]；下一个相同的 -1 不必重复枚举。",
+        "vector<vector<int>> threeSum(vector<int> a) {\n    sort(a.begin(), a.end());\n    vector<vector<int>> ans;\n    int n = (int)a.size();\n    for (int i = 0; i + 2 < n; ++i) {\n        if (i && a[i] == a[i-1]) continue;\n        if (a[i] > 0) break;\n        int l = i + 1, r = n - 1;\n        while (l < r) {\n            long long s = 1LL * a[i] + a[l] + a[r];\n            if (s < 0) ++l;\n            else if (s > 0) --r;\n            else {\n                ans.push_back({a[i], a[l], a[r]});\n                int x = a[l], y = a[r];\n                while (l < r && a[l] == x) ++l;\n                while (l < r && a[r] == y) --r;\n            }\n        }\n    }\n    return ans;\n}",
+        "时间 O(n²)。该实现复制输入，额外 O(n)，另有输出 O(k)；若原地排序则排序栈通常 O(log n)。",
+        "两数之和返回下标时，排序会破坏原下标，需要保存映射。三个 int 相加前就应转为 long long。",
+        "去重为什么发生在枚举层和找到解之后？四数之和怎样推广？",
+        "练习：LeetCode 15 三数之和、11 盛最多水的容器、26 删除有序数组中的重复项。"
+      ],
+      [
+        "可变滑动窗口：最短合法区间",
+        "窗口适用于连续区间，并要求能根据当前状态安全决定端点的移动方向。所有元素为正时，右移右端点会增大区间和，右移左端点会减小区间和。",
+        "求和至少 target 的最短子数组：加入右端点后，只要仍满足条件就记录长度并收缩左端点。收缩结束后，该右端点的所有可能更短合法窗口都已检查。",
+        "target=7，数组 [2,3,1,2,4,3]：到 4 时可从 [2,3,1,2,4] 连续收缩至 [1,2,4]；到 3 时找到 [4,3]，长度为 2。",
+        "int minSubArrayLen(long long target, const vector<int>& a) {\n    // 前提：target > 0，所有 a[i] > 0。\n    long long sum = 0;\n    int left = 0, ans = (int)a.size() + 1;\n    for (int right = 0; right < (int)a.size(); ++right) {\n        sum += a[right];\n        while (sum >= target) {\n            ans = min(ans, right - left + 1);\n            sum -= a[left++];\n        }\n    }\n    return ans > (int)a.size() ? 0 : ans;\n}",
+        "每个元素进入和离开窗口至多一次，时间 O(n)，空间 O(1)。",
+        "含负数时和不再单调。例如 [1,-1,5] 不能简单沿用正数窗口的排除逻辑；最短和至少 K 可用前缀和 + 单调队列。",
+        "最长合法窗口与最短合法窗口的答案更新时机有何不同？",
+        "练习：LeetCode 209 长度最小的子数组、76 最小覆盖子串、438 找到字符串中所有字母异位词。"
+      ],
+      [
+        "前缀和、差分与区间计数",
+        "前缀和把静态区间和转成两个累计值之差。定义 pre[0]=0，pre[i+1]=pre[i]+a[i]，则闭区间 [l,r] 的和为 pre[r+1]-pre[l]。差分则把多次区间加法转成端点修改，最后一次前缀还原。",
+        "求和为 k 的子数组：当前前缀和为 pre，需要统计此前 pre-k 的数量。先查询再插入当前前缀，避免把长度 0 的区间算进去。",
+        "[1,1,1]，k=2：前缀和 0、1、2、3。在 pre=2 时查到 0 一次；pre=3 时查到 1 一次，答案 2。这个方法允许负数。",
+        "long long subarraySum(const vector<int>& a, long long k) {\n    unordered_map<long long, long long> freq;\n    freq[0] = 1;\n    long long pre = 0, ans = 0;\n    for (int x : a) {\n        pre += x;\n        auto it = freq.find(pre - k);\n        if (it != freq.end()) ans += it->second;\n        ++freq[pre];\n    }\n    return ans;\n}",
+        "哈希平均时间 O(n)，最坏可达 O(n²)，额外空间 O(n)。答案最多 n(n+1)/2，使用 long long。",
+        "差分 diff[r+1]-=x 要预留 n+1 位置。二维前缀查询需要减去两侧、加回重复扣除的左上角。",
+        "为什么 freq[0]=1？如果求最长而非数量，哈希值应存什么？",
+        "练习：LeetCode 560 和为 K 的子数组、304 二维区域和检索、1109 航班预订统计。"
+      ],
+      [
+        "矩阵边界与螺旋遍历",
+        "矩阵模拟先明确四条边界，再按固定方向访问。每走完一条边缩小对应边界；对于单行、单列，必须在折返前检查是否还有未访问区域。",
+        "上边从左到右，右边从上到下，下边从右到左，左边从下到上。top/bottom/left/right 始终围成尚未输出的矩形。",
+        "2×3 矩阵 [[1,2,3],[4,5,6]] 输出 1、2、3、6、5、4；访问上边和右边后，下边只剩 5、4，左边已为空。",
+        "vector<int> spiralOrder(const vector<vector<int>>& a) {\n    if (a.empty() || a[0].empty()) return {};\n    vector<int> ans;\n    int top = 0, bottom = (int)a.size()-1;\n    int left = 0, right = (int)a[0].size()-1;\n    while (top <= bottom && left <= right) {\n        for (int c = left; c <= right; ++c) ans.push_back(a[top][c]);\n        ++top;\n        for (int r = top; r <= bottom; ++r) ans.push_back(a[r][right]);\n        --right;\n        if (top <= bottom) {\n            for (int c = right; c >= left; --c) ans.push_back(a[bottom][c]);\n            --bottom;\n        }\n        if (left <= right) {\n            for (int r = bottom; r >= top; --r) ans.push_back(a[r][left]);\n            ++left;\n        }\n    }\n    return ans;\n}",
+        "时间 O(RC)，除输出外额外空间 O(1)。假设每行列数相同。",
+        "原地旋转 90° 仅对方阵可直接采用转置 + 每行反转。网格搜索中坐标合法性检查必须在数组访问之前。",
+        "若只剩一行或一列，哪些循环会执行？如何避免重复输出？",
+        "练习：LeetCode 54 螺旋矩阵、48 旋转图像、73 矩阵置零。"
+      ]
+    ]
+  },
+  {
+    "dir": "03-链表",
+    "title": "链表",
+    "intro": "链表题检验的是对连接关系的控制。先画出要保留的指针，再修改指向；让已处理部分与未处理部分始终有明确入口。",
+    "sections": [
+      [
+        "虚拟头结点与有序合并",
+        "头结点可能改变时，增加 dummy 可以统一处理头部和中间节点。tail 永远指向已构建结果的最后一个节点，每次把较小节点接到尾部。",
+        "两个输入链表均有序，因此它们当前头部的较小者也是所有剩余节点中的最小者。接入后只推进被选中的那条链表。",
+        "[1,3] 与 [1,2] 合并：依次接入第一条的 1、第二条的 1、第二条的 2，最后直接接上剩余的 3。",
+        "struct ListNode {\n    int val;\n    ListNode* next;\n    ListNode(int v = 0, ListNode* p = nullptr) : val(v), next(p) {}\n};\nListNode* mergeTwo(ListNode* a, ListNode* b) {\n    ListNode dummy;\n    ListNode* tail = &dummy;\n    while (a && b) {\n        if (a->val <= b->val) { tail->next = a; a = a->next; }\n        else { tail->next = b; b = b->next; }\n        tail = tail->next;\n    }\n    tail->next = a ? a : b;\n    return dummy.next;\n}",
+        "时间 O(m+n)，额外空间 O(1)，复用原节点并改变连接关系。前提是输入链表无环且不共享节点。",
+        "dummy 是局部对象，但返回的是 dummy.next 所指的原节点，不能返回 &dummy。面试节点通常由平台管理，不要随意 delete。",
+        "合并稳定性由哪个比较符号决定？如果两链表共享尾部会有什么风险？",
+        "练习：LeetCode 21 合并两个有序链表、203 移除链表元素、19 删除链表的倒数第 N 个结点。"
+      ],
+      [
+        "迭代反转与局部拼接",
+        "反转时必须保存当前节点的旧后继。prev 表示已反转部分的头，cur 表示未处理部分的头。每轮把 cur 从未处理部分移到已反转部分前端。",
+        "修改 cur->next 之前，用 next 保存剩余链表。局部反转还需要保留区间前驱和原区间头：原头在翻转后变成尾，要连接后续部分。",
+        "1→2→3：第一轮变成 1→null 与 2→3；第二轮 2→1 与 3；第三轮 3→2→1，cur 为空时返回 prev。",
+        "struct ListNode {\n    int val; ListNode* next;\n    ListNode(int v = 0, ListNode* p = nullptr) : val(v), next(p) {}\n};\nListNode* reverseList(ListNode* head) {\n    ListNode* prev = nullptr;\n    ListNode* cur = head;\n    while (cur) {\n        ListNode* next = cur->next;\n        cur->next = prev;\n        prev = cur;\n        cur = next;\n    }\n    return prev;\n}",
+        "时间 O(n)，额外空间 O(1)。递归反转同样 O(n) 时间，但调用栈 O(n)。",
+        "K 个一组反转必须先检查剩余是否有 K 个节点。回文链表题反转后半段后，如果要求输入保持原状，要再次反转恢复。",
+        "为什么不能先执行 cur=cur->next？局部翻转后需要重新接上哪两条边？",
+        "练习：LeetCode 206 反转链表、92 反转链表 II、25 K 个一组翻转链表。"
+      ],
+      [
+        "快慢指针、环入口与中点",
+        "快慢指针用于在一次扫描中构造位置差。找中点依赖速度差，找倒数第 k 个依赖固定距离差。检测环时，环内相对速度为一步，必定相遇。",
+        "相遇后让一个指针回到头部，两者每次各走一步。设入口前长度 a，相遇位置距入口 b，环长 L，则 a+b 是 L 的整数倍，故从相遇处再走 a 步回到入口。",
+        "链表 1→2→3→4→2，环长 3。相遇后头部指针与相遇指针同步走，第一次相遇在 2。",
+        "struct ListNode {\n    int val; ListNode* next;\n    ListNode(int v = 0, ListNode* p = nullptr) : val(v), next(p) {}\n};\nListNode* detectCycle(ListNode* head) {\n    ListNode *slow = head, *fast = head;\n    while (fast && fast->next) {\n        slow = slow->next;\n        fast = fast->next->next;\n        if (slow == fast) {\n            ListNode* p = head;\n            while (p != slow) { p = p->next; slow = slow->next; }\n            return p;\n        }\n    }\n    return nullptr;\n}",
+        "时间 O(n)，额外空间 O(1)。n 指不同节点总数。",
+        "中点模板的初始位置决定偶数长度返回左中点还是右中点。判断相交比较节点地址，不能比较 val。",
+        "若快指针每次走 3 步，相遇后回头同步走的结论还能直接照搬吗？",
+        "练习：LeetCode 141 环形链表、142 环形链表 II、876 链表的中间结点、160 相交链表。"
+      ],
+      [
+        "随机指针复制与深拷贝",
+        "深拷贝要求新旧节点完全分离，但连接拓扑相同。难点在于 random 可能指向尚未复制的节点，因此将建点和连边分成两个阶段。",
+        "第一遍为每个旧节点创建新节点并记录映射；第二遍根据映射设置 next 与 random。这样不论 random 指向前方、后方、自己还是空，都能统一处理。",
+        "A.random=C，B.random=A。复制时先得到 A'、B'、C'；随后连 A'.random=C'，B'.random=A'，绝不能把新节点连回旧节点。",
+        "struct Node {\n    int val; Node *next = nullptr, *random = nullptr;\n    explicit Node(int v) : val(v) {}\n};\nNode* copyRandomList(Node* head) {\n    unordered_map<Node*, Node*> copied;\n    for (Node* p = head; p; p = p->next) copied[p] = new Node(p->val);\n    for (Node* p = head; p; p = p->next) {\n        copied[p]->next = p->next ? copied.at(p->next) : nullptr;\n        copied[p]->random = p->random ? copied.at(p->random) : nullptr;\n    }\n    return head ? copied.at(head) : nullptr;\n}",
+        "平均时间 O(n)，额外映射 O(n)，新输出节点 O(n)。前提：next 无环，random 指向链表内节点或空。",
+        "穿插复制节点可以把辅助空间降为 O(1)，但会暂时修改原链表，最后必须拆分恢复。真实项目要约定释放新节点的责任。",
+        "如果 next 也可能有环，为什么两次普通 for 遍历不再成立？",
+        "练习：LeetCode 138 随机链表的复制；进阶：将映射复制推广到图的克隆。"
+      ]
+    ]
+  },
+  {
+    "dir": "04-栈队列与单调结构",
+    "title": "栈、队列与单调结构",
+    "intro": "从后进先出与先进先出出发，理解什么时候应该保留历史候选，什么时候可以永久淘汰它。单调结构的核心就是这种淘汰依据。",
+    "sections": [
+      [
+        "括号匹配与栈中的待解决问题",
+        "栈保存尚未匹配的左括号。右括号只能与最近的未匹配左括号配对，天然符合后进先出。表达式求值、函数调用和嵌套结构解析都沿用同样的层级思想。",
+        "扫描到右括号时先检查栈是否为空，再检查类型。扫描完成后栈必须为空，否则仍有未闭合括号。下面约定输入只允许六种括号字符。",
+        "输入 ([)]：栈依次为 (、([；读到 ) 时栈顶是 [，立即失败，不能跨过它与更早的 ( 配对。",
+        "bool validBrackets(const string& s) {\n    vector<char> st;\n    for (char c : s) {\n        if (c == '(' || c == '[' || c == '{') st.push_back(c);\n        else {\n            char need = c == ')' ? '(' : c == ']' ? '[' : c == '}' ? '{' : 0;\n            if (!need || st.empty() || st.back() != need) return false;\n            st.pop_back();\n        }\n    }\n    return st.empty();\n}",
+        "时间 O(n)，最坏额外空间 O(n)。",
+        "最小栈要保存每一层对应的最小值；重复最小值不能只记录一次。表达式中的一元负号与二元减法需要区分。",
+        "如何用一个辅助栈 O(1) 查询当前最小值？遇到非括号字符应忽略还是报错？",
+        "练习：LeetCode 20 有效的括号、155 最小栈、150 逆波兰表达式求值。"
+      ],
+      [
+        "单调栈：下一个更大元素",
+        "对每个位置寻找右侧第一个更大值，暴力会重复扫描。单调栈保存还没有找到答案的下标，新值出现时可以一次解决多个较小值。",
+        "保持栈中温度非递增。若当前温度大于栈顶温度，则当前下标就是栈顶的第一个更高温度：之前扫描过的位置都没能弹出它。",
+        "[73,71,72,75]：72 解决 71；75 依次解决 72 与 73。对应等待天数 [3,1,1,0]。",
+        "vector<int> dailyTemperatures(const vector<int>& t) {\n    vector<int> ans(t.size(), 0), st;\n    for (int i = 0; i < (int)t.size(); ++i) {\n        while (!st.empty() && t[i] > t[st.back()]) {\n            int j = st.back();\n            st.pop_back();\n            ans[j] = i - j;\n        }\n        st.push_back(i);\n    }\n    return ans;\n}",
+        "时间 O(n)，空间 O(n)；每个下标入栈出栈至多一次。",
+        "严格更大使用 >，大于等于使用 >=。柱状图求面积时，弹出元素后新的栈顶代表左侧边界，宽度不能用两端下标直接相减。",
+        "为什么相同温度不弹出？如何寻找左侧第一个更小元素？",
+        "练习：LeetCode 739 每日温度、496 下一个更大元素 I、84 柱状图中最大的矩形。"
+      ],
+      [
+        "单调队列：窗口最大值",
+        "堆能解决窗口最值，但需要处理过期元素。单调队列利用固定的时间顺序，把将来永远不可能成为最大值的候选提前删除。",
+        "队列保存下标，对应值递减。新值 x 到来时，队尾所有 <=x 的旧值都可淘汰：x 更大且更晚过期。查询前移除下标 <= i-k 的元素。",
+        "[1,3,-1,-3,5]，k=3：3 淘汰 1；5 到来时移除过期的 3，并从尾部淘汰 -3、-1，窗口最大值依次为 3、3、5。",
+        "vector<int> maxSlidingWindow(const vector<int>& a, int k) {\n    if (k <= 0 || k > (int)a.size()) return {};\n    deque<int> q;\n    vector<int> ans;\n    for (int i = 0; i < (int)a.size(); ++i) {\n        while (!q.empty() && q.front() <= i-k) q.pop_front();\n        while (!q.empty() && a[q.back()] <= a[i]) q.pop_back();\n        q.push_back(i);\n        if (i >= k-1) ans.push_back(a[q.front()]);\n    }\n    return ans;\n}",
+        "时间 O(n)，辅助空间 O(k)，输出空间 O(n-k+1)。",
+        "队列中存值会失去精确过期信息；若使用值，需要另行处理重复值及其数量。",
+        "为什么删除队尾旧的小值是安全的？窗口最小值改哪个比较符？",
+        "练习：LeetCode 239 滑动窗口最大值、862 和至少为 K 的最短子数组。"
+      ],
+      [
+        "两个栈实现队列与均摊分析",
+        "输入栈接收新元素，输出栈负责弹出最旧元素。当输出栈为空时，把输入栈全部倒入，顺序就被反转。输出栈非空时不能把新元素混入。",
+        "每个元素最多压入输入栈一次、转入输出栈一次、弹出一次。虽然某次 pop 可能耗时 O(n)，一串 n 次操作的总成本是 O(n)。",
+        "push(1)、push(2)、pop()：倒入输出栈后栈顶为 1；再 push(3) 不影响输出栈中的 2，下一次 pop 仍返回 2。",
+        "class TwoStackQueue {\n    stack<int> in, out;\n    void transfer() {\n        if (out.empty()) {\n            while (!in.empty()) { out.push(in.top()); in.pop(); }\n        }\n    }\npublic:\n    void push(int x) { in.push(x); }\n    bool empty() const { return in.empty() && out.empty(); }\n    int pop() {\n        transfer();\n        if (out.empty()) throw out_of_range(\"empty queue\");\n        int x = out.top(); out.pop(); return x;\n    }\n    int front() {\n        transfer();\n        if (out.empty()) throw out_of_range(\"empty queue\");\n        return out.top();\n    }\n};",
+        "push 最坏 O(1)；pop/front 均摊 O(1)、单次最坏 O(n)；空间 O(n)。",
+        "空队列行为要与接口约定一致。使用队列做 BFS 时入队就标记，防止重复入队。",
+        "单次最坏和均摊有什么区别？为什么不能每次 pop 都执行倒栈？",
+        "练习：LeetCode 232 用栈实现队列、225 用队列实现栈。"
+      ]
+    ]
+  },
+  {
+    "dir": "05-哈希集合与位运算",
+    "title": "哈希、集合与位运算",
+    "intro": "把重复查找压缩成状态映射，把小集合编码成二进制。重点是选择正确的键、保存足够的信息，并说明平均复杂度的前提。",
+    "sections": [
+      [
+        "哈希映射：存在、下标还是次数",
+        "哈希表的 value 必须服务于问题目标：判断存在用 set，返回位置保存下标，统计数量保存频次，求最长区间常保存最早下标。键必须能完整代表你要比较的状态。",
+        "两数之和先查询补数，再插入当前数，保证不会重复使用同一个位置。此前所有元素都在表中，因此当前元素作为较晚端点的解不会被遗漏。",
+        "[3,3]，target=6：第一个 3 只入表；第二个 3 查到下标 0，返回 [0,1]。若先插入当前值，可能错误得到同一个下标两次。",
+        "vector<int> twoSum(const vector<int>& a, long long target) {\n    unordered_map<long long, int> pos;\n    for (int i = 0; i < (int)a.size(); ++i) {\n        auto it = pos.find(target - a[i]);\n        if (it != pos.end()) return {it->second, i};\n        pos[a[i]] = i;\n    }\n    return {};\n}",
+        "平均时间 O(n)，最坏 O(n²)，空间 O(n)。",
+        "operator[] 查询不存在的键会插入默认值；纯查询优先 find。rehash 会使迭代器失效，遍历中修改需谨慎。",
+        "如果要返回所有下标对，value 应改成什么？返回值为空代表什么？",
+        "练习：LeetCode 1 两数之和、49 字母异位词分组、205 同构字符串。"
+      ],
+      [
+        "集合：最长连续序列为何是线性",
+        "把所有数放进集合后，仅从没有前驱 x-1 的数启动向后扩展。这保证每段连续区间只被扫描一次，而不是对每个起点重复扫描整段。",
+        "集合去重后，连续块只有一个最小值能触发扩展。扫描集合一次，加上各块内总共 O(n) 次扩展，平均总成本 O(n)。",
+        "[100,4,200,1,3,2,2] 去重后，只从 1、100、200 扩展。1 找到 2、3、4，长度 4；2、3、4 因为存在前驱不启动搜索。",
+        "int longestConsecutive(const vector<int>& a) {\n    unordered_set<long long> values(a.begin(), a.end());\n    int ans = 0;\n    for (long long x : values) {\n        if (values.count(x - 1)) continue;\n        long long y = x;\n        while (values.count(y)) ++y;\n        ans = max(ans, (int)(y - x));\n    }\n    return ans;\n}",
+        "平均时间 O(n)，空间 O(n)，哈希最坏时间可能退化。",
+        "使用 long long 存储 int 输入，避免 INT_MIN-1、INT_MAX+1 溢出。外层如果遍历含大量重复值的原数组，可能重复扩展同一长区间。",
+        "为什么嵌套 while 不是 O(n²)？如果不去重会怎样？",
+        "练习：LeetCode 128 最长连续序列、349 两个数组的交集。"
+      ],
+      [
+        "异或与二进制计数",
+        "异或满足交换律、结合律，且 x^x=0，因此偶数次出现的元素会抵消。但不能把这个结论套到出现三次的问题，后者需要按位计数或状态机。",
+        "x&(x-1) 每次清除最低位的 1：x-1 把最低位 1 变为 0，并把其右侧的 0 变成 1，相与后只删除该位。使用无符号类型使位级语义明确。",
+        "x=12，即 1100；第一次变为 1000，第二次变为 0000，所以 popcount 为 2。",
+        "int singleNumber(const vector<int>& a) {\n    int ans = 0;\n    for (int x : a) ans ^= x;\n    return ans;\n}\nint countBits(uint32_t x) {\n    int count = 0;\n    while (x) {\n        x &= x - 1;\n        ++count;\n    }\n    return count;\n}\nbool isPowerOfTwo(uint32_t x) {\n    return x != 0 && (x & (x - 1)) == 0;\n}",
+        "异或归约 O(n) 时间、O(1) 空间；位计数 O(b)，b 为 1 的个数，最多 32。",
+        "0 不是 2 的幂。位移位数不能大于等于类型宽度；设置高位用 1ULL<<k，并确认 k<64。",
+        "两个数各出现一次、其余两次时，如何用异或结果的最低位 1 分组？",
+        "练习：LeetCode 136 只出现一次的数字、260 只出现一次的数字 III、191 位 1 的个数。"
+      ],
+      [
+        "位掩码表示子集",
+        "n 个选或不选状态可用 n 位二进制编码，第 i 位为 1 表示选择第 i 个元素。这适合 n 较小的穷举、状态压缩 DP 和集合运算。",
+        "遍历 0 到 2^n-1，每个整数唯一对应一个子集。判断成员用 mask&(1ULL<<i)，集合并/交/差可以用按位或、与、与取反。",
+        "[a,b,c] 的掩码 101 表示选择 a 与 c；000 为空集，111 为全集。共有 8 个状态。",
+        "vector<vector<int>> subsetsByMask(const vector<int>& a) {\n    int n = (int)a.size();\n    if (n > 20) throw invalid_argument(\"exponential output too large\");\n    vector<vector<int>> ans;\n    uint64_t total = 1ULL << n;\n    for (uint64_t mask = 0; mask < total; ++mask) {\n        vector<int> cur;\n        for (int i = 0; i < n; ++i)\n            if (mask & (1ULL << i)) cur.push_back(a[i]);\n        ans.push_back(move(cur));\n    }\n    return ans;\n}",
+        "时间与输出空间 O(n·2^n)，临时单个子集 O(n)。",
+        "位宽允许不代表内存允许；n=40 即使掩码放得下，也无法直接枚举全部子集。输入含重复值时会生成内容重复的子集。",
+        "如何枚举 mask 的所有非空子集？提示 sub=(sub-1)&mask。",
+        "练习：LeetCode 78 子集；进阶：旅行商状态 dp[mask][last]。"
+      ]
+    ]
+  },
+  {
+    "dir": "06-排序与二分查找",
+    "title": "排序与二分查找",
+    "intro": "排序创建有序结构，二分利用单调性压缩答案范围。面试中既要熟悉标准库，也要能解释分区、归并和边界寻找。",
+    "sections": [
+      [
+        "归并排序、稳定性与逆序对",
+        "归并先递归排序两半，再用双指针合并。相等时优先取左半元素可以保持稳定性，即原本相等元素的相对顺序不变。稳定性对多字段排序有意义。",
+        "每层合并总共处理 n 个元素，递归约 log n 层。逆序对统计时，如果右值小于左值，则该右值与左半剩余所有元素都构成逆序对。",
+        "[3,1,2] 分为 [3] 与 [1,2]。合并时先取 1，产生一对 (3,1)；再取 2，产生 (3,2)。",
+        "void mergeSortRange(vector<int>& a, vector<int>& tmp, int l, int r) {\n    if (r - l <= 1) return;\n    int m = l + (r-l)/2;\n    mergeSortRange(a, tmp, l, m);\n    mergeSortRange(a, tmp, m, r);\n    int i=l, j=m, k=l;\n    while (i<m && j<r)\n        tmp[k++] = a[i] <= a[j] ? a[i++] : a[j++];\n    while (i<m) tmp[k++] = a[i++];\n    while (j<r) tmp[k++] = a[j++];\n    for (int p=l; p<r; ++p) a[p]=tmp[p];\n}\nvoid mergeSort(vector<int>& a) {\n    vector<int> tmp(a.size());\n    mergeSortRange(a, tmp, 0, (int)a.size());\n}",
+        "时间 O(n log n)，辅助数组 O(n)，调用栈 O(log n)，总额外空间 O(n)。",
+        "sort 不保证稳定，stable_sort 保证稳定。比较器不能写 <=，必须满足严格弱序。",
+        "把 <= 改成 < 是否影响数值排序结果？会影响稳定性吗？",
+        "练习：LeetCode 912 排序数组、LCR 170 交易逆序对的总数。"
+      ],
+      [
+        "快速排序与三路分区",
+        "快排通过分区把较小值放左边、较大值放右边，再递归处理。平均 O(n log n)，选择极差基准时最坏 O(n²)。大量重复值时，三路分区能一次跳过整个相等区域。",
+        "保持 [l,lt) < pivot，[lt,i) = pivot，[i,gt] 未处理，(gt,r] > pivot。遇到大值时与 gt 交换，但新换来的值尚未处理，因此 i 不前进。",
+        "[2,1,2,3,2] 以 2 为基准，最终得到 [1]、[2,2,2]、[3]，只需要继续处理两侧。",
+        "void quickSort(vector<int>& a, int l, int r) {\n    if (l >= r) return;\n    int pivot = a[l + (r-l)/2];\n    int lt=l, i=l, gt=r;\n    while (i <= gt) {\n        if (a[i] < pivot) swap(a[lt++], a[i++]);\n        else if (a[i] > pivot) swap(a[i], a[gt--]);\n        else ++i;\n    }\n    quickSort(a, l, lt-1);\n    quickSort(a, gt+1, r);\n}\nvoid sortArray(vector<int>& a) {\n    if (!a.empty()) quickSort(a, 0, (int)a.size()-1);\n}",
+        "常见输入平均 O(n log n)，本实现中点基准没有随机化，最坏 O(n²)；栈平均 O(log n)、最坏 O(n)。",
+        "快排不是稳定排序。需要可靠最坏性能时通常使用标准库 sort，或自己实现内省排序；随机化只能降低遇到极端分区的概率。",
+        "如何用分区实现第 K 小？为什么只递归一边时平均可达 O(n)？",
+        "练习：LeetCode 75 颜色分类、215 数组中的第 K 个最大元素。"
+      ],
+      [
+        "左右边界与标准库二分",
+        "lower_bound 返回第一个 >=x 的位置，upper_bound 返回第一个 >x 的位置。两者之差就是 x 的出现次数；找不到时可能返回 end。",
+        "下界搜索把 >=x 作为右半区条件，上界搜索把 >x 作为右半区条件。重复元素不是特例，而是边界定义的一部分。",
+        "[1,2,2,2,4] 中 x=2，下界 1，上界 4，因此范围 [1,3]，次数 3。",
+        "pair<int,int> searchRange(const vector<int>& a, int x) {\n    auto first = lower_bound(a.begin(), a.end(), x);\n    if (first == a.end() || *first != x) return {-1,-1};\n    auto after = upper_bound(first, a.end(), x);\n    return {(int)(first-a.begin()), (int)(after-a.begin())-1};\n}",
+        "随机访问数组上时间 O(log n)，空间 O(1)。在链表迭代器上，比较次数虽为对数，移动迭代器却可能为线性。",
+        "有序容器 set/map 优先使用成员 lower_bound，不能把通用算法在其迭代器上的成本误认为 O(log n)。旋转数组要先判断哪半有序。",
+        "找最后一个 <=x 如何用 upper_bound 表达？空数组会返回什么？",
+        "练习：LeetCode 34 查找首尾位置、33 搜索旋转排序数组、153 寻找旋转排序数组中的最小值。"
+      ],
+      [
+        "答案二分：最小运输能力",
+        "答案二分要求可行性单调。运输容量越大，需要的天数越少，因此存在“不可行→可行”的分界。对每个候选容量，按顺序尽量装满当前天即可检查可行性。",
+        "下界为最大单件重量，上界为总重量。容量固定后，贪心每天尽量多装不会让未来变差；check 返回能否在 D 天内完成。",
+        "重量 [1,2,3,1,1]，D=4，容量 2 装不下重量 3；容量 3 可分为 [1,2]、[3]、[1,1]，最小答案是 3。",
+        "long long shipCapacity(const vector<int>& w, int days) {\n    if (w.empty()) return 0;\n    if (days <= 0) throw invalid_argument(\"days must be positive\");\n    long long lo = *max_element(w.begin(),w.end());\n    long long hi = accumulate(w.begin(),w.end(),0LL);\n    auto ok = [&](long long cap) {\n        int used=1;\n        long long load=0;\n        for (int x:w) {\n            if (load+x>cap) { ++used; load=0; }\n            load+=x;\n        }\n        return used<=days;\n    };\n    while (lo<hi) {\n        long long mid=lo+(hi-lo)/2;\n        if (ok(mid)) hi=mid;\n        else lo=mid+1;\n    }\n    return lo;\n}",
+        "时间 O(n log(S-M+1))，S 为总重、M 为最大重量；空间 O(1)。重量需为正。",
+        "不要看到最小化最大值就直接二分；先证明 check 单调，并保证初始上界可行。",
+        "如果允许打乱货物顺序，check 是否仍然这样写？",
+        "练习：LeetCode 1011 在 D 天内送达包裹的能力、875 爱吃香蕉的珂珂、410 分割数组的最大值。"
+      ]
+    ]
+  },
+  {
+    "dir": "07-树与二叉搜索树",
+    "title": "树与二叉搜索树",
+    "intro": "树题的突破口是递归函数的返回值：孩子应该向父节点汇报什么？把这个问题回答清楚，遍历、路径和树形 DP 就有了共同基础。",
+    "sections": [
+      [
+        "遍历顺序与显式栈",
+        "前序在进入节点时处理，中序在左子树完成后处理，后序在两个孩子完成后处理。层序使用队列。选择顺序取决于当前计算依赖父节点还是孩子信息。",
+        "迭代中序用栈保存暂时搁置的祖先：先沿左链入栈，弹出访问，再转到右子树。每个节点入栈、出栈各一次。",
+        "树 2 的左右孩子为 1、3：压入 2、1，弹出 1；随后弹出 2，再进入 3，输出 1、2、3。",
+        "struct TreeNode {\n    int val; TreeNode *left=nullptr, *right=nullptr;\n    explicit TreeNode(int v):val(v){}\n};\nvector<int> inorder(TreeNode* root) {\n    vector<int> ans;\n    stack<TreeNode*> st;\n    TreeNode* cur=root;\n    while (cur || !st.empty()) {\n        while (cur) { st.push(cur); cur=cur->left; }\n        cur=st.top(); st.pop();\n        ans.push_back(cur->val);\n        cur=cur->right;\n    }\n    return ans;\n}",
+        "时间 O(n)，辅助栈 O(h)，输出 O(n)。退化树 h=n，平衡树 h=O(log n)。",
+        "BFS 分层时，进入本层前保存队列大小，不能让新加入的下一层节点参与本层循环。",
+        "迭代前序为何先压右孩子？后序如何记录节点是否已经完成右子树？",
+        "练习：LeetCode 94 中序遍历、102 层序遍历、199 二叉树的右视图。"
+      ],
+      [
+        "后序汇总：平衡性与直径",
+        "一个子树可以同时返回结构信息并帮助更新全局答案。判断平衡需要高度；直径需要左右高度之和，但向父节点只能返回可继续连接的单边高度。",
+        "平衡检查用 -1 代表不平衡。先算左右子树，只要任何一侧失败或高度差大于 1，立刻向上传递失败；否则返回当前高度。",
+        "一个节点左高 3、右高 1，高度差 2，整棵树在这里失败。祖先无需重复遍历子树计算高度。",
+        "struct TreeNode {\n    int val; TreeNode *left=nullptr, *right=nullptr;\n    explicit TreeNode(int v):val(v){}\n};\nint balancedHeight(TreeNode* node) {\n    if (!node) return 0;\n    int l=balancedHeight(node->left);\n    if (l==-1) return -1;\n    int r=balancedHeight(node->right);\n    if (r==-1 || abs(l-r)>1) return -1;\n    return 1+max(l,r);\n}\nbool isBalanced(TreeNode* root) {\n    return balancedHeight(root)!=-1;\n}",
+        "时间 O(n)，空间 O(h)。逐节点重新求高度的朴素实现最坏 O(n²)。",
+        "直径若以边数计，用 leftHeight+rightHeight；以节点数计再加 1。最大路径和中向上返回不能同时选左右两边。",
+        "为什么最大路径和可以用左右两边更新答案，却只能返回单边？",
+        "练习：LeetCode 110 平衡二叉树、543 二叉树的直径、124 二叉树中的最大路径和。"
+      ],
+      [
+        "BST 的全局范围约束",
+        "BST 不仅要求左孩子小于根，还要求整个左子树都小于根。验证时把祖先施加的上下界一路传下去；默认不允许重复值。",
+        "当前节点必须落在开区间 (lo,hi)。左子树的上界收紧为当前值，右子树的下界收紧为当前值。使用 long long 边界覆盖所有 int 节点值。",
+        "根 10，左孩子 5，5 的右孩子 12。虽然每条父子边看似合理，但 12 位于 10 的左子树，违反上界 10。",
+        "struct TreeNode {\n    int val; TreeNode *left=nullptr, *right=nullptr;\n    explicit TreeNode(int v):val(v){}\n};\nbool validRange(TreeNode* p, long long lo, long long hi) {\n    if (!p) return true;\n    if (p->val<=lo || p->val>=hi) return false;\n    return validRange(p->left,lo,p->val)\n        && validRange(p->right,p->val,hi);\n}\nbool isValidBST(TreeNode* root) {\n    return validRange(root,LLONG_MIN,LLONG_MAX);\n}",
+        "时间 O(n)，空间 O(h)。BST 查找平均 O(log n)，退化时 O(n)，普通 BST 不自动平衡。",
+        "中序检查也能验证，但前一个值不能初始化为 INT_MIN 后直接严格比较，否则节点值等于 INT_MIN 时出错。",
+        "允许重复值只放右侧时，上下界语义如何变化？如何求第 K 小？",
+        "练习：LeetCode 98 验证二叉搜索树、230 二叉搜索树中第 K 小的元素、450 删除二叉搜索树中的节点。"
+      ],
+      [
+        "最近公共祖先与返回值语义",
+        "对普通二叉树，递归返回“该子树中找到的目标节点或它们的 LCA”。若左右各找到一个，当前根就是分叉点；若只找到一侧，答案向上传递。",
+        "遇到 p 或 q 直接返回；左右非空时返回当前节点，否则返回非空一侧。这个简洁版本要求 p、q 都确实存在于树中。",
+        "若 p 在左子树、q 在右子树，当前节点是首次汇合点；若 p 本身是 q 的祖先，递归到 p 时返回 p，正好符合祖先可以是自身的定义。",
+        "struct TreeNode {\n    int val; TreeNode *left=nullptr, *right=nullptr;\n    explicit TreeNode(int v):val(v){}\n};\nTreeNode* lca(TreeNode* root, TreeNode* p, TreeNode* q) {\n    if (!root || root==p || root==q) return root;\n    TreeNode* a=lca(root->left,p,q);\n    TreeNode* b=lca(root->right,p,q);\n    if (a && b) return root;\n    return a ? a : b;\n}",
+        "时间 O(n)，空间 O(h)。BST 的 LCA 可利用键值方向迭代，时间 O(h)、空间 O(1)。",
+        "按节点身份比较指针，不能靠值区分重复节点。若目标可能不存在，需要额外统计找到的目标数或预先验证。",
+        "如果有十万次 LCA 查询，单次 DFS 是否合适？了解倍增预处理作为进阶方向。",
+        "练习：LeetCode 236 二叉树的最近公共祖先、235 二叉搜索树的最近公共祖先、105 从前序与中序遍历构造二叉树。"
+      ]
+    ]
+  },
+  {
+    "dir": "08-堆与优先队列",
+    "title": "堆与优先队列",
+    "intro": "堆只保证当前极值可以快速取出。对动态候选集，往往不需要维护完整排序，只需维护“下一次最应该处理谁”。",
+    "sections": [
+      [
+        "堆的数组表示与向下调整",
+        "0 下标完全二叉树的孩子为 2i+1、2i+2。大顶堆每个父节点不小于孩子。交换根和末尾后，只有根附近可能破坏性质，可以沿一条路径向下修复。",
+        "从最后一个非叶节点逆序执行下沉即可建堆。底层节点多但下沉距离短，按高度求和得到 O(n)，并非 O(n log n)。",
+        "[3,1,5,2] 从下标 1 开始，1 与 2 交换；再处理根 3，与 5 交换，得到 [5,2,3,1]。",
+        "void siftDown(vector<int>& a, int i, int n) {\n    while (2*i+1 < n) {\n        int child=2*i+1;\n        if (child+1<n && a[child+1]>a[child]) ++child;\n        if (a[i]>=a[child]) break;\n        swap(a[i],a[child]);\n        i=child;\n    }\n}\nvoid buildMaxHeap(vector<int>& a) {\n    int n=(int)a.size();\n    for (int i=n/2-1; i>=0; --i) siftDown(a,i,n);\n}",
+        "建堆 O(n) 时间、O(1) 额外空间；单次上浮/下沉 O(log n)。",
+        "priority_queue<int> 默认大顶堆，小顶堆用 greater<int>。堆不是整体有序数组，不能对内部存储做二分。",
+        "为什么建堆可以从 n/2-1 开始？叶节点为何不必处理？",
+        "练习：手写堆排序；LeetCode 1046 最后一块石头的重量。"
+      ],
+      [
+        "固定大小堆与 Top K",
+        "求最大的 K 个时维护小顶堆：堆顶是目前入选者中最弱的，新的大值可以替换它。保留的集合始终是已扫描前缀的 K 个最大值。",
+        "加入每个元素后若大小超过 K，就删除最小值。最终堆顶是第 K 大。K=1 时退化为维护最大值。",
+        "[3,2,1,5,6,4]，K=2：堆最终保留 5、6，堆顶 5 即第 2 大。",
+        "int kthLargest(const vector<int>& a, int k) {\n    if (k<=0 || k>(int)a.size()) throw invalid_argument(\"invalid k\");\n    priority_queue<int,vector<int>,greater<int>> heap;\n    for (int x:a) {\n        heap.push(x);\n        if ((int)heap.size()>k) heap.pop();\n    }\n    return heap.top();\n}",
+        "时间 O(n log(k+1))，额外空间 O(k)。",
+        "第 K 大通常按元素计数而不是去重后的值，重复值要保留。静态数组且可修改时，nth_element 平均线性更合适。",
+        "若 k 接近 n，可否改为维护 n-k+1 个最小值？",
+        "练习：LeetCode 215 第 K 个最大元素、703 数据流中的第 K 大元素、347 前 K 个高频元素。"
+      ],
+      [
+        "多路归并：只保存每一路的前沿",
+        "每个有序序列未处理部分的最小值一定是其当前头部。因此全局最小值一定在各路头部之中，堆只需保存这些候选。",
+        "弹出三元组 (value,row,index)，输出 value，再把同一路下一个元素入堆。每一路最多有一个候选存在于堆中。",
+        "[1,4]、[2,5]、[0,3]：堆初始 0、1、2；弹出 0 后补入 3；持续得到 0、1、2、3、4、5。",
+        "vector<int> mergeSorted(const vector<vector<int>>& a) {\n    using Item=tuple<int,int,int>;\n    priority_queue<Item,vector<Item>,greater<Item>> pq;\n    for (int r=0;r<(int)a.size();++r)\n        if (!a[r].empty()) pq.emplace(a[r][0],r,0);\n    vector<int> ans;\n    while (!pq.empty()) {\n        auto [value,r,i]=pq.top(); pq.pop();\n        ans.push_back(value);\n        if (i+1<(int)a[r].size()) pq.emplace(a[r][i+1],r,i+1);\n    }\n    return ans;\n}",
+        "总元素数 N，路数 K：时间 O(N log(K+1)+K)，额外堆空间 O(K)，输出 O(N)。",
+        "保存来源索引才能推进正确的序列。K 个链表合并时，弹出节点后要保留 next，避免错误修改连接。",
+        "如果数据量超过内存，为何这个思路仍适用外部归并？",
+        "练习：LeetCode 23 合并 K 个升序链表、373 查找和最小的 K 对数字。"
+      ],
+      [
+        "双堆维护中位数",
+        "大顶堆 lo 保存较小一半，小顶堆 hi 保存较大一半。维护 lo 的元素数等于 hi，或比 hi 多 1；并保证所有 lo 元素 <= 所有 hi 元素。",
+        "先按 lo.top 分流，再通过移动堆顶平衡大小。奇数个元素的中位数是 lo.top，偶数个是两个堆顶平均值。",
+        "插入 1、5、2：最终 lo={1,2}，hi={5}，中位数 2；再插入 4，两个堆顶为 2 和 4，中位数 3。",
+        "class MedianFinder {\n    priority_queue<int> lo;\n    priority_queue<int,vector<int>,greater<int>> hi;\npublic:\n    void addNum(int x) {\n        if (lo.empty() || x<=lo.top()) lo.push(x);\n        else hi.push(x);\n        if (lo.size()>hi.size()+1) { hi.push(lo.top()); lo.pop(); }\n        if (hi.size()>lo.size()) { lo.push(hi.top()); hi.pop(); }\n    }\n    double findMedian() const {\n        if (lo.empty()) throw out_of_range(\"no data\");\n        if (lo.size()!=hi.size()) return lo.top();\n        return ((long long)lo.top()+hi.top())/2.0;\n    }\n};",
+        "插入 O(log n)，查询 O(1)，存储 O(n)。",
+        "两个 int 先相加可能溢出，先转 long long。若还支持删除任意旧值，需要额外的延迟删除或有序多重集合。",
+        "滑动窗口中位数比数据流中位数多了哪项操作？",
+        "练习：LeetCode 295 数据流的中位数、480 滑动窗口中位数。"
+      ]
+    ]
+  },
+  {
+    "dir": "09-递归回溯与分治",
+    "title": "递归、回溯与分治",
+    "intro": "把穷举组织成决策树，再用约束消除无效分支。代码中的选择、递归、撤销必须一一对应；输出的大小也是复杂度的一部分。",
+    "sections": [
+      [
+        "子集与组合：start 消除排列重复",
+        "子集关心选哪些元素，不关心选取顺序，因此每次只能从上一次下标之后继续选。路径对应已经选取的元素，start 对应下一层可以选择的最小下标。",
+        "每个递归节点都代表一个合法子集，进入函数就记录。循环选择第 i 个元素后递归到 i+1，再撤销。",
+        "[1,2]：先记录 []，选择 1 得到 [1]，再选 2 得到 [1,2]；回到根再选 2 得到 [2]，不会生成 [2,1]。",
+        "vector<vector<int>> subsets(const vector<int>& a) {\n    vector<vector<int>> ans;\n    vector<int> path;\n    function<void(int)> dfs=[&](int start) {\n        ans.push_back(path);\n        for (int i=start;i<(int)a.size();++i) {\n            path.push_back(a[i]);\n            dfs(i+1);\n            path.pop_back();\n        }\n    };\n    dfs(0);\n    return ans;\n}",
+        "时间 O(n·2^n)，输出 O(n·2^n)，路径和递归栈 O(n)。",
+        "组合选 K 个时只有 path.size()==K 才记录，并可用剩余数量剪枝。元素允许重复使用时，递归传 i 而不是 i+1，但需保证问题能终止。",
+        "组合总和中的候选若含 0 或负数，无限复用会有什么问题？",
+        "练习：LeetCode 78 子集、77 组合、39 组合总和。"
+      ],
+      [
+        "全排列与同层去重",
+        "排列允许每层从所有未使用元素中选择，因此需要 used 数组。输入有重复值时，仅仅按下标区分会输出重复排列，需要排序并控制相同元素的选择顺序。",
+        "当 a[i]==a[i-1] 且前一个相同元素尚未被本条路径使用时，跳过 i。这表示同一层只允许最靠前的相同元素作为分支起点。",
+        "[1,1,2]：根层只能选择第一个 1；在它的下一层，第二个 1 可以被选择，因为前一个已经 used，最终得到三种唯一排列。",
+        "vector<vector<int>> permuteUnique(vector<int> a) {\n    sort(a.begin(),a.end());\n    vector<vector<int>> ans;\n    vector<int> path;\n    vector<bool> used(a.size(),false);\n    function<void()> dfs=[&] {\n        if (path.size()==a.size()) { ans.push_back(path); return; }\n        for (int i=0;i<(int)a.size();++i) {\n            if (used[i]) continue;\n            if (i>0 && a[i]==a[i-1] && !used[i-1]) continue;\n            used[i]=true; path.push_back(a[i]);\n            dfs();\n            path.pop_back(); used[i]=false;\n        }\n    };\n    dfs();\n    return ans;\n}",
+        "无重复时约 O(n·n!) 时间和输出空间，辅助 O(n)。重复会减少实际分支。",
+        "不要把同层去重写成只要值相同就跳过，否则无法同时选择两个值相同的不同元素。",
+        "used 标记与 start 参数各自解决什么问题？",
+        "练习：LeetCode 46 全排列、47 全排列 II、90 子集 II。"
+      ],
+      [
+        "剪枝：括号生成与约束传播",
+        "剪枝应基于明确的不可行条件。生成 n 对括号时，任意前缀右括号数都不能超过左括号数，否则之后再补字符也无法修复该前缀。",
+        "只有 left<n 才能放左括号，只有 right<left 才能放右括号。相比枚举 2^(2n) 个字符串后检查，这样只进入合法前缀。",
+        "n=2：空串只能放 '('；当路径为 '()' 时只能再放 '('；最终得到 '(())'、'()()'。",
+        "vector<string> generateParenthesis(int n) {\n    if (n<0) return {};\n    vector<string> ans;\n    string path;\n    function<void(int,int)> dfs=[&](int left,int right) {\n        if (right==n) { ans.push_back(path); return; }\n        if (left<n) {\n            path.push_back('('); dfs(left+1,right); path.pop_back();\n        }\n        if (right<left) {\n            path.push_back(')'); dfs(left,right+1); path.pop_back();\n        }\n    };\n    dfs(0,0);\n    return ans;\n}",
+        "共有卡特兰数 Cn 个答案，时间 O(n·Cn)，辅助空间 O(n)，输出 O(n·Cn)。",
+        "N 皇后可以用列与两类对角线占用表剪枝；网格单词搜索必须撤销 visited，不能永久标记路径上的节点。",
+        "如何证明被剪去的前缀永远不可能补成合法字符串？",
+        "练习：LeetCode 22 括号生成、51 N 皇后、79 单词搜索。"
+      ],
+      [
+        "从暴力递归到记忆化",
+        "如果不同决策路径到达相同子问题，重复计算可以用缓存消除。缓存键必须包含决定未来结果的所有信息，不能省略仍影响可行性的状态。",
+        "零钱兑换最少数量中，固定硬币集合后，剩余金额 rem 就完整决定子问题。f(rem)=1+min f(rem-coin)，rem=0 为 0，不可达为 INF。",
+        "硬币 [1,3,4]，金额 6：选择 1 后剩 5，选择 3 后剩 3；不同分支都会再次遇到 rem=2、rem=1，缓存使每个金额只算一次。",
+        "int coinChangeMemo(const vector<int>& coins, int amount) {\n    if (amount<0) return -1;\n    const int INF=INT_MAX/2;\n    vector<int> memo(amount+1,-1);\n    function<int(int)> dfs=[&](int rem) {\n        if (rem==0) return 0;\n        if (memo[rem]!=-1) return memo[rem];\n        int best=INF;\n        for (int c:coins) {\n            if (c<=0) throw invalid_argument(\"positive coins required\");\n            if (c<=rem) best=min(best,1+dfs(rem-c));\n        }\n        return memo[rem]=best;\n    };\n    int ans=dfs(amount);\n    return ans==INF ? -1 : ans;\n}",
+        "时间 O(amount·币种数)，缓存 O(amount)，最深递归 O(amount/minCoin)。金额很大应改用递推。",
+        "路径本身影响结果时，不能只缓存当前位置，例如允许路径内不重复访问的图搜索。分治子问题通常独立，记忆化针对重叠子问题。",
+        "为什么不能把 memo 初值设为 0？最少数量与方案数量的转移如何不同？",
+        "练习：LeetCode 322 零钱兑换、139 单词拆分；在第 12 章改写成迭代 DP。"
+      ]
+    ]
+  },
+  {
+    "dir": "10-图论",
+    "title": "图论",
+    "intro": "先辨认方向、边权与连通性，再选择算法。网格只是图的一种表示；最短路、依赖关系、连通块和最小生成树解决的是不同问题。",
+    "sections": [
+      [
+        "建图与 BFS：无权最短路",
+        "邻接表用 vector<vector<int>> 表示出边，空间 O(V+E)。无向边要添加两个方向。BFS 按距离层扩展，第一次发现一个节点时已经得到最少边数。",
+        "距离数组 -1 表示未访问；源点距离置 0 并入队。发现邻居时立即赋距离并入队，防止它被同层多个父节点重复加入。",
+        "边 0→1、0→2、1→3、2→3，源点 0。第一层发现 1、2，第二层只把 3 入队一次，距离为 2。",
+        "vector<int> bfsDistances(const vector<vector<int>>& g, int source) {\n    int n=(int)g.size();\n    if (source<0 || source>=n) throw out_of_range(\"source\");\n    vector<int> dist(n,-1);\n    queue<int> q;\n    dist[source]=0; q.push(source);\n    while (!q.empty()) {\n        int u=q.front(); q.pop();\n        for (int v:g[u]) {\n            if (dist[v]!=-1) continue;\n            dist[v]=dist[u]+1;\n            q.push(v);\n        }\n    }\n    return dist;\n}",
+        "时间 O(V+E)，距离和队列空间 O(V)，图本身 O(V+E)。",
+        "求全图连通块需从每个未访问节点启动搜索。多源 BFS 把所有源点初始距离设为 0，同时入队；普通 BFS 不适用于任意不同边权。",
+        "如何额外记录一条最短路径？把 predecessor[v]=u 放在哪一步？",
+        "练习：LeetCode 200 岛屿数量、994 腐烂的橘子、542 01 矩阵。"
+      ],
+      [
+        "拓扑排序与有向环",
+        "拓扑序要求每条边 u→v 中 u 都出现在 v 前面。只有 DAG 存在完整拓扑序；入度为 0 的节点表示当前没有尚未完成的前置依赖。",
+        "Kahn 算法每次移除入度 0 的节点及其出边。若剩余节点全部入度大于 0，就无法继续，剩余部分包含有向环。",
+        "课程依赖 0→1、0→2、1→3、2→3：先处理 0，再处理 1、2，最后 3。1 与 2 可交换，所以拓扑序不一定唯一。",
+        "vector<int> topoSort(const vector<vector<int>>& g) {\n    int n=(int)g.size();\n    vector<int> degree(n,0), order;\n    for (const auto& edges:g) for (int v:edges) ++degree[v];\n    queue<int> q;\n    for (int u=0;u<n;++u) if (degree[u]==0) q.push(u);\n    while (!q.empty()) {\n        int u=q.front(); q.pop(); order.push_back(u);\n        for (int v:g[u]) if (--degree[v]==0) q.push(v);\n    }\n    if ((int)order.size()!=n) return {}; // 非空图时，空结果表示有环\n    return order;\n}",
+        "时间 O(V+E)，辅助空间 O(V)。",
+        "不要把无向图的父节点判环规则搬到有向图。DFS 判有向环需要三色标记，指向“正在访问”的节点才是回边。",
+        "如何得到字典序最小的拓扑序？为什么把 queue 换成小顶堆即可？",
+        "练习：LeetCode 207 课程表、210 课程表 II、802 找到最终的安全状态。"
+      ],
+      [
+        "Dijkstra：非负权最短路",
+        "非负边权保证当前未确定节点中距离最小者，其距离不会再通过更远节点改小。这个贪心结论依赖非负权，存在负边时不成立。",
+        "小顶堆保存 (候选距离,节点)。松弛成功时推入新状态，不必删除旧状态；弹出时若距离不等于当前 dist，说明是旧状态，跳过即可。",
+        "0→1 权 10，0→2 权 1，2→1 权 2。1 先以 10 入堆，随后改为 3；弹出 (10,1) 时应跳过。",
+        "vector<long long> dijkstra(\n    const vector<vector<pair<int,int>>>& g, int source) {\n    const long long INF=LLONG_MAX/4;\n    if (source<0 || source>=(int)g.size()) throw out_of_range(\"source\");\n    vector<long long> dist(g.size(),INF);\n    using State=pair<long long,int>;\n    priority_queue<State,vector<State>,greater<State>> pq;\n    dist[source]=0; pq.push({0,source});\n    while (!pq.empty()) {\n        auto [d,u]=pq.top(); pq.pop();\n        if (d!=dist[u]) continue;\n        for (auto [v,w]:g[u]) {\n            if (w<0) throw invalid_argument(\"negative edge\");\n            if (d+w<dist[v]) {\n                dist[v]=d+w;\n                pq.push({dist[v],v});\n            }\n        }\n    }\n    return dist;\n}",
+        "允许重复状态的堆实现：一般写 O((V+E) log(E+2))，简单图中常写 O((V+E) log V)；堆最多 O(E)，距离 O(V)。",
+        "本例假设有效路径长度小于 INF。首次入堆并不代表距离最终确定，不能在入堆时永久标记。不可达节点距离仍为 INF。",
+        "为什么有负边时最小距离弹出不再保证最优？0/1 边权可用什么更快算法？",
+        "练习：LeetCode 743 网络延迟时间、1631 最小体力消耗路径；了解 0-1 BFS。"
+      ],
+      [
+        "Floyd 与负权算法的选择",
+        "多个点之间都要查询距离且节点数较少时，可用 Floyd。它逐步允许路径经过编号更大的中间节点。存在负边但无负环时仍适用；若负环影响某对点，最短路不再有限。",
+        "外层必须枚举中间点 k，转移 d[i][j]=min(d[i][j],d[i][k]+d[k][j])。初始化对角为 0，直接边取最小权重，其余为 INF。",
+        "0→1 为 3，1→2 为 -1，0→2 为 5。允许中间点 1 后，0→2 改为 2。",
+        "void floyd(vector<vector<long long>>& d) {\n    const long long INF=LLONG_MAX/4;\n    int n=(int)d.size();\n    for (int k=0;k<n;++k)\n        for (int i=0;i<n;++i) {\n            if (d[i][k]==INF) continue;\n            for (int j=0;j<n;++j) {\n                if (d[k][j]==INF) continue;\n                d[i][j]=min(d[i][j],d[i][k]+d[k][j]);\n            }\n        }\n    // 如有 d[i][i] < 0，则存在负环。\n}",
+        "时间 O(V³)，距离矩阵 O(V²)，原地转移额外空间 O(1)。",
+        "INF 参与加法前必须判断。边权规模需保证有限路径和不会溢出。单源含负边可选 Bellman-Ford：重复松弛 V-1 轮，再一轮检查可达负环。",
+        "为什么不能随意把 k 循环放到最里面？只有一对点查询时 Floyd 是否划算？",
+        "练习：LeetCode 1334 阈值距离内邻居最少的城市；实现 Bellman-Ford 作为进阶练习。"
+      ],
+      [
+        "最小生成树与最短路的区别",
+        "最小生成树要求用最小总边权连接所有节点，不要求从某个源到其他点的路径最短。Kruskal 按边权排序，选择连接不同连通块的最小边。",
+        "并查集判断加边是否形成环。每选一条边，连通块数减少 1；选满 V-1 条边就得到生成树，若选不满则图不连通。",
+        "三角形边权 1、2、3，选 1 和 2 即可连接全部节点，总权 3；继续选 3 会成环，必须跳过。",
+        "struct DSU {\n    vector<int> p,sz;\n    explicit DSU(int n):p(n),sz(n,1){ iota(p.begin(),p.end(),0); }\n    int find(int x){ return p[x]==x ? x : p[x]=find(p[x]); }\n    bool unite(int a,int b){\n        a=find(a); b=find(b);\n        if(a==b) return false;\n        if(sz[a]<sz[b]) swap(a,b);\n        p[b]=a; sz[a]+=sz[b]; return true;\n    }\n};\noptional<long long> kruskal(int n, vector<tuple<int,int,int>> edges) {\n    // 每条边为 (权重,u,v)，无向图；节点编号 0..n-1。\n    if(n<=1) return 0LL;\n    sort(edges.begin(),edges.end());\n    DSU dsu(n);\n    long long sum=0; int used=0;\n    for(auto [w,u,v]:edges)\n        if(dsu.unite(u,v)){\n            sum+=w;\n            if(++used==n-1) return sum;\n        }\n    return nullopt;\n}",
+        "时间 O(E log E + E·α(V))，并查集 O(V)；该实现按值传边表，额外复制 O(E)。",
+        "有负边仍可求最小生成树。图必须无向；有向图的最小连接问题不能直接套 Kruskal。",
+        "为什么选择跨越某个割的最小边是安全的？最短路树一定是最小生成树吗？",
+        "练习：LeetCode 1584 连接所有点的最小费用、684 冗余连接。"
+      ]
+    ]
+  },
+  {
+    "dir": "11-贪心",
+    "title": "贪心",
+    "intro": "贪心的关键产物是一段证明。遇到局部最优规则，先寻找交换论证或前缀领先性质，再决定是否可以永久放弃其他选项。",
+    "sections": [
+      [
+        "区间调度与交换论证",
+        "最大化互不重叠区间数量时，优先选择结束最早的区间。它为后续留下最多空间；最短区间、最早开始都不具有同样保证。",
+        "把任意最优解的第一个区间替换成全局结束最早的区间，后续已选区间仍然可行且数量不变。因此存在以贪心选择开始的最优解，之后对剩余问题重复。",
+        "[1,4]、[2,3]、[3,5]，先选 [2,3] 再选 [3,5] 可以选 2 个；按最早开始选 [1,4] 只能选 1 个。约定端点相接不冲突。",
+        "int maxNonOverlapping(vector<pair<int,int>> intervals) {\n    sort(intervals.begin(),intervals.end(),[](auto a,auto b){\n        return a.second<b.second;\n    });\n    long long end=LLONG_MIN;\n    int count=0;\n    for(auto [l,r]:intervals){\n        if(l>=end){ ++count; end=r; }\n    }\n    return count;\n}",
+        "排序 O(n log n)，扫描 O(n)；输入复制 O(n)。",
+        "若端点相接也算冲突，判断需改为 l>end。求覆盖目标区间的最少数量则需要每一步选择可衔接且延伸最远者，不能套结束最早。",
+        "删除最少区间使不重叠，如何由保留最多区间得到答案？",
+        "练习：LeetCode 435 无重叠区间、452 用最少数量的箭引爆气球。"
+      ],
+      [
+        "跳跃游戏：覆盖前沿与分层",
+        "每个位置给出向右最大跳跃长度。判断可达性只需记录所有已可达位置所能扩展的最远位置。最少跳数可以把一次跳跃能覆盖的范围看成 BFS 的一层。",
+        "遍历当前层时更新 far；到达当前层右边界 end 时，必须增加一次跳跃并把 end 扩展到 far。如果 far 未超过当前位置，就无法继续。",
+        "[2,3,1,1,4]：第一层从 0 到达最远 2；扫描位置 1、2 时可把下一层扩展到 4，因此共两次跳跃。",
+        "int minJumps(const vector<int>& a) {\n    int n=(int)a.size();\n    if(n<=1) return 0;\n    long long far=0,end=0;\n    int steps=0;\n    for(int i=0;i<n-1;++i){\n        if(i>far) return -1;\n        far=max(far,(long long)i+a[i]);\n        if(i==end){\n            if(far<=i) return -1;\n            ++steps; end=far;\n            if(end>=n-1) return steps;\n        }\n    }\n    return -1;\n}",
+        "时间 O(n)，空间 O(1)。前提：a[i] 非负。",
+        "不应直接跳到 a[i] 最大的位置，应比较 i+a[i] 的覆盖能力。循环不处理终点，避免到达后又增加一次跳跃。",
+        "为什么当前层边界处才增加步数？若题目保证可达，哪些判断可省略？",
+        "练习：LeetCode 55 跳跃游戏、45 跳跃游戏 II、763 划分字母区间。"
+      ],
+      [
+        "最优合并与小顶堆",
+        "每次合并两项的成本等于两项之和，希望总成本最小。小元素应更早参与合并、大元素应更晚参与，避免大权值被多次计入。这个结构对应 Huffman 树。",
+        "选择最小的两个值合并，再把和放回集合。可以用交换论证说明存在最优树让两个最小权值成为最深的一对兄弟，因此这一步可以收缩为更小问题。",
+        "[1,2,3]：先合 1+2=3，再合 3+3=6，总成本 9；若先合 2+3=5，再加 1，总成本 11。",
+        "long long minMergeCost(const vector<int>& weights) {\n    priority_queue<long long,vector<long long>,greater<long long>> pq;\n    for(int x:weights){\n        if(x<0) throw invalid_argument(\"nonnegative weights required\");\n        pq.push(x);\n    }\n    long long cost=0;\n    while(pq.size()>1){\n        long long a=pq.top(); pq.pop();\n        long long b=pq.top(); pq.pop();\n        cost+=a+b; pq.push(a+b);\n    }\n    return cost;\n}",
+        "时间 O(n log n)，空间 O(n)。总成本需在 long long 范围内。",
+        "如果只允许合并相邻区间，任取最小两项不再合法，需要区间 DP 等方法。约束改变后不能照搬贪心。",
+        "为什么相邻合并不能使用同样的堆？如何构造反例？",
+        "练习：经典合并果子；对比 LeetCode 1000 合并石头的最低成本。"
+      ],
+      [
+        "股票问题：从合法策略判断贪心边界",
+        "允许无限次交易、不能同时持有多股、没有手续费和冷冻期时，所有相邻上涨差值相加就是最优收益。一次长上涨的利润可以拆成若干相邻上涨之和。",
+        "下降段不持有，上涨段捕获全部增量。对于任何合法交易，跨越的总价差不可能超过其中所有正增量之和；该上界又可通过低买高卖实现。",
+        "[7,1,5,3,6,4]，正增量是 4 和 3，总收益 7。若限制最多一次交易，则不能把两段利润直接相加。",
+        "long long maxProfitUnlimited(const vector<int>& prices) {\n    long long profit=0;\n    for(int i=1;i<(int)prices.size();++i)\n        profit+=max(0LL,(long long)prices[i]-prices[i-1]);\n    return profit;\n}",
+        "时间 O(n)，空间 O(1)。",
+        "加手续费、冷冻期或交易次数上限后，决策之间产生额外依赖，通常应建持有/未持有状态 DP。",
+        "最多一次交易时，为什么维护历史最低价格即可？手续费会破坏哪一步证明？",
+        "练习：LeetCode 121 买卖股票的最佳时机、122 买卖股票的最佳时机 II；对比 309、714。"
+      ]
+    ]
+  },
+  {
+    "dir": "12-动态规划",
+    "title": "动态规划",
+    "intro": "先写状态的完整中文定义，再写方程。每个状态都必须有可解释的含义；初始化、遍历顺序与最终答案都由这个含义推导。",
+    "sections": [
+      [
+        "线性 DP：以当前位置结尾",
+        "最大子数组和的状态是“必须以 i 结尾的非空子数组最大和”，不是前 i 个元素的全局最优。状态只需在继续前一段和从当前元素重新开始之间选择。",
+        "endHere=max(a[i],endHere+a[i])；全局答案取所有 endHere 的最大值。若前一段和为负，接上它只会让当前更差，应重新开始。",
+        "[-2,1,-3,4,-1,2,1,-5,4]：处理到 4 时重新开始，随后累加 -1、2、1 得到 6，是最终最大值。",
+        "long long maxSubArray(const vector<int>& a) {\n    if(a.empty()) throw invalid_argument(\"nonempty array required\");\n    long long endHere=a[0],best=a[0];\n    for(int i=1;i<(int)a.size();++i){\n        endHere=max((long long)a[i],endHere+a[i]);\n        best=max(best,endHere);\n    }\n    return best;\n}",
+        "时间 O(n)，滚动状态空间 O(1)。",
+        "若允许空子数组则全负数组答案可为 0；本题要求非空，必须用首元素初始化。打家劫舍中则可以一个都不选。",
+        "如何返回子数组左右下标？为何不能只保存当前全局 best 做下一轮转移？",
+        "练习：LeetCode 53 最大子数组和、198 打家劫舍、213 打家劫舍 II。"
+      ],
+      [
+        "0/1 背包：容量倒序的原因",
+        "dp[c] 表示处理到当前物品时，在容量不超过 c 的限制下能获得的最大价值。每个物品最多用一次；二维转移应从上一行取值。",
+        "压缩为一维后按容量倒序，使 dp[c-weight] 尚未使用本轮物品。如果正序，会把本轮更新值再次拿来转移，错误地重复选择同一件物品。",
+        "只有一件重量 2、价值 3 的物品，容量 4。正序会先把 dp[2] 更新为 3，再把 dp[4] 更新为 6；倒序则 dp[4] 只能得到 3。",
+        "long long knapsack01(const vector<int>& weight,\n                     const vector<int>& value,int capacity) {\n    if(capacity<0 || weight.size()!=value.size())\n        throw invalid_argument(\"invalid input\");\n    vector<long long> dp(capacity+1,0);\n    for(int i=0;i<(int)weight.size();++i){\n        if(weight[i]<=0) throw invalid_argument(\"positive weights required\");\n        for(int c=capacity;c>=weight[i];--c)\n            dp[c]=max(dp[c],dp[c-weight[i]]+value[i]);\n    }\n    return dp[capacity];\n}",
+        "时间 O(nC)，空间 O(C)，属于伪多项式算法，C 的数值可能很大。",
+        "恰好装满与不超过容量不同：恰好装满应仅 dp[0]=0，其余设负无穷，并跳过不可达转移。",
+        "如何把分割等和子集转成布尔背包？总和为奇数为何可立即失败？",
+        "练习：LeetCode 416 分割等和子集、494 目标和、1049 最后一块石头的重量 II。"
+      ],
+      [
+        "完全背包与计数顺序",
+        "物品可无限次使用时，同一轮允许重复依赖当前物品，所以容量正序遍历。计数题必须再区分组合与排列：组合忽略选择顺序，排列保留顺序。",
+        "求硬币组合数时外层遍历币种、内层正序遍历金额。每种组合按币种顺序构建一次。若外层金额、内层币种，转移是在为序列追加最后一枚硬币，通常计数排列。",
+        "硬币 [1,2]，金额 3：组合为 {1,1,1}、{1,2} 共 2；排列还区分 [1,2] 与 [2,1]，共 3。",
+        "long long coinCombinations(const vector<int>& coins,int amount) {\n    if(amount<0) return 0;\n    vector<long long> dp(amount+1,0);\n    dp[0]=1;\n    for(int c:coins){\n        if(c<=0) throw invalid_argument(\"positive distinct coins required\");\n        for(int s=c;s<=amount;++s) dp[s]+=dp[s-c];\n    }\n    return dp[amount];\n}",
+        "时间 O(币种数·amount)，空间 O(amount)。示例假设币种互异，方案数不超过 long long。",
+        "dp[0]=1 代表一种空选择，是计数的起点。最少硬币数问题把加法计数改为 min，并把不可达初始化为 INF。",
+        "为什么重复币种会造成重复计数？需要取模时在哪里进行？",
+        "练习：LeetCode 322 零钱兑换、518 零钱兑换 II、377 组合总和 IV。"
+      ],
+      [
+        "序列 DP：最长公共子序列与编辑距离",
+        "两个字符串的相对进度需要两个下标。LCS 的 dp[i][j] 表示两个前缀的最长公共子序列长度；子序列允许跳过字符，子串必须连续，转移不同。",
+        "若最后字符相同，LCS 可由 dp[i-1][j-1]+1 得到；否则舍弃其中一侧末字符，取 max(dp[i-1][j],dp[i][j-1])。编辑距离则把三种删除、插入、替换成本取最小。",
+        "\"abcde\" 与 \"ace\" 的 LCS 是 \"ace\"，长度 3。若要求公共子串，就不能跨过 b、d，答案不再是 3。",
+        "int longestCommonSubsequence(const string& a,const string& b) {\n    int n=(int)a.size(),m=(int)b.size();\n    vector<vector<int>> dp(n+1,vector<int>(m+1,0));\n    for(int i=1;i<=n;++i)\n        for(int j=1;j<=m;++j)\n            if(a[i-1]==b[j-1]) dp[i][j]=dp[i-1][j-1]+1;\n            else dp[i][j]=max(dp[i-1][j],dp[i][j-1]);\n    return dp[n][m];\n}",
+        "时间 O(nm)，空间 O(nm)，只求长度时可滚动优化到 O(m)。字符串按字节比较。",
+        "状态下标是前缀长度，访问字符时需要减 1。编辑距离初始化 dp[i][0]=i、dp[0][j]=j，不能全部置零。",
+        "如何从 DP 表回溯一条 LCS？最长递增子序列的 O(n²) 状态怎么定义？",
+        "练习：LeetCode 1143 最长公共子序列、72 编辑距离、300 最长递增子序列。"
+      ],
+      [
+        "区间 DP：由短区间构造长区间",
+        "区间 DP 的状态通常是闭区间 [l,r] 上的答案，依赖更短区间。最长回文子序列：两端相同可配对，不同则至少丢掉一端。",
+        "dp[l][r] 在相同端点时等于内部答案+2，否则取 dp[l+1][r] 与 dp[l][r-1] 的最大值。按长度递增填表，确保内部和两个短区间已计算。",
+        "\"bbbab\" 中区间两端都是 b，把它们配对并求内部 \"bba\" 的答案，可得到长度 4 的 \"bbbb\"。",
+        "int longestPalindromeSubseq(const string& s) {\n    int n=(int)s.size();\n    if(n==0) return 0;\n    vector<vector<int>> dp(n,vector<int>(n,0));\n    for(int i=0;i<n;++i) dp[i][i]=1;\n    for(int len=2;len<=n;++len)\n        for(int l=0;l+len<=n;++l){\n            int r=l+len-1;\n            if(s[l]==s[r]) dp[l][r]=2+(len==2 ? 0 : dp[l+1][r-1]);\n            else dp[l][r]=max(dp[l+1][r],dp[l][r-1]);\n        }\n    return dp[0][n-1];\n}",
+        "时间 O(n²)，空间 O(n²)。",
+        "最长回文子串要求内部整个区间是回文；最长回文子序列允许删除字符，不能混用状态。戳气球应考虑区间最后戳哪一个，固定边界后子问题才独立。",
+        "为什么直接按 l 从小到大、r 从小到大可能用到未计算状态？",
+        "练习：LeetCode 516 最长回文子序列、5 最长回文子串、312 戳气球。"
+      ],
+      [
+        "树形与状态机 DP：把限制写进状态",
+        "树上打家劫舍中相邻父子不能同时选。一个节点需返回两个值：不选它的最优值 skip、选它的最优值 take。只返回一个最优值会丢失父节点决策所需的信息。",
+        "选当前节点时，两个孩子都必须不选；不选当前节点时，每个孩子可以独立取选或不选的最大值。后序顺序恰好保证孩子状态先完成。",
+        "根 3，孩子 2、3，孙辈 3、1：选择根和两个孙辈可得 7；仅比较孩子局部最大值而不区分是否选取，会错误连接相邻节点。",
+        "struct TreeNode {\n    int val; TreeNode *left=nullptr,*right=nullptr;\n    explicit TreeNode(int v):val(v){}\n};\npair<long long,long long> robState(TreeNode* p) {\n    if(!p) return {0,0}; // {skip,take}\n    auto [ls,lt]=robState(p->left);\n    auto [rs,rt]=robState(p->right);\n    long long skip=max(ls,lt)+max(rs,rt);\n    long long take=p->val+ls+rs;\n    return {skip,take};\n}\nlong long robTree(TreeNode* root) {\n    auto [skip,take]=robState(root);\n    return max(skip,take);\n}",
+        "时间 O(n)，递归空间 O(h)。",
+        "股票 DP 同理：用持有/未持有、剩余交易次数等状态表达约束。更新多个状态时先保存上一轮值，避免未经证明的本轮互相依赖。",
+        "为什么只返回 max(skip,take) 不够？有冷冻期时股票 DP 需要增加什么状态？",
+        "练习：LeetCode 337 打家劫舍 III、309 最佳买卖股票时机含冷冻期、714 买卖股票的最佳时机含手续费。"
+      ]
+    ]
+  },
+  {
+    "dir": "13-并查集与高级数据结构",
+    "title": "并查集与高级数据结构",
+    "intro": "先明确需要支持的操作，再选择结构。并查集维护集合合并，Trie 维护前缀，树状数组和线段树维护动态区间信息。",
+    "sections": [
+      [
+        "并查集：路径压缩与按大小合并",
+        "每个集合用一棵父指针树表示，根是代表元。find 找根，unite 连接两个根。路径压缩把沿途节点直接连到根；按大小合并让小树挂到大树上。",
+        "只有根维护有效的集合大小。合并前先 find，若同根说明已连通，不应重复减少连通块数。两种优化一起使用时，均摊成本为反阿克曼函数 α(n)。",
+        "先合并 0、1，再合并 1、2。find(2) 与 find(0) 相同；再次合并 0、2 返回 false，表示此边会在无向图中形成环。",
+        "class UnionFind {\n    vector<int> parent,sz;\n    int components;\npublic:\n    explicit UnionFind(int n):parent(n),sz(n,1),components(n) {\n        iota(parent.begin(),parent.end(),0);\n    }\n    int find(int x) {\n        if(parent[x]!=x) parent[x]=find(parent[x]);\n        return parent[x];\n    }\n    bool unite(int a,int b) {\n        a=find(a); b=find(b);\n        if(a==b) return false;\n        if(sz[a]<sz[b]) swap(a,b);\n        parent[b]=a; sz[a]+=sz[b]; --components;\n        return true;\n    }\n    int count() const { return components; }\n};",
+        "初始化 O(n)，m 次操作 O(m·α(n))，空间 O(n)。",
+        "并查集擅长合并，不直接支持一般删边。代表元不一定是集合最小元素，不应把它当成有业务含义的标识。",
+        "如何维护每个集合大小？动态图含删边时为何需要离线或可回滚并查集？",
+        "练习：LeetCode 547 省份数量、684 冗余连接、990 等式方程的可满足性。"
+      ],
+      [
+        "Trie：前缀与完整单词",
+        "Trie 的边表示字符，根到节点的路径表示前缀。路径存在只说明前缀存在，还需要 terminal 标记区分完整单词。固定小写字母可用 26 路数组。",
+        "插入逐字符寻找或创建孩子，最后标记结束。查询完整单词需 terminal=true，查询前缀只需路径存在。使用节点下标避免手写释放指针。",
+        "插入 \"apple\" 后，\"app\" 的路径存在，但 search(\"app\") 为 false；再插入 \"app\" 后才变为 true。",
+        "class Trie {\n    struct Node {\n        array<int,26> next;\n        bool terminal=false;\n        Node(){ next.fill(-1); }\n    };\n    vector<Node> nodes{Node{}};\n    static int letter(char c) {\n        if(c<'a'||c>'z') throw invalid_argument(\"lowercase a-z only\");\n        return c-'a';\n    }\n    int walk(const string& s) const {\n        int u=0;\n        for(char c:s){\n            int v=nodes[u].next[letter(c)];\n            if(v==-1) return -1;\n            u=v;\n        }\n        return u;\n    }\npublic:\n    void insert(const string& s){\n        int u=0;\n        for(char c:s){\n            int k=letter(c);\n            if(nodes[u].next[k]==-1){\n                int v=(int)nodes.size();\n                nodes.emplace_back();\n                nodes[u].next[k]=v;\n            }\n            u=nodes[u].next[k];\n        }\n        nodes[u].terminal=true;\n    }\n    bool search(const string& s) const {\n        int u=walk(s); return u!=-1 && nodes[u].terminal;\n    }\n    bool startsWith(const string& s) const { return walk(s)!=-1; }\n};",
+        "单次插入/查询 O(L)，最多 O(总字符数·字符集大小) 空间；本例字符集固定为 26。",
+        "vector 扩容时元素引用失效，所以创建新节点前后不要持有 Node&。删除单词若要回收节点需维护经过计数或引用数量。",
+        "通配符 '.' 查询为何可能产生多分支？字符集很大时如何节省空间？",
+        "练习：LeetCode 208 实现 Trie、211 添加与搜索单词、212 单词搜索 II。"
+      ],
+      [
+        "树状数组：动态前缀和",
+        "树状数组把前缀分成若干长度为 2 的幂的区间。tree[i] 管理 (i-lowbit(i),i]，使用 1 下标。前缀查询沿 i-=lowbit(i) 汇总；更新沿 i+=lowbit(i) 通知所有包含该点的区间。",
+        "它适合单点加法与区间和。区间和 [l,r] 等于 prefix(r)-prefix(l-1)。若接口是赋值而非增量，需要保存旧数组计算 delta。",
+        "查询 prefix(13)：13→12→8→0，对应区间 [13,13]、[9,12]、[1,8]，恰好不重不漏覆盖前 13 项。",
+        "class Fenwick {\n    int n;\n    vector<long long> bit;\npublic:\n    explicit Fenwick(int size):n(size),bit(size+1,0){}\n    void add(int i,long long delta){\n        if(i<1||i>n) throw out_of_range(\"index\");\n        for(;i<=n;i+=i&-i) bit[i]+=delta;\n    }\n    long long prefix(int i) const {\n        if(i<0||i>n) throw out_of_range(\"index\");\n        long long ans=0;\n        for(;i>0;i-=i&-i) ans+=bit[i];\n        return ans;\n    }\n    long long rangeSum(int l,int r) const {\n        if(l<1||r>n||l>r) throw out_of_range(\"range\");\n        return prefix(r)-prefix(l-1);\n    }\n};",
+        "单次更新、查询 O(log n)，空间 O(n)。逐项初始化 O(n log n)，也存在线性建树方法。",
+        "add(0,delta) 会因 lowbit(0)=0 死循环，所以必须避免 0 下标更新。值域很大时先排序去重并离散化。",
+        "为什么普通前缀和不适合频繁更新？如何用树状数组统计逆序对？",
+        "练习：LeetCode 307 区域和检索—数组可修改、315 计算右侧小于当前元素的个数。"
+      ],
+      [
+        "线段树：可合并的区间信息",
+        "线段树把区间二分，父节点信息由两个孩子合并。sum 用加法，max 用最大值。相比树状数组，它支持更广泛的可结合运算，但实现更复杂。",
+        "下面采用迭代线段树，叶子放在 [n,2n)。查询半开区间 [l,r)：若 l 是右孩子，则先纳入它再向右；若 r 是右边界，则先减一纳入左侧末节点，然后共同上移。",
+        "数组 [2,1,3,4] 查询 [1,3) 得到 1+3=4。把下标 2 赋为 5 后，同一区间变为 6。",
+        "class SegmentTree {\n    int n;\n    vector<long long> tree;\npublic:\n    explicit SegmentTree(const vector<int>& a):n((int)a.size()),tree(2*a.size(),0){\n        for(int i=0;i<n;++i) tree[n+i]=a[i];\n        for(int i=n-1;i>0;--i) tree[i]=tree[i*2]+tree[i*2+1];\n    }\n    void setValue(int p,long long value){\n        if(p<0||p>=n) throw out_of_range(\"index\");\n        p+=n; tree[p]=value;\n        for(p/=2;p>0;p/=2) tree[p]=tree[p*2]+tree[p*2+1];\n    }\n    long long query(int l,int r) const {\n        if(l<0||r<l||r>n) throw out_of_range(\"range\");\n        long long ans=0;\n        for(l+=n,r+=n;l<r;l/=2,r/=2){\n            if(l&1) ans+=tree[l++];\n            if(r&1) ans+=tree[--r];\n        }\n        return ans;\n    }\n};",
+        "建树 O(n)，更新/查询 O(log(n+1))，空间 O(n)。",
+        "本例只支持单点赋值。区间更新需懒标记：区间加 x 时节点和增加 x×区间长度，并保存待下传增量；赋值与加法混用时要特别定义标记组合顺序。",
+        "如果改成字符串拼接等非交换运算，为什么查询要分别保存左答案和右答案？",
+        "练习：LeetCode 307；进阶：区间加法与区间求和的懒标记线段树。"
+      ]
+    ]
+  },
+  {
+    "dir": "14-高频技巧与综合题型",
+    "title": "高频技巧与综合题型",
+    "intro": "综合题往往不是新算法，而是让多个结构共同维持一个不变量。先拆分操作及其复杂度要求，再决定哪些信息存在哪里。",
+    "sections": [
+      [
+        "LRU 缓存：哈希 + 双向链表",
+        "LRU 淘汰最久未使用的键。哈希提供按键 O(1) 定位，双向链表提供 O(1) 移动和删除。约定链表头为最近使用，尾为最久未使用。",
+        "get 命中时把节点移到头；put 已存在时更新并移到头；新键插入后超容量则删除尾部，同时移除哈希项。两个结构必须始终保存相同键集合。",
+        "容量 2：put(1)、put(2)、get(1) 后顺序为 1、2；put(3) 淘汰 2，保留 3、1。",
+        "class LRUCache {\n    size_t cap;\n    list<pair<int,int>> order;\n    unordered_map<int,list<pair<int,int>>::iterator> pos;\npublic:\n    explicit LRUCache(int capacity):cap(max(0,capacity)){}\n    LRUCache(const LRUCache&)=delete;\n    LRUCache& operator=(const LRUCache&)=delete;\n    int get(int key){\n        auto it=pos.find(key);\n        if(it==pos.end()) return -1;\n        order.splice(order.begin(),order,it->second);\n        return it->second->second;\n    }\n    void put(int key,int value){\n        auto it=pos.find(key);\n        if(it!=pos.end()){\n            it->second->second=value;\n            order.splice(order.begin(),order,it->second);\n            return;\n        }\n        if(cap==0) return;\n        order.emplace_front(key,value);\n        pos[key]=order.begin();\n        if(order.size()>cap){\n            pos.erase(order.back().first);\n            order.pop_back();\n        }\n    }\n};",
+        "哈希平均每次操作 O(1)，空间 O(capacity)；哈希极端情况可能退化。",
+        "list::splice 移动节点不会使该节点迭代器失效。不能用 vector 存位置并期待中间删除 O(1)。示例禁止拷贝，避免哈希迭代器仍指向旧链表。",
+        "若值可能为 -1，接口如何区分不存在？LFU 还需要维护什么信息？",
+        "练习：LeetCode 146 LRU 缓存、460 LFU 缓存。"
+      ],
+      [
+        "扫描线：并发数量与端点规则",
+        "把区间开始转成 +1 事件，结束转成 -1 事件，排序后维护活跃数量。重点不在求和，而在同一时间发生的事件谁先处理。",
+        "会议采用 [start,end) 时，某会议结束的瞬间可以开始下一场，故相同时间先处理 -1，再处理 +1。闭区间且端点重叠时需要反过来。",
+        "[0,10)、[5,10)、[10,15) 最大并发为 2；时间 10 应先释放两个房间，再安排新会议，而不是算成 3。",
+        "int minMeetingRooms(const vector<pair<int,int>>& meetings){\n    vector<pair<int,int>> events;\n    for(auto [l,r]:meetings){\n        if(l>r) throw invalid_argument(\"invalid interval\");\n        if(l==r) continue;\n        events.push_back({l,1});\n        events.push_back({r,-1});\n    }\n    sort(events.begin(),events.end());\n    int active=0,best=0;\n    for(auto [time,delta]:events){\n        active+=delta;\n        best=max(best,active);\n    }\n    return best;\n}",
+        "时间 O(n log n)，事件空间 O(n)。",
+        "区间合并求覆盖范围、扫描线求并发数、贪心调度求不冲突数量，是三个不同目标。零长度区间应根据语义单独处理。",
+        "若要返回所有最大并发时间段，需要在处理时间点分组时记录哪些信息？",
+        "练习：LeetCode 253 会议室 II、1094 拼车、56 合并区间。"
+      ],
+      [
+        "随机集合：交换末尾删除",
+        "数组支持随机下标访问，哈希支持按值定位。删除中间元素时用末尾元素填洞，再修正末尾元素的下标映射，即可避免线性搬移。",
+        "维护 index[value] 等于该值在数组中的实际下标。删除 x 时先把最后值写到 x 的位置并更新映射，再 pop_back 和擦除 x。",
+        "数组 [10,20,30] 删除 20：把 30 移到下标 1，数组变为 [10,30]，映射 index[30] 从 2 改为 1。",
+        "class RandomizedSet {\n    vector<int> data;\n    unordered_map<int,int> index;\n    mt19937 rng{random_device{}()};\npublic:\n    bool insert(int x){\n        if(index.count(x)) return false;\n        index[x]=(int)data.size(); data.push_back(x); return true;\n    }\n    bool remove(int x){\n        auto it=index.find(x);\n        if(it==index.end()) return false;\n        int i=it->second,last=data.back();\n        data[i]=last; index[last]=i;\n        data.pop_back(); index.erase(x); return true;\n    }\n    int getRandom(){\n        if(data.empty()) throw out_of_range(\"empty set\");\n        uniform_int_distribution<int> pick(0,(int)data.size()-1);\n        return data[pick(rng)];\n    }\n};",
+        "插入、删除哈希平均 O(1)，数组追加为均摊 O(1)，随机读取 O(1)，空间 O(n)。",
+        "直接 rand()%n 可能有取模偏差。删除末尾元素时也必须正确工作，不能先删映射再依赖它。",
+        "若允许重复值，每个值应该映射到什么？如何支持均匀随机抽取所有元素实例？",
+        "练习：LeetCode 380 O(1) 时间插入、删除和获取随机元素、381 允许重复版本。"
+      ],
+      [
+        "欧几里得、筛法与数值边界",
+        "数学题同样先找不变量：gcd(a,b)=gcd(b,a%b)，因为两对数拥有相同公因数。最小公倍数可由 a/gcd(a,b)*b 计算，先除后乘降低中间溢出风险。",
+        "埃氏筛从每个未标记质数 p 的 p² 开始标记倍数，因为更小倍数已被更小质因子标记。循环条件使用 p<=n/p 避免 p*p 在条件中溢出。",
+        "筛到 10：p=2 标记 4、6、8、10；p=3 从 9 开始标记，剩下 2、3、5、7 为质数。",
+        "vector<int> primesUpTo(int n){\n    if(n<2) return {};\n    vector<bool> prime(n+1,true);\n    prime[0]=prime[1]=false;\n    for(int p=2;p<=n/p;++p)\n        if(prime[p])\n            for(long long x=1LL*p*p;x<=n;x+=p) prime[(size_t)x]=false;\n    vector<int> ans;\n    for(int x=2;x<=n;++x) if(prime[x]) ans.push_back(x);\n    return ans;\n}\nlong long gcdNonnegative(long long a,long long b){\n    // 前提：a,b >= 0；约定 gcd(0,0)=0。\n    while(b){ long long r=a%b; a=b; b=r; }\n    return a;\n}",
+        "筛法时间 O(n log log n)、空间 O(n)；gcd 时间 O(log(min(a,b)+1))、空间 O(1)。",
+        "模运算不能把除法直接改成除后取模，逆元需要满足存在条件。负数取模在 C++ 中可能为负，常用 (x%mod+mod)%mod 归一化。",
+        "为什么从 p² 开始？若 a、b 的乘积仍超 long long，先除后乘是否一定足够？",
+        "练习：LeetCode 204 计数质数、50 Pow(x,n)、189 轮转数组中的 gcd 循环置换。"
+      ]
+    ]
+  },
+  {
+    "dir": "15-面试表达与训练计划",
+    "title": "面试表达与训练计划",
+    "intro": "训练目标是完整交付一道题：澄清约束、推导方案、写出代码、验证边界并解释成本。让每次复盘都能对应到下一次可执行的练习。",
+    "sections": [
+      [
+        "一场 40 分钟手撕的节奏",
+        "前 3 分钟确认题意和样例；接着约 7 分钟从暴力推到优化并说清不变量；约 20 分钟完成代码；剩余时间用于测试、复杂度和追问。时间仅作为训练参照，应随题目难度调整。",
+        "以有序数组两数之和为例：先确认是否返回原下标、是否存在解、是否允许同一元素使用两次，然后解释相向双指针的排除依据，再编码。",
+        "口述示例：数组已排序。若两端之和偏小，固定左端并减小右端只会更小，所以当前左端不可能参与答案，可以安全丢弃。",
+        "pair<int,int> twoSumSorted(const vector<int>& a,long long target){\n    int l=0,r=(int)a.size()-1;\n    while(l<r){\n        long long sum=(long long)a[l]+a[r];\n        if(sum==target) return {l,r};\n        if(sum<target) ++l;\n        else --r;\n    }\n    return {-1,-1};\n}",
+        "时间 O(n)，空间 O(1)，输入为非降序；返回 0 下标，无解返回 {-1,-1}。",
+        "不要在代码写完后才发现题目要求 1 下标或多个解。卡住时说明已验证的性质和具体障碍，而不是无声地重复试代码。",
+        "如果数组未排序但要求原下标，怎么改？如果需要返回所有不同值对呢？",
+        "训练：录音完成一次从澄清到复杂度的 5 分钟口述；检查是否明确了排序、重复值和下标约定。"
+      ],
+      [
+        "边界测试与反例设计",
+        "测试应覆盖结构边界和算法前提。二分测空数组、首尾命中、重复值、全部小于或大于目标；链表测空、单节点、头部删除；DP 测不可达、全负、零容量。",
+        "使用已知答案的 assert 进行小规模回归。为了验证最优算法，可以为随机小输入写暴力基线做差分测试：两者不一致时输出原输入，而不是继续运行掩盖错误。",
+        "最大子数组和若全负 [-5,-2,-9]，正确答案是 -2。这个用例能直接发现把 best 初始化为 0 的错误。",
+        "long long kadane(const vector<int>& a){\n    if(a.empty()) throw invalid_argument(\"nonempty required\");\n    long long cur=a[0],ans=a[0];\n    for(int i=1;i<(int)a.size();++i){\n        cur=max((long long)a[i],cur+a[i]); ans=max(ans,cur);\n    }\n    return ans;\n}\nint main(){\n    assert(kadane({-5,-2,-9})==-2);\n    assert(kadane({0})==0);\n    assert(kadane({4,-1,2,1})==6);\n    assert(kadane({-2,1,-3,4,-1,2,1,-5,4})==6);\n    cout<<\"all checks passed\\n\";\n}",
+        "每个测试调用 O(n)，测试总成本取决于用例规模。差分测试只用于小输入，不把指数暴力放进正式提交。",
+        "assert 在定义 NDEBUG 时会被禁用。随机测试不能替代正确性证明；没有触发 bug 不代表算法一定正确。",
+        "哪一个最小反例能打破你最初的贪心？哪种输入会让当前算法退化？",
+        "训练：每题至少写一个正常用例、一个边界用例、一个针对核心假设的反例。"
+      ],
+      [
+        "C++ 标准库、比较器与编码习惯",
+        "面试中优先使用标准库表达已掌握的结构，但需要能解释复杂度和语义。比较器必须满足严格弱序：相等对象比较应为 false，不能用 <= 替代 <。",
+        "多关键字排序先比主关键字，再比较次关键字。避免用 a.score-b.score 判断大小，因为差值可能溢出。const 引用避免比较过程中复制大型对象。",
+        "按成绩降序、同分按名字升序排列：90 分的 Alice 应排在 90 分的 Bob 前面，二者都在 80 分记录之前。",
+        "struct Student { string name; int score; };\nvoid sortStudents(vector<Student>& students){\n    sort(students.begin(),students.end(),\n         [](const Student& a,const Student& b){\n             if(a.score!=b.score) return a.score>b.score;\n             return a.name<b.name;\n         });\n}\nlong long sumValues(const vector<int>& a){\n    return accumulate(a.begin(),a.end(),0LL);\n}",
+        "排序 O(n log n) 次比较；字符串比较还取决于公共前缀长度。求和 O(n)，额外空间 O(1)。",
+        "range-for 按 auto x 复制元素，auto& x 才能修改原元素。vector::reserve 只预留容量，不改变 size；下标访问仍要求 index<size。",
+        "lambda 捕获引用的对象能否在它销毁后继续访问？sort 与 stable_sort 何时选择？",
+        "训练：从空文件写出常用头文件、输入输出、vector、哈希、小顶堆和自定义排序。"
+      ],
+      [
+        "四周计划、错题复盘与掌握标准",
+        "第一周学习复杂度、数组、链表、栈队列、哈希、二分；第二周学习树、堆、回溯、图；第三周重点练贪心与 DP；第四周混合抽题和设计题，做限时模拟。高级结构按岗位和时间补充，不挤占基础训练。",
+        "每天约两小时：15 分钟默写模板，60 分钟独立做题，25 分钟重写卡住题，20 分钟复盘。第 1、3、7 天重做错题；连续两次独立完成并能解释证明，才标记为掌握。",
+        "复盘示例：不是“二分不会”，而是“把 [l,r) 与闭区间更新混用，导致单元素死循环”；下一次练习目标就是在编码前写出区间不变量。",
+        "// 小规模暴力基线：用于核对最大子数组和优化实现。\nlong long bruteMaxSubArray(const vector<int>& a){\n    if(a.empty()) throw invalid_argument(\"nonempty required\");\n    long long best=LLONG_MIN;\n    for(int l=0;l<(int)a.size();++l){\n        long long sum=0;\n        for(int r=l;r<(int)a.size();++r){\n            sum+=a[r]; best=max(best,sum);\n        }\n    }\n    return best;\n}",
+        "暴力基线 O(n²) 时间、O(1) 空间。与上一节 O(n) 实现对照，可以用很短随机数组快速定位反例。",
+        "题量不能替代迁移能力。复盘记录：识别信号、暴力瓶颈、不变量/状态、失败用例、修正原因、下次复习日期。",
+        "不提示题型时能否在 3 分钟内定位思路？能否在 20 分钟内完成代码并主动测试？",
+        "毕业练习：每次随机抽一道数组/树题和一道 DP/图题，完成 45–60 分钟模拟，再分别给正确性、编码、表达、测试打分。"
+      ]
+    ]
+  }
+]

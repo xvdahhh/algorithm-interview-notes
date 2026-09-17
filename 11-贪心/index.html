@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="description" content="秋招算法手撕学习讲义：知识推导、经典考点、C++17 示例与面试训练。">
+<title>贪心 · 算法手撕讲义</title><link rel="stylesheet" href="../assets/style.css"><script src="../assets/app.js" defer></script></head>
+<body><a class="skip" href="#main">跳到正文</a><header class="topbar"><a class="brand" href="../index.html"><span class="brand-mark">a[i]</span><span>算法手撕讲义<small>秋招学习工作区 / C++17</small></span></a><button type="button" class="nav-toggle" aria-expanded="false" aria-controls="chapter-nav">章节目录</button><a class="home-link" href="../index.html">全部章节 ↗</a></header>
+<div class="layout"><aside class="sidebar" id="chapter-nav" aria-label="章节导航"><p class="rail-label">LEARNING PATH · 学习路径</p><nav><a class="chapter-link"  href="../01-复杂度与解题方法/index.html"><span>01</span>复杂度与解题方法</a><a class="chapter-link"  href="../02-数组字符串与矩阵/index.html"><span>02</span>数组、字符串与矩阵</a><a class="chapter-link"  href="../03-链表/index.html"><span>03</span>链表</a><a class="chapter-link"  href="../04-栈队列与单调结构/index.html"><span>04</span>栈、队列与单调结构</a><a class="chapter-link"  href="../05-哈希集合与位运算/index.html"><span>05</span>哈希、集合与位运算</a><a class="chapter-link"  href="../06-排序与二分查找/index.html"><span>06</span>排序与二分查找</a><a class="chapter-link"  href="../07-树与二叉搜索树/index.html"><span>07</span>树与二叉搜索树</a><a class="chapter-link"  href="../08-堆与优先队列/index.html"><span>08</span>堆与优先队列</a><a class="chapter-link"  href="../09-递归回溯与分治/index.html"><span>09</span>递归、回溯与分治</a><a class="chapter-link"  href="../10-图论/index.html"><span>10</span>图论</a><a class="chapter-link active" aria-current=page href="../11-贪心/index.html"><span>11</span>贪心</a><a class="chapter-link"  href="../12-动态规划/index.html"><span>12</span>动态规划</a><a class="chapter-link"  href="../13-并查集与高级数据结构/index.html"><span>13</span>并查集与高级数据结构</a><a class="chapter-link"  href="../14-高频技巧与综合题型/index.html"><span>14</span>高频技巧与综合题型</a><a class="chapter-link"  href="../15-面试表达与训练计划/index.html"><span>15</span>面试表达与训练计划</a></nav><div class="sidebar-note">读懂不变量，独立写代码。<br>共 15 章 · 63 个小节<br>无需联网，浏览器直接打开。</div></aside><main id="main"><header class="chapter-header"><p class="eyebrow">CHAPTER 11 / 15</p><h1>贪心</h1><p class="lead">贪心的关键产物是一段证明。遇到局部最优规则，先寻找交换论证或前缀领先性质，再决定是否可以永久放弃其他选项。</p><div class="chapter-meta"><span>4 个小节</span><span>C++17 示例</span><a href="README.md">原始知识摘要 ↗</a></div></header><div class="reading-guide"><strong>本章怎么学</strong><p>先读原理与不变量，遮住代码手推例子，再独立实现。最后用面试追问检查理解，按练习条目做变式。</p></div><details class="environment"><summary>代码使用说明与通用头文件</summary><p>示例统一采用 C++17。页面展示核心函数或类，下载的 .cpp 已包含以下头文件，可独立编译。不同小节可能重用类型名，应分别编译；含 main 的示例可直接运行，其余需自行补充调用与测试。复制按钮复制当前代码块。</p><div class="codebox"><div class="codebar"><span>C++17</span><div><button type="button" class="copy">复制代码</button></div></div><pre tabindex="0" aria-label="C++17 代码"><code>#include &lt;algorithm&gt;
+#include &lt;array&gt;
+#include &lt;cassert&gt;
+#include &lt;climits&gt;
+#include &lt;cstdint&gt;
+#include &lt;cstdlib&gt;
+#include &lt;deque&gt;
+#include &lt;functional&gt;
+#include &lt;iostream&gt;
+#include &lt;list&gt;
+#include &lt;numeric&gt;
+#include &lt;optional&gt;
+#include &lt;queue&gt;
+#include &lt;random&gt;
+#include &lt;stack&gt;
+#include &lt;stdexcept&gt;
+#include &lt;string&gt;
+#include &lt;tuple&gt;
+#include &lt;unordered_map&gt;
+#include &lt;unordered_set&gt;
+#include &lt;utility&gt;
+#include &lt;vector&gt;
+<span class="keyword">using</span> <span class="keyword">namespace</span> std;
+</code></pre></div><p>检查单个示例：<code>g++ -std=c++17 -Wall -Wextra -c sample.cpp</code>。这只检查编译；验证结果还需要调用函数并覆盖边界输入。代码按题目约束编写，各节明确其适用前提。</p></details><section class="lesson" id="s1"><div class="lesson-heading"><span class="lesson-number">11.01</span><h2>区间调度与交换论证</h2></div>
+<h3>知识与适用场景</h3><p>最大化互不重叠区间数量时，优先选择结束最早的区间。它为后续留下最多空间；最短区间、最早开始都不具有同样保证。</p><div class="invariant"><span>推导 / 不变量</span><p>把任意最优解的第一个区间替换成全局结束最早的区间，后续已选区间仍然可行且数量不变。因此存在以贪心选择开始的最优解，之后对剩余问题重复。</p></div>
+<h3>手推一个例子</h3><p>[1,4]、[2,3]、[3,5]，先选 [2,3] 再选 [3,5] 可以选 2 个；按最早开始选 [1,4] 只能选 1 个。约定端点相接不冲突。</p><div class="codebox"><div class="codebar"><span>C++17</span><div><a href="examples/01.cpp" download>下载 .cpp</a><button type="button" class="copy">复制代码</button></div></div><pre tabindex="0" aria-label="C++17 代码"><code><span class="keyword">int</span> maxNonOverlapping(vector&lt;pair&lt;<span class="keyword">int</span>,<span class="keyword">int</span>&gt;&gt; intervals) {
+    sort(intervals.begin(),intervals.end(),[](<span class="keyword">auto</span> a,<span class="keyword">auto</span> b){
+        <span class="keyword">return</span> a.second&lt;b.second;
+    });
+    <span class="keyword">long</span> <span class="keyword">long</span> end=LLONG_MIN;
+    <span class="keyword">int</span> count=<span class="number">0</span>;
+    <span class="keyword">for</span>(<span class="keyword">auto</span> [l,r]:intervals){
+        <span class="keyword">if</span>(l&gt;=end){ ++count; end=r; }
+    }
+    <span class="keyword">return</span> count;
+}</code></pre></div>
+<dl class="analysis-grid"><div><dt>复杂度</dt><dd>排序 O(n log n)，扫描 O(n)；输入复制 O(n)。</dd></div><div><dt>易错点与边界</dt><dd>若端点相接也算冲突，判断需改为 l&gt;end。求覆盖目标区间的最少数量则需要每一步选择可衔接且延伸最远者，不能套结束最早。</dd></div></dl>
+<div class="practice"><h3>经典考点与练习</h3><p>练习：LeetCode 435 无重叠区间、452 用最少数量的箭引爆气球。</p><details><summary>面试官可能继续问什么？</summary><p>删除最少区间使不重叠，如何由保留最多区间得到答案？</p><p class="muted">先用自己的话回答，再回到本节的前提、不变量和边界检查论证。</p></details></div>
+<label class="learned"><input type="checkbox" data-progress="11-01">我能独立实现，并解释正确性与边界</label></section><section class="lesson" id="s2"><div class="lesson-heading"><span class="lesson-number">11.02</span><h2>跳跃游戏：覆盖前沿与分层</h2></div>
+<h3>知识与适用场景</h3><p>每个位置给出向右最大跳跃长度。判断可达性只需记录所有已可达位置所能扩展的最远位置。最少跳数可以把一次跳跃能覆盖的范围看成 BFS 的一层。</p><div class="invariant"><span>推导 / 不变量</span><p>遍历当前层时更新 far；到达当前层右边界 end 时，必须增加一次跳跃并把 end 扩展到 far。如果 far 未超过当前位置，就无法继续。</p></div>
+<h3>手推一个例子</h3><p>[2,3,1,1,4]：第一层从 0 到达最远 2；扫描位置 1、2 时可把下一层扩展到 4，因此共两次跳跃。</p><div class="codebox"><div class="codebar"><span>C++17</span><div><a href="examples/02.cpp" download>下载 .cpp</a><button type="button" class="copy">复制代码</button></div></div><pre tabindex="0" aria-label="C++17 代码"><code><span class="keyword">int</span> minJumps(<span class="keyword">const</span> vector&lt;<span class="keyword">int</span>&gt;&amp; a) {
+    <span class="keyword">int</span> n=(<span class="keyword">int</span>)a.size();
+    <span class="keyword">if</span>(n&lt;=<span class="number">1</span>) <span class="keyword">return</span> <span class="number">0</span>;
+    <span class="keyword">long</span> <span class="keyword">long</span> far=<span class="number">0</span>,end=<span class="number">0</span>;
+    <span class="keyword">int</span> steps=<span class="number">0</span>;
+    <span class="keyword">for</span>(<span class="keyword">int</span> i=<span class="number">0</span>;i&lt;n-<span class="number">1</span>;++i){
+        <span class="keyword">if</span>(i&gt;far) <span class="keyword">return</span> -<span class="number">1</span>;
+        far=max(far,(<span class="keyword">long</span> <span class="keyword">long</span>)i+a[i]);
+        <span class="keyword">if</span>(i==end){
+            <span class="keyword">if</span>(far&lt;=i) <span class="keyword">return</span> -<span class="number">1</span>;
+            ++steps; end=far;
+            <span class="keyword">if</span>(end&gt;=n-<span class="number">1</span>) <span class="keyword">return</span> steps;
+        }
+    }
+    <span class="keyword">return</span> -<span class="number">1</span>;
+}</code></pre></div>
+<dl class="analysis-grid"><div><dt>复杂度</dt><dd>时间 O(n)，空间 O(1)。前提：a[i] 非负。</dd></div><div><dt>易错点与边界</dt><dd>不应直接跳到 a[i] 最大的位置，应比较 i+a[i] 的覆盖能力。循环不处理终点，避免到达后又增加一次跳跃。</dd></div></dl>
+<div class="practice"><h3>经典考点与练习</h3><p>练习：LeetCode 55 跳跃游戏、45 跳跃游戏 II、763 划分字母区间。</p><details><summary>面试官可能继续问什么？</summary><p>为什么当前层边界处才增加步数？若题目保证可达，哪些判断可省略？</p><p class="muted">先用自己的话回答，再回到本节的前提、不变量和边界检查论证。</p></details></div>
+<label class="learned"><input type="checkbox" data-progress="11-02">我能独立实现，并解释正确性与边界</label></section><section class="lesson" id="s3"><div class="lesson-heading"><span class="lesson-number">11.03</span><h2>最优合并与小顶堆</h2></div>
+<h3>知识与适用场景</h3><p>每次合并两项的成本等于两项之和，希望总成本最小。小元素应更早参与合并、大元素应更晚参与，避免大权值被多次计入。这个结构对应 Huffman 树。</p><div class="invariant"><span>推导 / 不变量</span><p>选择最小的两个值合并，再把和放回集合。可以用交换论证说明存在最优树让两个最小权值成为最深的一对兄弟，因此这一步可以收缩为更小问题。</p></div>
+<h3>手推一个例子</h3><p>[1,2,3]：先合 1+2=3，再合 3+3=6，总成本 9；若先合 2+3=5，再加 1，总成本 11。</p><div class="codebox"><div class="codebar"><span>C++17</span><div><a href="examples/03.cpp" download>下载 .cpp</a><button type="button" class="copy">复制代码</button></div></div><pre tabindex="0" aria-label="C++17 代码"><code><span class="keyword">long</span> <span class="keyword">long</span> minMergeCost(<span class="keyword">const</span> vector&lt;<span class="keyword">int</span>&gt;&amp; weights) {
+    priority_queue&lt;<span class="keyword">long</span> <span class="keyword">long</span>,vector&lt;<span class="keyword">long</span> <span class="keyword">long</span>&gt;,greater&lt;<span class="keyword">long</span> <span class="keyword">long</span>&gt;&gt; pq;
+    <span class="keyword">for</span>(<span class="keyword">int</span> x:weights){
+        <span class="keyword">if</span>(x&lt;<span class="number">0</span>) <span class="keyword">throw</span> invalid_argument(<span class="string">&quot;nonnegative weights required&quot;</span>);
+        pq.push(x);
+    }
+    <span class="keyword">long</span> <span class="keyword">long</span> cost=<span class="number">0</span>;
+    <span class="keyword">while</span>(pq.size()&gt;<span class="number">1</span>){
+        <span class="keyword">long</span> <span class="keyword">long</span> a=pq.top(); pq.pop();
+        <span class="keyword">long</span> <span class="keyword">long</span> b=pq.top(); pq.pop();
+        cost+=a+b; pq.push(a+b);
+    }
+    <span class="keyword">return</span> cost;
+}</code></pre></div>
+<dl class="analysis-grid"><div><dt>复杂度</dt><dd>时间 O(n log n)，空间 O(n)。总成本需在 long long 范围内。</dd></div><div><dt>易错点与边界</dt><dd>如果只允许合并相邻区间，任取最小两项不再合法，需要区间 DP 等方法。约束改变后不能照搬贪心。</dd></div></dl>
+<div class="practice"><h3>经典考点与练习</h3><p>练习：经典合并果子；对比 LeetCode 1000 合并石头的最低成本。</p><details><summary>面试官可能继续问什么？</summary><p>为什么相邻合并不能使用同样的堆？如何构造反例？</p><p class="muted">先用自己的话回答，再回到本节的前提、不变量和边界检查论证。</p></details></div>
+<label class="learned"><input type="checkbox" data-progress="11-03">我能独立实现，并解释正确性与边界</label></section><section class="lesson" id="s4"><div class="lesson-heading"><span class="lesson-number">11.04</span><h2>股票问题：从合法策略判断贪心边界</h2></div>
+<h3>知识与适用场景</h3><p>允许无限次交易、不能同时持有多股、没有手续费和冷冻期时，所有相邻上涨差值相加就是最优收益。一次长上涨的利润可以拆成若干相邻上涨之和。</p><div class="invariant"><span>推导 / 不变量</span><p>下降段不持有，上涨段捕获全部增量。对于任何合法交易，跨越的总价差不可能超过其中所有正增量之和；该上界又可通过低买高卖实现。</p></div>
+<h3>手推一个例子</h3><p>[7,1,5,3,6,4]，正增量是 4 和 3，总收益 7。若限制最多一次交易，则不能把两段利润直接相加。</p><div class="codebox"><div class="codebar"><span>C++17</span><div><a href="examples/04.cpp" download>下载 .cpp</a><button type="button" class="copy">复制代码</button></div></div><pre tabindex="0" aria-label="C++17 代码"><code><span class="keyword">long</span> <span class="keyword">long</span> maxProfitUnlimited(<span class="keyword">const</span> vector&lt;<span class="keyword">int</span>&gt;&amp; prices) {
+    <span class="keyword">long</span> <span class="keyword">long</span> profit=<span class="number">0</span>;
+    <span class="keyword">for</span>(<span class="keyword">int</span> i=<span class="number">1</span>;i&lt;(<span class="keyword">int</span>)prices.size();++i)
+        profit+=max(<span class="number">0LL</span>,(<span class="keyword">long</span> <span class="keyword">long</span>)prices[i]-prices[i-<span class="number">1</span>]);
+    <span class="keyword">return</span> profit;
+}</code></pre></div>
+<dl class="analysis-grid"><div><dt>复杂度</dt><dd>时间 O(n)，空间 O(1)。</dd></div><div><dt>易错点与边界</dt><dd>加手续费、冷冻期或交易次数上限后，决策之间产生额外依赖，通常应建持有/未持有状态 DP。</dd></div></dl>
+<div class="practice"><h3>经典考点与练习</h3><p>练习：LeetCode 121 买卖股票的最佳时机、122 买卖股票的最佳时机 II；对比 309、714。</p><details><summary>面试官可能继续问什么？</summary><p>最多一次交易时，为什么维护历史最低价格即可？手续费会破坏哪一步证明？</p><p class="muted">先用自己的话回答，再回到本节的前提、不变量和边界检查论证。</p></details></div>
+<label class="learned"><input type="checkbox" data-progress="11-04">我能独立实现，并解释正确性与边界</label></section><nav class="chapter-pager" aria-label="相邻章节"><a href="../10-图论/index.html"><small>上一章</small>← 图论</a><a href="../12-动态规划/index.html"><small>下一章</small>动态规划 →</a></nav><footer>秋招算法学习讲义 · C++17<br>例题编号供检索；难度与覆盖范围按学习顺序组织。</footer></main><aside class="toc" aria-label="本页目录"><p class="rail-label">本章小节</p><a href="#s1"><span>01</span>区间调度与交换论证</a><a href="#s2"><span>02</span>跳跃游戏：覆盖前沿与分层</a><a href="#s3"><span>03</span>最优合并与小顶堆</a><a href="#s4"><span>04</span>股票问题：从合法策略判断贪心边界</a></aside></div><div class="toast" role="status" aria-live="polite"></div></body></html>

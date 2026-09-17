@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="description" content="秋招算法手撕学习讲义：知识推导、经典考点、C++17 示例与面试训练。">
+<title>动态规划 · 算法手撕讲义</title><link rel="stylesheet" href="../assets/style.css"><script src="../assets/app.js" defer></script></head>
+<body><a class="skip" href="#main">跳到正文</a><header class="topbar"><a class="brand" href="../index.html"><span class="brand-mark">a[i]</span><span>算法手撕讲义<small>秋招学习工作区 / C++17</small></span></a><button type="button" class="nav-toggle" aria-expanded="false" aria-controls="chapter-nav">章节目录</button><a class="home-link" href="../index.html">全部章节 ↗</a></header>
+<div class="layout"><aside class="sidebar" id="chapter-nav" aria-label="章节导航"><p class="rail-label">LEARNING PATH · 学习路径</p><nav><a class="chapter-link"  href="../01-复杂度与解题方法/index.html"><span>01</span>复杂度与解题方法</a><a class="chapter-link"  href="../02-数组字符串与矩阵/index.html"><span>02</span>数组、字符串与矩阵</a><a class="chapter-link"  href="../03-链表/index.html"><span>03</span>链表</a><a class="chapter-link"  href="../04-栈队列与单调结构/index.html"><span>04</span>栈、队列与单调结构</a><a class="chapter-link"  href="../05-哈希集合与位运算/index.html"><span>05</span>哈希、集合与位运算</a><a class="chapter-link"  href="../06-排序与二分查找/index.html"><span>06</span>排序与二分查找</a><a class="chapter-link"  href="../07-树与二叉搜索树/index.html"><span>07</span>树与二叉搜索树</a><a class="chapter-link"  href="../08-堆与优先队列/index.html"><span>08</span>堆与优先队列</a><a class="chapter-link"  href="../09-递归回溯与分治/index.html"><span>09</span>递归、回溯与分治</a><a class="chapter-link"  href="../10-图论/index.html"><span>10</span>图论</a><a class="chapter-link"  href="../11-贪心/index.html"><span>11</span>贪心</a><a class="chapter-link active" aria-current=page href="../12-动态规划/index.html"><span>12</span>动态规划</a><a class="chapter-link"  href="../13-并查集与高级数据结构/index.html"><span>13</span>并查集与高级数据结构</a><a class="chapter-link"  href="../14-高频技巧与综合题型/index.html"><span>14</span>高频技巧与综合题型</a><a class="chapter-link"  href="../15-面试表达与训练计划/index.html"><span>15</span>面试表达与训练计划</a></nav><div class="sidebar-note">读懂不变量，独立写代码。<br>共 15 章 · 63 个小节<br>无需联网，浏览器直接打开。</div></aside><main id="main"><header class="chapter-header"><p class="eyebrow">CHAPTER 12 / 15</p><h1>动态规划</h1><p class="lead">先写状态的完整中文定义，再写方程。每个状态都必须有可解释的含义；初始化、遍历顺序与最终答案都由这个含义推导。</p><div class="chapter-meta"><span>6 个小节</span><span>C++17 示例</span><a href="README.md">原始知识摘要 ↗</a></div></header><div class="reading-guide"><strong>本章怎么学</strong><p>先读原理与不变量，遮住代码手推例子，再独立实现。最后用面试追问检查理解，按练习条目做变式。</p></div><details class="environment"><summary>代码使用说明与通用头文件</summary><p>示例统一采用 C++17。页面展示核心函数或类，下载的 .cpp 已包含以下头文件，可独立编译。不同小节可能重用类型名，应分别编译；含 main 的示例可直接运行，其余需自行补充调用与测试。复制按钮复制当前代码块。</p><div class="codebox"><div class="codebar"><span>C++17</span><div><button type="button" class="copy">复制代码</button></div></div><pre tabindex="0" aria-label="C++17 代码"><code>#include &lt;algorithm&gt;
+#include &lt;array&gt;
+#include &lt;cassert&gt;
+#include &lt;climits&gt;
+#include &lt;cstdint&gt;
+#include &lt;cstdlib&gt;
+#include &lt;deque&gt;
+#include &lt;functional&gt;
+#include &lt;iostream&gt;
+#include &lt;list&gt;
+#include &lt;numeric&gt;
+#include &lt;optional&gt;
+#include &lt;queue&gt;
+#include &lt;random&gt;
+#include &lt;stack&gt;
+#include &lt;stdexcept&gt;
+#include &lt;string&gt;
+#include &lt;tuple&gt;
+#include &lt;unordered_map&gt;
+#include &lt;unordered_set&gt;
+#include &lt;utility&gt;
+#include &lt;vector&gt;
+<span class="keyword">using</span> <span class="keyword">namespace</span> std;
+</code></pre></div><p>检查单个示例：<code>g++ -std=c++17 -Wall -Wextra -c sample.cpp</code>。这只检查编译；验证结果还需要调用函数并覆盖边界输入。代码按题目约束编写，各节明确其适用前提。</p></details><section class="lesson" id="s1"><div class="lesson-heading"><span class="lesson-number">12.01</span><h2>线性 DP：以当前位置结尾</h2></div>
+<h3>知识与适用场景</h3><p>最大子数组和的状态是“必须以 i 结尾的非空子数组最大和”，不是前 i 个元素的全局最优。状态只需在继续前一段和从当前元素重新开始之间选择。</p><div class="invariant"><span>推导 / 不变量</span><p>endHere=max(a[i],endHere+a[i])；全局答案取所有 endHere 的最大值。若前一段和为负，接上它只会让当前更差，应重新开始。</p></div>
+<h3>手推一个例子</h3><p>[-2,1,-3,4,-1,2,1,-5,4]：处理到 4 时重新开始，随后累加 -1、2、1 得到 6，是最终最大值。</p><div class="codebox"><div class="codebar"><span>C++17</span><div><a href="examples/01.cpp" download>下载 .cpp</a><button type="button" class="copy">复制代码</button></div></div><pre tabindex="0" aria-label="C++17 代码"><code><span class="keyword">long</span> <span class="keyword">long</span> maxSubArray(<span class="keyword">const</span> vector&lt;<span class="keyword">int</span>&gt;&amp; a) {
+    <span class="keyword">if</span>(a.empty()) <span class="keyword">throw</span> invalid_argument(<span class="string">&quot;nonempty array required&quot;</span>);
+    <span class="keyword">long</span> <span class="keyword">long</span> endHere=a[<span class="number">0</span>],best=a[<span class="number">0</span>];
+    <span class="keyword">for</span>(<span class="keyword">int</span> i=<span class="number">1</span>;i&lt;(<span class="keyword">int</span>)a.size();++i){
+        endHere=max((<span class="keyword">long</span> <span class="keyword">long</span>)a[i],endHere+a[i]);
+        best=max(best,endHere);
+    }
+    <span class="keyword">return</span> best;
+}</code></pre></div>
+<dl class="analysis-grid"><div><dt>复杂度</dt><dd>时间 O(n)，滚动状态空间 O(1)。</dd></div><div><dt>易错点与边界</dt><dd>若允许空子数组则全负数组答案可为 0；本题要求非空，必须用首元素初始化。打家劫舍中则可以一个都不选。</dd></div></dl>
+<div class="practice"><h3>经典考点与练习</h3><p>练习：LeetCode 53 最大子数组和、198 打家劫舍、213 打家劫舍 II。</p><details><summary>面试官可能继续问什么？</summary><p>如何返回子数组左右下标？为何不能只保存当前全局 best 做下一轮转移？</p><p class="muted">先用自己的话回答，再回到本节的前提、不变量和边界检查论证。</p></details></div>
+<label class="learned"><input type="checkbox" data-progress="12-01">我能独立实现，并解释正确性与边界</label></section><section class="lesson" id="s2"><div class="lesson-heading"><span class="lesson-number">12.02</span><h2>0/1 背包：容量倒序的原因</h2></div>
+<h3>知识与适用场景</h3><p>dp[c] 表示处理到当前物品时，在容量不超过 c 的限制下能获得的最大价值。每个物品最多用一次；二维转移应从上一行取值。</p><div class="invariant"><span>推导 / 不变量</span><p>压缩为一维后按容量倒序，使 dp[c-weight] 尚未使用本轮物品。如果正序，会把本轮更新值再次拿来转移，错误地重复选择同一件物品。</p></div>
+<h3>手推一个例子</h3><p>只有一件重量 2、价值 3 的物品，容量 4。正序会先把 dp[2] 更新为 3，再把 dp[4] 更新为 6；倒序则 dp[4] 只能得到 3。</p><div class="codebox"><div class="codebar"><span>C++17</span><div><a href="examples/02.cpp" download>下载 .cpp</a><button type="button" class="copy">复制代码</button></div></div><pre tabindex="0" aria-label="C++17 代码"><code><span class="keyword">long</span> <span class="keyword">long</span> knapsack01(<span class="keyword">const</span> vector&lt;<span class="keyword">int</span>&gt;&amp; weight,
+                     <span class="keyword">const</span> vector&lt;<span class="keyword">int</span>&gt;&amp; value,<span class="keyword">int</span> capacity) {
+    <span class="keyword">if</span>(capacity&lt;<span class="number">0</span> || weight.size()!=value.size())
+        <span class="keyword">throw</span> invalid_argument(<span class="string">&quot;invalid input&quot;</span>);
+    vector&lt;<span class="keyword">long</span> <span class="keyword">long</span>&gt; dp(capacity+<span class="number">1</span>,<span class="number">0</span>);
+    <span class="keyword">for</span>(<span class="keyword">int</span> i=<span class="number">0</span>;i&lt;(<span class="keyword">int</span>)weight.size();++i){
+        <span class="keyword">if</span>(weight[i]&lt;=<span class="number">0</span>) <span class="keyword">throw</span> invalid_argument(<span class="string">&quot;positive weights required&quot;</span>);
+        <span class="keyword">for</span>(<span class="keyword">int</span> c=capacity;c&gt;=weight[i];--c)
+            dp[c]=max(dp[c],dp[c-weight[i]]+value[i]);
+    }
+    <span class="keyword">return</span> dp[capacity];
+}</code></pre></div>
+<dl class="analysis-grid"><div><dt>复杂度</dt><dd>时间 O(nC)，空间 O(C)，属于伪多项式算法，C 的数值可能很大。</dd></div><div><dt>易错点与边界</dt><dd>恰好装满与不超过容量不同：恰好装满应仅 dp[0]=0，其余设负无穷，并跳过不可达转移。</dd></div></dl>
+<div class="practice"><h3>经典考点与练习</h3><p>练习：LeetCode 416 分割等和子集、494 目标和、1049 最后一块石头的重量 II。</p><details><summary>面试官可能继续问什么？</summary><p>如何把分割等和子集转成布尔背包？总和为奇数为何可立即失败？</p><p class="muted">先用自己的话回答，再回到本节的前提、不变量和边界检查论证。</p></details></div>
+<label class="learned"><input type="checkbox" data-progress="12-02">我能独立实现，并解释正确性与边界</label></section><section class="lesson" id="s3"><div class="lesson-heading"><span class="lesson-number">12.03</span><h2>完全背包与计数顺序</h2></div>
+<h3>知识与适用场景</h3><p>物品可无限次使用时，同一轮允许重复依赖当前物品，所以容量正序遍历。计数题必须再区分组合与排列：组合忽略选择顺序，排列保留顺序。</p><div class="invariant"><span>推导 / 不变量</span><p>求硬币组合数时外层遍历币种、内层正序遍历金额。每种组合按币种顺序构建一次。若外层金额、内层币种，转移是在为序列追加最后一枚硬币，通常计数排列。</p></div>
+<h3>手推一个例子</h3><p>硬币 [1,2]，金额 3：组合为 {1,1,1}、{1,2} 共 2；排列还区分 [1,2] 与 [2,1]，共 3。</p><div class="codebox"><div class="codebar"><span>C++17</span><div><a href="examples/03.cpp" download>下载 .cpp</a><button type="button" class="copy">复制代码</button></div></div><pre tabindex="0" aria-label="C++17 代码"><code><span class="keyword">long</span> <span class="keyword">long</span> coinCombinations(<span class="keyword">const</span> vector&lt;<span class="keyword">int</span>&gt;&amp; coins,<span class="keyword">int</span> amount) {
+    <span class="keyword">if</span>(amount&lt;<span class="number">0</span>) <span class="keyword">return</span> <span class="number">0</span>;
+    vector&lt;<span class="keyword">long</span> <span class="keyword">long</span>&gt; dp(amount+<span class="number">1</span>,<span class="number">0</span>);
+    dp[<span class="number">0</span>]=<span class="number">1</span>;
+    <span class="keyword">for</span>(<span class="keyword">int</span> c:coins){
+        <span class="keyword">if</span>(c&lt;=<span class="number">0</span>) <span class="keyword">throw</span> invalid_argument(<span class="string">&quot;positive distinct coins required&quot;</span>);
+        <span class="keyword">for</span>(<span class="keyword">int</span> s=c;s&lt;=amount;++s) dp[s]+=dp[s-c];
+    }
+    <span class="keyword">return</span> dp[amount];
+}</code></pre></div>
+<dl class="analysis-grid"><div><dt>复杂度</dt><dd>时间 O(币种数·amount)，空间 O(amount)。示例假设币种互异，方案数不超过 long long。</dd></div><div><dt>易错点与边界</dt><dd>dp[0]=1 代表一种空选择，是计数的起点。最少硬币数问题把加法计数改为 min，并把不可达初始化为 INF。</dd></div></dl>
+<div class="practice"><h3>经典考点与练习</h3><p>练习：LeetCode 322 零钱兑换、518 零钱兑换 II、377 组合总和 IV。</p><details><summary>面试官可能继续问什么？</summary><p>为什么重复币种会造成重复计数？需要取模时在哪里进行？</p><p class="muted">先用自己的话回答，再回到本节的前提、不变量和边界检查论证。</p></details></div>
+<label class="learned"><input type="checkbox" data-progress="12-03">我能独立实现，并解释正确性与边界</label></section><section class="lesson" id="s4"><div class="lesson-heading"><span class="lesson-number">12.04</span><h2>序列 DP：最长公共子序列与编辑距离</h2></div>
+<h3>知识与适用场景</h3><p>两个字符串的相对进度需要两个下标。LCS 的 dp[i][j] 表示两个前缀的最长公共子序列长度；子序列允许跳过字符，子串必须连续，转移不同。</p><div class="invariant"><span>推导 / 不变量</span><p>若最后字符相同，LCS 可由 dp[i-1][j-1]+1 得到；否则舍弃其中一侧末字符，取 max(dp[i-1][j],dp[i][j-1])。编辑距离则把三种删除、插入、替换成本取最小。</p></div>
+<h3>手推一个例子</h3><p>&quot;abcde&quot; 与 &quot;ace&quot; 的 LCS 是 &quot;ace&quot;，长度 3。若要求公共子串，就不能跨过 b、d，答案不再是 3。</p><div class="codebox"><div class="codebar"><span>C++17</span><div><a href="examples/04.cpp" download>下载 .cpp</a><button type="button" class="copy">复制代码</button></div></div><pre tabindex="0" aria-label="C++17 代码"><code><span class="keyword">int</span> longestCommonSubsequence(<span class="keyword">const</span> string&amp; a,<span class="keyword">const</span> string&amp; b) {
+    <span class="keyword">int</span> n=(<span class="keyword">int</span>)a.size(),m=(<span class="keyword">int</span>)b.size();
+    vector&lt;vector&lt;<span class="keyword">int</span>&gt;&gt; dp(n+<span class="number">1</span>,vector&lt;<span class="keyword">int</span>&gt;(m+<span class="number">1</span>,<span class="number">0</span>));
+    <span class="keyword">for</span>(<span class="keyword">int</span> i=<span class="number">1</span>;i&lt;=n;++i)
+        <span class="keyword">for</span>(<span class="keyword">int</span> j=<span class="number">1</span>;j&lt;=m;++j)
+            <span class="keyword">if</span>(a[i-<span class="number">1</span>]==b[j-<span class="number">1</span>]) dp[i][j]=dp[i-<span class="number">1</span>][j-<span class="number">1</span>]+<span class="number">1</span>;
+            <span class="keyword">else</span> dp[i][j]=max(dp[i-<span class="number">1</span>][j],dp[i][j-<span class="number">1</span>]);
+    <span class="keyword">return</span> dp[n][m];
+}</code></pre></div>
+<dl class="analysis-grid"><div><dt>复杂度</dt><dd>时间 O(nm)，空间 O(nm)，只求长度时可滚动优化到 O(m)。字符串按字节比较。</dd></div><div><dt>易错点与边界</dt><dd>状态下标是前缀长度，访问字符时需要减 1。编辑距离初始化 dp[i][0]=i、dp[0][j]=j，不能全部置零。</dd></div></dl>
+<div class="practice"><h3>经典考点与练习</h3><p>练习：LeetCode 1143 最长公共子序列、72 编辑距离、300 最长递增子序列。</p><details><summary>面试官可能继续问什么？</summary><p>如何从 DP 表回溯一条 LCS？最长递增子序列的 O(n²) 状态怎么定义？</p><p class="muted">先用自己的话回答，再回到本节的前提、不变量和边界检查论证。</p></details></div>
+<label class="learned"><input type="checkbox" data-progress="12-04">我能独立实现，并解释正确性与边界</label></section><section class="lesson" id="s5"><div class="lesson-heading"><span class="lesson-number">12.05</span><h2>区间 DP：由短区间构造长区间</h2></div>
+<h3>知识与适用场景</h3><p>区间 DP 的状态通常是闭区间 [l,r] 上的答案，依赖更短区间。最长回文子序列：两端相同可配对，不同则至少丢掉一端。</p><div class="invariant"><span>推导 / 不变量</span><p>dp[l][r] 在相同端点时等于内部答案+2，否则取 dp[l+1][r] 与 dp[l][r-1] 的最大值。按长度递增填表，确保内部和两个短区间已计算。</p></div>
+<h3>手推一个例子</h3><p>&quot;bbbab&quot; 中区间两端都是 b，把它们配对并求内部 &quot;bba&quot; 的答案，可得到长度 4 的 &quot;bbbb&quot;。</p><div class="codebox"><div class="codebar"><span>C++17</span><div><a href="examples/05.cpp" download>下载 .cpp</a><button type="button" class="copy">复制代码</button></div></div><pre tabindex="0" aria-label="C++17 代码"><code><span class="keyword">int</span> longestPalindromeSubseq(<span class="keyword">const</span> string&amp; s) {
+    <span class="keyword">int</span> n=(<span class="keyword">int</span>)s.size();
+    <span class="keyword">if</span>(n==<span class="number">0</span>) <span class="keyword">return</span> <span class="number">0</span>;
+    vector&lt;vector&lt;<span class="keyword">int</span>&gt;&gt; dp(n,vector&lt;<span class="keyword">int</span>&gt;(n,<span class="number">0</span>));
+    <span class="keyword">for</span>(<span class="keyword">int</span> i=<span class="number">0</span>;i&lt;n;++i) dp[i][i]=<span class="number">1</span>;
+    <span class="keyword">for</span>(<span class="keyword">int</span> len=<span class="number">2</span>;len&lt;=n;++len)
+        <span class="keyword">for</span>(<span class="keyword">int</span> l=<span class="number">0</span>;l+len&lt;=n;++l){
+            <span class="keyword">int</span> r=l+len-<span class="number">1</span>;
+            <span class="keyword">if</span>(s[l]==s[r]) dp[l][r]=<span class="number">2</span>+(len==<span class="number">2</span> ? <span class="number">0</span> : dp[l+<span class="number">1</span>][r-<span class="number">1</span>]);
+            <span class="keyword">else</span> dp[l][r]=max(dp[l+<span class="number">1</span>][r],dp[l][r-<span class="number">1</span>]);
+        }
+    <span class="keyword">return</span> dp[<span class="number">0</span>][n-<span class="number">1</span>];
+}</code></pre></div>
+<dl class="analysis-grid"><div><dt>复杂度</dt><dd>时间 O(n²)，空间 O(n²)。</dd></div><div><dt>易错点与边界</dt><dd>最长回文子串要求内部整个区间是回文；最长回文子序列允许删除字符，不能混用状态。戳气球应考虑区间最后戳哪一个，固定边界后子问题才独立。</dd></div></dl>
+<div class="practice"><h3>经典考点与练习</h3><p>练习：LeetCode 516 最长回文子序列、5 最长回文子串、312 戳气球。</p><details><summary>面试官可能继续问什么？</summary><p>为什么直接按 l 从小到大、r 从小到大可能用到未计算状态？</p><p class="muted">先用自己的话回答，再回到本节的前提、不变量和边界检查论证。</p></details></div>
+<label class="learned"><input type="checkbox" data-progress="12-05">我能独立实现，并解释正确性与边界</label></section><section class="lesson" id="s6"><div class="lesson-heading"><span class="lesson-number">12.06</span><h2>树形与状态机 DP：把限制写进状态</h2></div>
+<h3>知识与适用场景</h3><p>树上打家劫舍中相邻父子不能同时选。一个节点需返回两个值：不选它的最优值 skip、选它的最优值 take。只返回一个最优值会丢失父节点决策所需的信息。</p><div class="invariant"><span>推导 / 不变量</span><p>选当前节点时，两个孩子都必须不选；不选当前节点时，每个孩子可以独立取选或不选的最大值。后序顺序恰好保证孩子状态先完成。</p></div>
+<h3>手推一个例子</h3><p>根 3，孩子 2、3，孙辈 3、1：选择根和两个孙辈可得 7；仅比较孩子局部最大值而不区分是否选取，会错误连接相邻节点。</p><div class="codebox"><div class="codebar"><span>C++17</span><div><a href="examples/06.cpp" download>下载 .cpp</a><button type="button" class="copy">复制代码</button></div></div><pre tabindex="0" aria-label="C++17 代码"><code><span class="keyword">struct</span> TreeNode {
+    <span class="keyword">int</span> val; TreeNode *left=<span class="keyword">nullptr</span>,*right=<span class="keyword">nullptr</span>;
+    <span class="keyword">explicit</span> TreeNode(<span class="keyword">int</span> v):val(v){}
+};
+pair&lt;<span class="keyword">long</span> <span class="keyword">long</span>,<span class="keyword">long</span> <span class="keyword">long</span>&gt; robState(TreeNode* p) {
+    <span class="keyword">if</span>(!p) <span class="keyword">return</span> {<span class="number">0</span>,<span class="number">0</span>}; <span class="comment">// {skip,take}</span>
+    <span class="keyword">auto</span> [ls,lt]=robState(p-&gt;left);
+    <span class="keyword">auto</span> [rs,rt]=robState(p-&gt;right);
+    <span class="keyword">long</span> <span class="keyword">long</span> skip=max(ls,lt)+max(rs,rt);
+    <span class="keyword">long</span> <span class="keyword">long</span> take=p-&gt;val+ls+rs;
+    <span class="keyword">return</span> {skip,take};
+}
+<span class="keyword">long</span> <span class="keyword">long</span> robTree(TreeNode* root) {
+    <span class="keyword">auto</span> [skip,take]=robState(root);
+    <span class="keyword">return</span> max(skip,take);
+}</code></pre></div>
+<dl class="analysis-grid"><div><dt>复杂度</dt><dd>时间 O(n)，递归空间 O(h)。</dd></div><div><dt>易错点与边界</dt><dd>股票 DP 同理：用持有/未持有、剩余交易次数等状态表达约束。更新多个状态时先保存上一轮值，避免未经证明的本轮互相依赖。</dd></div></dl>
+<div class="practice"><h3>经典考点与练习</h3><p>练习：LeetCode 337 打家劫舍 III、309 最佳买卖股票时机含冷冻期、714 买卖股票的最佳时机含手续费。</p><details><summary>面试官可能继续问什么？</summary><p>为什么只返回 max(skip,take) 不够？有冷冻期时股票 DP 需要增加什么状态？</p><p class="muted">先用自己的话回答，再回到本节的前提、不变量和边界检查论证。</p></details></div>
+<label class="learned"><input type="checkbox" data-progress="12-06">我能独立实现，并解释正确性与边界</label></section><nav class="chapter-pager" aria-label="相邻章节"><a href="../11-贪心/index.html"><small>上一章</small>← 贪心</a><a href="../13-并查集与高级数据结构/index.html"><small>下一章</small>并查集与高级数据结构 →</a></nav><footer>秋招算法学习讲义 · C++17<br>例题编号供检索；难度与覆盖范围按学习顺序组织。</footer></main><aside class="toc" aria-label="本页目录"><p class="rail-label">本章小节</p><a href="#s1"><span>01</span>线性 DP：以当前位置结尾</a><a href="#s2"><span>02</span>0/1 背包：容量倒序的原因</a><a href="#s3"><span>03</span>完全背包与计数顺序</a><a href="#s4"><span>04</span>序列 DP：最长公共子序列与编辑距离</a><a href="#s5"><span>05</span>区间 DP：由短区间构造长区间</a><a href="#s6"><span>06</span>树形与状态机 DP：把限制写进状态</a></aside></div><div class="toast" role="status" aria-live="polite"></div></body></html>

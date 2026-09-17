@@ -1,0 +1,12 @@
+# Local browser QA artifacts
+site-src/qa/
+
+# Python caches and C++ build outputs
+__pycache__/
+*.py[cod]
+*.o
+*.obj
+*.exe
+*.out
+.DS_Store
+Thumbs.db

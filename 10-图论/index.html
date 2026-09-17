@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="description" content="秋招算法手撕学习讲义：知识推导、经典考点、C++17 示例与面试训练。">
+<title>图论 · 算法手撕讲义</title><link rel="stylesheet" href="../assets/style.css"><script src="../assets/app.js" defer></script></head>
+<body><a class="skip" href="#main">跳到正文</a><header class="topbar"><a class="brand" href="../index.html"><span class="brand-mark">a[i]</span><span>算法手撕讲义<small>秋招学习工作区 / C++17</small></span></a><button type="button" class="nav-toggle" aria-expanded="false" aria-controls="chapter-nav">章节目录</button><a class="home-link" href="../index.html">全部章节 ↗</a></header>
+<div class="layout"><aside class="sidebar" id="chapter-nav" aria-label="章节导航"><p class="rail-label">LEARNING PATH · 学习路径</p><nav><a class="chapter-link"  href="../01-复杂度与解题方法/index.html"><span>01</span>复杂度与解题方法</a><a class="chapter-link"  href="../02-数组字符串与矩阵/index.html"><span>02</span>数组、字符串与矩阵</a><a class="chapter-link"  href="../03-链表/index.html"><span>03</span>链表</a><a class="chapter-link"  href="../04-栈队列与单调结构/index.html"><span>04</span>栈、队列与单调结构</a><a class="chapter-link"  href="../05-哈希集合与位运算/index.html"><span>05</span>哈希、集合与位运算</a><a class="chapter-link"  href="../06-排序与二分查找/index.html"><span>06</span>排序与二分查找</a><a class="chapter-link"  href="../07-树与二叉搜索树/index.html"><span>07</span>树与二叉搜索树</a><a class="chapter-link"  href="../08-堆与优先队列/index.html"><span>08</span>堆与优先队列</a><a class="chapter-link"  href="../09-递归回溯与分治/index.html"><span>09</span>递归、回溯与分治</a><a class="chapter-link active" aria-current=page href="../10-图论/index.html"><span>10</span>图论</a><a class="chapter-link"  href="../11-贪心/index.html"><span>11</span>贪心</a><a class="chapter-link"  href="../12-动态规划/index.html"><span>12</span>动态规划</a><a class="chapter-link"  href="../13-并查集与高级数据结构/index.html"><span>13</span>并查集与高级数据结构</a><a class="chapter-link"  href="../14-高频技巧与综合题型/index.html"><span>14</span>高频技巧与综合题型</a><a class="chapter-link"  href="../15-面试表达与训练计划/index.html"><span>15</span>面试表达与训练计划</a></nav><div class="sidebar-note">读懂不变量，独立写代码。<br>共 15 章 · 63 个小节<br>无需联网，浏览器直接打开。</div></aside><main id="main"><header class="chapter-header"><p class="eyebrow">CHAPTER 10 / 15</p><h1>图论</h1><p class="lead">先辨认方向、边权与连通性，再选择算法。网格只是图的一种表示；最短路、依赖关系、连通块和最小生成树解决的是不同问题。</p><div class="chapter-meta"><span>5 个小节</span><span>C++17 示例</span><a href="README.md">原始知识摘要 ↗</a></div></header><div class="reading-guide"><strong>本章怎么学</strong><p>先读原理与不变量，遮住代码手推例子，再独立实现。最后用面试追问检查理解，按练习条目做变式。</p></div><details class="environment"><summary>代码使用说明与通用头文件</summary><p>示例统一采用 C++17。页面展示核心函数或类，下载的 .cpp 已包含以下头文件，可独立编译。不同小节可能重用类型名，应分别编译；含 main 的示例可直接运行，其余需自行补充调用与测试。复制按钮复制当前代码块。</p><div class="codebox"><div class="codebar"><span>C++17</span><div><button type="button" class="copy">复制代码</button></div></div><pre tabindex="0" aria-label="C++17 代码"><code>#include &lt;algorithm&gt;
+#include &lt;array&gt;
+#include &lt;cassert&gt;
+#include &lt;climits&gt;
+#include &lt;cstdint&gt;
+#include &lt;cstdlib&gt;
+#include &lt;deque&gt;
+#include &lt;functional&gt;
+#include &lt;iostream&gt;
+#include &lt;list&gt;
+#include &lt;numeric&gt;
+#include &lt;optional&gt;
+#include &lt;queue&gt;
+#include &lt;random&gt;
+#include &lt;stack&gt;
+#include &lt;stdexcept&gt;
+#include &lt;string&gt;
+#include &lt;tuple&gt;
+#include &lt;unordered_map&gt;
+#include &lt;unordered_set&gt;
+#include &lt;utility&gt;
+#include &lt;vector&gt;
+<span class="keyword">using</span> <span class="keyword">namespace</span> std;
+</code></pre></div><p>检查单个示例：<code>g++ -std=c++17 -Wall -Wextra -c sample.cpp</code>。这只检查编译；验证结果还需要调用函数并覆盖边界输入。代码按题目约束编写，各节明确其适用前提。</p></details><section class="lesson" id="s1"><div class="lesson-heading"><span class="lesson-number">10.01</span><h2>建图与 BFS：无权最短路</h2></div>
+<h3>知识与适用场景</h3><p>邻接表用 vector&lt;vector&lt;int&gt;&gt; 表示出边，空间 O(V+E)。无向边要添加两个方向。BFS 按距离层扩展，第一次发现一个节点时已经得到最少边数。</p><div class="invariant"><span>推导 / 不变量</span><p>距离数组 -1 表示未访问；源点距离置 0 并入队。发现邻居时立即赋距离并入队，防止它被同层多个父节点重复加入。</p></div>
+<h3>手推一个例子</h3><p>边 0→1、0→2、1→3、2→3，源点 0。第一层发现 1、2，第二层只把 3 入队一次，距离为 2。</p><div class="codebox"><div class="codebar"><span>C++17</span><div><a href="examples/01.cpp" download>下载 .cpp</a><button type="button" class="copy">复制代码</button></div></div><pre tabindex="0" aria-label="C++17 代码"><code>vector&lt;<span class="keyword">int</span>&gt; bfsDistances(<span class="keyword">const</span> vector&lt;vector&lt;<span class="keyword">int</span>&gt;&gt;&amp; g, <span class="keyword">int</span> source) {
+    <span class="keyword">int</span> n=(<span class="keyword">int</span>)g.size();
+    <span class="keyword">if</span> (source&lt;<span class="number">0</span> || source&gt;=n) <span class="keyword">throw</span> out_of_range(<span class="string">&quot;source&quot;</span>);
+    vector&lt;<span class="keyword">int</span>&gt; dist(n,-<span class="number">1</span>);
+    queue&lt;<span class="keyword">int</span>&gt; q;
+    dist[source]=<span class="number">0</span>; q.push(source);
+    <span class="keyword">while</span> (!q.empty()) {
+        <span class="keyword">int</span> u=q.front(); q.pop();
+        <span class="keyword">for</span> (<span class="keyword">int</span> v:g[u]) {
+            <span class="keyword">if</span> (dist[v]!=-<span class="number">1</span>) continue;
+            dist[v]=dist[u]+<span class="number">1</span>;
+            q.push(v);
+        }
+    }
+    <span class="keyword">return</span> dist;
+}</code></pre></div>
+<dl class="analysis-grid"><div><dt>复杂度</dt><dd>时间 O(V+E)，距离和队列空间 O(V)，图本身 O(V+E)。</dd></div><div><dt>易错点与边界</dt><dd>求全图连通块需从每个未访问节点启动搜索。多源 BFS 把所有源点初始距离设为 0，同时入队；普通 BFS 不适用于任意不同边权。</dd></div></dl>
+<div class="practice"><h3>经典考点与练习</h3><p>练习：LeetCode 200 岛屿数量、994 腐烂的橘子、542 01 矩阵。</p><details><summary>面试官可能继续问什么？</summary><p>如何额外记录一条最短路径？把 predecessor[v]=u 放在哪一步？</p><p class="muted">先用自己的话回答，再回到本节的前提、不变量和边界检查论证。</p></details></div>
+<label class="learned"><input type="checkbox" data-progress="10-01">我能独立实现，并解释正确性与边界</label></section><section class="lesson" id="s2"><div class="lesson-heading"><span class="lesson-number">10.02</span><h2>拓扑排序与有向环</h2></div>
+<h3>知识与适用场景</h3><p>拓扑序要求每条边 u→v 中 u 都出现在 v 前面。只有 DAG 存在完整拓扑序；入度为 0 的节点表示当前没有尚未完成的前置依赖。</p><div class="invariant"><span>推导 / 不变量</span><p>Kahn 算法每次移除入度 0 的节点及其出边。若剩余节点全部入度大于 0，就无法继续，剩余部分包含有向环。</p></div>
+<h3>手推一个例子</h3><p>课程依赖 0→1、0→2、1→3、2→3：先处理 0，再处理 1、2，最后 3。1 与 2 可交换，所以拓扑序不一定唯一。</p><div class="codebox"><div class="codebar"><span>C++17</span><div><a href="examples/02.cpp" download>下载 .cpp</a><button type="button" class="copy">复制代码</button></div></div><pre tabindex="0" aria-label="C++17 代码"><code>vector&lt;<span class="keyword">int</span>&gt; topoSort(<span class="keyword">const</span> vector&lt;vector&lt;<span class="keyword">int</span>&gt;&gt;&amp; g) {
+    <span class="keyword">int</span> n=(<span class="keyword">int</span>)g.size();
+    vector&lt;<span class="keyword">int</span>&gt; degree(n,<span class="number">0</span>), order;
+    <span class="keyword">for</span> (<span class="keyword">const</span> <span class="keyword">auto</span>&amp; edges:g) <span class="keyword">for</span> (<span class="keyword">int</span> v:edges) ++degree[v];
+    queue&lt;<span class="keyword">int</span>&gt; q;
+    <span class="keyword">for</span> (<span class="keyword">int</span> u=<span class="number">0</span>;u&lt;n;++u) <span class="keyword">if</span> (degree[u]==<span class="number">0</span>) q.push(u);
+    <span class="keyword">while</span> (!q.empty()) {
+        <span class="keyword">int</span> u=q.front(); q.pop(); order.push_back(u);
+        <span class="keyword">for</span> (<span class="keyword">int</span> v:g[u]) <span class="keyword">if</span> (--degree[v]==<span class="number">0</span>) q.push(v);
+    }
+    <span class="keyword">if</span> ((<span class="keyword">int</span>)order.size()!=n) <span class="keyword">return</span> {}; <span class="comment">// 非空图时，空结果表示有环</span>
+    <span class="keyword">return</span> order;
+}</code></pre></div>
+<dl class="analysis-grid"><div><dt>复杂度</dt><dd>时间 O(V+E)，辅助空间 O(V)。</dd></div><div><dt>易错点与边界</dt><dd>不要把无向图的父节点判环规则搬到有向图。DFS 判有向环需要三色标记，指向“正在访问”的节点才是回边。</dd></div></dl>
+<div class="practice"><h3>经典考点与练习</h3><p>练习：LeetCode 207 课程表、210 课程表 II、802 找到最终的安全状态。</p><details><summary>面试官可能继续问什么？</summary><p>如何得到字典序最小的拓扑序？为什么把 queue 换成小顶堆即可？</p><p class="muted">先用自己的话回答，再回到本节的前提、不变量和边界检查论证。</p></details></div>
+<label class="learned"><input type="checkbox" data-progress="10-02">我能独立实现，并解释正确性与边界</label></section><section class="lesson" id="s3"><div class="lesson-heading"><span class="lesson-number">10.03</span><h2>Dijkstra：非负权最短路</h2></div>
+<h3>知识与适用场景</h3><p>非负边权保证当前未确定节点中距离最小者，其距离不会再通过更远节点改小。这个贪心结论依赖非负权，存在负边时不成立。</p><div class="invariant"><span>推导 / 不变量</span><p>小顶堆保存 (候选距离,节点)。松弛成功时推入新状态，不必删除旧状态；弹出时若距离不等于当前 dist，说明是旧状态，跳过即可。</p></div>
+<h3>手推一个例子</h3><p>0→1 权 10，0→2 权 1，2→1 权 2。1 先以 10 入堆，随后改为 3；弹出 (10,1) 时应跳过。</p><div class="codebox"><div class="codebar"><span>C++17</span><div><a href="examples/03.cpp" download>下载 .cpp</a><button type="button" class="copy">复制代码</button></div></div><pre tabindex="0" aria-label="C++17 代码"><code>vector&lt;<span class="keyword">long</span> <span class="keyword">long</span>&gt; dijkstra(
+    <span class="keyword">const</span> vector&lt;vector&lt;pair&lt;<span class="keyword">int</span>,<span class="keyword">int</span>&gt;&gt;&gt;&amp; g, <span class="keyword">int</span> source) {
+    <span class="keyword">const</span> <span class="keyword">long</span> <span class="keyword">long</span> INF=LLONG_MAX/<span class="number">4</span>;
+    <span class="keyword">if</span> (source&lt;<span class="number">0</span> || source&gt;=(<span class="keyword">int</span>)g.size()) <span class="keyword">throw</span> out_of_range(<span class="string">&quot;source&quot;</span>);
+    vector&lt;<span class="keyword">long</span> <span class="keyword">long</span>&gt; dist(g.size(),INF);
+    <span class="keyword">using</span> State=pair&lt;<span class="keyword">long</span> <span class="keyword">long</span>,<span class="keyword">int</span>&gt;;
+    priority_queue&lt;State,vector&lt;State&gt;,greater&lt;State&gt;&gt; pq;
+    dist[source]=<span class="number">0</span>; pq.push({<span class="number">0</span>,source});
+    <span class="keyword">while</span> (!pq.empty()) {
+        <span class="keyword">auto</span> [d,u]=pq.top(); pq.pop();
+        <span class="keyword">if</span> (d!=dist[u]) continue;
+        <span class="keyword">for</span> (<span class="keyword">auto</span> [v,w]:g[u]) {
+            <span class="keyword">if</span> (w&lt;<span class="number">0</span>) <span class="keyword">throw</span> invalid_argument(<span class="string">&quot;negative edge&quot;</span>);
+            <span class="keyword">if</span> (d+w&lt;dist[v]) {
+                dist[v]=d+w;
+                pq.push({dist[v],v});
+            }
+        }
+    }
+    <span class="keyword">return</span> dist;
+}</code></pre></div>
+<dl class="analysis-grid"><div><dt>复杂度</dt><dd>允许重复状态的堆实现：一般写 O((V+E) log(E+2))，简单图中常写 O((V+E) log V)；堆最多 O(E)，距离 O(V)。</dd></div><div><dt>易错点与边界</dt><dd>本例假设有效路径长度小于 INF。首次入堆并不代表距离最终确定，不能在入堆时永久标记。不可达节点距离仍为 INF。</dd></div></dl>
+<div class="practice"><h3>经典考点与练习</h3><p>练习：LeetCode 743 网络延迟时间、1631 最小体力消耗路径；了解 0-1 BFS。</p><details><summary>面试官可能继续问什么？</summary><p>为什么有负边时最小距离弹出不再保证最优？0/1 边权可用什么更快算法？</p><p class="muted">先用自己的话回答，再回到本节的前提、不变量和边界检查论证。</p></details></div>
+<label class="learned"><input type="checkbox" data-progress="10-03">我能独立实现，并解释正确性与边界</label></section><section class="lesson" id="s4"><div class="lesson-heading"><span class="lesson-number">10.04</span><h2>Floyd 与负权算法的选择</h2></div>
+<h3>知识与适用场景</h3><p>多个点之间都要查询距离且节点数较少时，可用 Floyd。它逐步允许路径经过编号更大的中间节点。存在负边但无负环时仍适用；若负环影响某对点，最短路不再有限。</p><div class="invariant"><span>推导 / 不变量</span><p>外层必须枚举中间点 k，转移 d[i][j]=min(d[i][j],d[i][k]+d[k][j])。初始化对角为 0，直接边取最小权重，其余为 INF。</p></div>
+<h3>手推一个例子</h3><p>0→1 为 3，1→2 为 -1，0→2 为 5。允许中间点 1 后，0→2 改为 2。</p><div class="codebox"><div class="codebar"><span>C++17</span><div><a href="examples/04.cpp" download>下载 .cpp</a><button type="button" class="copy">复制代码</button></div></div><pre tabindex="0" aria-label="C++17 代码"><code><span class="keyword">void</span> floyd(vector&lt;vector&lt;<span class="keyword">long</span> <span class="keyword">long</span>&gt;&gt;&amp; d) {
+    <span class="keyword">const</span> <span class="keyword">long</span> <span class="keyword">long</span> INF=LLONG_MAX/<span class="number">4</span>;
+    <span class="keyword">int</span> n=(<span class="keyword">int</span>)d.size();
+    <span class="keyword">for</span> (<span class="keyword">int</span> k=<span class="number">0</span>;k&lt;n;++k)
+        <span class="keyword">for</span> (<span class="keyword">int</span> i=<span class="number">0</span>;i&lt;n;++i) {
+            <span class="keyword">if</span> (d[i][k]==INF) continue;
+            <span class="keyword">for</span> (<span class="keyword">int</span> j=<span class="number">0</span>;j&lt;n;++j) {
+                <span class="keyword">if</span> (d[k][j]==INF) continue;
+                d[i][j]=min(d[i][j],d[i][k]+d[k][j]);
+            }
+        }
+    <span class="comment">// 如有 d[i][i] &lt; 0，则存在负环。</span>
+}</code></pre></div>
+<dl class="analysis-grid"><div><dt>复杂度</dt><dd>时间 O(V³)，距离矩阵 O(V²)，原地转移额外空间 O(1)。</dd></div><div><dt>易错点与边界</dt><dd>INF 参与加法前必须判断。边权规模需保证有限路径和不会溢出。单源含负边可选 Bellman-Ford：重复松弛 V-1 轮，再一轮检查可达负环。</dd></div></dl>
+<div class="practice"><h3>经典考点与练习</h3><p>练习：LeetCode 1334 阈值距离内邻居最少的城市；实现 Bellman-Ford 作为进阶练习。</p><details><summary>面试官可能继续问什么？</summary><p>为什么不能随意把 k 循环放到最里面？只有一对点查询时 Floyd 是否划算？</p><p class="muted">先用自己的话回答，再回到本节的前提、不变量和边界检查论证。</p></details></div>
+<label class="learned"><input type="checkbox" data-progress="10-04">我能独立实现，并解释正确性与边界</label></section><section class="lesson" id="s5"><div class="lesson-heading"><span class="lesson-number">10.05</span><h2>最小生成树与最短路的区别</h2></div>
+<h3>知识与适用场景</h3><p>最小生成树要求用最小总边权连接所有节点，不要求从某个源到其他点的路径最短。Kruskal 按边权排序，选择连接不同连通块的最小边。</p><div class="invariant"><span>推导 / 不变量</span><p>并查集判断加边是否形成环。每选一条边，连通块数减少 1；选满 V-1 条边就得到生成树，若选不满则图不连通。</p></div>
+<h3>手推一个例子</h3><p>三角形边权 1、2、3，选 1 和 2 即可连接全部节点，总权 3；继续选 3 会成环，必须跳过。</p><div class="codebox"><div class="codebar"><span>C++17</span><div><a href="examples/05.cpp" download>下载 .cpp</a><button type="button" class="copy">复制代码</button></div></div><pre tabindex="0" aria-label="C++17 代码"><code><span class="keyword">struct</span> DSU {
+    vector&lt;<span class="keyword">int</span>&gt; p,sz;
+    <span class="keyword">explicit</span> DSU(<span class="keyword">int</span> n):p(n),sz(n,<span class="number">1</span>){ iota(p.begin(),p.end(),<span class="number">0</span>); }
+    <span class="keyword">int</span> find(<span class="keyword">int</span> x){ <span class="keyword">return</span> p[x]==x ? x : p[x]=find(p[x]); }
+    <span class="keyword">bool</span> unite(<span class="keyword">int</span> a,<span class="keyword">int</span> b){
+        a=find(a); b=find(b);
+        <span class="keyword">if</span>(a==b) <span class="keyword">return</span> <span class="keyword">false</span>;
+        <span class="keyword">if</span>(sz[a]&lt;sz[b]) swap(a,b);
+        p[b]=a; sz[a]+=sz[b]; <span class="keyword">return</span> <span class="keyword">true</span>;
+    }
+};
+optional&lt;<span class="keyword">long</span> <span class="keyword">long</span>&gt; kruskal(<span class="keyword">int</span> n, vector&lt;tuple&lt;<span class="keyword">int</span>,<span class="keyword">int</span>,<span class="keyword">int</span>&gt;&gt; edges) {
+    <span class="comment">// 每条边为 (权重,u,v)，无向图；节点编号 0..n-1。</span>
+    <span class="keyword">if</span>(n&lt;=<span class="number">1</span>) <span class="keyword">return</span> <span class="number">0LL</span>;
+    sort(edges.begin(),edges.end());
+    DSU dsu(n);
+    <span class="keyword">long</span> <span class="keyword">long</span> sum=<span class="number">0</span>; <span class="keyword">int</span> used=<span class="number">0</span>;
+    <span class="keyword">for</span>(<span class="keyword">auto</span> [w,u,v]:edges)
+        <span class="keyword">if</span>(dsu.unite(u,v)){
+            sum+=w;
+            <span class="keyword">if</span>(++used==n-<span class="number">1</span>) <span class="keyword">return</span> sum;
+        }
+    <span class="keyword">return</span> nullopt;
+}</code></pre></div>
+<dl class="analysis-grid"><div><dt>复杂度</dt><dd>时间 O(E log E + E·α(V))，并查集 O(V)；该实现按值传边表，额外复制 O(E)。</dd></div><div><dt>易错点与边界</dt><dd>有负边仍可求最小生成树。图必须无向；有向图的最小连接问题不能直接套 Kruskal。</dd></div></dl>
+<div class="practice"><h3>经典考点与练习</h3><p>练习：LeetCode 1584 连接所有点的最小费用、684 冗余连接。</p><details><summary>面试官可能继续问什么？</summary><p>为什么选择跨越某个割的最小边是安全的？最短路树一定是最小生成树吗？</p><p class="muted">先用自己的话回答，再回到本节的前提、不变量和边界检查论证。</p></details></div>
+<label class="learned"><input type="checkbox" data-progress="10-05">我能独立实现，并解释正确性与边界</label></section><nav class="chapter-pager" aria-label="相邻章节"><a href="../09-递归回溯与分治/index.html"><small>上一章</small>← 递归、回溯与分治</a><a href="../11-贪心/index.html"><small>下一章</small>贪心 →</a></nav><footer>秋招算法学习讲义 · C++17<br>例题编号供检索；难度与覆盖范围按学习顺序组织。</footer></main><aside class="toc" aria-label="本页目录"><p class="rail-label">本章小节</p><a href="#s1"><span>01</span>建图与 BFS：无权最短路</a><a href="#s2"><span>02</span>拓扑排序与有向环</a><a href="#s3"><span>03</span>Dijkstra：非负权最短路</a><a href="#s4"><span>04</span>Floyd 与负权算法的选择</a><a href="#s5"><span>05</span>最小生成树与最短路的区别</a></aside></div><div class="toast" role="status" aria-live="polite"></div></body></html>

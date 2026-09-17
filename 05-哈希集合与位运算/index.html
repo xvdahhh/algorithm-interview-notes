@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="description" content="秋招算法手撕学习讲义：知识推导、经典考点、C++17 示例与面试训练。">
+<title>哈希、集合与位运算 · 算法手撕讲义</title><link rel="stylesheet" href="../assets/style.css"><script src="../assets/app.js" defer></script></head>
+<body><a class="skip" href="#main">跳到正文</a><header class="topbar"><a class="brand" href="../index.html"><span class="brand-mark">a[i]</span><span>算法手撕讲义<small>秋招学习工作区 / C++17</small></span></a><button type="button" class="nav-toggle" aria-expanded="false" aria-controls="chapter-nav">章节目录</button><a class="home-link" href="../index.html">全部章节 ↗</a></header>
+<div class="layout"><aside class="sidebar" id="chapter-nav" aria-label="章节导航"><p class="rail-label">LEARNING PATH · 学习路径</p><nav><a class="chapter-link"  href="../01-复杂度与解题方法/index.html"><span>01</span>复杂度与解题方法</a><a class="chapter-link"  href="../02-数组字符串与矩阵/index.html"><span>02</span>数组、字符串与矩阵</a><a class="chapter-link"  href="../03-链表/index.html"><span>03</span>链表</a><a class="chapter-link"  href="../04-栈队列与单调结构/index.html"><span>04</span>栈、队列与单调结构</a><a class="chapter-link active" aria-current=page href="../05-哈希集合与位运算/index.html"><span>05</span>哈希、集合与位运算</a><a class="chapter-link"  href="../06-排序与二分查找/index.html"><span>06</span>排序与二分查找</a><a class="chapter-link"  href="../07-树与二叉搜索树/index.html"><span>07</span>树与二叉搜索树</a><a class="chapter-link"  href="../08-堆与优先队列/index.html"><span>08</span>堆与优先队列</a><a class="chapter-link"  href="../09-递归回溯与分治/index.html"><span>09</span>递归、回溯与分治</a><a class="chapter-link"  href="../10-图论/index.html"><span>10</span>图论</a><a class="chapter-link"  href="../11-贪心/index.html"><span>11</span>贪心</a><a class="chapter-link"  href="../12-动态规划/index.html"><span>12</span>动态规划</a><a class="chapter-link"  href="../13-并查集与高级数据结构/index.html"><span>13</span>并查集与高级数据结构</a><a class="chapter-link"  href="../14-高频技巧与综合题型/index.html"><span>14</span>高频技巧与综合题型</a><a class="chapter-link"  href="../15-面试表达与训练计划/index.html"><span>15</span>面试表达与训练计划</a></nav><div class="sidebar-note">读懂不变量，独立写代码。<br>共 15 章 · 63 个小节<br>无需联网，浏览器直接打开。</div></aside><main id="main"><header class="chapter-header"><p class="eyebrow">CHAPTER 05 / 15</p><h1>哈希、集合与位运算</h1><p class="lead">把重复查找压缩成状态映射，把小集合编码成二进制。重点是选择正确的键、保存足够的信息，并说明平均复杂度的前提。</p><div class="chapter-meta"><span>4 个小节</span><span>C++17 示例</span><a href="README.md">原始知识摘要 ↗</a></div></header><div class="reading-guide"><strong>本章怎么学</strong><p>先读原理与不变量，遮住代码手推例子，再独立实现。最后用面试追问检查理解，按练习条目做变式。</p></div><details class="environment"><summary>代码使用说明与通用头文件</summary><p>示例统一采用 C++17。页面展示核心函数或类，下载的 .cpp 已包含以下头文件，可独立编译。不同小节可能重用类型名，应分别编译；含 main 的示例可直接运行，其余需自行补充调用与测试。复制按钮复制当前代码块。</p><div class="codebox"><div class="codebar"><span>C++17</span><div><button type="button" class="copy">复制代码</button></div></div><pre tabindex="0" aria-label="C++17 代码"><code>#include &lt;algorithm&gt;
+#include &lt;array&gt;
+#include &lt;cassert&gt;
+#include &lt;climits&gt;
+#include &lt;cstdint&gt;
+#include &lt;cstdlib&gt;
+#include &lt;deque&gt;
+#include &lt;functional&gt;
+#include &lt;iostream&gt;
+#include &lt;list&gt;
+#include &lt;numeric&gt;
+#include &lt;optional&gt;
+#include &lt;queue&gt;
+#include &lt;random&gt;
+#include &lt;stack&gt;
+#include &lt;stdexcept&gt;
+#include &lt;string&gt;
+#include &lt;tuple&gt;
+#include &lt;unordered_map&gt;
+#include &lt;unordered_set&gt;
+#include &lt;utility&gt;
+#include &lt;vector&gt;
+<span class="keyword">using</span> <span class="keyword">namespace</span> std;
+</code></pre></div><p>检查单个示例：<code>g++ -std=c++17 -Wall -Wextra -c sample.cpp</code>。这只检查编译；验证结果还需要调用函数并覆盖边界输入。代码按题目约束编写，各节明确其适用前提。</p></details><section class="lesson" id="s1"><div class="lesson-heading"><span class="lesson-number">05.01</span><h2>哈希映射：存在、下标还是次数</h2></div>
+<h3>知识与适用场景</h3><p>哈希表的 value 必须服务于问题目标：判断存在用 set，返回位置保存下标，统计数量保存频次，求最长区间常保存最早下标。键必须能完整代表你要比较的状态。</p><div class="invariant"><span>推导 / 不变量</span><p>两数之和先查询补数，再插入当前数，保证不会重复使用同一个位置。此前所有元素都在表中，因此当前元素作为较晚端点的解不会被遗漏。</p></div>
+<h3>手推一个例子</h3><p>[3,3]，target=6：第一个 3 只入表；第二个 3 查到下标 0，返回 [0,1]。若先插入当前值，可能错误得到同一个下标两次。</p><div class="codebox"><div class="codebar"><span>C++17</span><div><a href="examples/01.cpp" download>下载 .cpp</a><button type="button" class="copy">复制代码</button></div></div><pre tabindex="0" aria-label="C++17 代码"><code>vector&lt;<span class="keyword">int</span>&gt; twoSum(<span class="keyword">const</span> vector&lt;<span class="keyword">int</span>&gt;&amp; a, <span class="keyword">long</span> <span class="keyword">long</span> target) {
+    unordered_map&lt;<span class="keyword">long</span> <span class="keyword">long</span>, <span class="keyword">int</span>&gt; pos;
+    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; (<span class="keyword">int</span>)a.size(); ++i) {
+        <span class="keyword">auto</span> it = pos.find(target - a[i]);
+        <span class="keyword">if</span> (it != pos.end()) <span class="keyword">return</span> {it-&gt;second, i};
+        pos[a[i]] = i;
+    }
+    <span class="keyword">return</span> {};
+}</code></pre></div>
+<dl class="analysis-grid"><div><dt>复杂度</dt><dd>平均时间 O(n)，最坏 O(n²)，空间 O(n)。</dd></div><div><dt>易错点与边界</dt><dd>operator[] 查询不存在的键会插入默认值；纯查询优先 find。rehash 会使迭代器失效，遍历中修改需谨慎。</dd></div></dl>
+<div class="practice"><h3>经典考点与练习</h3><p>练习：LeetCode 1 两数之和、49 字母异位词分组、205 同构字符串。</p><details><summary>面试官可能继续问什么？</summary><p>如果要返回所有下标对，value 应改成什么？返回值为空代表什么？</p><p class="muted">先用自己的话回答，再回到本节的前提、不变量和边界检查论证。</p></details></div>
+<label class="learned"><input type="checkbox" data-progress="05-01">我能独立实现，并解释正确性与边界</label></section><section class="lesson" id="s2"><div class="lesson-heading"><span class="lesson-number">05.02</span><h2>集合：最长连续序列为何是线性</h2></div>
+<h3>知识与适用场景</h3><p>把所有数放进集合后，仅从没有前驱 x-1 的数启动向后扩展。这保证每段连续区间只被扫描一次，而不是对每个起点重复扫描整段。</p><div class="invariant"><span>推导 / 不变量</span><p>集合去重后，连续块只有一个最小值能触发扩展。扫描集合一次，加上各块内总共 O(n) 次扩展，平均总成本 O(n)。</p></div>
+<h3>手推一个例子</h3><p>[100,4,200,1,3,2,2] 去重后，只从 1、100、200 扩展。1 找到 2、3、4，长度 4；2、3、4 因为存在前驱不启动搜索。</p><div class="codebox"><div class="codebar"><span>C++17</span><div><a href="examples/02.cpp" download>下载 .cpp</a><button type="button" class="copy">复制代码</button></div></div><pre tabindex="0" aria-label="C++17 代码"><code><span class="keyword">int</span> longestConsecutive(<span class="keyword">const</span> vector&lt;<span class="keyword">int</span>&gt;&amp; a) {
+    unordered_set&lt;<span class="keyword">long</span> <span class="keyword">long</span>&gt; values(a.begin(), a.end());
+    <span class="keyword">int</span> ans = <span class="number">0</span>;
+    <span class="keyword">for</span> (<span class="keyword">long</span> <span class="keyword">long</span> x : values) {
+        <span class="keyword">if</span> (values.count(x - <span class="number">1</span>)) continue;
+        <span class="keyword">long</span> <span class="keyword">long</span> y = x;
+        <span class="keyword">while</span> (values.count(y)) ++y;
+        ans = max(ans, (<span class="keyword">int</span>)(y - x));
+    }
+    <span class="keyword">return</span> ans;
+}</code></pre></div>
+<dl class="analysis-grid"><div><dt>复杂度</dt><dd>平均时间 O(n)，空间 O(n)，哈希最坏时间可能退化。</dd></div><div><dt>易错点与边界</dt><dd>使用 long long 存储 int 输入，避免 INT_MIN-1、INT_MAX+1 溢出。外层如果遍历含大量重复值的原数组，可能重复扩展同一长区间。</dd></div></dl>
+<div class="practice"><h3>经典考点与练习</h3><p>练习：LeetCode 128 最长连续序列、349 两个数组的交集。</p><details><summary>面试官可能继续问什么？</summary><p>为什么嵌套 while 不是 O(n²)？如果不去重会怎样？</p><p class="muted">先用自己的话回答，再回到本节的前提、不变量和边界检查论证。</p></details></div>
+<label class="learned"><input type="checkbox" data-progress="05-02">我能独立实现，并解释正确性与边界</label></section><section class="lesson" id="s3"><div class="lesson-heading"><span class="lesson-number">05.03</span><h2>异或与二进制计数</h2></div>
+<h3>知识与适用场景</h3><p>异或满足交换律、结合律，且 x^x=0，因此偶数次出现的元素会抵消。但不能把这个结论套到出现三次的问题，后者需要按位计数或状态机。</p><div class="invariant"><span>推导 / 不变量</span><p>x&amp;(x-1) 每次清除最低位的 1：x-1 把最低位 1 变为 0，并把其右侧的 0 变成 1，相与后只删除该位。使用无符号类型使位级语义明确。</p></div>
+<h3>手推一个例子</h3><p>x=12，即 1100；第一次变为 1000，第二次变为 0000，所以 popcount 为 2。</p><div class="codebox"><div class="codebar"><span>C++17</span><div><a href="examples/03.cpp" download>下载 .cpp</a><button type="button" class="copy">复制代码</button></div></div><pre tabindex="0" aria-label="C++17 代码"><code><span class="keyword">int</span> singleNumber(<span class="keyword">const</span> vector&lt;<span class="keyword">int</span>&gt;&amp; a) {
+    <span class="keyword">int</span> ans = <span class="number">0</span>;
+    <span class="keyword">for</span> (<span class="keyword">int</span> x : a) ans ^= x;
+    <span class="keyword">return</span> ans;
+}
+<span class="keyword">int</span> countBits(uint32_t x) {
+    <span class="keyword">int</span> count = <span class="number">0</span>;
+    <span class="keyword">while</span> (x) {
+        x &amp;= x - <span class="number">1</span>;
+        ++count;
+    }
+    <span class="keyword">return</span> count;
+}
+<span class="keyword">bool</span> isPowerOfTwo(uint32_t x) {
+    <span class="keyword">return</span> x != <span class="number">0</span> &amp;&amp; (x &amp; (x - <span class="number">1</span>)) == <span class="number">0</span>;
+}</code></pre></div>
+<dl class="analysis-grid"><div><dt>复杂度</dt><dd>异或归约 O(n) 时间、O(1) 空间；位计数 O(b)，b 为 1 的个数，最多 32。</dd></div><div><dt>易错点与边界</dt><dd>0 不是 2 的幂。位移位数不能大于等于类型宽度；设置高位用 1ULL&lt;&lt;k，并确认 k&lt;64。</dd></div></dl>
+<div class="practice"><h3>经典考点与练习</h3><p>练习：LeetCode 136 只出现一次的数字、260 只出现一次的数字 III、191 位 1 的个数。</p><details><summary>面试官可能继续问什么？</summary><p>两个数各出现一次、其余两次时，如何用异或结果的最低位 1 分组？</p><p class="muted">先用自己的话回答，再回到本节的前提、不变量和边界检查论证。</p></details></div>
+<label class="learned"><input type="checkbox" data-progress="05-03">我能独立实现，并解释正确性与边界</label></section><section class="lesson" id="s4"><div class="lesson-heading"><span class="lesson-number">05.04</span><h2>位掩码表示子集</h2></div>
+<h3>知识与适用场景</h3><p>n 个选或不选状态可用 n 位二进制编码，第 i 位为 1 表示选择第 i 个元素。这适合 n 较小的穷举、状态压缩 DP 和集合运算。</p><div class="invariant"><span>推导 / 不变量</span><p>遍历 0 到 2^n-1，每个整数唯一对应一个子集。判断成员用 mask&amp;(1ULL&lt;&lt;i)，集合并/交/差可以用按位或、与、与取反。</p></div>
+<h3>手推一个例子</h3><p>[a,b,c] 的掩码 101 表示选择 a 与 c；000 为空集，111 为全集。共有 8 个状态。</p><div class="codebox"><div class="codebar"><span>C++17</span><div><a href="examples/04.cpp" download>下载 .cpp</a><button type="button" class="copy">复制代码</button></div></div><pre tabindex="0" aria-label="C++17 代码"><code>vector&lt;vector&lt;<span class="keyword">int</span>&gt;&gt; subsetsByMask(<span class="keyword">const</span> vector&lt;<span class="keyword">int</span>&gt;&amp; a) {
+    <span class="keyword">int</span> n = (<span class="keyword">int</span>)a.size();
+    <span class="keyword">if</span> (n &gt; <span class="number">20</span>) <span class="keyword">throw</span> invalid_argument(<span class="string">&quot;exponential output too large&quot;</span>);
+    vector&lt;vector&lt;<span class="keyword">int</span>&gt;&gt; ans;
+    uint64_t total = <span class="number">1ULL</span> &lt;&lt; n;
+    <span class="keyword">for</span> (uint64_t mask = <span class="number">0</span>; mask &lt; total; ++mask) {
+        vector&lt;<span class="keyword">int</span>&gt; cur;
+        <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; n; ++i)
+            <span class="keyword">if</span> (mask &amp; (<span class="number">1ULL</span> &lt;&lt; i)) cur.push_back(a[i]);
+        ans.push_back(move(cur));
+    }
+    <span class="keyword">return</span> ans;
+}</code></pre></div>
+<dl class="analysis-grid"><div><dt>复杂度</dt><dd>时间与输出空间 O(n·2^n)，临时单个子集 O(n)。</dd></div><div><dt>易错点与边界</dt><dd>位宽允许不代表内存允许；n=40 即使掩码放得下，也无法直接枚举全部子集。输入含重复值时会生成内容重复的子集。</dd></div></dl>
+<div class="practice"><h3>经典考点与练习</h3><p>练习：LeetCode 78 子集；进阶：旅行商状态 dp[mask][last]。</p><details><summary>面试官可能继续问什么？</summary><p>如何枚举 mask 的所有非空子集？提示 sub=(sub-1)&amp;mask。</p><p class="muted">先用自己的话回答，再回到本节的前提、不变量和边界检查论证。</p></details></div>
+<label class="learned"><input type="checkbox" data-progress="05-04">我能独立实现，并解释正确性与边界</label></section><nav class="chapter-pager" aria-label="相邻章节"><a href="../04-栈队列与单调结构/index.html"><small>上一章</small>← 栈、队列与单调结构</a><a href="../06-排序与二分查找/index.html"><small>下一章</small>排序与二分查找 →</a></nav><footer>秋招算法学习讲义 · C++17<br>例题编号供检索；难度与覆盖范围按学习顺序组织。</footer></main><aside class="toc" aria-label="本页目录"><p class="rail-label">本章小节</p><a href="#s1"><span>01</span>哈希映射：存在、下标还是次数</a><a href="#s2"><span>02</span>集合：最长连续序列为何是线性</a><a href="#s3"><span>03</span>异或与二进制计数</a><a href="#s4"><span>04</span>位掩码表示子集</a></aside></div><div class="toast" role="status" aria-live="polite"></div></body></html>
