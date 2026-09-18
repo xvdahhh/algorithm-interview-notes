@@ -1,0 +1,912 @@
+{
+  "intro": [
+    {
+      "type": "text",
+      "title": "本章的主线：维护一段区间，而不是反复扫描",
+      "paragraphs": [
+        "数组、字符串和矩阵题经常从枚举起步，再通过保留相邻状态之间的共同信息优化。双指针利用顺序排除不可能的候选；滑动窗口增量维护连续区间；前缀和复用区间外的累计量；矩阵模拟则维护尚未处理的边界。",
+        "先分清三个词：子数组与子串要求连续，子序列可以跳过元素。排序可以帮助判断数值大小，但会改变原来的邻接关系，因此“连续子数组”问题通常不能为了方便双指针而先排序。",
+        "本章代码使用 C++17，数组长度和矩阵行列数默认可用 int 表示；累加值使用 long long，并仍需满足题目给定的数值范围。字符串示例默认按字节处理，若题意是 Unicode 码点或用户可见字符，需先明确分段方式。"
+      ]
+    },
+    {
+      "type": "table",
+      "title": "先根据题目约束选工具",
+      "columns": [
+        "题型信号",
+        "优先考虑",
+        "必须核对的条件"
+      ],
+      "rows": [
+        [
+          "有序数组中配对、回文两端比较",
+          "相向双指针",
+          "移动一端能否排除整个候选集合"
+        ],
+        [
+          "原地删除、去重、保持相对顺序",
+          "读写指针",
+          "写指针不能破坏尚未读取的数据"
+        ],
+        [
+          "连续区间、频次或可单调收缩的约束",
+          "滑动窗口",
+          "窗口可否增量维护，收缩是否不会漏解"
+        ],
+        [
+          "静态区间和、精确和计数、含负数",
+          "前缀和 / 前缀和+哈希",
+          "哈希值存次数、最早位置还是其他状态"
+        ],
+        [
+          "批量区间加法，最后统一查看",
+          "差分",
+          "是否需要每次更新后立即查询"
+        ],
+        [
+          "二维区域、旋转、四方向邻接",
+          "容斥 / 坐标映射 / 网格搜索",
+          "是方阵还是长方形；能否修改原矩阵"
+        ]
+      ]
+    },
+    {
+      "type": "text",
+      "title": "建议学习顺序与完成标准",
+      "paragraphs": [
+        "先独立实现有序去重、正数最短窗口、和为 K 的计数、矩阵旋转四题；再做最小覆盖、二维前缀和、矩阵置零和网格连通块。章末提供同一问题的暴力与优化对照，用于练习验证。",
+        "每个模板都要能解释：变量代表什么、循环结束时什么性质成立、每次移动为什么不漏解、输入前提改变后哪里失效。能说清这些，再记忆代码才有意义。"
+      ]
+    }
+  ],
+  "sections": {
+    "1": {
+      "before": [
+        {
+          "type": "text",
+          "title": "1.1 数组与字符串：下标访问快，搬移和复制不免费",
+          "paragraphs": [
+            "vector 的元素连续存储，按下标访问 O(1)，尾部 push_back 均摊 O(1)，中间插入或删除通常需要移动后续元素，最坏 O(n)。反复从数组中间 erase 可能把一次遍历变为 O(n²)。因此很多“删除”题只要求把保留值压到前面，返回新的有效长度。",
+            "string 也提供下标访问，但 substr 会复制选定字节，反复截取长子串同样可能导致平方复杂度。扫描时尽量记录左右下标，最后只构造一次结果。字符频次已知只有 a..z 时用 26 长度数组；本章通用字节计数用 256 并将索引转为 unsigned char。"
+          ]
+        },
+        {
+          "type": "text",
+          "title": "1.2 相向双指针：移动依据来自一个可排除的集合",
+          "paragraphs": [
+            "对非降序数组，固定当前左端 l。如果 a[l]+a[r]<target，那么任意 j≤r 都满足 a[l]+a[j]≤a[l]+a[r]<target，因此 a[l] 不可能参与剩余范围内的答案，可以安全执行 ++l。",
+            "反过来，若 a[l]+a[r]>target，任意 i≥l 与 a[r] 配对只会更大，因此可以 --r。找到解后如何继续取决于题目：只求一组可返回；求不同数值对需要跳过重复值；求所有下标对则不能简单跳过重复元素。"
+          ]
+        },
+        {
+          "type": "table",
+          "title": "三数之和为什么可以降到 O(n²)",
+          "columns": [
+            "阶段",
+            "要做什么",
+            "依据与成本"
+          ],
+          "rows": [
+            [
+              "排序",
+              "把数值排成非降序",
+              "O(n log n)，后续比较才能批量排除"
+            ],
+            [
+              "枚举 i",
+              "把目标改写为 a[l]+a[r]=-a[i]",
+              "固定一个数，还剩两数之和"
+            ],
+            [
+              "相向扫描",
+              "l=i+1，r=n-1",
+              "每个 i 的 l、r 合计移动 O(n) 次"
+            ],
+            [
+              "去重",
+              "i 层跳同值，找到解后跳过左右同值",
+              "返回不同数值三元组，不枚举重复下标组合"
+            ],
+            [
+              "总成本",
+              "n 个固定点各做一次线性扫描",
+              "O(n²)，另计答案存储"
+            ]
+          ]
+        },
+        {
+          "type": "code",
+          "title": "1.3 读写指针：有序数组原地去重",
+          "file": "detail-deduplicate.cpp",
+          "code": "int removeDuplicatesSorted(vector<int>& a) {\n    int write = 0;\n    for (int read = 0; read < (int)a.size(); ++read) {\n        if (write == 0 || a[read] != a[write - 1]) {\n            a[write] = a[read];\n            ++write;\n        }\n    }\n    return write; // 仅 [0, write) 是结果，vector.size() 未改变\n}",
+          "paragraphs": [
+            "循环开始时，[0,write) 是已读前缀中去重后的有序结果；read 指向下一个待读元素。因为 write≤read，写入不会覆盖未来未读取的数据。比较上一份已保留值，就能判断当前值是否是新值。",
+            "例如 [1,1,2,2,3] 最后返回 3，前缀为 [1,2,3]，后面的元素不再有意义。时间 O(n)、额外空间 O(1)。若接口确实要求缩小容器，可在结束后调用 resize(write)，不要逐个 erase。"
+          ]
+        },
+        {
+          "type": "code",
+          "title": "1.4 移动零：稳定压缩，再补尾部",
+          "file": "detail-move-zeroes.cpp",
+          "code": "void moveZeroes(vector<int>& a) {\n    int write = 0;\n    for (int read = 0; read < (int)a.size(); ++read) {\n        if (a[read] != 0) a[write++] = a[read];\n    }\n    for (int i = write; i < (int)a.size(); ++i) a[i] = 0;\n}",
+          "paragraphs": [
+            "第一轮按原顺序写入所有非零值，故其相对次序保持不变；第二轮把剩余位置补为 0。比如 [0,1,0,3,12] 变为 [1,3,12,0,0]。总时间 O(n)，额外空间 O(1)。读写同位置是合法赋值，无需额外分支。"
+          ]
+        },
+        {
+          "type": "code",
+          "title": "1.5 盛水容器：为什么移动短板而非长板？",
+          "file": "detail-max-area.cpp",
+          "code": "long long maxArea(const vector<int>& height) {\n    // 前提：所有高度非负。\n    int left = 0, right = (int)height.size() - 1;\n    long long best = 0;\n    while (left < right) {\n        best = max(best, 1LL * (right - left)\n                         * min(height[left], height[right]));\n        if (height[left] <= height[right]) ++left;\n        else --right;\n    }\n    return best;\n}",
+          "paragraphs": [
+            "假设左高度≤右高度，当前容量受左侧限制。固定左端而把右端左移，宽度下降、高度上限仍不超过左高度，因此不可能比当前容器更大；可以丢弃左端。两端一样高时任意移动一端都安全。注意此题不能排序，因为原下标距离参与面积。",
+            "时间 O(n)、空间 O(1)。这是与两数之和不同的移动证明：两者都用相向指针，但不能只背“和小就左移”这样的表面规则。"
+          ]
+        },
+        {
+          "type": "code",
+          "title": "1.6 字符串两端比较：回文与输入语义",
+          "file": "detail-palindrome.cpp",
+          "code": "bool isBytePalindrome(const string& s) {\n    int left = 0, right = (int)s.size() - 1;\n    while (left < right) {\n        if (s[left] != s[right]) return false;\n        ++left;\n        --right;\n    }\n    return true;\n}",
+          "paragraphs": [
+            "这段代码判断原始字节序列是否对称，时间 O(n)、空间 O(1)，空串和单字节串返回 true。若题目要求忽略标点和大小写，需要先规定允许字符的集合，再在两端跳过无效字符并统一大小写。UTF-8 中一个汉字通常占多个字节，不能把字节反转或字节回文当成字符级判断。"
+          ]
+        }
+      ],
+      "after": [
+        {
+          "type": "table",
+          "title": "1.7 三数之和手推：固定 -1 后如何去重",
+          "columns": [
+            "当前值（已排序）",
+            "判断",
+            "下一步"
+          ],
+          "rows": [
+            [
+              "固定 i 的值 -1，l=-1，r=2",
+              "和为 0，记录 [-1,-1,2]",
+              "越过 l 的所有 -1 和 r 的所有 2"
+            ],
+            [
+              "固定值仍为 -1，l=0，r=1",
+              "和为 0，记录 [-1,0,1]",
+              "移动并跳重复，l 与 r 相遇"
+            ],
+            [
+              "外层下一个 i 的值仍是 -1",
+              "相同固定值产生的数值解已经处理",
+              "跳过该 i，不再重复扫描"
+            ],
+            [
+              "外层到正数",
+              "后续最小值也为正，三数之和必为正",
+              "本题目标为 0，可以提前结束"
+            ]
+          ]
+        },
+        {
+          "type": "text",
+          "title": "不要把去重变成丢失合法答案",
+          "paragraphs": [
+            "输入 [-1,-1,2] 必须允许同一答案里出现两个 -1。去重的目标是避免重复输出相同三元组，不是禁止选择相等的两个元素。外层检查 i>0 && a[i]==a[i-1]，只跳过重复的固定分支；内层则在已经记录一个解之后跳过该端同值。",
+            "四数之和可排序后固定两个下标，再做相向双指针，时间 O(n³)。两个枚举层各自同层去重；所有求和和上下界剪枝都应先提升到 long long，不能等 int 相加溢出后才转换。"
+          ]
+        }
+      ],
+      "answers": [
+        {
+          "question": "去重为什么要在外层和找到解后分别处理？",
+          "answer": [
+            "外层去重避免同一个固定数值引出重复扫描；找到解后跳过左右同值，避免相同固定点下再次输出同一数值组合。两个层次解决的是不同来源的重复。"
+          ]
+        },
+        {
+          "question": "有序数组去重为什么可以比较 a[write-1]？",
+          "answer": [
+            "它始终是已保留结果的最后一个值。原输入有序，当前值若等于它就属于同一连续重复段；若不等就是新的数值。write=0 时没有前一个保留元素，必须先短路判断。"
+          ]
+        },
+        {
+          "question": "排序以后还能直接返回原下标吗？",
+          "answer": [
+            "通常不能，因为排序重排了元素。若原下标重要，可排序 (值,原下标) 对，或直接用哈希表解原数组上的两数之和。三数之和题通常返回数值，因此允许排序。"
+          ]
+        },
+        {
+          "question": "移动零为什么保持非零值的相对顺序？",
+          "answer": [
+            "读指针从左到右，每遇到一个非零值就追加到输出前缀，写入次序与读到次序完全一致。任意交换当前元素和末尾元素则不一定稳定。"
+          ]
+        },
+        {
+          "question": "相向指针与读写指针有什么本质区别？",
+          "answer": [
+            "相向指针通过比较排除候选，关键是证明排除安全；读写指针通过已处理前缀构建结果，关键是保持结果含义并不覆盖未读数据。都是两个下标，正确性依据却不同。"
+          ]
+        },
+        {
+          "question": "如何推广到四数之和？",
+          "answer": [
+            "两层固定下标，把余下目标留给双指针；循环边界保证仍有两个位置可选。按层去重，时间 O(n³)，数值用 long long 计算。可以剪枝，但只有当最小可能和或最大可能和的计算与排序前提都正确时才安全。"
+          ]
+        }
+      ]
+    },
+    "2": {
+      "before": [
+        {
+          "type": "text",
+          "title": "2.1 滑动窗口的前提：连续、可维护、可安全丢弃",
+          "paragraphs": [
+            "滑动窗口的左右端点在原序列上移动，因此它求的是连续子数组或子串。窗口和可用加减维护，字符频次可用计数器维护；能增量维护只是第一步，还必须解释为什么某些左边界从此不必再考虑。",
+            "例如最长无重复子串，重复出现后必须移过旧重复位置；更靠左的窗口只会仍然包含重复。正数最短和问题则依赖和的单调性：右侧加入正数不减和，左侧移出正数不增和。"
+          ]
+        },
+        {
+          "type": "table",
+          "title": "2.2 三种窗口模板，更新答案的时机不同",
+          "columns": [
+            "目标",
+            "收缩条件",
+            "何时更新答案"
+          ],
+          "rows": [
+            [
+              "固定长度 k",
+              "窗口超过 k 就移走最旧元素",
+              "窗口长度恰为 k 时"
+            ],
+            [
+              "最长合法窗口",
+              "当前窗口不合法时不断收缩",
+              "重新合法后；得到当前右端点下的最长合法窗口"
+            ],
+            [
+              "最短覆盖/至少满足要求",
+              "窗口已经满足要求时尝试收缩",
+              "每次仍合法时先记录，再移走左端"
+            ],
+            [
+              "精确计数",
+              "不能只找到一个窗口就结束",
+              "需分析每个右端贡献；可用前缀和频次等方法"
+            ]
+          ]
+        },
+        {
+          "type": "code",
+          "title": "2.3 固定窗口：长度为 k 的最大区间和",
+          "file": "detail-fixed-window.cpp",
+          "code": "long long maxFixedWindowSum(const vector<int>& a, int k) {\n    if (k <= 0 || k > (int)a.size())\n        throw invalid_argument(\"invalid window length\");\n    long long sum = 0, best = LLONG_MIN;\n    for (int right = 0; right < (int)a.size(); ++right) {\n        sum += a[right];\n        if (right >= k) sum -= a[right - k];\n        if (right >= k - 1) best = max(best, sum);\n    }\n    return best;\n}",
+          "paragraphs": [
+            "窗口固定长度时不依赖正数条件，负数也可使用，因为我们不根据和决定是否跳过某个窗口。维护当前最后 k 个元素的和即可。全负数组必须用负无穷或首个完整窗口初始化答案，不能初始化为 0。时间 O(n)，空间 O(1)。"
+          ]
+        },
+        {
+          "type": "text",
+          "title": "2.4 最短正数窗口为什么不漏解？",
+          "paragraphs": [
+            "固定 right，若窗口和仍≥target，就记录长度并右移 left，直到不满足为止。这样把以该 right 结尾且有机会更短的候选都处理了。此前被移走的左端点已经产生过合法窗口；未来右端点更大时，从那个旧左端出发只会更长，不可能改善它已经贡献的长度。",
+            "两条指针总共最多移动 2n 次，所以嵌套 while 的整体时间仍是 O(n)。这不是每轮外层重新扫描一个独立长度 n 的区间。对于非负元素、target>0，同样的算法也成立；遇到 0 时仍可继续收缩，不会增加和。"
+          ]
+        },
+        {
+          "type": "table",
+          "title": "target=7，数组 [2,3,1,2,4,3] 的收缩过程",
+          "columns": [
+            "right",
+            "新元素加入后的变化",
+            "得到的最优长度"
+          ],
+          "rows": [
+            [
+              "0..2",
+              "和分别为 2、5、6，尚未满足",
+              "暂无"
+            ],
+            [
+              "3",
+              "和 8；记录 [0,3] 长 4，移走 2 后和 6",
+              "4"
+            ],
+            [
+              "4",
+              "和 10；记录 [1,4] 长 4；移走 3 后和 7，记录 [2,4] 长 3；再移走 1",
+              "3"
+            ],
+            [
+              "5",
+              "和 9；记录 [3,5] 长 3；移走 2 后和 7，记录 [4,5] 长 2；再移走 4",
+              "2"
+            ]
+          ]
+        },
+        {
+          "type": "text",
+          "title": "2.5 一条负数就足以破坏按和收缩的逻辑",
+          "paragraphs": [
+            "最短和至少 5，数组 [1,-1,5]。原正数模板在最后得到和 5，记录长度 3，移走 1 后和变 4，于是停止。它不会继续移走 -1，因此漏掉 [5] 这个长度 1 的答案。",
+            "失败不是代码少写一个 if，而是“删掉左元素只会降低和”这个前提失效。精确和计数可改用前缀和+哈希；含负数的最短和至少 K，常用前缀和+单调队列，不能简单把计数模板拿来当最短模板。"
+          ]
+        },
+        {
+          "type": "code",
+          "title": "2.6 最小覆盖子串：重复字符也要满足",
+          "file": "detail-min-window.cpp",
+          "code": "string minWindow(const string& s, const string& t) {\n    if (t.empty()) return \"\";\n    array<int, 256> need{}, have{};\n    for (unsigned char c : t) ++need[c];\n    int missing = (int)t.size();\n    int left = 0, bestStart = 0, bestLength = INT_MAX;\n    for (int right = 0; right < (int)s.size(); ++right) {\n        unsigned char c = static_cast<unsigned char>(s[right]);\n        if (have[c] < need[c]) --missing;\n        ++have[c];\n        while (missing == 0) {\n            if (right - left + 1 < bestLength) {\n                bestStart = left;\n                bestLength = right - left + 1;\n            }\n            unsigned char old = static_cast<unsigned char>(s[left++]);\n            --have[old];\n            if (have[old] < need[old]) ++missing;\n        }\n    }\n    return bestLength == INT_MAX ? \"\" : s.substr(bestStart, bestLength);\n}",
+          "paragraphs": [
+            "missing 统计还缺多少个字符实例，不是不同字符种数。t=\"AAB\" 时必须有两个 A 和一个 B。新增字符只有在其原有数量不足时才填补一个缺口；删除字符后数量低于需求，才重新产生缺口。",
+            "扫描时间 O(|s|+|t|)，辅助空间固定 256 项，返回子串另计 O(答案长度)。每次只记录最佳起点和长度，最后统一 substr，避免在循环中复制长字符串。"
+          ]
+        },
+        {
+          "type": "table",
+          "title": "最小覆盖关键步骤：s=ADOBECODEBANC，t=ABC",
+          "columns": [
+            "状态",
+            "missing",
+            "行为"
+          ],
+          "rows": [
+            [
+              "扫描到第一个 C（下标 5）",
+              "0",
+              "ADOBEC 首次覆盖，记录长度 6；去掉 A 后失效"
+            ],
+            [
+              "扫描到第二个 A（下标 10）",
+              "0",
+              "再次覆盖，收缩旧的左侧字符，直到删掉必需的 C"
+            ],
+            [
+              "扫描到末尾 C（下标 12）",
+              "0",
+              "继续收缩，得到 BANC（下标 9..12），长度 4"
+            ],
+            [
+              "尝试删掉 B",
+              "1",
+              "覆盖失效，停止收缩；BANC 保留为最优"
+            ]
+          ]
+        },
+        {
+          "type": "code",
+          "title": "2.7 异位词子串：固定长度 + 完整频次",
+          "file": "detail-anagrams.cpp",
+          "code": "vector<int> findAnagrams(const string& s, const string& pattern) {\n    if (pattern.empty()) return {}; // 本接口不枚举空模式的位置\n    int k = (int)pattern.size();\n    array<int, 256> need{}, have{};\n    for (unsigned char c : pattern) ++need[c];\n    vector<int> answer;\n    for (int right = 0; right < (int)s.size(); ++right) {\n        ++have[static_cast<unsigned char>(s[right])];\n        if (right >= k)\n            --have[static_cast<unsigned char>(s[right - k])];\n        if (right >= k - 1 && have == need)\n            answer.push_back(right - k + 1);\n    }\n    return answer;\n}",
+          "paragraphs": [
+            "两个字符串是否互为异位词，需要每个字符的出现次数相同，不能只比较集合。这里每次比较 256 个计数，时间 O(256·|s|+|pattern|)，在固定字节字符集下写作 O(|s|+|pattern|)。辅助空间 O(256)，输出另计。若字符集不固定，可维护频次差异数来避免每轮完整比较。"
+          ]
+        }
+      ],
+      "after": [
+        {
+          "type": "text",
+          "title": "把模板中的 left、sum、ans 分别说清",
+          "paragraphs": [
+            "left 不是“任意当前位置”，而是当前待继续尝试的窗口起点；sum 必须恰好等于 a[left]..a[right] 的总和；ans 是此前已经确认合法的最短长度。每次减去 a[left] 后再递增 left，使总和与边界保持一致。",
+            "最短窗口在 while 内、移除左端前更新答案。若写到 while 之后，此时窗口通常已经不合法；最长无重复窗口则恰好反过来，先收缩到合法，再在 while 之后记录最长长度。"
+          ]
+        }
+      ],
+      "answers": [
+        {
+          "question": "为什么最短与最长窗口更新答案的位置不同？",
+          "answer": [
+            "最短覆盖想不断缩小一个合法窗口，所以先记录合法状态再删左端；最长合法窗口需要先消除违规，再记录剩下的最长合法状态。更新时机来自目标与不变量，而非固定背诵模板。"
+          ]
+        },
+        {
+          "question": "有负数时，所有滑动窗口都不能用吗？",
+          "answer": [
+            "不是。固定长度窗口可以含负数，因为不会依据区间和决定跳过左边界。失效的是依赖非负性证明的某些可变窗口，例如最短和至少 target。"
+          ]
+        },
+        {
+          "question": "为什么空目标串要先返回？",
+          "answer": [
+            "最小覆盖实现中空目标让 missing 一开始就是 0，若仍进入不断收缩的 while，可能越过有效窗口。先定义空目标的结果并特判，能同时解决语义和边界问题。"
+          ]
+        },
+        {
+          "question": "t=AAB，仅维护字符种类是否足够？",
+          "answer": [
+            "不够。窗口 AB 的种类已经包含 A、B，但还缺一个 A。可以统计缺失实例数，也可以统计已经达到需求次数的种类数；后一种必须在计数达到/跌破阈值时更新。"
+          ]
+        },
+        {
+          "question": "为什么 found 窗口后只保存下标，不立即截取？",
+          "answer": [
+            "substr 会复制字符。若每次改善都复制一个很长的窗口，额外成本可能很大；记录起点与长度是 O(1)，最后只复制一次答案。"
+          ]
+        },
+        {
+          "question": "异位词判断能否只比较字符总和或异或？",
+          "answer": [
+            "不能，一种摘要值通常会碰撞，不同频次也可能具有相同和或异或。题目要求确定正确时，维护完整频次或等价的无损信息。"
+          ]
+        },
+        {
+          "question": "最短窗口无解时为什么返回 0？",
+          "answer": [
+            "这是当前正数最短子数组接口的约定：合法答案长度至少为 1，所以 0 可以表示不存在。最小覆盖子串接口则返回空串。返回约定要按题目确认，不能在不同题目间混用。"
+          ]
+        }
+      ]
+    },
+    "3": {
+      "before": [
+        {
+          "type": "text",
+          "title": "3.1 一维前缀和：统一用“前几个元素”定义",
+          "paragraphs": [
+            "定义 pre[k] 是前 k 个元素之和，pre[0]=0，pre[k+1]=pre[k]+a[k]。闭区间 [l,r] 有 r-l+1 个元素，对应 pre[r+1]-pre[l]；若接口采用半开区间 [l,r)，则是 pre[r]-pre[l]。两个公式都正确，但不能把接口和公式混着用。",
+            "前缀和把一次 O(区间长度) 的查询转成 O(1)。n 个元素预处理 O(n)，q 次查询总计 O(n+q)，辅助空间 O(n)。它适合数组基本不变的情况；单点修改会影响此位置之后的所有前缀，更新最坏 O(n)。"
+          ]
+        },
+        {
+          "type": "table",
+          "title": "一维前缀与闭区间手推",
+          "columns": [
+            "原数组 / 位置",
+            "前缀值",
+            "解释"
+          ],
+          "rows": [
+            [
+              "a=[2,-1,3,4]，pre[0]",
+              "0",
+              "空前缀"
+            ],
+            [
+              "pre[1]、pre[2]",
+              "2、1",
+              "先加 2，再加 -1"
+            ],
+            [
+              "pre[3]、pre[4]",
+              "4、8",
+              "继续加 3、4"
+            ],
+            [
+              "查询 [1,3]",
+              "pre[4]-pre[1]=8-2=6",
+              "保留 -1+3+4"
+            ],
+            [
+              "查询 [0,0]",
+              "pre[1]-pre[0]=2",
+              "无需 l=0 特判"
+            ]
+          ]
+        },
+        {
+          "type": "text",
+          "title": "3.2 精确和计数：从等式中确定哈希键",
+          "paragraphs": [
+            "一个连续区间的和等于 k，即 pre[right+1]-pre[left]=k。移项后，需要此前存在 pre[left]=pre[right+1]-k。扫描右端点时，当前前缀已知，所以查哈希中的“当前前缀-k”即可。",
+            "同一个前缀值可能出现多次，每一次都对应不同左边界，因此求数量必须存频次，不能只存一个下标。先查询此前频次，再插入当前前缀，才能保证左边界不越过右边界，也不会把长度 0 区间计入。"
+          ]
+        },
+        {
+          "type": "table",
+          "title": "全零数组：为什么是加频次，不是只加 1？",
+          "columns": [
+            "步骤：a=[0,0,0]，k=0",
+            "查询前 freq[0]",
+            "累积答案 / 更新频次"
+          ],
+          "rows": [
+            [
+              "初始化空前缀",
+              "1",
+              "ans=0"
+            ],
+            [
+              "读第一个 0，pre=0",
+              "1",
+              "ans=1，freq[0]=2"
+            ],
+            [
+              "读第二个 0，pre=0",
+              "2",
+              "ans=3，freq[0]=3"
+            ],
+            [
+              "读第三个 0，pre=0",
+              "3",
+              "ans=6，freq[0]=4"
+            ]
+          ]
+        },
+        {
+          "type": "code",
+          "title": "3.3 同一个前缀等式，求最长时保存最早位置",
+          "file": "detail-longest-sum.cpp",
+          "code": "int longestSubarraySum(const vector<int>& a, long long k) {\n    unordered_map<long long, int> first;\n    first[0] = 0; // 空前缀的位置，以“元素个数”为下标\n    long long prefix = 0;\n    int best = 0;\n    for (int end = 1; end <= (int)a.size(); ++end) {\n        prefix += a[end - 1];\n        auto it = first.find(prefix - k);\n        if (it != first.end()) best = max(best, end - it->second);\n        first.emplace(prefix, end); // 已存在时不覆盖，保留最早出现位置\n    }\n    return best;\n}",
+          "paragraphs": [
+            "对于固定的右边界 end，左前缀位置越早，区间越长。因此同一个前缀值只保留最早下标。平均时间 O(n)、空间 O(n)，哈希最坏可退化。返回 0 表示不存在非空合法区间。",
+            "例如 [1,-1,5,-2,3]、k=3，前四个元素之和为 3，长度 4。若要求最短“精确和”区间，则可保存最新的前缀位置并调整答案目标；最短“至少为 k”不是同一等式，不能直接这样改。"
+          ]
+        },
+        {
+          "type": "text",
+          "title": "3.4 差分：把区间操作只记在两端",
+          "paragraphs": [
+            "令 diff[0]=a[0]，diff[i]=a[i]-a[i-1]。从左到右累加 diff 就能还原原数组。给闭区间 [l,r] 每项加 x，只需 diff[l]+=x、diff[r+1]-=x；前一个操作让从 l 开始的累计值增加，后一个在 r 后将影响抵消。",
+            "多次区间更新可相互叠加：每次 O(1) 记端点，最后 O(n) 还原。若有 m 次更新，总时间 O(n+m)、空间 O(n)。这不表示差分能在每次更新后 O(1) 查询任意区间和；动态查询需另选数据结构。"
+          ]
+        },
+        {
+          "type": "code",
+          "title": "批量区间加法：预留 r+1 的哨兵位置",
+          "file": "detail-range-add.cpp",
+          "code": "vector<long long> applyRangeAdds(\n    const vector<int>& a,\n    const vector<tuple<int, int, long long>>& updates) {\n    int n = (int)a.size();\n    vector<long long> diff(n + 1, 0);\n    for (int i = 0; i < n; ++i)\n        diff[i] = (long long)a[i] - (i == 0 ? 0LL : a[i - 1]);\n    for (auto [left, right, value] : updates) {\n        if (left < 0 || right < left || right >= n)\n            throw out_of_range(\"invalid update interval\");\n        diff[left] += value;\n        diff[right + 1] -= value; // right=n-1 时写入 diff[n] 仍安全\n    }\n    vector<long long> result(n);\n    long long current = 0;\n    for (int i = 0; i < n; ++i) {\n        current += diff[i];\n        result[i] = current;\n    }\n    return result;\n}",
+          "paragraphs": [
+            "前提：所有差分、更新累计和最终结果都在 long long 范围内。空数组允许没有更新；非空区间更新不能落在空数组上。返回新数组保留原输入。",
+            "例如全零数组长度 5，依次给 [1,3] 加 2、[2,4] 加 3，端点相加后的 diff 为 [0,2,3,0,-2,-3]，累加前五项得到 [0,2,5,5,3]。"
+          ]
+        },
+        {
+          "type": "text",
+          "title": "3.5 二维前缀和：四块区域的容斥",
+          "paragraphs": [
+            "定义 pre[r][c] 为原矩阵前 r 行、前 c 列的和，多开一行一列 0。构造式为 pre[r+1][c+1]=a[r][c]+pre[r][c+1]+pre[r+1][c]-pre[r][c]：上方和左方重叠的左上矩形被加了两次，所以减一次。",
+            "查询闭矩形 (r1,c1)..(r2,c2) 时，先取 pre[r2+1][c2+1]，减去上方 pre[r1][c2+1] 与左方 pre[r2+1][c1]，再加回被重复扣掉的 pre[r1][c1]。构造与查询的容斥符号看似相近，但坐标含义必须分别推导。"
+          ]
+        },
+        {
+          "type": "code",
+          "title": "二维静态区域和：建表 O(RC)，查询 O(1)",
+          "file": "detail-prefix2d.cpp",
+          "code": "class Prefix2D {\n    int rows, cols;\n    vector<vector<long long>> pre;\npublic:\n    explicit Prefix2D(const vector<vector<int>>& a)\n        : rows((int)a.size()), cols(a.empty() ? 0 : (int)a[0].size()),\n          pre(rows + 1, vector<long long>(cols + 1, 0)) {\n        for (const auto& row : a)\n            if ((int)row.size() != cols)\n                throw invalid_argument(\"rectangular matrix required\");\n        for (int r = 0; r < rows; ++r)\n            for (int col = 0; col < cols; ++col)\n                pre[r + 1][col + 1] = (long long)a[r][col]\n                    + pre[r][col + 1] + pre[r + 1][col] - pre[r][col];\n    }\n    long long query(int r1, int c1, int r2, int c2) const {\n        if (r1 < 0 || c1 < 0 || r2 < r1 || c2 < c1\n            || r2 >= rows || c2 >= cols)\n            throw out_of_range(\"invalid rectangle\");\n        return pre[r2 + 1][c2 + 1] - pre[r1][c2 + 1]\n             - pre[r2 + 1][c1] + pre[r1][c1];\n    }\n};",
+          "paragraphs": [
+            "假设各中间表达式不溢出 long long。辅助空间 O(RC)，输入要求规则矩形，构造函数会检查行长。空矩阵可以构造，但没有任何合法非空矩形查询。",
+            "对 [[1,2,3],[4,5,6]] 查询 (0,1)..(1,2)，结果为 2+3+5+6=16；查询整张矩阵为 21。"
+          ]
+        },
+        {
+          "type": "code",
+          "title": "3.6 前后缀乘积：除自身以外的乘积，不使用除法",
+          "file": "detail-product-except-self.cpp",
+          "code": "vector<long long> productExceptSelf(const vector<int>& a) {\n    // 前提：下列前缀、后缀及输出乘积均不溢出 long long。\n    int n = (int)a.size();\n    vector<long long> answer(n, 1);\n    long long left = 1;\n    for (int i = 0; i < n; ++i) {\n        answer[i] = left;\n        if (i + 1 < n) left *= a[i];\n    }\n    long long right = 1;\n    for (int i = n - 1; i >= 0; --i) {\n        answer[i] *= right;\n        if (i > 0) right *= a[i];\n    }\n    return answer;\n}",
+          "paragraphs": [
+            "第一遍 answer[i] 保存 i 左边所有元素之积；第二遍乘上 i 右边所有元素之积，所以始终排除当前位置。空积取 1，零元素自然被正确处理，不需要除法也不需要单独分支。时间 O(n)，除输出外辅助空间 O(1)。",
+            "[1,2,3,4] 的左乘积为 [1,1,2,6]，配合右乘积得到 [24,12,8,6]。若只有一个 0，只有该 0 所在位置可能得到非零答案；至少两个 0 时全部为 0。前缀/后缀中间乘积仍可能很大，不能仅凭最终答案小就认为安全。"
+          ]
+        }
+      ],
+      "after": [
+        {
+          "type": "text",
+          "title": "把原计数模板与本节扩展对应起来",
+          "paragraphs": [
+            "原模板的 freq[0]=1 表示“当前元素之前存在一个空前缀”，这样从数组第 0 项开始的合法区间也能被统一发现。它存的是次数；longestSubarraySum 中的 first[0]=0 存的是前缀位置，含义不同。",
+            "原模板每次先查 pre-k，累加频次，再 ++freq[pre]。若 k=0 且先插入，本轮新前缀会与自己配对，多算一个空区间。答案可能达到 n(n+1)/2，因此不仅 pre，ans 和频次也应按规模选择足够宽的整数。"
+          ]
+        }
+      ],
+      "answers": [
+        {
+          "question": "为什么 freq[0]=1，不能省略吗？",
+          "answer": [
+            "它代表任何元素尚未读取时的空前缀。如果当前 pre 恰好等于 k，pre-k=0，空前缀使从下标 0 开始的区间被计入。省略会漏掉这类答案。"
+          ]
+        },
+        {
+          "question": "同一个前缀状态，求数量、最长、最短分别存什么？",
+          "answer": [
+            "数量存频次；最长精确和存最早位置；最短非空精确和可存最新位置，并在更新当前前缀前先查询。不能把“最短精确和”与“最短至少为 k”混为一谈。"
+          ]
+        },
+        {
+          "question": "含负数时前缀和为什么仍然正确？",
+          "answer": [
+            "区间和由两个累计和相减是代数恒等式，不需要累计和单调。负数影响某些窗口或二分的前提，但不会破坏前缀和等式。"
+          ]
+        },
+        {
+          "question": "差分的 r+1 为什么要减去 x？",
+          "answer": [
+            "diff[l]+=x 会让从 l 往后的每个累计值都增加 x；为了只影响到 r，在 r+1 开始减回 x。使用 n+1 长度的差分数组，让最后一个位置之后也有可写的哨兵。"
+          ]
+        },
+        {
+          "question": "二维前缀查询为什么最后是加左上区域？",
+          "answer": [
+            "减去上方和左方时，它们共同的左上矩形被减了两遍，但只应减一次。因此加回一次，正好得到目标矩形。"
+          ]
+        },
+        {
+          "question": "差分适合哪些操作组合，不适合哪些？",
+          "answer": [
+            "适合很多区间增减后统一还原或一次性检查。若每次更新之后都要立即做区间求和，反复还原会很慢，可考虑树状数组或带懒标记的线段树。"
+          ]
+        },
+        {
+          "question": "不用除法算乘积如何处理零？",
+          "answer": [
+            "前后缀乘积自动排除当前位置。如果唯一的零在 i，answer[i] 的左右两段都不含零，可能非零；其他位置的某一侧包含零，结果为零。两个及以上零会使每个位置的左右部分至少包含一个零。"
+          ]
+        }
+      ]
+    },
+    "4": {
+      "before": [
+        {
+          "type": "text",
+          "title": "4.1 矩阵题先确认坐标、形状和访问成本",
+          "paragraphs": [
+            "通常 a[r][c] 表示第 r 行第 c 列，合法范围是 0≤r<R、0≤c<C。先判断外层为空，再读 a[0].size()。vector<vector<int>> 每一行独立存储，不保证所有行连接成一个连续内存块，因此不能直接对 &a[0][0] 做跨行平铺访问。",
+            "规则矩形要求每行列数一致。在线题经常保证这一点，通用函数则应检查或明确前提。方向数组统一使用 (dr,dc)，别把行列的偏移次序写反；必须先验证邻居坐标，再读取数组。"
+          ]
+        },
+        {
+          "type": "text",
+          "title": "4.2 螺旋遍历的不变量：四条边围出所有剩余元素",
+          "paragraphs": [
+            "top..bottom 与 left..right 始终构成尚未访问的矩形。按上、右、下、左依次走边，每走完一条就缩小对应边界。新边界可能已经交错，所以折返前需要重新判断。",
+            "原模板在上边走完后 ++top，右边走完后 --right。如果只剩一行，这时 top>bottom，下边不能再走；如果只剩一列，则 left>right，左边不能重复走。不要只依赖最外层 while，因为边界在这一轮内部已经改变。"
+          ]
+        },
+        {
+          "type": "table",
+          "title": "2×3 矩阵 [[1,2,3],[4,5,6]] 手推",
+          "columns": [
+            "方向",
+            "输出",
+            "更新后的边界"
+          ],
+          "rows": [
+            [
+              "上边",
+              "1、2、3",
+              "top 从 0 变 1"
+            ],
+            [
+              "右边",
+              "6",
+              "right 从 2 变 1"
+            ],
+            [
+              "下边",
+              "5、4",
+              "bottom 从 1 变 0"
+            ],
+            [
+              "左边",
+              "没有剩余行可走",
+              "top=1 已大于 bottom=0"
+            ],
+            [
+              "结束",
+              "总共 6 个元素，恰好一次",
+              "剩余矩形为空"
+            ]
+          ]
+        },
+        {
+          "type": "code",
+          "title": "4.3 顺时针旋转：转置，再反转每一行",
+          "file": "detail-rotate-matrix.cpp",
+          "code": "void rotateClockwise(vector<vector<int>>& a) {\n    int n = (int)a.size();\n    for (const auto& row : a)\n        if ((int)row.size() != n)\n            throw invalid_argument(\"square matrix required\");\n    for (int r = 0; r < n; ++r)\n        for (int col = r + 1; col < n; ++col)\n            swap(a[r][col], a[col][r]);\n    for (auto& row : a) reverse(row.begin(), row.end());\n}",
+          "paragraphs": [
+            "方阵顺时针旋转的坐标映射是 (r,c)→(c,n-1-r)。转置完成 (r,c)→(c,r)，每行反转再变为 (c,n-1-r)，组合后正好是目标。转置只遍历对角线一侧，每对元素交换一次；遍历整个矩阵会交换两次，抵消效果。",
+            "[[1,2],[3,4]] 先转置为 [[1,3],[2,4]]，再反转各行得到 [[3,1],[4,2]]。时间 O(n²)，额外空间 O(1)。长方形 R×C 旋转后是 C×R，通常创建新矩阵并写 result[c][R-1-r]=a[r][c]。"
+          ]
+        },
+        {
+          "type": "text",
+          "title": "4.4 矩阵置零：新写入的零不能冒充原始零",
+          "paragraphs": [
+            "若看到一个 0 就立刻清空整行整列，后面扫描时可能把新产生的 0 当成原始 0，扩散出多余的清零。例如 [[1,1,1],[1,0,1],[1,1,1]] 只应清中间行列，而非整个矩阵。",
+            "简单可靠版本先用行标记和列标记记录原始零，额外空间 O(R+C)。要压到 O(1)，可用第一行和第一列作为标记区，但它们本身是否需要清零必须提前用两个布尔变量保存。"
+          ]
+        },
+        {
+          "type": "code",
+          "title": "常数辅助空间置零：先记录，后应用",
+          "file": "detail-set-zeroes.cpp",
+          "code": "void setZeroes(vector<vector<int>>& a) {\n    if (a.empty()) return;\n    int rows = (int)a.size(), cols = (int)a[0].size();\n    for (const auto& row : a)\n        if ((int)row.size() != cols)\n            throw invalid_argument(\"rectangular matrix required\");\n    if (cols == 0) return;\n    bool firstRowZero = false, firstColZero = false;\n    for (int col = 0; col < cols; ++col)\n        if (a[0][col] == 0) firstRowZero = true;\n    for (int r = 0; r < rows; ++r)\n        if (a[r][0] == 0) firstColZero = true;\n    for (int r = 1; r < rows; ++r)\n        for (int col = 1; col < cols; ++col)\n            if (a[r][col] == 0) {\n                a[r][0] = 0;\n                a[0][col] = 0;\n            }\n    for (int r = 1; r < rows; ++r)\n        for (int col = 1; col < cols; ++col)\n            if (a[r][0] == 0 || a[0][col] == 0) a[r][col] = 0;\n    if (firstRowZero) fill(a[0].begin(), a[0].end(), 0);\n    if (firstColZero)\n        for (int r = 0; r < rows; ++r) a[r][0] = 0;\n}",
+          "paragraphs": [
+            "第一轮先保存首行/首列的原始状态；第二轮扫描内部并写标记；第三轮只根据标记清空内部；最后再处理首行和首列。顺序保证标记在用完之前不会被整体清空。时间 O(RC)，额外空间 O(1)。"
+          ]
+        },
+        {
+          "type": "code",
+          "title": "4.5 每行每列有序：从右上角排除一行或一列",
+          "file": "detail-search-matrix.cpp",
+          "code": "bool searchSortedMatrix(const vector<vector<int>>& a, int target) {\n    if (a.empty()) return false;\n    int rows = (int)a.size(), cols = (int)a[0].size();\n    for (const auto& row : a)\n        if ((int)row.size() != cols)\n            throw invalid_argument(\"rectangular matrix required\");\n    int r = 0, col = cols - 1;\n    while (r < rows && col >= 0) {\n        if (a[r][col] == target) return true;\n        if (a[r][col] > target) --col;\n        else ++r;\n    }\n    return false;\n}",
+          "paragraphs": [
+            "前提是每行从左到右非降序、每列从上到下非降序。右上角值过大，则该列下方只会更大，排除这一列；值过小，则该行左方只会更小，排除这一行。每步至少删一行或一列，总时间 O(R+C)，额外空间 O(1)。",
+            "“每行每列有序”不保证按行拼接后有序。例如 [[1,4],[2,5]] 的平铺序列 [1,4,2,5] 无序，不能直接整体二分。只有进一步保证下一行首元素大于等于上一行尾元素时，才具备按行展开后二分的前提。"
+          ]
+        },
+        {
+          "type": "code",
+          "title": "4.6 岛屿数量：把网格当成隐式图",
+          "file": "detail-islands.cpp",
+          "code": "int countIslands(vector<vector<char>>& grid) {\n    if (grid.empty()) return 0;\n    int rows = (int)grid.size(), cols = (int)grid[0].size();\n    for (const auto& row : grid)\n        if ((int)row.size() != cols)\n            throw invalid_argument(\"rectangular grid required\");\n    const int dr[4] = {-1, 1, 0, 0};\n    const int dc[4] = {0, 0, -1, 1};\n    int count = 0;\n    for (int r = 0; r < rows; ++r)\n        for (int col = 0; col < cols; ++col) {\n            if (grid[r][col] != '1') continue;\n            ++count;\n            queue<pair<int, int>> pending;\n            grid[r][col] = '0'; // 入队时即标记\n            pending.push({r, col});\n            while (!pending.empty()) {\n                auto [x, y] = pending.front();\n                pending.pop();\n                for (int dir = 0; dir < 4; ++dir) {\n                    int nx = x + dr[dir], ny = y + dc[dir];\n                    if (nx < 0 || nx >= rows || ny < 0 || ny >= cols)\n                        continue;\n                    if (grid[nx][ny] != '1') continue;\n                    grid[nx][ny] = '0';\n                    pending.push({nx, ny});\n                }\n            }\n        }\n    return count;\n}",
+          "paragraphs": [
+            "每发现一个未访问的陆地，就启动一次 BFS 并消去整个四邻接连通块，所以启动次数就是岛屿数。下标 (r,c) 是图节点，不需要真的创建邻接表。时间 O(RC)，队列辅助空间最坏 O(RC)。代码会修改输入；若禁止修改，需单独 visited。",
+            "必须入队时标记，否则同一陆地可能被多个邻居重复加入。对角接触是否连通取决于题目：本例只有上下左右四个方向，不能擅自加入斜方向。BFS 队列避免了大网格递归 DFS 的调用栈过深问题。"
+          ]
+        }
+      ],
+      "after": [
+        {
+          "type": "text",
+          "title": "矩阵题的检查顺序",
+          "paragraphs": [
+            "先确认矩阵形状和空值，再确认行列下标范围，然后明确当前访问会不会修改未来依赖的信息。螺旋遍历依赖未访问边界，旋转依赖成对交换不重复，置零依赖原始标记，网格搜索依赖访问状态——每类题的不变量不同。",
+            "复杂度要用 R 与 C 表述：遍历矩形一般是 O(RC)，不是笼统的 O(n²)。若输出全部元素，结果本身占 O(RC)，应与辅助空间分开报告。"
+          ]
+        }
+      ],
+      "answers": [
+        {
+          "question": "只剩一行或一列时，螺旋遍历如何避免重复？",
+          "answer": [
+            "每走完一条边就立即收紧对应边界；下边开始前检查 top≤bottom，左边开始前检查 left≤right，同时循环本身使用最新行界。外层开始时合法，不代表走完两条边后仍有剩余矩形。"
+          ]
+        },
+        {
+          "question": "旋转为什么只交换上三角区域？",
+          "answer": [
+            "转置交换 (r,c) 和 (c,r)。如果上下三角都遍历，第一次交换后第二次又交换回来。只遍历 c>r，恰好覆盖每一对非对角元素一次。"
+          ]
+        },
+        {
+          "question": "矩阵置零为什么最后处理首行和首列？",
+          "answer": [
+            "它们在中途是标记存储区；提前清空会把所有行/列误标成需要置零。先保存首行首列原始零状态，等内部清理完再用这两个布尔值收尾。"
+          ]
+        },
+        {
+          "question": "vector<vector<int>> 可以视为平铺数组吗？",
+          "answer": [
+            "逻辑上可把线性下标 i 映射为行 i/C、列 i%C，但物理上各行未必相邻，因此不能用单个 int* 无条件跨越行访问。整体二分还需要额外的全局有序性。"
+          ]
+        },
+        {
+          "question": "为什么网格搜索在入队时标记，而不是出队时？",
+          "answer": [
+            "入队即标记让每个节点最多入队一次。若出队才标记，它等待期间可能被多个邻居反复加入，增加处理与内存，甚至让某些计数逻辑重复执行。"
+          ]
+        },
+        {
+          "question": "每行每列都有序，为什么选择右上角而非左上角？",
+          "answer": [
+            "右上角向左不增、向下不减，一次比较能排除一整列或一整行。左上角的右侧和下侧都不小于它，目标更大时无法仅凭一次比较决定排除哪一个方向。"
+          ]
+        }
+      ]
+    }
+  },
+  "outro": [
+    {
+      "type": "text",
+      "title": "综合例题：相同的“区间和”，目标一变算法就变",
+      "paragraphs": [
+        "现在求“和恰好等于 k 的连续子数组数量”，允许负数、零和重复前缀。先从暴力出发：枚举左端点 l，再向右累加；每增加一个元素只更新当前和，不重新求整段和。这样是 O(n²)，而不是三层重算的 O(n³)。",
+        "优化的关键是 pre[end]-pre[start]=k。扫描到 end 时，所有合法左前缀都已见过，只需查询 pre[end]-k 的频次。于是平均时间降到 O(n)，辅助空间 O(n)。一条方程就解释了查询键、频次值、空前缀初始化和更新顺序四个实现细节。",
+        "若改为“最短和至少 k 且全为正数”，使用本章窗口；若允许负数，则需要前缀和+单调队列等方法；若改为“很多次指定区间查询”，使用前缀数组直接相减。看清题目的目标和限制，比看到关键词就套模板更重要。"
+      ]
+    },
+    {
+      "type": "table",
+      "title": "对照测试要覆盖哪些输入？",
+      "columns": [
+        "输入 / k",
+        "预期数量",
+        "用于发现什么"
+      ],
+      "rows": [
+        [
+          "[] / 0",
+          "0",
+          "不能把空子数组算成一个解"
+        ],
+        [
+          "[0] / 0",
+          "1",
+          "先插入后查询导致多算空区间"
+        ],
+        [
+          "[0,0,0] / 0",
+          "6",
+          "只保存是否出现，而未记录频次"
+        ],
+        [
+          "[1,-1,1] / 1",
+          "3",
+          "含负数和重复前缀"
+        ],
+        [
+          "[1,1,1] / 2",
+          "2",
+          "一般连续区间"
+        ],
+        [
+          "[1000000000,1000000000,1000000000] / 3000000000",
+          "1",
+          "累计值超出常见 32 位 int"
+        ]
+      ]
+    },
+    {
+      "type": "code",
+      "title": "可独立运行：暴力基线、边界断言与随机差分测试",
+      "file": "detail-subarray-tests.cpp",
+      "code": "long long bruteCount(const vector<int>& a, long long k) {\n    long long answer = 0;\n    for (int left = 0; left < (int)a.size(); ++left) {\n        long long sum = 0;\n        for (int right = left; right < (int)a.size(); ++right) {\n            sum += a[right];\n            if (sum == k) ++answer;\n        }\n    }\n    return answer;\n}\nlong long prefixCount(const vector<int>& a, long long k) {\n    unordered_map<long long, long long> frequency;\n    frequency[0] = 1;\n    long long prefix = 0, answer = 0;\n    for (int x : a) {\n        prefix += x;\n        auto it = frequency.find(prefix - k);\n        if (it != frequency.end()) answer += it->second;\n        ++frequency[prefix];\n    }\n    return answer;\n}\nint main() {\n    assert(prefixCount({}, 0) == 0);\n    assert(prefixCount({0}, 0) == 1);\n    assert(prefixCount({0, 0, 0}, 0) == 6);\n    assert(prefixCount({1, -1, 1}, 1) == 3);\n    assert(prefixCount({1, 1, 1}, 2) == 2);\n    assert(prefixCount({1000000000, 1000000000, 1000000000},\n                       3000000000LL) == 1);\n\n    mt19937 rng(20260918);\n    uniform_int_distribution<int> length(0, 12), value(-3, 3), target(-8, 8);\n    for (int trial = 0; trial < 1000; ++trial) {\n        vector<int> a(length(rng));\n        for (int& x : a) x = value(rng);\n        int k = target(rng);\n        long long slow = bruteCount(a, k), fast = prefixCount(a, k);\n        if (slow != fast) {\n            cerr << \"Mismatch: k=\" << k << \", input:\";\n            for (int x : a) cerr << ' ' << x;\n            cerr << \"\\nbrute=\" << slow << \", prefix=\" << fast << '\\n';\n            return 1;\n        }\n    }\n    cout << \"boundary and differential checks passed\\n\";\n}",
+      "paragraphs": [
+        "下载后可用 g++ -std=c++17 -Wall -Wextra detail-subarray-tests.cpp -o subarray-tests 编译，再运行程序。固定随机种子便于复现；小数组上的暴力结果可作为优化算法的基线。assert 在定义 NDEBUG 后会被禁用，但随机差分中的显式比较仍会执行。",
+        "这是一份供运行的验证程序；若当前环境没有 C++ 编译器，提供代码和预期结果不代表已经完成编译运行。差分测试能暴露大量错误，也仍不能代替对任意输入的正确性证明。"
+      ]
+    },
+    {
+      "type": "text",
+      "title": "练习顺序：先掌握一个模型，再改变一个条件",
+      "paragraphs": [
+        "第一轮：26 有序数组去重、283 移动零、209 长度最小的子数组、560 和为 K 的子数组、54 螺旋矩阵。第二轮：15 三数之和、76 最小覆盖子串、438 字母异位词、304 二维区域和、73 矩阵置零。",
+        "第三轮做条件变化：把正数改成允许负数，把求数量改成求最长，把静态数组改成有更新，把方阵改成长方形，把原地修改改成不能修改输入。每次先指出哪条证明失效，再选择新算法。进阶字符串匹配如 KMP 可以后续专题学习，不是本章窗口与频次模板的直接替代。"
+      ]
+    },
+    {
+      "type": "qa",
+      "title": "章末自测：把规则还原成理由",
+      "items": [
+        {
+          "question": "连续子数组问题先排序再做双指针，有什么风险？",
+          "answer": [
+            "排序会改变原始相邻关系。例如原数组中不相邻的元素排序后可能相邻，从而得到不属于原题的“连续区间”。只有问题不关心原顺序，或题目本来有序时，才能据此使用排序。"
+          ]
+        },
+        {
+          "question": "把最短窗口更新答案移到 while 外会怎样？",
+          "answer": [
+            "收缩循环结束时，窗口通常已经不满足目标。此时记录长度会把非法窗口作为答案。正确做法是每次仍合法时先记录，再移除左端。"
+          ]
+        },
+        {
+          "question": "“含负数就用前缀和+哈希”总是完整答案吗？",
+          "answer": [
+            "不是。前缀和是表示方式，后续结构由目标决定。精确和计数可查频次，精确和最长可存最早位置，最短和至少 k 往往需要单调队列。"
+          ]
+        },
+        {
+          "question": "三数之和输入 [0,0,0,0] 应输出几个数值三元组？",
+          "answer": [
+            "只输出一个 [0,0,0]。虽然有多个下标组合，但本题通常要求不同数值三元组；若题意改为统计下标组合，答案和去重方法都要改变。"
+          ]
+        },
+        {
+          "question": "异位词串 abab 与 aabb 相同吗？回文判断呢？",
+          "answer": [
+            "它们字符频次相同，因此互为异位词；但回文要求位置对称，不能靠频次判断。这体现出集合、次数、顺序是不同的信息。"
+          ]
+        },
+        {
+          "question": "差分的更新和前缀和的查询为什么都只涉及端点？",
+          "answer": [
+            "区间加法在差分中只改变进入和离开区间时的跳变量；区间求和在前缀中是累计量相减。它们都利用了区间内部重复贡献相互抵消，但服务的操作方向相反。"
+          ]
+        },
+        {
+          "question": "把 [[1,4],[2,5]] 平铺后二分为什么错误？",
+          "answer": [
+            "按行平铺为 [1,4,2,5]，并非有序。只有每行、每列有序不足以支撑整体二分；可从右上角按行列单调性排除。"
+          ]
+        },
+        {
+          "question": "看完第二章，应能不看答案写出哪些内容？",
+          "answer": [
+            "有序去重、移动零、三数之和、固定/可变窗口、最小覆盖、前缀和计数、差分更新、二维前缀查询、螺旋与旋转、矩阵置零。对网格搜索至少说清邻接规则、标记时机和是否修改输入。"
+          ]
+        }
+      ]
+    }
+  ]
+}
