@@ -1,0 +1,985 @@
+{
+  "intro": [
+    {
+      "type": "text",
+      "title": "读完这一章，要能说明三种“出结构”的理由",
+      "paragraphs": [
+        "普通栈弹出：最近进入的任务已完成，例如右括号匹配左括号。单调栈弹出：某个待解决位置的答案或边界已确定。单调队列弹出有两类：队首已过期，或者队尾被更优且更晚过期的候选支配。先说清理由，再写比较符。",
+        "本章沿用原来的四个主小节，将题型按不变量、手推、实现、反例与追问展开。所有下标示例约定数组长度可用 int 表示；整数运算还需满足各题注明的范围。C++ 下载文件独立使用，不能直接拼接重名函数。"
+      ]
+    },
+    {
+      "type": "table",
+      "title": "题型识别：先判断要维护什么",
+      "columns": [
+        "题目要求",
+        "维护的状态",
+        "删除依据",
+        "典型题"
+      ],
+      "rows": [
+        [
+          "嵌套匹配、后缀求值",
+          "尚未完成的上下文或操作数",
+          "最近的任务被完成",
+          "20、150、224"
+        ],
+        [
+          "右侧第一个更大/更小",
+          "尚未得到答案的下标",
+          "当前元素确定旧下标的答案",
+          "739、503"
+        ],
+        [
+          "以某高度为瓶颈的最宽区间",
+          "高度及未确定的左右边界",
+          "更矮柱子终止延伸",
+          "84"
+        ],
+        [
+          "连续窗口最大/最小",
+          "仍可能获胜的候选下标",
+          "过期或被支配",
+          "239、1438"
+        ],
+        [
+          "含负数、和至少为 K 的最短区间",
+          "单调前缀和下标",
+          "答案已结算或前缀被支配",
+          "862"
+        ],
+        [
+          "队列或栈的接口设计",
+          "完整的元素逻辑顺序",
+          "遵守 FIFO 或 LIFO",
+          "232、225、622"
+        ]
+      ]
+    },
+    {
+      "type": "text",
+      "title": "建议学习顺序与面试口述",
+      "paragraphs": [
+        "先独立写括号匹配、最小栈和两栈队列，再写每日温度与窗口最大值。之后攻克柱状图、接雨水，最后学习子数组最小值贡献与前缀和单调队列。后两项是进阶，不应挤占基础模板练习。",
+        "每题用四句话说明：结构里存什么；从底到顶或从头到尾满足什么；什么事件让元素离开；离开以后为什么再也不需要它。最后补上空输入、相等值和整数溢出的检查。"
+      ]
+    }
+  ],
+  "sections": {
+    "1": {
+      "before": [
+        {
+          "type": "text",
+          "title": "1.1 栈不是数组，而是一种访问顺序",
+          "paragraphs": [
+            "栈只允许访问最近压入、尚未删除的元素；队列访问最早进入的元素；双端队列允许两端操作。C++ 的 stack、queue 是容器适配器，没有任意下标访问接口。vector 可以模拟栈，deque 可以作为普通双端队列。",
+            "调用 top/front/back 前必须判空。标准 stack::pop 和 queue::pop 不返回元素，正确写法是先读取再弹出。vector::push_back 是均摊 O(1)，扩容的单次代价可以是 O(n)，不要与逻辑算法的入栈次数混淆。"
+          ]
+        },
+        {
+          "type": "table",
+          "title": "1.2 括号匹配的前缀不变量",
+          "columns": [
+            "已读字符",
+            "从栈底到栈顶",
+            "判断",
+            "原因"
+          ],
+          "rows": [
+            [
+              "(",
+              "(",
+              "继续",
+              "存在一个未关闭的圆括号"
+            ],
+            [
+              "([",
+              "( [",
+              "继续",
+              "方括号必须先闭合"
+            ],
+            [
+              "([]",
+              "(",
+              "继续",
+              "右方括号与栈顶配对"
+            ],
+            [
+              "([])",
+              "空",
+              "扫描结束后成功",
+              "所有左括号都已关闭"
+            ],
+            [
+              "([)",
+              "( [",
+              "立即失败",
+              "不能跳过栈顶匹配更早的左括号"
+            ],
+            [
+              ")",
+              "空",
+              "立即失败",
+              "前缀里右括号多于可匹配左括号"
+            ]
+          ]
+        },
+        {
+          "type": "text",
+          "title": "1.3 为什么一个计数器不够",
+          "paragraphs": [
+            "只有一种括号时，可以让左括号 +1、右括号 -1，每个前缀非负且最终为零即可。存在多种括号时，计数无法记住嵌套类型，([)] 的各种数量都相等却无效。栈保存的是顺序信息，而不只是数量。",
+            "基础代码明确只接受六种括号字符，因此字母、数字、空格会被拒绝。若题目要求检查源代码里的括号，还需要处理字符串字面量、转义与注释，不能简单跳过所有非括号字符就声称完成语法分析。"
+          ]
+        },
+        {
+          "type": "code",
+          "title": "1.4 最小栈：每一层保存截至该层的最小值",
+          "file": "detail-min-stack.cpp",
+          "code": "class MinStack {\n    stack<pair<int, int>> st; // {value, minimum so far}\npublic:\n    bool empty() const { return st.empty(); }\n    void push(int x) {\n        int mn = st.empty() ? x : min(x, st.top().second);\n        st.push({x, mn});\n    }\n    void pop() {\n        if (st.empty()) throw out_of_range(\"empty stack\");\n        st.pop();\n    }\n    int top() const {\n        if (st.empty()) throw out_of_range(\"empty stack\");\n        return st.top().first;\n    }\n    int getMin() const {\n        if (st.empty()) throw out_of_range(\"empty stack\");\n        return st.top().second;\n    }\n};",
+          "paragraphs": [
+            "例如 push(2), push(1), push(1)：三层最小值是 2,1,1，弹出一次后仍为 1，再弹一次才恢复为 2。四种操作均为 O(1)，总空间 O(n)。两份同步栈本质相同；若辅助栈只存下降点，必须保存重复最小值或计数。"
+          ]
+        },
+        {
+          "type": "code",
+          "title": "1.5 逆波兰表达式：注意左右操作数不能交换",
+          "file": "detail-rpn.cpp",
+          "code": "long long evalRPN(const vector<string>& tokens) {\n    vector<long long> st;\n    for (const string& t : tokens) {\n        bool op = t == \"+\" || t == \"-\" || t == \"*\" || t == \"/\";\n        if (!op) {\n            size_t used = 0;\n            long long x = stoll(t, &used);\n            if (used != t.size()) throw invalid_argument(\"bad number\");\n            st.push_back(x);\n            continue;\n        }\n        if (st.size() < 2) throw invalid_argument(\"missing operand\");\n        long long rhs = st.back(); st.pop_back();\n        long long lhs = st.back(); st.pop_back();\n        if (t == \"+\") st.push_back(lhs + rhs);\n        else if (t == \"-\") st.push_back(lhs - rhs);\n        else if (t == \"*\") st.push_back(lhs * rhs);\n        else {\n            if (rhs == 0) throw invalid_argument(\"division by zero\");\n            if (lhs == LLONG_MIN && rhs == -1)\n                throw overflow_error(\"division overflow\");\n            st.push_back(lhs / rhs);\n        }\n    }\n    if (st.size() != 1) throw invalid_argument(\"invalid expression\");\n    return st.back();\n}",
+          "paragraphs": [
+            "token 已由调用者切分；-11 是一个数字，不是减号。约定加减乘及所有中间结果均在 long long 范围内；这不是任意精度计算器。C++ 整数除法向零截断，-7/3 为 -2。时间 O(所有 token 的总字符数)，辅助空间 O(token 数)。"
+          ]
+        },
+        {
+          "type": "table",
+          "title": "1.6 后缀求值手推：4 13 5 / -",
+          "columns": [
+            "输入",
+            "数值栈（底→顶）",
+            "动作"
+          ],
+          "rows": [
+            [
+              "4",
+              "4",
+              "数字入栈"
+            ],
+            [
+              "13",
+              "4,13",
+              "数字入栈"
+            ],
+            [
+              "5",
+              "4,13,5",
+              "数字入栈"
+            ],
+            [
+              "/",
+              "4,2",
+              "rhs=5，lhs=13，13/5=2"
+            ],
+            [
+              "-",
+              "2",
+              "rhs=2，lhs=4，4-2=2"
+            ]
+          ]
+        }
+      ],
+      "after": [
+        {
+          "type": "text",
+          "title": "1.7 中缀表达式：先约定语法，再谈优先级",
+          "paragraphs": [
+            "两栈法分别保存数字与运算符。遇到新运算符时，先计算栈顶优先级更高的运算；相同优先级还要看结合性。+、-、*、/ 是左结合，8-3-2 应为 (8-3)-2=3。遇左括号建立屏障，遇右括号计算到屏障。",
+            "一元负号不能无条件替换为 0-：例如 2*-3 会被破坏。下面采用递归下降语法：expression = term {(+|-) term}；term = unary {(*|/) unary}；unary = (+|-) unary | primary；primary = number | '(' expression ')'。递归调用栈保存尚未完成的子表达式，因此也属于栈的应用。"
+          ]
+        },
+        {
+          "type": "code",
+          "title": "1.8 支持括号、一元正负号与优先级的计算器",
+          "file": "detail-calculator.cpp",
+          "code": "class Calculator {\n    string s;\n    size_t pos = 0;\n    void spaces() { while (pos < s.size() && s[pos] == ' ') ++pos; }\n    bool take(char c) {\n        spaces();\n        if (pos < s.size() && s[pos] == c) { ++pos; return true; }\n        return false;\n    }\n    long long primary() {\n        if (take('(')) {\n            long long x = expression();\n            if (!take(')')) throw invalid_argument(\"missing )\");\n            return x;\n        }\n        spaces();\n        if (pos == s.size() || s[pos] < '0' || s[pos] > '9')\n            throw invalid_argument(\"expected number\");\n        long long x = 0;\n        while (pos < s.size() && s[pos] >= '0' && s[pos] <= '9') {\n            int digit = s[pos++] - '0';\n            if (x > (LLONG_MAX - digit) / 10)\n                throw overflow_error(\"literal overflow\");\n            x = x * 10 + digit;\n        }\n        return x;\n    }\n    long long unary() {\n        if (take('+')) return unary();\n        if (take('-')) return -unary();\n        return primary();\n    }\n    long long term() {\n        long long x = unary();\n        for (;;) {\n            if (take('*')) x *= unary();\n            else if (take('/')) {\n                long long y = unary();\n                if (y == 0) throw invalid_argument(\"division by zero\");\n                if (x == LLONG_MIN && y == -1)\n                    throw overflow_error(\"division overflow\");\n                x /= y;\n            } else return x;\n        }\n    }\n    long long expression() {\n        long long x = term();\n        for (;;) {\n            if (take('+')) x += term();\n            else if (take('-')) x -= term();\n            else return x;\n        }\n    }\npublic:\n    long long evaluate(const string& input) {\n        s = input; pos = 0;\n        long long result = expression();\n        spaces();\n        if (pos != s.size()) throw invalid_argument(\"trailing token\");\n        return result;\n    }\n};",
+          "paragraphs": [
+            "示例：2*-3 + (8-3-2) 得 -3；-(2+3)*4 得 -20；1--2 得 3。支持十进制非负整数字面量、ASCII 空格和所列运算符，不支持小数、变量、幂、隐式乘法。",
+            "前提：所有算术中间结果（包括一元取负）均可用 long long 表示，数字字面量不超过 LLONG_MAX；不直接支持把 9223372036854775808 作为字面量再取负。此实现检测部分格式错误、字面量溢出与除零，不是全范围安全的生产解析器。扫描 O(n)，包含输入副本的空间 O(n)，递归深度最坏 O(n)，极深嵌套可能导致调用栈溢出。"
+          ]
+        },
+        {
+          "type": "text",
+          "title": "1.9 显式栈模拟递归，需要保存“执行到哪一步”",
+          "paragraphs": [
+            "仅把节点放进栈常能完成前序遍历，但后序、回溯与表达式求值还要记阶段。可以保存 (node, expanded)：第一次取出先压入 (node,true)，再按逆访问顺序压孩子；第二次取出时合并结果。",
+            "栈帧应包含递归函数之后仍会用到的局部信息。把递归改成栈通常只是把系统栈空间转移到堆上，不会自动从 O(h) 变成 O(1)。完整树遍历将在树章节展开。"
+          ]
+        }
+      ],
+      "answers": [
+        {
+          "question": "为什么最终栈空还不够判断括号有效？",
+          "answer": [
+            "还要保证每个扫描前缀都合法。) ( 的最终计数可能为零，但第一个字符没有可匹配的左括号。多种括号还必须每次匹配栈顶类型，不能只查某种左括号是否出现过。"
+          ]
+        },
+        {
+          "question": "最小栈能不能只记录严格变小的值？",
+          "answer": [
+            "可以，但必须为重复最小值记录次数；否则 push(1), push(1), pop() 会误删仍有效的最小值。更易写对的方法是每层同步保存最小值，或者辅助栈在 x<=当前最小值时入栈，并在相等弹出时同步弹出。"
+          ]
+        },
+        {
+          "question": "为什么逆波兰表达式先弹出来的是右操作数？",
+          "answer": [
+            "后缀式按左表达式、右表达式、运算符排列，右表达式的结果最后入栈。减法与除法不可交换，5 2 - 必须算 5-2 而不是 2-5。"
+          ]
+        },
+        {
+          "question": "如何区分一元负号与二元减号？",
+          "answer": [
+            "在期待一个操作数的位置出现的 - 是一元运算，例如开头、左括号后或另一个二元运算符之后。递归下降把这个上下文交给 unary；两栈法则可设置 expectOperand 并将一元运算记成独立符号。"
+          ]
+        },
+        {
+          "question": "非括号字符是忽略还是报错？",
+          "answer": [
+            "由接口约定决定。本节基础括号函数报错式返回 false；表达式解析器允许空格，拒绝未知 token。忽略字母不等于能够解析程序源代码，字符串里的括号也不应直接计入。"
+          ]
+        },
+        {
+          "question": "空栈操作应该返回 -1 吗？",
+          "answer": [
+            "只有题目明确约定 -1 不可能是合法数据时才可这样做。通用接口用异常、optional 或成功标记区分空状态；本节示例抛出 out_of_range。不要直接对空栈调用 top。"
+          ]
+        }
+      ]
+    },
+    "2": {
+      "before": [
+        {
+          "type": "text",
+          "title": "2.1 从 O(n²) 扫描到“只保存未解决者”",
+          "paragraphs": [
+            "每日温度的暴力做法对每个 i 向右扫描。重复工作来自：很多位置都在等待同一个更高温度。正向扫描时，把还没有答案的下标压栈；当前值比栈顶大，就确定栈顶的答案，继续检查新的栈顶。",
+            "不变量：下标从底到顶递增，温度非递增；每个下标都没有在已扫描部分找到更高温度。弹出 j 时，i 是右侧第一个更高值，因为如果 j 与 i 之间已有更高值，j 早已被弹出。这里不仅证明了“更高”，还证明了“第一个”。"
+          ]
+        },
+        {
+          "type": "table",
+          "title": "2.2 每日温度完整手推 [73,71,72,75]",
+          "columns": [
+            "位置与值",
+            "进入前栈（下标:值）",
+            "弹出与答案",
+            "进入后栈"
+          ],
+          "rows": [
+            [
+              "0:73",
+              "空",
+              "无",
+              "0:73"
+            ],
+            [
+              "1:71",
+              "0:73",
+              "无",
+              "0:73,1:71"
+            ],
+            [
+              "2:72",
+              "0:73,1:71",
+              "弹 1，等待 2-1=1",
+              "0:73,2:72"
+            ],
+            [
+              "3:75",
+              "0:73,2:72",
+              "弹 2 得 1；弹 0 得 3",
+              "3:75"
+            ],
+            [
+              "扫描结束",
+              "3:75",
+              "位置 3 没有答案，保持 0",
+              "最终 [3,1,1,0]"
+            ]
+          ]
+        },
+        {
+          "type": "table",
+          "title": "2.3 比较符对照：先固定扫描方向与语义",
+          "columns": [
+            "目标",
+            "扫描与弹出条件",
+            "留下的关系",
+            "答案取得时机"
+          ],
+          "rows": [
+            [
+              "右侧第一个严格更大",
+              "左→右，a[i]>a[top]",
+              "底→顶非递增",
+              "弹出 top 时答案是 i"
+            ],
+            [
+              "右侧第一个大于等于",
+              "左→右，a[i]>=a[top]",
+              "底→顶严格递减",
+              "弹出 top 时答案是 i"
+            ],
+            [
+              "左侧第一个严格更小",
+              "左→右，a[top]>=a[i]",
+              "底→顶严格递增",
+              "清理后栈顶为答案"
+            ],
+            [
+              "右侧第一个严格更大（反向）",
+              "右→左，a[top]<=a[i]",
+              "底→顶严格递减",
+              "清理后栈顶为答案"
+            ]
+          ]
+        },
+        {
+          "type": "text",
+          "title": "2.4 相等元素为什么没有唯一模板",
+          "paragraphs": [
+            "正向求右侧第一个严格更大时，相等不能结算，所以用 >。反向求同一个问题时，相等的右侧候选不够大且被更近的当前值遮挡，所以清理时用 <=。可见“求严格更大就用 >”只有在特定扫描模板里成立。",
+            "每次写 while 之前先写清楚：被弹出者是一个已找到答案的查询，还是一个被淘汰的候选？这两个视角会产生不同的比较符。"
+          ]
+        },
+        {
+          "type": "code",
+          "title": "2.5 左侧第一个严格更小：先清理，再读取栈顶",
+          "file": "detail-previous-smaller.cpp",
+          "code": "vector<int> previousSmaller(const vector<int>& a) {\n    vector<int> left(a.size(), -1), st;\n    for (int i = 0; i < (int)a.size(); ++i) {\n        while (!st.empty() && a[st.back()] >= a[i]) st.pop_back();\n        if (!st.empty()) left[i] = st.back();\n        st.push_back(i);\n    }\n    return left;\n}",
+          "paragraphs": [
+            "返回下标，-1 表示不存在。被弹出的值不比当前值小，对将来的位置而言，当前元素更近且不大于它，旧候选不会更优。时间 O(n)、空间 O(n)。"
+          ]
+        },
+        {
+          "type": "code",
+          "title": "2.6 循环数组的下一个更大元素",
+          "file": "detail-circular-next.cpp",
+          "code": "vector<int> nextGreaterCircular(const vector<int>& a) {\n    int n = (int)a.size();\n    vector<int> answer(n, -1), st;\n    for (int pass = 0; pass < 2; ++pass) {\n        for (int i = 0; i < n; ++i) {\n            while (!st.empty() && a[i] > a[st.back()]) {\n                answer[st.back()] = a[i];\n                st.pop_back();\n            }\n            if (pass == 0) st.push_back(i);\n        }\n    }\n    return answer;\n}",
+          "paragraphs": [
+            "第二遍只结算，不重复入栈，避免给同一原位置创建多份任务。相同值不会让元素匹配自己。[1,2,1] 返回 [2,-1,2]。空数组自然返回空；两遍扫描仍为 O(n)，空间 O(n)。这里的 -1 按题目约定表示没有更大值，若需要区分合法 -1，可改为返回下标或 optional。"
+          ]
+        }
+      ],
+      "after": [
+        {
+          "type": "text",
+          "title": "2.7 柱状图最大矩形：以被弹出的高度作为瓶颈",
+          "paragraphs": [
+            "固定某根柱子作为矩形最低高度，就应尽量向左右扩展到更矮的柱子之前。扫描到比栈顶更矮的柱子 i 时，栈顶 j 的右边界已经确定；弹出 j 后的新栈顶 L 是本实现的左侧阻挡位置，矩形覆盖 L+1 到 i-1，宽度 i-L-1。",
+            "下面采用严格大于才弹出的策略，所以栈内高度非递减。存在相等柱子时，L 可能与 h[j] 相等而非严格更矮，因此某个 j 的候选矩形未必是它能覆盖的最大范围。但是更左的等高柱子最终会覆盖整段，最大面积仍不会遗漏。不要把本实现的 L 一律称为“左侧第一个严格更小”。"
+          ]
+        },
+        {
+          "type": "code",
+          "title": "2.8 柱状图最大矩形：虚拟尾柱与边界宽度",
+          "file": "detail-histogram.cpp",
+          "code": "long long largestRectangle(const vector<int>& h) {\n    int n = (int)h.size();\n    vector<int> st;\n    long long best = 0;\n    for (int i = 0; i <= n; ++i) {\n        int current = i == n ? 0 : h[i];\n        while (!st.empty() && h[st.back()] > current) {\n            int j = st.back(); st.pop_back();\n            int left = st.empty() ? -1 : st.back();\n            best = max(best, 1LL * h[j] * (i - left - 1));\n        }\n        if (i < n) st.push_back(i);\n    }\n    return best;\n}",
+          "paragraphs": [
+            "前提：高度非负，面积在 long long 内。尾部虚拟高度 0 负责结算所有正高度柱子，剩余零高度不影响答案，不修改原数组。时间 O(n)、空间 O(n)。空数组返回 0。"
+          ]
+        },
+        {
+          "type": "table",
+          "title": "2.9 最大矩形手推 [2,1,5,6,2,3]",
+          "columns": [
+            "事件",
+            "被弹高度",
+            "新左边界 L",
+            "宽度 i-L-1",
+            "面积"
+          ],
+          "rows": [
+            [
+              "i=1，高度1",
+              "2",
+              "-1",
+              "1",
+              "2"
+            ],
+            [
+              "i=4，高度2",
+              "6",
+              "2",
+              "1",
+              "6"
+            ],
+            [
+              "i=4，高度2",
+              "5",
+              "1",
+              "2",
+              "10"
+            ],
+            [
+              "i=6，虚拟高度0",
+              "3",
+              "4",
+              "1",
+              "3"
+            ],
+            [
+              "i=6，继续弹出",
+              "2",
+              "1",
+              "4",
+              "8"
+            ],
+            [
+              "i=6，继续弹出",
+              "1",
+              "-1",
+              "6",
+              "6"
+            ]
+          ]
+        },
+        {
+          "type": "text",
+          "title": "2.10 接雨水与最大矩形的不同",
+          "paragraphs": [
+            "最大矩形以一根柱子为高度瓶颈、计算连续横向范围；接雨水弹出的柱子代表凹槽底部。若弹出底部后栈空，则没有左墙，不能蓄水。有左墙 L 与当前右墙 i 时，新补的一层水高度为 min(h[L],h[i])-h[bottom]，宽度 i-L-1。",
+            "这一层不包含左右墙，且与此前累计的更低水层不重叠。例如 [3,0,1,3] 先在下标 2 结算底部的一层 1，再在下标 3 结算宽度 2、高度 2 的上层水，共 5。也可用左右最大值或双指针，后者能做到 O(1) 辅助空间。"
+          ]
+        },
+        {
+          "type": "code",
+          "title": "2.11 单调栈分层计算雨水",
+          "file": "detail-rainwater.cpp",
+          "code": "long long trapRain(const vector<int>& h) {\n    vector<int> st;\n    long long water = 0;\n    for (int i = 0; i < (int)h.size(); ++i) {\n        while (!st.empty() && h[i] > h[st.back()]) {\n            int bottom = st.back(); st.pop_back();\n            if (st.empty()) break;\n            int left = st.back();\n            long long depth = (long long)min(h[left], h[i]) - h[bottom];\n            water += depth * (i - left - 1);\n        }\n        st.push_back(i);\n    }\n    return water;\n}",
+          "paragraphs": [
+            "高度非负，结果假设在 long long 内；时间 O(n)、空间 O(n)。长度不足 3 时自然返回 0。"
+          ]
+        },
+        {
+          "type": "text",
+          "title": "2.12 贡献法进阶：子数组最小值之和",
+          "paragraphs": [
+            "不枚举所有子数组，而计算每个 a[i] 被指定为最小值的子数组数。若左边界 L 是左侧第一个严格更小，右边界 R 是右侧第一个小于等于，则左端点可选 L+1..i，共 i-L 个，右端点可选 i..R-1，共 R-i 个，贡献 a[i]*(i-L)*(R-i)。",
+            "为何一边严格、一边非严格？这是为相等最小值指定唯一归属。本策略让含多个相等最小值的区间归属最右一个；例如 [2,2] 的整段只归属下标 1。两边都严格会重复计数，两边都非严格会遗漏整个 [2,2]。反过来左非严格、右严格也可以，但不能随意混搭。"
+          ]
+        },
+        {
+          "type": "code",
+          "title": "2.13 最小值贡献：一侧严格，另一侧非严格",
+          "file": "detail-subarray-minimums.cpp",
+          "code": "int sumSubarrayMins(const vector<int>& a) {\n    const long long MOD = 1000000007;\n    int n = (int)a.size();\n    vector<int> left(n), right(n), st;\n    for (int i = 0; i < n; ++i) {\n        while (!st.empty() && a[st.back()] >= a[i]) st.pop_back();\n        left[i] = st.empty() ? -1 : st.back();\n        st.push_back(i);\n    }\n    st.clear();\n    for (int i = n - 1; i >= 0; --i) {\n        while (!st.empty() && a[st.back()] > a[i]) st.pop_back();\n        right[i] = st.empty() ? n : st.back();\n        st.push_back(i);\n    }\n    long long result = 0;\n    for (int i = 0; i < n; ++i) {\n        long long contribution = (long long)a[i] * (i - left[i]) % MOD;\n        contribution = contribution * (right[i] - i) % MOD;\n        result = (result + contribution) % MOD;\n    }\n    return (int)result;\n}",
+          "paragraphs": [
+            "采用经典题 907 的正整数约束：1<=a[i]<=30000，n<=30000；空输入额外支持返回 0。按步骤取模，避免多个因子直接相乘。时间 O(n)、空间 O(n)。若允许负数，需要规范化模结果并重新说明数值范围。"
+          ]
+        }
+      ],
+      "answers": [
+        {
+          "question": "为什么两层循环不是 O(n²)？",
+          "answer": [
+            "外层虽然执行 n 次，内层的每次成功迭代都会永久弹出一个下标，而每个下标只入栈一次。总入栈 n 次、总弹出至多 n 次；失败的 while 条件检查每轮至多一次。因此总体 O(n)，但某一轮仍可能弹出 O(n) 个元素。"
+          ]
+        },
+        {
+          "question": "什么时候存值，什么时候存下标？",
+          "answer": [
+            "只做括号匹配可存字符；答案涉及距离、左右边界、过期、重复值对应位置时，应存下标。每日温度需要 i-j，柱状图需要 i-L-1，单靠数值无法恢复这些信息。"
+          ]
+        },
+        {
+          "question": "为什么相同温度不能解决彼此？",
+          "answer": [
+            "题目要求严格更高，73 后面仍是 73 并不满足。正向结算时用 >，相等的两个下标都留在栈里，未来 74 到来时分别得到各自距离；改成 >= 就改变了问题。"
+          ]
+        },
+        {
+          "question": "柱状图宽度为什么要减 1？",
+          "answer": [
+            "左右边界 L 与 i 均不在当前结算的矩形内部，覆盖的整数位置是 L+1 到 i-1，数量为 (i-1)-(L+1)+1=i-L-1。若栈空取 L=-1，宽度就是 i。"
+          ]
+        },
+        {
+          "question": "柱状图保留相等高度，还能得到最大宽度吗？",
+          "answer": [
+            "可以。以 [2,2] 为例，虚拟尾柱先结算右柱宽度 1，再结算左柱宽度 2，最大面积为 4。保留相等值时，不是每根柱子都要独立得到完整最大范围，只要最大矩形有一个代表被结算。"
+          ]
+        },
+        {
+          "question": "子数组贡献为什么不能沿用柱状图任意一套相等策略？",
+          "answer": [
+            "求最大值只要求某个代表覆盖最优区间，而求和必须让每个子数组恰好出现一次。贡献法的左右边界需要不对称的严格性来打破相等值平局，这是计数唯一性的要求。"
+          ]
+        }
+      ]
+    },
+    "3": {
+      "before": [
+        {
+          "type": "text",
+          "title": "3.1 两端删除各有含义：过期与支配",
+          "paragraphs": [
+            "窗口 [i-k+1,i] 的最大值只需要候选，不需要保存所有元素。队首删除是时间约束：下标 <=i-k 已不在窗口。队尾删除是价值约束：旧下标 j<i 且 a[j]<=a[i] 时，任何未来仍含 j 的窗口也会包含 i，i 的值不小且过期更晚，因此 j 永远不会优于 i。",
+            "此论证依赖窗口左右端点单调右移。若允许任意删除新元素、让左端点倒退或回查旧窗口，被淘汰值可能重新有用，不能原样使用这套队列。"
+          ]
+        },
+        {
+          "type": "table",
+          "title": "3.2 [1,3,-1,-3,5]，k=3 的候选变化",
+          "columns": [
+            "i 与值",
+            "队首过期删除",
+            "队尾支配删除",
+            "加入后的队列（下标:值）",
+            "输出"
+          ],
+          "rows": [
+            [
+              "0:1",
+              "无",
+              "无",
+              "0:1",
+              "未成完整窗口"
+            ],
+            [
+              "1:3",
+              "无",
+              "0:1",
+              "1:3",
+              "未成完整窗口"
+            ],
+            [
+              "2:-1",
+              "无",
+              "无",
+              "1:3,2:-1",
+              "3"
+            ],
+            [
+              "3:-3",
+              "无",
+              "无",
+              "1:3,2:-1,3:-3",
+              "3"
+            ],
+            [
+              "4:5",
+              "1:3（1<=4-3）",
+              "3:-3,2:-1",
+              "4:5",
+              "5"
+            ]
+          ]
+        },
+        {
+          "type": "text",
+          "title": "3.3 三个不变量与完整操作顺序",
+          "paragraphs": [
+            "下标从队首到队尾严格递增；值从队首到队尾严格递减（本节用 <= 清尾）；队列里所有下标都位于当前窗口。更大的值排在更前，所以最大值在队首。",
+            "采用固定顺序：先从头部移除过期候选；再从尾部移除被支配者；压入当前下标；当 i>=k-1 时输出。队列空时先别读取 front。k<=0、k>n 与空输入在基础函数中返回空数组。"
+          ]
+        },
+        {
+          "type": "text",
+          "title": "3.4 与堆、树及普通滑动窗口比较",
+          "paragraphs": [
+            "朴素逐窗口扫描 O(nk)。平衡树维护窗口内多重集合可做到 O(n log k)，需按实例删除重复值。普通优先队列配合队首懒惰过期删除可能累积 O(n) 个无效元素，最坏空间 O(n)、时间 O(n log n)，不能不加条件就写 O(k) 空间。",
+            "单调队列利用最值候选的支配关系得到 O(n) 时间和 O(k) 辅助空间，输出另外占 O(n-k+1)。如果要维护中位数，不存在同样简单的支配关系，不能只改一个比较符解决。"
+          ]
+        }
+      ],
+      "after": [
+        {
+          "type": "code",
+          "title": "3.5 两个单调队列：最大值减最小值不超过 limit 的最长窗口",
+          "file": "detail-bounded-window.cpp",
+          "code": "int longestBoundedWindow(const vector<int>& a, long long limit) {\n    if (limit < 0) return 0;\n    deque<int> maximum, minimum;\n    int left = 0, best = 0;\n    for (int right = 0; right < (int)a.size(); ++right) {\n        while (!maximum.empty() && a[maximum.back()] <= a[right])\n            maximum.pop_back();\n        while (!minimum.empty() && a[minimum.back()] >= a[right])\n            minimum.pop_back();\n        maximum.push_back(right);\n        minimum.push_back(right);\n        while ((long long)a[maximum.front()] - a[minimum.front()] > limit) {\n            if (maximum.front() == left) maximum.pop_front();\n            if (minimum.front() == left) minimum.pop_front();\n            ++left;\n        }\n        best = max(best, right - left + 1);\n    }\n    return best;\n}",
+          "paragraphs": [
+            "前提 limit>=0 时，单元素窗口必定合法，所以缩窗过程不会在需要再次读取时把两个队列全部清空。差值先转 long long，避免 INT_MAX-INT_MIN 溢出。例 [8,2,4,7]、limit=4，答案 2。",
+            "窗口扩张不会减小 max-min，收缩不会增大它，因此可以用双指针修复不合法状态。每个下标在两个队列中各入出至多一次，总 O(n)、最坏空间 O(n)。"
+          ]
+        },
+        {
+          "type": "text",
+          "title": "3.6 含负数的最短子数组：普通和窗口为什么失效",
+          "paragraphs": [
+            "目标是找非空区间，其和至少为 K，长度最短。若数组全为正数，和随右端点扩张增加、随左端点收缩减少；允许负数后不再成立。例如 [1,-1,3]、K=3：得到总和 3 后，普通缩窗先删 1，和为 2 就停，却漏掉继续删 -1 后得到的单元素 [3]。",
+            "改用前缀和 P[0]=0，P[i] 表示前 i 个数的和；区间 [j,i) 满足 P[i]-P[j]>=K，长度为 i-j。队列保存可能作为左端点的前缀下标，按下标递增且前缀值严格递增。"
+          ]
+        },
+        {
+          "type": "text",
+          "title": "3.7 前缀队列为什么能从两端永久删除",
+          "paragraphs": [
+            "队首 j 满足 P[i]-P[j]>=K 时，先更新 i-j，再弹出 j。对于未来右端点 r>i，同一个 j 只会产生更长区间，所以 j 不会再改善全局最短答案。需要 while 而不是 if，因为可能有多个可行起点，越靠后的起点给出越短区间。",
+            "队尾 j 若满足 P[j]>=P[i]，可直接删除：对于任意未来右端点 r，P[r]-P[i]>=P[r]-P[j]，且 r-i<r-j。新的 i 在“更容易满足和约束”和“长度更短”两个方面都不差于 j。每个前缀最多入出一次。"
+          ]
+        },
+        {
+          "type": "code",
+          "title": "3.8 前缀和单调队列：和至少 K 的最短非空子数组",
+          "file": "detail-shortest-subarray.cpp",
+          "code": "int shortestSubarray(const vector<int>& a, long long k) {\n    int n = (int)a.size();\n    vector<long long> prefix(n + 1, 0);\n    for (int i = 0; i < n; ++i) prefix[i + 1] = prefix[i] + a[i];\n    deque<int> candidates;\n    int best = INT_MAX;\n    for (int i = 0; i <= n; ++i) {\n        while (!candidates.empty() &&\n               prefix[i] - prefix[candidates.front()] >= k) {\n            best = min(best, i - candidates.front());\n            candidates.pop_front();\n        }\n        while (!candidates.empty() &&\n               prefix[candidates.back()] >= prefix[i])\n            candidates.pop_back();\n        candidates.push_back(i);\n    }\n    return best == INT_MAX ? -1 : best;\n}",
+          "paragraphs": [
+            "约定 n<=100000、|a[i]|<=100000，k 为 long long；前缀及其差不会溢出。查询放在压入 i 之前，确保不会选择 j=i 的空区间，即使 K<=0 也保持“非空”语义。空数组返回 -1。时间与空间均为 O(n)。"
+          ]
+        },
+        {
+          "type": "table",
+          "title": "3.9 [1,-1,3]，K=3：前缀队列手推",
+          "columns": [
+            "i / P[i]",
+            "先结算队首",
+            "再清理队尾",
+            "最终候选下标",
+            "当前答案"
+          ],
+          "rows": [
+            [
+              "0 / 0",
+              "无",
+              "无",
+              "0",
+              "无"
+            ],
+            [
+              "1 / 1",
+              "差1<3",
+              "无",
+              "0,1",
+              "无"
+            ],
+            [
+              "2 / 0",
+              "差0<3",
+              "弹1（1>=0）、弹0（0>=0）",
+              "2",
+              "无"
+            ],
+            [
+              "3 / 3",
+              "弹2，长度3-2=1",
+              "无",
+              "3",
+              "1"
+            ]
+          ]
+        }
+      ],
+      "answers": [
+        {
+          "question": "为什么新元素可以淘汰队尾更小的旧元素？",
+          "answer": [
+            "需要同时满足值更优和有效期更晚。未来只要旧元素仍在一个向右移动的窗口里，新元素也在；旧元素过期以后更无资格。因此删掉旧元素不会损失任何未来最大值。只比较数值、不比较时间顺序是不完整的证明。"
+          ]
+        },
+        {
+          "question": "相等值用 < 还是 <= 删除？",
+          "answer": [
+            "两种都能求出最大值。用 <= 保留最新的相等值，队列更短、过期更晚；用 < 保留所有相等候选也正确，但必须按下标分别过期。如果题目要求最大值的最早下标，应保留旧的相等值，不能直接套 <=。"
+          ]
+        },
+        {
+          "question": "窗口最小值改哪里？",
+          "answer": [
+            "队尾清理从 a[q.back()]<=a[i] 改成 >=，使值严格递增。下标仍递增、过期条件仍是 q.front()<=i-k、答案仍在队首。改变的是优劣关系，不是时间顺序。"
+          ]
+        },
+        {
+          "question": "为什么不能先取答案再清理过期下标？",
+          "answer": [
+            "队首可能已经离开当前窗口。例如 [9,1,2]、k=2，在处理下标2时，9不在 [1,2] 内；先读队首就会错误输出9。入队和清理之间可有等价安排，但输出前必须同时满足有效期与单调性。"
+          ]
+        },
+        {
+          "question": "最短子数组为什么不用普通单调栈？",
+          "answer": [
+            "它同时需要淘汰队尾较差的前缀，以及从队首结算已可行起点，单端栈不能同时高效完成。deque 提供两端 O(1) 操作，恰好对应这两种不同的删除依据。"
+          ]
+        },
+        {
+          "question": "最短子数组在队首可行后立即弹出，会不会错过更好答案？",
+          "answer": [
+            "已经用当前右端点 i 记录 i-j；未来右端点只会增大，因此以同一个 j 为起点的区间不可能更短。这个删除逻辑适用于全局最短长度，不意味着该起点对其他任务（例如统计所有可行区间数）也可以删除。"
+          ]
+        }
+      ]
+    },
+    "4": {
+      "before": [
+        {
+          "type": "text",
+          "title": "4.1 用一个式子描述两栈队列的逻辑顺序",
+          "paragraphs": [
+            "把 out 从顶到底读取，再把 in 从底到顶读取，拼起来就是队列从头到尾的逻辑顺序。push 只向 in 加元素；pop/front 优先访问 out；仅当 out 为空时才把 in 全部倒入 out。",
+            "不能在 out 非空时继续倒栈。反例：push(1),push(2),pop() 后 out 留着 2；再 push(3)，如果立刻把 3 压到 out 顶部，下次会先弹出 3，违反先进先出。"
+          ]
+        },
+        {
+          "type": "table",
+          "title": "4.2 两栈队列逐步跟踪",
+          "columns": [
+            "操作",
+            "in（底→顶）",
+            "out（底→顶）",
+            "逻辑队列（头→尾）"
+          ],
+          "rows": [
+            [
+              "push(1), push(2)",
+              "1,2",
+              "空",
+              "1,2"
+            ],
+            [
+              "front()=1",
+              "空",
+              "2,1",
+              "1,2"
+            ],
+            [
+              "pop()=1",
+              "空",
+              "2",
+              "2"
+            ],
+            [
+              "push(3)",
+              "3",
+              "2",
+              "2,3"
+            ],
+            [
+              "pop()=2",
+              "3",
+              "空",
+              "3"
+            ],
+            [
+              "pop()=3",
+              "空",
+              "空",
+              "空"
+            ]
+          ]
+        },
+        {
+          "type": "text",
+          "title": "4.3 均摊不是概率平均：记账法与势能法",
+          "paragraphs": [
+            "记账法：一个元素入 in 一次，之后最多从 in 弹出一次、压入 out 一次、从 out 弹出一次，生命周期内基本栈操作不超过四次。一串 m 次队列操作总工作量 O(m)，所以每次均摊 O(1)，不依赖输入随机性。",
+            "势能法取 Φ=2*|in|，把每个基本栈 push/pop 的费用记为 1。队列 push 实际费用1、势能增加2，均摊3；倒入 t 个元素再 pop 实际费用2t+1、势能减少2t，均摊1；不需要倒栈的 pop 费用1、势能不变。front 的读操作再加常数即可。势能从0开始且始终非负，所以总实际成本被总均摊成本控制。",
+            "面试应完整说：push 最坏 O(1)，pop/front 单次最坏 O(n)、均摊 O(1)，总空间 O(n)。实时系统若要求每次请求都有严格常数延迟，这个简单实现并不能保证。"
+          ]
+        }
+      ],
+      "after": [
+        {
+          "type": "code",
+          "title": "4.4 一个队列实现栈：把新元素旋转到队首",
+          "file": "detail-queue-stack.cpp",
+          "code": "class QueueStack {\n    queue<int> q;\npublic:\n    bool empty() const { return q.empty(); }\n    void push(int x) {\n        size_t oldSize = q.size();\n        q.push(x);\n        for (size_t i = 0; i < oldSize; ++i) {\n            int front = q.front(); q.pop();\n            q.push(front);\n        }\n    }\n    int pop() {\n        if (q.empty()) throw out_of_range(\"empty stack\");\n        int value = q.front(); q.pop();\n        return value;\n    }\n    int top() const {\n        if (q.empty()) throw out_of_range(\"empty stack\");\n        return q.front();\n    }\n};",
+          "paragraphs": [
+            "保持队首是最新压入者，push 最坏 O(n)，pop/top 最坏 O(1)，空间 O(n)。另一种实现让 push 为 O(1)，把搬运成本放到 pop；题目若明确要求两个队列，也可用第二个队列接收搬运结果。无论哪种方案，都要说清昂贵的是哪个操作，不能照搬两栈队列的均摊结论。"
+          ]
+        },
+        {
+          "type": "code",
+          "title": "4.5 固定容量循环队列：用 size 区分空与满",
+          "file": "detail-ring-queue.cpp",
+          "code": "class RingQueue {\n    vector<int> data;\n    size_t head = 0, used = 0;\npublic:\n    explicit RingQueue(int capacity) {\n        if (capacity <= 0) throw invalid_argument(\"capacity must be positive\");\n        data.resize((size_t)capacity);\n    }\n    bool empty() const { return used == 0; }\n    bool full() const { return used == data.size(); }\n    bool push(int value) {\n        if (full()) return false;\n        data[(head + used) % data.size()] = value;\n        ++used;\n        return true;\n    }\n    optional<int> pop() {\n        if (empty()) return nullopt;\n        int value = data[head];\n        head = (head + 1) % data.size();\n        --used;\n        return value;\n    }\n    optional<int> front() const {\n        if (empty()) return nullopt;\n        return data[head];\n    }\n};",
+          "paragraphs": [
+            "head 指向下一次要读取的位置，写入位置为 (head+used)%capacity。满时返回 false，不覆盖旧数据。容量1、装满后弹出再写入、跨尾回绕都要测。初始化 O(capacity)，之后各接口最坏 O(1)，空间 O(capacity)。这是普通单线程实现，不是无锁并发队列。"
+          ]
+        },
+        {
+          "type": "text",
+          "title": "4.6 BFS 为何入队就标记",
+          "paragraphs": [
+            "队列按距离非递减顺序处理无权图节点。第一次发现节点 v 时就设置距离并入队，保证每个节点只入队一次。若到出队才标记，菱形图 0→1、0→2、1→3、2→3 会让 3 被重复入队。",
+            "对于有权图，第一次发现不一定是最短路；0-1 BFS 使用双端队列与松弛，Dijkstra 使用优先队列，不能直接照搬普通 BFS 的首次发现即定值。"
+          ]
+        },
+        {
+          "type": "code",
+          "title": "4.7 无权图最短距离：入队时确定访问状态",
+          "file": "detail-bfs.cpp",
+          "code": "vector<int> bfsDistance(const vector<vector<int>>& graph, int source) {\n    int n = (int)graph.size();\n    if (source < 0 || source >= n) throw out_of_range(\"invalid source\");\n    vector<int> distance(n, -1);\n    queue<int> pending;\n    distance[source] = 0;\n    pending.push(source);\n    while (!pending.empty()) {\n        int u = pending.front(); pending.pop();\n        for (int v : graph[u]) {\n            if (v < 0 || v >= n) throw out_of_range(\"invalid neighbor\");\n            if (distance[v] != -1) continue;\n            distance[v] = distance[u] + 1;\n            pending.push(v);\n        }\n    }\n    return distance;\n}",
+          "paragraphs": [
+            "邻接表可表示有向或无向图；边权视为1。不可达点距离为-1。时间 O(V+E)，辅助空间 O(V)，不含图的存储。若按层输出，必须先保存本层 queue.size()，不要在本层循环中反复读取变化的长度。"
+          ]
+        },
+        {
+          "type": "text",
+          "title": "4.8 撤销与重做：两个栈维护的不是队列顺序",
+          "paragraphs": [
+            "undo 栈保存历史操作，redo 栈保存刚被撤销的操作。撤销时将操作从 undo 移到 redo 并执行逆操作；重做时反向移动并重新执行。产生新的编辑时必须清空 redo，因为旧的未来分支已经失效。",
+            "实际工程中还要选择保存完整快照、差量还是可逆命令，并处理一次业务操作包含多个修改的原子性。本章只讨论历史顺序，不把这些要求混同于两栈队列的倒栈逻辑。"
+          ]
+        }
+      ],
+      "answers": [
+        {
+          "question": "为什么只有 out 为空才倒栈？",
+          "answer": [
+            "out 保存更早进入的一批元素，其顶部应先出队；in 保存后来进入的一批元素。如果提前把新批次放在 out 顶部，就让晚到者越过早到者。等 out 消耗完，才允许反转新批次。"
+          ]
+        },
+        {
+          "question": "front 为什么也可能是 O(n)？",
+          "answer": [
+            "若 out 为空而 in 有 n 个元素，读取最早元素之前也必须完成倒栈。虽然 front 不减少逻辑队列长度，但会改变内部布局；第一次 O(n)，随后不再重复倒同一批元素，因此仍是均摊 O(1)。"
+          ]
+        },
+        {
+          "question": "均摊 O(1) 与平均 O(1) 区别是什么？",
+          "answer": [
+            "均摊分析对任意合法操作序列给出总成本上界，不要求某种输入概率分布；平均复杂度通常需要说明随机输入或随机算法模型。均摊也不是单次最坏保证。"
+          ]
+        },
+        {
+          "question": "循环队列 head==tail 为什么可能有歧义？",
+          "answer": [
+            "若只让 head 和 tail 指向环上位置，空队列与绕一圈后的满队列可能落在相同位置。可以另存 size（本例）、增加满标记，或牺牲一个槽位。牺牲槽位时长度 k+1 的数组才存得下 k 个元素。"
+          ]
+        },
+        {
+          "question": "一个队列实现栈的连续 push 总成本是多少？",
+          "answer": [
+            "本例第 i 次 push 要旋转之前的 i-1 个元素，连续 n 次 push 总成本为 0+1+…+(n-1)=O(n²)。这里同一个老元素会被多次搬运，所以不能用“每个元素只搬一次”的两栈队列证明。"
+          ]
+        },
+        {
+          "question": "BFS 入队标记是否适用于所有最短路？",
+          "answer": [
+            "只适用于普通无权或等权边 BFS 的首次发现定距离性质。有权图可能后来找到更短路径，需要松弛和相应的数据结构；即使都用 deque，0-1 BFS 也不能机械复制本例的 visited 规则。"
+          ]
+        }
+      ]
+    }
+  },
+  "outro": [
+    {
+      "type": "table",
+      "title": "练习路线：从能套模板到能解释变式",
+      "columns": [
+        "阶段",
+        "经典题",
+        "必须回答的关键点",
+        "最小自测"
+      ],
+      "rows": [
+        [
+          "基础栈",
+          "20 有效括号；155 最小栈；150 逆波兰",
+          "前缀合法；重复最小值；左右操作数",
+          "([)]；1,1 后弹出；5 2 -"
+        ],
+        [
+          "单调栈入门",
+          "739 每日温度；503 下一个更大元素 II",
+          "待解决者与候选者；循环第二遍不重复压栈",
+          "全相等；严格递减；[1,2,1]"
+        ],
+        [
+          "边界与贡献",
+          "84 最大矩形；42 接雨水；907 最小值之和",
+          "宽度减1；水层不重叠；相等值唯一归属",
+          "[2,2]；[3,0,1,3]；[2,2]"
+        ],
+        [
+          "单调队列",
+          "239 窗口最大值；1438 最长连续子数组",
+          "两端删除的区别；下标过期；差值溢出",
+          "k=1；k=n；全相等；极值"
+        ],
+        [
+          "进阶前缀",
+          "862 最短子数组",
+          "负数破坏和窗口；队首结算和队尾支配",
+          "[1,-1,3]、K=3；无解；K<=0"
+        ],
+        [
+          "接口设计",
+          "232 两栈队列；225 队列栈；622 循环队列",
+          "逻辑顺序；均摊与最坏；空满及回绕",
+          "交替入出；容量1；空读；满写"
+        ]
+      ]
+    },
+    {
+      "type": "text",
+      "title": "综合测试：小规模暴力对照与状态机测试",
+      "paragraphs": [
+        "算法代码容易在相等值、负数和边界位置出错。下面提供一个带 main 的独立测试文件：将五个线性算法与朴素枚举对照，并将循环队列与标准 deque 的受限容量模型逐步对照。固定随机种子以便重现。",
+        "下载文件已经包含被测函数，不依赖拼接其他示例。手动编译运行：g++ -std=c++17 -O2 -Wall -Wextra detail-structure-tests.cpp -o chapter04-tests，然后运行生成的程序。随机测试使用小数组，不代表覆盖了所有情况；它用于发现错误，不能替代前面的正确性证明。此处提供的是可运行测试源码，不表示已在当前环境执行通过。"
+      ]
+    },
+    {
+      "type": "code",
+      "title": "完整测试程序：重复值、负数、宽整数与循环回绕",
+      "file": "detail-structure-tests.cpp",
+      "code": "long long largestRectangle(const vector<int>& h) {\n    int n = (int)h.size();\n    vector<int> st;\n    long long best = 0;\n    for (int i = 0; i <= n; ++i) {\n        int current = i == n ? 0 : h[i];\n        while (!st.empty() && h[st.back()] > current) {\n            int j = st.back(); st.pop_back();\n            int left = st.empty() ? -1 : st.back();\n            best = max(best, 1LL * h[j] * (i - left - 1));\n        }\n        if (i < n) st.push_back(i);\n    }\n    return best;\n}\n\nlong long trapRain(const vector<int>& h) {\n    vector<int> st;\n    long long water = 0;\n    for (int i = 0; i < (int)h.size(); ++i) {\n        while (!st.empty() && h[i] > h[st.back()]) {\n            int bottom = st.back(); st.pop_back();\n            if (st.empty()) break;\n            int left = st.back();\n            long long depth = (long long)min(h[left], h[i]) - h[bottom];\n            water += depth * (i - left - 1);\n        }\n        st.push_back(i);\n    }\n    return water;\n}\n\nint sumSubarrayMins(const vector<int>& a) {\n    const long long MOD = 1000000007;\n    int n = (int)a.size();\n    vector<int> left(n), right(n), st;\n    for (int i = 0; i < n; ++i) {\n        while (!st.empty() && a[st.back()] >= a[i]) st.pop_back();\n        left[i] = st.empty() ? -1 : st.back();\n        st.push_back(i);\n    }\n    st.clear();\n    for (int i = n - 1; i >= 0; --i) {\n        while (!st.empty() && a[st.back()] > a[i]) st.pop_back();\n        right[i] = st.empty() ? n : st.back();\n        st.push_back(i);\n    }\n    long long result = 0;\n    for (int i = 0; i < n; ++i) {\n        long long contribution = (long long)a[i] * (i - left[i]) % MOD;\n        contribution = contribution * (right[i] - i) % MOD;\n        result = (result + contribution) % MOD;\n    }\n    return (int)result;\n}\n\nint shortestSubarray(const vector<int>& a, long long k) {\n    int n = (int)a.size();\n    vector<long long> prefix(n + 1, 0);\n    for (int i = 0; i < n; ++i) prefix[i + 1] = prefix[i] + a[i];\n    deque<int> candidates;\n    int best = INT_MAX;\n    for (int i = 0; i <= n; ++i) {\n        while (!candidates.empty() &&\n               prefix[i] - prefix[candidates.front()] >= k) {\n            best = min(best, i - candidates.front());\n            candidates.pop_front();\n        }\n        while (!candidates.empty() &&\n               prefix[candidates.back()] >= prefix[i])\n            candidates.pop_back();\n        candidates.push_back(i);\n    }\n    return best == INT_MAX ? -1 : best;\n}\n\nint longestBoundedWindow(const vector<int>& a, long long limit) {\n    if (limit < 0) return 0;\n    deque<int> maximum, minimum;\n    int left = 0, best = 0;\n    for (int right = 0; right < (int)a.size(); ++right) {\n        while (!maximum.empty() && a[maximum.back()] <= a[right])\n            maximum.pop_back();\n        while (!minimum.empty() && a[minimum.back()] >= a[right])\n            minimum.pop_back();\n        maximum.push_back(right);\n        minimum.push_back(right);\n        while ((long long)a[maximum.front()] - a[minimum.front()] > limit) {\n            if (maximum.front() == left) maximum.pop_front();\n            if (minimum.front() == left) minimum.pop_front();\n            ++left;\n        }\n        best = max(best, right - left + 1);\n    }\n    return best;\n}\n\nclass RingQueue {\n    vector<int> data;\n    size_t head = 0, used = 0;\npublic:\n    explicit RingQueue(int capacity) {\n        if (capacity <= 0) throw invalid_argument(\"capacity must be positive\");\n        data.resize((size_t)capacity);\n    }\n    bool empty() const { return used == 0; }\n    bool full() const { return used == data.size(); }\n    bool push(int value) {\n        if (full()) return false;\n        data[(head + used) % data.size()] = value;\n        ++used;\n        return true;\n    }\n    optional<int> pop() {\n        if (empty()) return nullopt;\n        int value = data[head];\n        head = (head + 1) % data.size();\n        --used;\n        return value;\n    }\n    optional<int> front() const {\n        if (empty()) return nullopt;\n        return data[head];\n    }\n};\n\nvoid require(bool ok, const string& message) {\n    if (!ok) throw runtime_error(message);\n}\nlong long bruteRectangle(const vector<int>& a) {\n    long long best = 0;\n    for (int l = 0; l < (int)a.size(); ++l) {\n        int mn = INT_MAX;\n        for (int r = l; r < (int)a.size(); ++r) {\n            mn = min(mn, a[r]);\n            best = max(best, 1LL * mn * (r - l + 1));\n        }\n    }\n    return best;\n}\nlong long bruteRain(const vector<int>& a) {\n    long long sum = 0;\n    for (int i = 0; i < (int)a.size(); ++i) {\n        int left = a[i], right = a[i];\n        for (int j = 0; j < i; ++j) left = max(left, a[j]);\n        for (int j = i + 1; j < (int)a.size(); ++j) right = max(right, a[j]);\n        sum += min(left, right) - a[i];\n    }\n    return sum;\n}\nint bruteMins(const vector<int>& a) {\n    long long total = 0;\n    for (int l = 0; l < (int)a.size(); ++l) {\n        int mn = INT_MAX;\n        for (int r = l; r < (int)a.size(); ++r) {\n            mn = min(mn, a[r]);\n            total += mn;\n        }\n    }\n    return (int)(total % 1000000007);\n}\nint bruteShortest(const vector<int>& a, long long k) {\n    int best = INT_MAX;\n    for (int l = 0; l < (int)a.size(); ++l) {\n        long long sum = 0;\n        for (int r = l; r < (int)a.size(); ++r) {\n            sum += a[r];\n            if (sum >= k) best = min(best, r - l + 1);\n        }\n    }\n    return best == INT_MAX ? -1 : best;\n}\nint bruteBounded(const vector<int>& a, long long limit) {\n    int best = 0;\n    for (int l = 0; l < (int)a.size(); ++l) {\n        int mn = INT_MAX, mx = INT_MIN;\n        for (int r = l; r < (int)a.size(); ++r) {\n            mn = min(mn, a[r]); mx = max(mx, a[r]);\n            if ((long long)mx - mn <= limit) best = max(best, r - l + 1);\n        }\n    }\n    return best;\n}\nint main() {\n    require(largestRectangle({2,1,5,6,2,3}) == 10, \"histogram example\");\n    require(largestRectangle({2,2}) == 4, \"equal heights\");\n    require(trapRain({3,0,1,3}) == 5, \"layered rain\");\n    require(sumSubarrayMins({2,2}) == 6, \"equal minimum ownership\");\n    require(shortestSubarray({1,-1,3}, 3) == 1, \"negative counterexample\");\n    require(shortestSubarray({}, 0) == -1, \"nonempty interval contract\");\n    require(longestBoundedWindow({INT_MIN, INT_MAX}, 4294967295LL) == 2,\n            \"wide integer subtraction\");\n    mt19937 rng(20260920);\n    uniform_int_distribution<int> length(0, 12), value(-5, 5), target(-8, 16);\n    for (int run = 0; run < 1000; ++run) {\n        vector<int> a(length(rng));\n        for (int& x : a) x = value(rng);\n        int k = target(rng);\n        require(shortestSubarray(a, k) == bruteShortest(a, k), \"shortest mismatch\");\n        int limit = target(rng);\n        require(longestBoundedWindow(a, limit) == bruteBounded(a, limit),\n                \"bounded mismatch\");\n        vector<int> heights, positive;\n        for (int x : a) {\n            heights.push_back(abs(x));\n            positive.push_back(abs(x) + 1);\n        }\n        require(largestRectangle(heights) == bruteRectangle(heights),\n                \"rectangle mismatch\");\n        require(trapRain(heights) == bruteRain(heights), \"rain mismatch\");\n        require(sumSubarrayMins(positive) == bruteMins(positive), \"minimum mismatch\");\n    }\n    for (int capacity : {1, 2, 7}) {\n        RingQueue actual(capacity);\n        deque<int> reference;\n        for (int step = 0; step < 1000; ++step) {\n            if (rng() % 2 == 0) {\n                int x = value(rng);\n                bool expected = reference.size() < (size_t)capacity;\n                require(actual.push(x) == expected, \"ring push\");\n                if (expected) reference.push_back(x);\n            } else {\n                optional<int> expected;\n                if (!reference.empty()) {\n                    expected = reference.front(); reference.pop_front();\n                }\n                require(actual.pop() == expected, \"ring pop\");\n            }\n            optional<int> expectedFront;\n            if (!reference.empty()) expectedFront = reference.front();\n            require(actual.front() == expectedFront, \"ring front\");\n            require(actual.empty() == reference.empty(), \"ring empty\");\n            require(actual.full() == (reference.size() == (size_t)capacity), \"ring full\");\n        }\n    }\n    cout << \"All chapter 4 checks passed\" << endl;\n}",
+      "paragraphs": [
+        "覆盖 1000 组小数组、三种容量各 1000 次队列操作，以及一组有针对性的固定反例。使用显式 require，避免 NDEBUG 禁用 assert 后测试失效。"
+      ]
+    },
+    {
+      "type": "qa",
+      "title": "章末自测：遮住答案，先自己说明",
+      "items": [
+        {
+          "question": "1. 每日温度 [70,70,71] 的答案是什么？相等值要弹出吗？",
+          "answer": [
+            "答案 [2,1,0]。左到右结算模板中两个70都应等待71，相等时不弹出；71到来时按顺序弹出下标1与0，距离分别是1与2。"
+          ]
+        },
+        {
+          "question": "2. 柱状图 [2,2] 中先弹出右柱只得到面积2，是否漏解？",
+          "answer": [
+            "没有。尾部0先结算右柱宽度1，再结算左柱宽度2得到4。此实现用更左的相等柱子代表覆盖整个等高区间的矩形。"
+          ]
+        },
+        {
+          "question": "3. [2,2] 的所有子数组最小值之和为什么是6而不是8？",
+          "answer": [
+            "三个非空子数组分别是下标[0]、[1]、[0,1]，最小值均为2，总和6。若两端都找严格更小，整段会分别归给两个位置并重复计算，得到8。"
+          ]
+        },
+        {
+          "question": "4. 窗口最大值 [9,1,2]、k=2 的输出是什么？",
+          "answer": [
+            "输出 [9,2]。处理下标2时必须先让下标0过期；之后2从队尾淘汰1。队首过期与队尾支配是两件独立的事。"
+          ]
+        },
+        {
+          "question": "5. 为什么 [1,-1,3]、K=3 能击穿正数版最短和窗口？",
+          "answer": [
+            "删去开头1后和从3降到2，正数版算法会停止缩窗；但继续删去-1会使和重新升到3，得到长度1。这证明含负数时“当前不足就停止收缩”的推理不成立。"
+          ]
+        },
+        {
+          "question": "6. 两栈队列 out 里还有2、in 里有3，应该返回谁？",
+          "answer": [
+            "返回2。out保存更老的一批元素；in不能在out非空时倒进去，否则3会插队。逻辑顺序是out顶到底，接着in底到顶。"
+          ]
+        },
+        {
+          "question": "7. 用一句话解释为什么单调结构整体线性但单步可能线性？",
+          "answer": [
+            "每个元素一生只入结构一次、出结构至多一次，所以总成本线性；但某个新值可以一次性使之前的所有候选出结构，因此这一轮仍可能花O(n)。"
+          ]
+        },
+        {
+          "question": "8. 面试完成编码后，最低限度要测哪些输入？",
+          "answer": [
+            "空输入和单元素；全相等、递增、递减；k=1与k=n及非法k；负数与无解；柱状图尾部结算；循环队列空满与回绕；表达式一元负号、除零及操作数顺序。按题目约束补极值，先提升类型再做可能溢出的运算。"
+          ]
+        }
+      ]
+    }
+  ]
+}

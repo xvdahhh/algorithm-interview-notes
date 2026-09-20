@@ -3,7 +3,7 @@
 <meta name="description" content="秋招算法手撕学习讲义：知识推导、经典考点、C++17 示例与面试训练。">
 <title>栈、队列与单调结构 · 算法手撕讲义</title><link rel="stylesheet" href="../assets/style.css"><script src="../assets/app.js" defer></script></head>
 <body><a class="skip" href="#main">跳到正文</a><header class="topbar"><a class="brand" href="../index.html"><span class="brand-mark">a[i]</span><span>算法手撕讲义<small>秋招学习工作区 / C++17</small></span></a><button type="button" class="nav-toggle" aria-expanded="false" aria-controls="chapter-nav">章节目录</button><a class="home-link" href="../index.html">全部章节 ↗</a></header>
-<div class="layout"><aside class="sidebar" id="chapter-nav" aria-label="章节导航"><p class="rail-label">LEARNING PATH · 学习路径</p><nav><a class="chapter-link"  href="../01-复杂度与解题方法/index.html"><span>01</span>复杂度与解题方法</a><a class="chapter-link"  href="../02-数组字符串与矩阵/index.html"><span>02</span>数组、字符串与矩阵</a><a class="chapter-link"  href="../03-链表/index.html"><span>03</span>链表</a><a class="chapter-link active" aria-current=page href="../04-栈队列与单调结构/index.html"><span>04</span>栈、队列与单调结构</a><a class="chapter-link"  href="../05-哈希集合与位运算/index.html"><span>05</span>哈希、集合与位运算</a><a class="chapter-link"  href="../06-排序与二分查找/index.html"><span>06</span>排序与二分查找</a><a class="chapter-link"  href="../07-树与二叉搜索树/index.html"><span>07</span>树与二叉搜索树</a><a class="chapter-link"  href="../08-堆与优先队列/index.html"><span>08</span>堆与优先队列</a><a class="chapter-link"  href="../09-递归回溯与分治/index.html"><span>09</span>递归、回溯与分治</a><a class="chapter-link"  href="../10-图论/index.html"><span>10</span>图论</a><a class="chapter-link"  href="../11-贪心/index.html"><span>11</span>贪心</a><a class="chapter-link"  href="../12-动态规划/index.html"><span>12</span>动态规划</a><a class="chapter-link"  href="../13-并查集与高级数据结构/index.html"><span>13</span>并查集与高级数据结构</a><a class="chapter-link"  href="../14-高频技巧与综合题型/index.html"><span>14</span>高频技巧与综合题型</a><a class="chapter-link"  href="../15-面试表达与训练计划/index.html"><span>15</span>面试表达与训练计划</a></nav><div class="sidebar-note">读懂不变量，独立写代码。<br>共 15 章 · 63 个小节<br>无需联网，浏览器直接打开。</div></aside><main id="main"><header class="chapter-header"><p class="eyebrow">CHAPTER 04 / 15</p><h1>栈、队列与单调结构</h1><p class="lead">从后进先出与先进先出出发，理解什么时候应该保留历史候选，什么时候可以永久淘汰它。单调结构的核心就是这种淘汰依据。</p><div class="chapter-meta"><span>4 个小节</span><span>C++17 示例</span><a href="README.md">原始知识摘要 ↗</a></div></header><div class="reading-guide"><strong>本章怎么学</strong><p>先读原理与不变量，遮住代码手推例子，再独立实现。最后用面试追问检查理解，按练习条目做变式。</p></div><details class="environment"><summary>代码使用说明与通用头文件</summary><p>示例统一采用 C++17。页面展示核心函数或类，下载的 .cpp 已包含以下头文件，可独立编译。不同小节可能重用类型名，应分别编译；含 main 的示例可直接运行，其余需自行补充调用与测试。复制按钮复制当前代码块。</p><div class="codebox"><div class="codebar"><span>C++17</span><div><button type="button" class="copy">复制代码</button></div></div><pre tabindex="0" aria-label="C++17 代码"><code>#include &lt;algorithm&gt;
+<div class="layout"><aside class="sidebar" id="chapter-nav" aria-label="章节导航"><p class="rail-label">LEARNING PATH · 学习路径</p><nav><a class="chapter-link"  href="../01-复杂度与解题方法/index.html"><span>01</span>复杂度与解题方法</a><a class="chapter-link"  href="../02-数组字符串与矩阵/index.html"><span>02</span>数组、字符串与矩阵</a><a class="chapter-link"  href="../03-链表/index.html"><span>03</span>链表</a><a class="chapter-link active" aria-current=page href="../04-栈队列与单调结构/index.html"><span>04</span>栈、队列与单调结构</a><a class="chapter-link"  href="../05-哈希集合与位运算/index.html"><span>05</span>哈希、集合与位运算</a><a class="chapter-link"  href="../06-排序与二分查找/index.html"><span>06</span>排序与二分查找</a><a class="chapter-link"  href="../07-树与二叉搜索树/index.html"><span>07</span>树与二叉搜索树</a><a class="chapter-link"  href="../08-堆与优先队列/index.html"><span>08</span>堆与优先队列</a><a class="chapter-link"  href="../09-递归回溯与分治/index.html"><span>09</span>递归、回溯与分治</a><a class="chapter-link"  href="../10-图论/index.html"><span>10</span>图论</a><a class="chapter-link"  href="../11-贪心/index.html"><span>11</span>贪心</a><a class="chapter-link"  href="../12-动态规划/index.html"><span>12</span>动态规划</a><a class="chapter-link"  href="../13-并查集与高级数据结构/index.html"><span>13</span>并查集与高级数据结构</a><a class="chapter-link"  href="../14-高频技巧与综合题型/index.html"><span>14</span>高频技巧与综合题型</a><a class="chapter-link"  href="../15-面试表达与训练计划/index.html"><span>15</span>面试表达与训练计划</a></nav><div class="sidebar-note">读懂不变量，独立写代码。<br>共 15 章 · 63 个小节<br>无需联网，浏览器直接打开。</div></aside><main id="main"><header class="chapter-header"><p class="eyebrow">CHAPTER 04 / 15</p><h1>栈、队列与单调结构</h1><p class="lead">从后进先出与先进先出出发，理解什么时候应该保留历史候选，什么时候可以永久淘汰它。单调结构的核心就是这种淘汰依据。</p><div class="chapter-meta"><span>4 个小节</span><span>C++17 示例</span><a href="README.md">原始知识摘要 ↗</a></div></header><div class="reading-guide"><strong>本章怎么学</strong><p>先读原理与不变量，遮住代码手推例子，再独立实现。最后用面试追问检查理解，按练习条目做变式。</p></div><div class="deep-intro"><div class="deep-block" id="guide-1"><h3>读完这一章，要能说明三种“出结构”的理由</h3><p>普通栈弹出：最近进入的任务已完成，例如右括号匹配左括号。单调栈弹出：某个待解决位置的答案或边界已确定。单调队列弹出有两类：队首已过期，或者队尾被更优且更晚过期的候选支配。先说清理由，再写比较符。</p><p>本章沿用原来的四个主小节，将题型按不变量、手推、实现、反例与追问展开。所有下标示例约定数组长度可用 int 表示；整数运算还需满足各题注明的范围。C++ 下载文件独立使用，不能直接拼接重名函数。</p></div><div class="deep-block" id="guide-2"><h3>题型识别：先判断要维护什么</h3><p class="table-hint">窄屏下可左右滑动表格，查看完整内容。</p><div class="study-table" tabindex="0" role="region" aria-label="题型识别：先判断要维护什么"><table><thead><tr><th scope="col">题目要求</th><th scope="col">维护的状态</th><th scope="col">删除依据</th><th scope="col">典型题</th></tr></thead><tbody><tr><td>嵌套匹配、后缀求值</td><td>尚未完成的上下文或操作数</td><td>最近的任务被完成</td><td>20、150、224</td></tr><tr><td>右侧第一个更大/更小</td><td>尚未得到答案的下标</td><td>当前元素确定旧下标的答案</td><td>739、503</td></tr><tr><td>以某高度为瓶颈的最宽区间</td><td>高度及未确定的左右边界</td><td>更矮柱子终止延伸</td><td>84</td></tr><tr><td>连续窗口最大/最小</td><td>仍可能获胜的候选下标</td><td>过期或被支配</td><td>239、1438</td></tr><tr><td>含负数、和至少为 K 的最短区间</td><td>单调前缀和下标</td><td>答案已结算或前缀被支配</td><td>862</td></tr><tr><td>队列或栈的接口设计</td><td>完整的元素逻辑顺序</td><td>遵守 FIFO 或 LIFO</td><td>232、225、622</td></tr></tbody></table></div></div><div class="deep-block" id="guide-3"><h3>建议学习顺序与面试口述</h3><p>先独立写括号匹配、最小栈和两栈队列，再写每日温度与窗口最大值。之后攻克柱状图、接雨水，最后学习子数组最小值贡献与前缀和单调队列。后两项是进阶，不应挤占基础模板练习。</p><p>每题用四句话说明：结构里存什么；从底到顶或从头到尾满足什么；什么事件让元素离开；离开以后为什么再也不需要它。最后补上空输入、相等值和整数溢出的检查。</p></div></div><nav class="chapter-outline" aria-label="本章阅读路线"><strong>直接跳到</strong><a href="#s1">01 括号匹配与栈中的待解决问题</a><a href="#s2">02 单调栈：下一个更大元素</a><a href="#s3">03 单调队列：窗口最大值</a><a href="#s4">04 两个栈实现队列与均摊分析</a><a href="#chapter-review">综合例题与自测答案</a></nav><details class="environment"><summary>代码使用说明与通用头文件</summary><p>示例统一采用 C++17。页面展示核心函数或类，下载的 .cpp 已包含以下头文件，可独立编译。不同小节可能重用类型名，应分别编译；含 main 的示例可直接运行，其余需自行补充调用与测试。复制按钮复制当前代码块。</p><div class="codebox"><div class="codebar"><span>C++17</span><div><button type="button" class="copy">复制代码</button></div></div><pre tabindex="0" aria-label="C++17 代码"><code>#include &lt;algorithm&gt;
 #include &lt;array&gt;
 #include &lt;cassert&gt;
 #include &lt;climits&gt;
@@ -27,7 +27,53 @@
 #include &lt;vector&gt;
 <span class="keyword">using</span> <span class="keyword">namespace</span> std;
 </code></pre></div><p>检查单个示例：<code>g++ -std=c++17 -Wall -Wextra -c sample.cpp</code>。这只检查编译；验证结果还需要调用函数并覆盖边界输入。代码按题目约束编写，各节明确其适用前提。</p></details><section class="lesson" id="s1"><div class="lesson-heading"><span class="lesson-number">04.01</span><h2>括号匹配与栈中的待解决问题</h2></div>
-<h3>知识与适用场景</h3><p>栈保存尚未匹配的左括号。右括号只能与最近的未匹配左括号配对，天然符合后进先出。表达式求值、函数调用和嵌套结构解析都沿用同样的层级思想。</p><div class="invariant"><span>推导 / 不变量</span><p>扫描到右括号时先检查栈是否为空，再检查类型。扫描完成后栈必须为空，否则仍有未闭合括号。下面约定输入只允许六种括号字符。</p></div>
+<h3>知识与适用场景</h3><p>栈保存尚未匹配的左括号。右括号只能与最近的未匹配左括号配对，天然符合后进先出。表达式求值、函数调用和嵌套结构解析都沿用同样的层级思想。</p><div class="deep-block" id="s1-before-1"><h3>1.1 栈不是数组，而是一种访问顺序</h3><p>栈只允许访问最近压入、尚未删除的元素；队列访问最早进入的元素；双端队列允许两端操作。C++ 的 stack、queue 是容器适配器，没有任意下标访问接口。vector 可以模拟栈，deque 可以作为普通双端队列。</p><p>调用 top/front/back 前必须判空。标准 stack::pop 和 queue::pop 不返回元素，正确写法是先读取再弹出。vector::push_back 是均摊 O(1)，扩容的单次代价可以是 O(n)，不要与逻辑算法的入栈次数混淆。</p></div><div class="deep-block" id="s1-before-2"><h3>1.2 括号匹配的前缀不变量</h3><p class="table-hint">窄屏下可左右滑动表格，查看完整内容。</p><div class="study-table" tabindex="0" role="region" aria-label="1.2 括号匹配的前缀不变量"><table><thead><tr><th scope="col">已读字符</th><th scope="col">从栈底到栈顶</th><th scope="col">判断</th><th scope="col">原因</th></tr></thead><tbody><tr><td>(</td><td>(</td><td>继续</td><td>存在一个未关闭的圆括号</td></tr><tr><td>([</td><td>( [</td><td>继续</td><td>方括号必须先闭合</td></tr><tr><td>([]</td><td>(</td><td>继续</td><td>右方括号与栈顶配对</td></tr><tr><td>([])</td><td>空</td><td>扫描结束后成功</td><td>所有左括号都已关闭</td></tr><tr><td>([)</td><td>( [</td><td>立即失败</td><td>不能跳过栈顶匹配更早的左括号</td></tr><tr><td>)</td><td>空</td><td>立即失败</td><td>前缀里右括号多于可匹配左括号</td></tr></tbody></table></div></div><div class="deep-block" id="s1-before-3"><h3>1.3 为什么一个计数器不够</h3><p>只有一种括号时，可以让左括号 +1、右括号 -1，每个前缀非负且最终为零即可。存在多种括号时，计数无法记住嵌套类型，([)] 的各种数量都相等却无效。栈保存的是顺序信息，而不只是数量。</p><p>基础代码明确只接受六种括号字符，因此字母、数字、空格会被拒绝。若题目要求检查源代码里的括号，还需要处理字符串字面量、转义与注释，不能简单跳过所有非括号字符就声称完成语法分析。</p></div><div class="deep-block" id="s1-before-4"><h3>1.4 最小栈：每一层保存截至该层的最小值</h3><p>例如 push(2), push(1), push(1)：三层最小值是 2,1,1，弹出一次后仍为 1，再弹一次才恢复为 2。四种操作均为 O(1)，总空间 O(n)。两份同步栈本质相同；若辅助栈只存下降点，必须保存重复最小值或计数。</p><div class="codebox"><div class="codebar"><span>C++17</span><div><a href="examples/detail-min-stack.cpp" download>下载 .cpp</a><button type="button" class="copy">复制代码</button></div></div><pre tabindex="0" aria-label="C++17 代码"><code><span class="keyword">class</span> MinStack {
+    stack&lt;pair&lt;<span class="keyword">int</span>, <span class="keyword">int</span>&gt;&gt; st; <span class="comment">// {value, minimum so far}</span>
+<span class="keyword">public</span>:
+    <span class="keyword">bool</span> empty() <span class="keyword">const</span> { <span class="keyword">return</span> st.empty(); }
+    <span class="keyword">void</span> push(<span class="keyword">int</span> x) {
+        <span class="keyword">int</span> mn = st.empty() ? x : min(x, st.top().second);
+        st.push({x, mn});
+    }
+    <span class="keyword">void</span> pop() {
+        <span class="keyword">if</span> (st.empty()) <span class="keyword">throw</span> out_of_range(<span class="string">&quot;empty stack&quot;</span>);
+        st.pop();
+    }
+    <span class="keyword">int</span> top() <span class="keyword">const</span> {
+        <span class="keyword">if</span> (st.empty()) <span class="keyword">throw</span> out_of_range(<span class="string">&quot;empty stack&quot;</span>);
+        <span class="keyword">return</span> st.top().first;
+    }
+    <span class="keyword">int</span> getMin() <span class="keyword">const</span> {
+        <span class="keyword">if</span> (st.empty()) <span class="keyword">throw</span> out_of_range(<span class="string">&quot;empty stack&quot;</span>);
+        <span class="keyword">return</span> st.top().second;
+    }
+};</code></pre></div></div><div class="deep-block" id="s1-before-5"><h3>1.5 逆波兰表达式：注意左右操作数不能交换</h3><p>token 已由调用者切分；-11 是一个数字，不是减号。约定加减乘及所有中间结果均在 long long 范围内；这不是任意精度计算器。C++ 整数除法向零截断，-7/3 为 -2。时间 O(所有 token 的总字符数)，辅助空间 O(token 数)。</p><div class="codebox"><div class="codebar"><span>C++17</span><div><a href="examples/detail-rpn.cpp" download>下载 .cpp</a><button type="button" class="copy">复制代码</button></div></div><pre tabindex="0" aria-label="C++17 代码"><code><span class="keyword">long</span> <span class="keyword">long</span> evalRPN(<span class="keyword">const</span> vector&lt;string&gt;&amp; tokens) {
+    vector&lt;<span class="keyword">long</span> <span class="keyword">long</span>&gt; st;
+    <span class="keyword">for</span> (<span class="keyword">const</span> string&amp; t : tokens) {
+        <span class="keyword">bool</span> op = t == <span class="string">&quot;+&quot;</span> || t == <span class="string">&quot;-&quot;</span> || t == <span class="string">&quot;*&quot;</span> || t == <span class="string">&quot;/&quot;</span>;
+        <span class="keyword">if</span> (!op) {
+            size_t used = <span class="number">0</span>;
+            <span class="keyword">long</span> <span class="keyword">long</span> x = stoll(t, &amp;used);
+            <span class="keyword">if</span> (used != t.size()) <span class="keyword">throw</span> invalid_argument(<span class="string">&quot;bad number&quot;</span>);
+            st.push_back(x);
+            continue;
+        }
+        <span class="keyword">if</span> (st.size() &lt; <span class="number">2</span>) <span class="keyword">throw</span> invalid_argument(<span class="string">&quot;missing operand&quot;</span>);
+        <span class="keyword">long</span> <span class="keyword">long</span> rhs = st.back(); st.pop_back();
+        <span class="keyword">long</span> <span class="keyword">long</span> lhs = st.back(); st.pop_back();
+        <span class="keyword">if</span> (t == <span class="string">&quot;+&quot;</span>) st.push_back(lhs + rhs);
+        <span class="keyword">else</span> <span class="keyword">if</span> (t == <span class="string">&quot;-&quot;</span>) st.push_back(lhs - rhs);
+        <span class="keyword">else</span> <span class="keyword">if</span> (t == <span class="string">&quot;*&quot;</span>) st.push_back(lhs * rhs);
+        <span class="keyword">else</span> {
+            <span class="keyword">if</span> (rhs == <span class="number">0</span>) <span class="keyword">throw</span> invalid_argument(<span class="string">&quot;division by zero&quot;</span>);
+            <span class="keyword">if</span> (lhs == LLONG_MIN &amp;&amp; rhs == -<span class="number">1</span>)
+                <span class="keyword">throw</span> overflow_error(<span class="string">&quot;division overflow&quot;</span>);
+            st.push_back(lhs / rhs);
+        }
+    }
+    <span class="keyword">if</span> (st.size() != <span class="number">1</span>) <span class="keyword">throw</span> invalid_argument(<span class="string">&quot;invalid expression&quot;</span>);
+    <span class="keyword">return</span> st.back();
+}</code></pre></div></div><div class="deep-block" id="s1-before-6"><h3>1.6 后缀求值手推：4 13 5 / -</h3><p class="table-hint">窄屏下可左右滑动表格，查看完整内容。</p><div class="study-table" tabindex="0" role="region" aria-label="1.6 后缀求值手推：4 13 5 / -"><table><thead><tr><th scope="col">输入</th><th scope="col">数值栈（底→顶）</th><th scope="col">动作</th></tr></thead><tbody><tr><td>4</td><td>4</td><td>数字入栈</td></tr><tr><td>13</td><td>4,13</td><td>数字入栈</td></tr><tr><td>5</td><td>4,13,5</td><td>数字入栈</td></tr><tr><td>/</td><td>4,2</td><td>rhs=5，lhs=13，13/5=2</td></tr><tr><td>-</td><td>2</td><td>rhs=2，lhs=4，4-2=2</td></tr></tbody></table></div></div><div class="invariant"><span>推导 / 不变量</span><p>扫描到右括号时先检查栈是否为空，再检查类型。扫描完成后栈必须为空，否则仍有未闭合括号。下面约定输入只允许六种括号字符。</p></div>
 <h3>手推一个例子</h3><p>输入 ([)]：栈依次为 (、([；读到 ) 时栈顶是 [，立即失败，不能跨过它与更早的 ( 配对。</p><div class="codebox"><div class="codebar"><span>C++17</span><div><a href="examples/01.cpp" download>下载 .cpp</a><button type="button" class="copy">复制代码</button></div></div><pre tabindex="0" aria-label="C++17 代码"><code><span class="keyword">bool</span> validBrackets(<span class="keyword">const</span> string&amp; s) {
     vector&lt;<span class="keyword">char</span>&gt; st;
     <span class="keyword">for</span> (<span class="keyword">char</span> c : s) {
@@ -41,9 +87,91 @@
     <span class="keyword">return</span> st.empty();
 }</code></pre></div>
 <dl class="analysis-grid"><div><dt>复杂度</dt><dd>时间 O(n)，最坏额外空间 O(n)。</dd></div><div><dt>易错点与边界</dt><dd>最小栈要保存每一层对应的最小值；重复最小值不能只记录一次。表达式中的一元负号与二元减法需要区分。</dd></div></dl>
-<div class="practice"><h3>经典考点与练习</h3><p>练习：LeetCode 20 有效的括号、155 最小栈、150 逆波兰表达式求值。</p><details><summary>面试官可能继续问什么？</summary><p>如何用一个辅助栈 O(1) 查询当前最小值？遇到非括号字符应忽略还是报错？</p><p class="muted">先用自己的话回答，再回到本节的前提、不变量和边界检查论证。</p></details></div>
+<div class="deep-block" id="s1-after-1"><h3>1.7 中缀表达式：先约定语法，再谈优先级</h3><p>两栈法分别保存数字与运算符。遇到新运算符时，先计算栈顶优先级更高的运算；相同优先级还要看结合性。+、-、*、/ 是左结合，8-3-2 应为 (8-3)-2=3。遇左括号建立屏障，遇右括号计算到屏障。</p><p>一元负号不能无条件替换为 0-：例如 2*-3 会被破坏。下面采用递归下降语法：expression = term {(+|-) term}；term = unary {(*|/) unary}；unary = (+|-) unary | primary；primary = number | &#x27;(&#x27; expression &#x27;)&#x27;。递归调用栈保存尚未完成的子表达式，因此也属于栈的应用。</p></div><div class="deep-block" id="s1-after-2"><h3>1.8 支持括号、一元正负号与优先级的计算器</h3><p>示例：2*-3 + (8-3-2) 得 -3；-(2+3)*4 得 -20；1--2 得 3。支持十进制非负整数字面量、ASCII 空格和所列运算符，不支持小数、变量、幂、隐式乘法。</p><p>前提：所有算术中间结果（包括一元取负）均可用 long long 表示，数字字面量不超过 LLONG_MAX；不直接支持把 9223372036854775808 作为字面量再取负。此实现检测部分格式错误、字面量溢出与除零，不是全范围安全的生产解析器。扫描 O(n)，包含输入副本的空间 O(n)，递归深度最坏 O(n)，极深嵌套可能导致调用栈溢出。</p><div class="codebox"><div class="codebar"><span>C++17</span><div><a href="examples/detail-calculator.cpp" download>下载 .cpp</a><button type="button" class="copy">复制代码</button></div></div><pre tabindex="0" aria-label="C++17 代码"><code><span class="keyword">class</span> Calculator {
+    string s;
+    size_t pos = <span class="number">0</span>;
+    <span class="keyword">void</span> spaces() { <span class="keyword">while</span> (pos &lt; s.size() &amp;&amp; s[pos] == &#x27; &#x27;) ++pos; }
+    <span class="keyword">bool</span> take(<span class="keyword">char</span> c) {
+        spaces();
+        <span class="keyword">if</span> (pos &lt; s.size() &amp;&amp; s[pos] == c) { ++pos; <span class="keyword">return</span> <span class="keyword">true</span>; }
+        <span class="keyword">return</span> <span class="keyword">false</span>;
+    }
+    <span class="keyword">long</span> <span class="keyword">long</span> primary() {
+        <span class="keyword">if</span> (take(&#x27;(&#x27;)) {
+            <span class="keyword">long</span> <span class="keyword">long</span> x = expression();
+            <span class="keyword">if</span> (!take(&#x27;)&#x27;)) <span class="keyword">throw</span> invalid_argument(<span class="string">&quot;missing )&quot;</span>);
+            <span class="keyword">return</span> x;
+        }
+        spaces();
+        <span class="keyword">if</span> (pos == s.size() || s[pos] &lt; &#x27;<span class="number">0</span>&#x27; || s[pos] &gt; &#x27;<span class="number">9</span>&#x27;)
+            <span class="keyword">throw</span> invalid_argument(<span class="string">&quot;expected number&quot;</span>);
+        <span class="keyword">long</span> <span class="keyword">long</span> x = <span class="number">0</span>;
+        <span class="keyword">while</span> (pos &lt; s.size() &amp;&amp; s[pos] &gt;= &#x27;<span class="number">0</span>&#x27; &amp;&amp; s[pos] &lt;= &#x27;<span class="number">9</span>&#x27;) {
+            <span class="keyword">int</span> digit = s[pos++] - &#x27;<span class="number">0</span>&#x27;;
+            <span class="keyword">if</span> (x &gt; (LLONG_MAX - digit) / <span class="number">10</span>)
+                <span class="keyword">throw</span> overflow_error(<span class="string">&quot;literal overflow&quot;</span>);
+            x = x * <span class="number">10</span> + digit;
+        }
+        <span class="keyword">return</span> x;
+    }
+    <span class="keyword">long</span> <span class="keyword">long</span> unary() {
+        <span class="keyword">if</span> (take(&#x27;+&#x27;)) <span class="keyword">return</span> unary();
+        <span class="keyword">if</span> (take(&#x27;-&#x27;)) <span class="keyword">return</span> -unary();
+        <span class="keyword">return</span> primary();
+    }
+    <span class="keyword">long</span> <span class="keyword">long</span> term() {
+        <span class="keyword">long</span> <span class="keyword">long</span> x = unary();
+        <span class="keyword">for</span> (;;) {
+            <span class="keyword">if</span> (take(&#x27;*&#x27;)) x *= unary();
+            <span class="keyword">else</span> <span class="keyword">if</span> (take(&#x27;/&#x27;)) {
+                <span class="keyword">long</span> <span class="keyword">long</span> y = unary();
+                <span class="keyword">if</span> (y == <span class="number">0</span>) <span class="keyword">throw</span> invalid_argument(<span class="string">&quot;division by zero&quot;</span>);
+                <span class="keyword">if</span> (x == LLONG_MIN &amp;&amp; y == -<span class="number">1</span>)
+                    <span class="keyword">throw</span> overflow_error(<span class="string">&quot;division overflow&quot;</span>);
+                x /= y;
+            } <span class="keyword">else</span> <span class="keyword">return</span> x;
+        }
+    }
+    <span class="keyword">long</span> <span class="keyword">long</span> expression() {
+        <span class="keyword">long</span> <span class="keyword">long</span> x = term();
+        <span class="keyword">for</span> (;;) {
+            <span class="keyword">if</span> (take(&#x27;+&#x27;)) x += term();
+            <span class="keyword">else</span> <span class="keyword">if</span> (take(&#x27;-&#x27;)) x -= term();
+            <span class="keyword">else</span> <span class="keyword">return</span> x;
+        }
+    }
+<span class="keyword">public</span>:
+    <span class="keyword">long</span> <span class="keyword">long</span> evaluate(<span class="keyword">const</span> string&amp; input) {
+        s = input; pos = <span class="number">0</span>;
+        <span class="keyword">long</span> <span class="keyword">long</span> result = expression();
+        spaces();
+        <span class="keyword">if</span> (pos != s.size()) <span class="keyword">throw</span> invalid_argument(<span class="string">&quot;trailing token&quot;</span>);
+        <span class="keyword">return</span> result;
+    }
+};</code></pre></div></div><div class="deep-block" id="s1-after-3"><h3>1.9 显式栈模拟递归，需要保存“执行到哪一步”</h3><p>仅把节点放进栈常能完成前序遍历，但后序、回溯与表达式求值还要记阶段。可以保存 (node, expanded)：第一次取出先压入 (node,true)，再按逆访问顺序压孩子；第二次取出时合并结果。</p><p>栈帧应包含递归函数之后仍会用到的局部信息。把递归改成栈通常只是把系统栈空间转移到堆上，不会自动从 O(h) 变成 O(1)。完整树遍历将在树章节展开。</p></div><div class="practice"><h3>经典考点与练习</h3><p>练习：LeetCode 20 有效的括号、155 最小栈、150 逆波兰表达式求值。</p><h3>面试追问：关键点完整解答</h3><dl class="answer-list"><div><dt>为什么最终栈空还不够判断括号有效？</dt><dd><p>还要保证每个扫描前缀都合法。) ( 的最终计数可能为零，但第一个字符没有可匹配的左括号。多种括号还必须每次匹配栈顶类型，不能只查某种左括号是否出现过。</p></dd></div><div><dt>最小栈能不能只记录严格变小的值？</dt><dd><p>可以，但必须为重复最小值记录次数；否则 push(1), push(1), pop() 会误删仍有效的最小值。更易写对的方法是每层同步保存最小值，或者辅助栈在 x&lt;=当前最小值时入栈，并在相等弹出时同步弹出。</p></dd></div><div><dt>为什么逆波兰表达式先弹出来的是右操作数？</dt><dd><p>后缀式按左表达式、右表达式、运算符排列，右表达式的结果最后入栈。减法与除法不可交换，5 2 - 必须算 5-2 而不是 2-5。</p></dd></div><div><dt>如何区分一元负号与二元减号？</dt><dd><p>在期待一个操作数的位置出现的 - 是一元运算，例如开头、左括号后或另一个二元运算符之后。递归下降把这个上下文交给 unary；两栈法则可设置 expectOperand 并将一元运算记成独立符号。</p></dd></div><div><dt>非括号字符是忽略还是报错？</dt><dd><p>由接口约定决定。本节基础括号函数报错式返回 false；表达式解析器允许空格，拒绝未知 token。忽略字母不等于能够解析程序源代码，字符串里的括号也不应直接计入。</p></dd></div><div><dt>空栈操作应该返回 -1 吗？</dt><dd><p>只有题目明确约定 -1 不可能是合法数据时才可这样做。通用接口用异常、optional 或成功标记区分空状态；本节示例抛出 out_of_range。不要直接对空栈调用 top。</p></dd></div></dl></div>
 <label class="learned"><input type="checkbox" data-progress="04-01">我能独立实现，并解释正确性与边界</label></section><section class="lesson" id="s2"><div class="lesson-heading"><span class="lesson-number">04.02</span><h2>单调栈：下一个更大元素</h2></div>
-<h3>知识与适用场景</h3><p>对每个位置寻找右侧第一个更大值，暴力会重复扫描。单调栈保存还没有找到答案的下标，新值出现时可以一次解决多个较小值。</p><div class="invariant"><span>推导 / 不变量</span><p>保持栈中温度非递增。若当前温度大于栈顶温度，则当前下标就是栈顶的第一个更高温度：之前扫描过的位置都没能弹出它。</p></div>
+<h3>知识与适用场景</h3><p>对每个位置寻找右侧第一个更大值，暴力会重复扫描。单调栈保存还没有找到答案的下标，新值出现时可以一次解决多个较小值。</p><div class="deep-block" id="s2-before-1"><h3>2.1 从 O(n²) 扫描到“只保存未解决者”</h3><p>每日温度的暴力做法对每个 i 向右扫描。重复工作来自：很多位置都在等待同一个更高温度。正向扫描时，把还没有答案的下标压栈；当前值比栈顶大，就确定栈顶的答案，继续检查新的栈顶。</p><p>不变量：下标从底到顶递增，温度非递增；每个下标都没有在已扫描部分找到更高温度。弹出 j 时，i 是右侧第一个更高值，因为如果 j 与 i 之间已有更高值，j 早已被弹出。这里不仅证明了“更高”，还证明了“第一个”。</p></div><div class="deep-block" id="s2-before-2"><h3>2.2 每日温度完整手推 [73,71,72,75]</h3><p class="table-hint">窄屏下可左右滑动表格，查看完整内容。</p><div class="study-table" tabindex="0" role="region" aria-label="2.2 每日温度完整手推 [73,71,72,75]"><table><thead><tr><th scope="col">位置与值</th><th scope="col">进入前栈（下标:值）</th><th scope="col">弹出与答案</th><th scope="col">进入后栈</th></tr></thead><tbody><tr><td>0:73</td><td>空</td><td>无</td><td>0:73</td></tr><tr><td>1:71</td><td>0:73</td><td>无</td><td>0:73,1:71</td></tr><tr><td>2:72</td><td>0:73,1:71</td><td>弹 1，等待 2-1=1</td><td>0:73,2:72</td></tr><tr><td>3:75</td><td>0:73,2:72</td><td>弹 2 得 1；弹 0 得 3</td><td>3:75</td></tr><tr><td>扫描结束</td><td>3:75</td><td>位置 3 没有答案，保持 0</td><td>最终 [3,1,1,0]</td></tr></tbody></table></div></div><div class="deep-block" id="s2-before-3"><h3>2.3 比较符对照：先固定扫描方向与语义</h3><p class="table-hint">窄屏下可左右滑动表格，查看完整内容。</p><div class="study-table" tabindex="0" role="region" aria-label="2.3 比较符对照：先固定扫描方向与语义"><table><thead><tr><th scope="col">目标</th><th scope="col">扫描与弹出条件</th><th scope="col">留下的关系</th><th scope="col">答案取得时机</th></tr></thead><tbody><tr><td>右侧第一个严格更大</td><td>左→右，a[i]&gt;a[top]</td><td>底→顶非递增</td><td>弹出 top 时答案是 i</td></tr><tr><td>右侧第一个大于等于</td><td>左→右，a[i]&gt;=a[top]</td><td>底→顶严格递减</td><td>弹出 top 时答案是 i</td></tr><tr><td>左侧第一个严格更小</td><td>左→右，a[top]&gt;=a[i]</td><td>底→顶严格递增</td><td>清理后栈顶为答案</td></tr><tr><td>右侧第一个严格更大（反向）</td><td>右→左，a[top]&lt;=a[i]</td><td>底→顶严格递减</td><td>清理后栈顶为答案</td></tr></tbody></table></div></div><div class="deep-block" id="s2-before-4"><h3>2.4 相等元素为什么没有唯一模板</h3><p>正向求右侧第一个严格更大时，相等不能结算，所以用 &gt;。反向求同一个问题时，相等的右侧候选不够大且被更近的当前值遮挡，所以清理时用 &lt;=。可见“求严格更大就用 &gt;”只有在特定扫描模板里成立。</p><p>每次写 while 之前先写清楚：被弹出者是一个已找到答案的查询，还是一个被淘汰的候选？这两个视角会产生不同的比较符。</p></div><div class="deep-block" id="s2-before-5"><h3>2.5 左侧第一个严格更小：先清理，再读取栈顶</h3><p>返回下标，-1 表示不存在。被弹出的值不比当前值小，对将来的位置而言，当前元素更近且不大于它，旧候选不会更优。时间 O(n)、空间 O(n)。</p><div class="codebox"><div class="codebar"><span>C++17</span><div><a href="examples/detail-previous-smaller.cpp" download>下载 .cpp</a><button type="button" class="copy">复制代码</button></div></div><pre tabindex="0" aria-label="C++17 代码"><code>vector&lt;<span class="keyword">int</span>&gt; previousSmaller(<span class="keyword">const</span> vector&lt;<span class="keyword">int</span>&gt;&amp; a) {
+    vector&lt;<span class="keyword">int</span>&gt; left(a.size(), -<span class="number">1</span>), st;
+    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; (<span class="keyword">int</span>)a.size(); ++i) {
+        <span class="keyword">while</span> (!st.empty() &amp;&amp; a[st.back()] &gt;= a[i]) st.pop_back();
+        <span class="keyword">if</span> (!st.empty()) left[i] = st.back();
+        st.push_back(i);
+    }
+    <span class="keyword">return</span> left;
+}</code></pre></div></div><div class="deep-block" id="s2-before-6"><h3>2.6 循环数组的下一个更大元素</h3><p>第二遍只结算，不重复入栈，避免给同一原位置创建多份任务。相同值不会让元素匹配自己。[1,2,1] 返回 [2,-1,2]。空数组自然返回空；两遍扫描仍为 O(n)，空间 O(n)。这里的 -1 按题目约定表示没有更大值，若需要区分合法 -1，可改为返回下标或 optional。</p><div class="codebox"><div class="codebar"><span>C++17</span><div><a href="examples/detail-circular-next.cpp" download>下载 .cpp</a><button type="button" class="copy">复制代码</button></div></div><pre tabindex="0" aria-label="C++17 代码"><code>vector&lt;<span class="keyword">int</span>&gt; nextGreaterCircular(<span class="keyword">const</span> vector&lt;<span class="keyword">int</span>&gt;&amp; a) {
+    <span class="keyword">int</span> n = (<span class="keyword">int</span>)a.size();
+    vector&lt;<span class="keyword">int</span>&gt; answer(n, -<span class="number">1</span>), st;
+    <span class="keyword">for</span> (<span class="keyword">int</span> pass = <span class="number">0</span>; pass &lt; <span class="number">2</span>; ++pass) {
+        <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; n; ++i) {
+            <span class="keyword">while</span> (!st.empty() &amp;&amp; a[i] &gt; a[st.back()]) {
+                answer[st.back()] = a[i];
+                st.pop_back();
+            }
+            <span class="keyword">if</span> (pass == <span class="number">0</span>) st.push_back(i);
+        }
+    }
+    <span class="keyword">return</span> answer;
+}</code></pre></div></div><div class="invariant"><span>推导 / 不变量</span><p>保持栈中温度非递增。若当前温度大于栈顶温度，则当前下标就是栈顶的第一个更高温度：之前扫描过的位置都没能弹出它。</p></div>
 <h3>手推一个例子</h3><p>[73,71,72,75]：72 解决 71；75 依次解决 72 与 73。对应等待天数 [3,1,1,0]。</p><div class="codebox"><div class="codebar"><span>C++17</span><div><a href="examples/02.cpp" download>下载 .cpp</a><button type="button" class="copy">复制代码</button></div></div><pre tabindex="0" aria-label="C++17 代码"><code>vector&lt;<span class="keyword">int</span>&gt; dailyTemperatures(<span class="keyword">const</span> vector&lt;<span class="keyword">int</span>&gt;&amp; t) {
     vector&lt;<span class="keyword">int</span>&gt; ans(t.size(), <span class="number">0</span>), st;
     <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; (<span class="keyword">int</span>)t.size(); ++i) {
@@ -57,9 +185,59 @@
     <span class="keyword">return</span> ans;
 }</code></pre></div>
 <dl class="analysis-grid"><div><dt>复杂度</dt><dd>时间 O(n)，空间 O(n)；每个下标入栈出栈至多一次。</dd></div><div><dt>易错点与边界</dt><dd>严格更大使用 &gt;，大于等于使用 &gt;=。柱状图求面积时，弹出元素后新的栈顶代表左侧边界，宽度不能用两端下标直接相减。</dd></div></dl>
-<div class="practice"><h3>经典考点与练习</h3><p>练习：LeetCode 739 每日温度、496 下一个更大元素 I、84 柱状图中最大的矩形。</p><details><summary>面试官可能继续问什么？</summary><p>为什么相同温度不弹出？如何寻找左侧第一个更小元素？</p><p class="muted">先用自己的话回答，再回到本节的前提、不变量和边界检查论证。</p></details></div>
+<div class="deep-block" id="s2-after-1"><h3>2.7 柱状图最大矩形：以被弹出的高度作为瓶颈</h3><p>固定某根柱子作为矩形最低高度，就应尽量向左右扩展到更矮的柱子之前。扫描到比栈顶更矮的柱子 i 时，栈顶 j 的右边界已经确定；弹出 j 后的新栈顶 L 是本实现的左侧阻挡位置，矩形覆盖 L+1 到 i-1，宽度 i-L-1。</p><p>下面采用严格大于才弹出的策略，所以栈内高度非递减。存在相等柱子时，L 可能与 h[j] 相等而非严格更矮，因此某个 j 的候选矩形未必是它能覆盖的最大范围。但是更左的等高柱子最终会覆盖整段，最大面积仍不会遗漏。不要把本实现的 L 一律称为“左侧第一个严格更小”。</p></div><div class="deep-block" id="s2-after-2"><h3>2.8 柱状图最大矩形：虚拟尾柱与边界宽度</h3><p>前提：高度非负，面积在 long long 内。尾部虚拟高度 0 负责结算所有正高度柱子，剩余零高度不影响答案，不修改原数组。时间 O(n)、空间 O(n)。空数组返回 0。</p><div class="codebox"><div class="codebar"><span>C++17</span><div><a href="examples/detail-histogram.cpp" download>下载 .cpp</a><button type="button" class="copy">复制代码</button></div></div><pre tabindex="0" aria-label="C++17 代码"><code><span class="keyword">long</span> <span class="keyword">long</span> largestRectangle(<span class="keyword">const</span> vector&lt;<span class="keyword">int</span>&gt;&amp; h) {
+    <span class="keyword">int</span> n = (<span class="keyword">int</span>)h.size();
+    vector&lt;<span class="keyword">int</span>&gt; st;
+    <span class="keyword">long</span> <span class="keyword">long</span> best = <span class="number">0</span>;
+    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt;= n; ++i) {
+        <span class="keyword">int</span> current = i == n ? <span class="number">0</span> : h[i];
+        <span class="keyword">while</span> (!st.empty() &amp;&amp; h[st.back()] &gt; current) {
+            <span class="keyword">int</span> j = st.back(); st.pop_back();
+            <span class="keyword">int</span> left = st.empty() ? -<span class="number">1</span> : st.back();
+            best = max(best, <span class="number">1LL</span> * h[j] * (i - left - <span class="number">1</span>));
+        }
+        <span class="keyword">if</span> (i &lt; n) st.push_back(i);
+    }
+    <span class="keyword">return</span> best;
+}</code></pre></div></div><div class="deep-block" id="s2-after-3"><h3>2.9 最大矩形手推 [2,1,5,6,2,3]</h3><p class="table-hint">窄屏下可左右滑动表格，查看完整内容。</p><div class="study-table" tabindex="0" role="region" aria-label="2.9 最大矩形手推 [2,1,5,6,2,3]"><table><thead><tr><th scope="col">事件</th><th scope="col">被弹高度</th><th scope="col">新左边界 L</th><th scope="col">宽度 i-L-1</th><th scope="col">面积</th></tr></thead><tbody><tr><td>i=1，高度1</td><td>2</td><td>-1</td><td>1</td><td>2</td></tr><tr><td>i=4，高度2</td><td>6</td><td>2</td><td>1</td><td>6</td></tr><tr><td>i=4，高度2</td><td>5</td><td>1</td><td>2</td><td>10</td></tr><tr><td>i=6，虚拟高度0</td><td>3</td><td>4</td><td>1</td><td>3</td></tr><tr><td>i=6，继续弹出</td><td>2</td><td>1</td><td>4</td><td>8</td></tr><tr><td>i=6，继续弹出</td><td>1</td><td>-1</td><td>6</td><td>6</td></tr></tbody></table></div></div><div class="deep-block" id="s2-after-4"><h3>2.10 接雨水与最大矩形的不同</h3><p>最大矩形以一根柱子为高度瓶颈、计算连续横向范围；接雨水弹出的柱子代表凹槽底部。若弹出底部后栈空，则没有左墙，不能蓄水。有左墙 L 与当前右墙 i 时，新补的一层水高度为 min(h[L],h[i])-h[bottom]，宽度 i-L-1。</p><p>这一层不包含左右墙，且与此前累计的更低水层不重叠。例如 [3,0,1,3] 先在下标 2 结算底部的一层 1，再在下标 3 结算宽度 2、高度 2 的上层水，共 5。也可用左右最大值或双指针，后者能做到 O(1) 辅助空间。</p></div><div class="deep-block" id="s2-after-5"><h3>2.11 单调栈分层计算雨水</h3><p>高度非负，结果假设在 long long 内；时间 O(n)、空间 O(n)。长度不足 3 时自然返回 0。</p><div class="codebox"><div class="codebar"><span>C++17</span><div><a href="examples/detail-rainwater.cpp" download>下载 .cpp</a><button type="button" class="copy">复制代码</button></div></div><pre tabindex="0" aria-label="C++17 代码"><code><span class="keyword">long</span> <span class="keyword">long</span> trapRain(<span class="keyword">const</span> vector&lt;<span class="keyword">int</span>&gt;&amp; h) {
+    vector&lt;<span class="keyword">int</span>&gt; st;
+    <span class="keyword">long</span> <span class="keyword">long</span> water = <span class="number">0</span>;
+    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; (<span class="keyword">int</span>)h.size(); ++i) {
+        <span class="keyword">while</span> (!st.empty() &amp;&amp; h[i] &gt; h[st.back()]) {
+            <span class="keyword">int</span> bottom = st.back(); st.pop_back();
+            <span class="keyword">if</span> (st.empty()) break;
+            <span class="keyword">int</span> left = st.back();
+            <span class="keyword">long</span> <span class="keyword">long</span> depth = (<span class="keyword">long</span> <span class="keyword">long</span>)min(h[left], h[i]) - h[bottom];
+            water += depth * (i - left - <span class="number">1</span>);
+        }
+        st.push_back(i);
+    }
+    <span class="keyword">return</span> water;
+}</code></pre></div></div><div class="deep-block" id="s2-after-6"><h3>2.12 贡献法进阶：子数组最小值之和</h3><p>不枚举所有子数组，而计算每个 a[i] 被指定为最小值的子数组数。若左边界 L 是左侧第一个严格更小，右边界 R 是右侧第一个小于等于，则左端点可选 L+1..i，共 i-L 个，右端点可选 i..R-1，共 R-i 个，贡献 a[i]*(i-L)*(R-i)。</p><p>为何一边严格、一边非严格？这是为相等最小值指定唯一归属。本策略让含多个相等最小值的区间归属最右一个；例如 [2,2] 的整段只归属下标 1。两边都严格会重复计数，两边都非严格会遗漏整个 [2,2]。反过来左非严格、右严格也可以，但不能随意混搭。</p></div><div class="deep-block" id="s2-after-7"><h3>2.13 最小值贡献：一侧严格，另一侧非严格</h3><p>采用经典题 907 的正整数约束：1&lt;=a[i]&lt;=30000，n&lt;=30000；空输入额外支持返回 0。按步骤取模，避免多个因子直接相乘。时间 O(n)、空间 O(n)。若允许负数，需要规范化模结果并重新说明数值范围。</p><div class="codebox"><div class="codebar"><span>C++17</span><div><a href="examples/detail-subarray-minimums.cpp" download>下载 .cpp</a><button type="button" class="copy">复制代码</button></div></div><pre tabindex="0" aria-label="C++17 代码"><code><span class="keyword">int</span> sumSubarrayMins(<span class="keyword">const</span> vector&lt;<span class="keyword">int</span>&gt;&amp; a) {
+    <span class="keyword">const</span> <span class="keyword">long</span> <span class="keyword">long</span> MOD = <span class="number">1000000007</span>;
+    <span class="keyword">int</span> n = (<span class="keyword">int</span>)a.size();
+    vector&lt;<span class="keyword">int</span>&gt; left(n), right(n), st;
+    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; n; ++i) {
+        <span class="keyword">while</span> (!st.empty() &amp;&amp; a[st.back()] &gt;= a[i]) st.pop_back();
+        left[i] = st.empty() ? -<span class="number">1</span> : st.back();
+        st.push_back(i);
+    }
+    st.clear();
+    <span class="keyword">for</span> (<span class="keyword">int</span> i = n - <span class="number">1</span>; i &gt;= <span class="number">0</span>; --i) {
+        <span class="keyword">while</span> (!st.empty() &amp;&amp; a[st.back()] &gt; a[i]) st.pop_back();
+        right[i] = st.empty() ? n : st.back();
+        st.push_back(i);
+    }
+    <span class="keyword">long</span> <span class="keyword">long</span> result = <span class="number">0</span>;
+    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; n; ++i) {
+        <span class="keyword">long</span> <span class="keyword">long</span> contribution = (<span class="keyword">long</span> <span class="keyword">long</span>)a[i] * (i - left[i]) % MOD;
+        contribution = contribution * (right[i] - i) % MOD;
+        result = (result + contribution) % MOD;
+    }
+    <span class="keyword">return</span> (<span class="keyword">int</span>)result;
+}</code></pre></div></div><div class="practice"><h3>经典考点与练习</h3><p>练习：LeetCode 739 每日温度、496 下一个更大元素 I、84 柱状图中最大的矩形。</p><h3>面试追问：关键点完整解答</h3><dl class="answer-list"><div><dt>为什么两层循环不是 O(n²)？</dt><dd><p>外层虽然执行 n 次，内层的每次成功迭代都会永久弹出一个下标，而每个下标只入栈一次。总入栈 n 次、总弹出至多 n 次；失败的 while 条件检查每轮至多一次。因此总体 O(n)，但某一轮仍可能弹出 O(n) 个元素。</p></dd></div><div><dt>什么时候存值，什么时候存下标？</dt><dd><p>只做括号匹配可存字符；答案涉及距离、左右边界、过期、重复值对应位置时，应存下标。每日温度需要 i-j，柱状图需要 i-L-1，单靠数值无法恢复这些信息。</p></dd></div><div><dt>为什么相同温度不能解决彼此？</dt><dd><p>题目要求严格更高，73 后面仍是 73 并不满足。正向结算时用 &gt;，相等的两个下标都留在栈里，未来 74 到来时分别得到各自距离；改成 &gt;= 就改变了问题。</p></dd></div><div><dt>柱状图宽度为什么要减 1？</dt><dd><p>左右边界 L 与 i 均不在当前结算的矩形内部，覆盖的整数位置是 L+1 到 i-1，数量为 (i-1)-(L+1)+1=i-L-1。若栈空取 L=-1，宽度就是 i。</p></dd></div><div><dt>柱状图保留相等高度，还能得到最大宽度吗？</dt><dd><p>可以。以 [2,2] 为例，虚拟尾柱先结算右柱宽度 1，再结算左柱宽度 2，最大面积为 4。保留相等值时，不是每根柱子都要独立得到完整最大范围，只要最大矩形有一个代表被结算。</p></dd></div><div><dt>子数组贡献为什么不能沿用柱状图任意一套相等策略？</dt><dd><p>求最大值只要求某个代表覆盖最优区间，而求和必须让每个子数组恰好出现一次。贡献法的左右边界需要不对称的严格性来打破相等值平局，这是计数唯一性的要求。</p></dd></div></dl></div>
 <label class="learned"><input type="checkbox" data-progress="04-02">我能独立实现，并解释正确性与边界</label></section><section class="lesson" id="s3"><div class="lesson-heading"><span class="lesson-number">04.03</span><h2>单调队列：窗口最大值</h2></div>
-<h3>知识与适用场景</h3><p>堆能解决窗口最值，但需要处理过期元素。单调队列利用固定的时间顺序，把将来永远不可能成为最大值的候选提前删除。</p><div class="invariant"><span>推导 / 不变量</span><p>队列保存下标，对应值递减。新值 x 到来时，队尾所有 &lt;=x 的旧值都可淘汰：x 更大且更晚过期。查询前移除下标 &lt;= i-k 的元素。</p></div>
+<h3>知识与适用场景</h3><p>堆能解决窗口最值，但需要处理过期元素。单调队列利用固定的时间顺序，把将来永远不可能成为最大值的候选提前删除。</p><div class="deep-block" id="s3-before-1"><h3>3.1 两端删除各有含义：过期与支配</h3><p>窗口 [i-k+1,i] 的最大值只需要候选，不需要保存所有元素。队首删除是时间约束：下标 &lt;=i-k 已不在窗口。队尾删除是价值约束：旧下标 j&lt;i 且 a[j]&lt;=a[i] 时，任何未来仍含 j 的窗口也会包含 i，i 的值不小且过期更晚，因此 j 永远不会优于 i。</p><p>此论证依赖窗口左右端点单调右移。若允许任意删除新元素、让左端点倒退或回查旧窗口，被淘汰值可能重新有用，不能原样使用这套队列。</p></div><div class="deep-block" id="s3-before-2"><h3>3.2 [1,3,-1,-3,5]，k=3 的候选变化</h3><p class="table-hint">窄屏下可左右滑动表格，查看完整内容。</p><div class="study-table" tabindex="0" role="region" aria-label="3.2 [1,3,-1,-3,5]，k=3 的候选变化"><table><thead><tr><th scope="col">i 与值</th><th scope="col">队首过期删除</th><th scope="col">队尾支配删除</th><th scope="col">加入后的队列（下标:值）</th><th scope="col">输出</th></tr></thead><tbody><tr><td>0:1</td><td>无</td><td>无</td><td>0:1</td><td>未成完整窗口</td></tr><tr><td>1:3</td><td>无</td><td>0:1</td><td>1:3</td><td>未成完整窗口</td></tr><tr><td>2:-1</td><td>无</td><td>无</td><td>1:3,2:-1</td><td>3</td></tr><tr><td>3:-3</td><td>无</td><td>无</td><td>1:3,2:-1,3:-3</td><td>3</td></tr><tr><td>4:5</td><td>1:3（1&lt;=4-3）</td><td>3:-3,2:-1</td><td>4:5</td><td>5</td></tr></tbody></table></div></div><div class="deep-block" id="s3-before-3"><h3>3.3 三个不变量与完整操作顺序</h3><p>下标从队首到队尾严格递增；值从队首到队尾严格递减（本节用 &lt;= 清尾）；队列里所有下标都位于当前窗口。更大的值排在更前，所以最大值在队首。</p><p>采用固定顺序：先从头部移除过期候选；再从尾部移除被支配者；压入当前下标；当 i&gt;=k-1 时输出。队列空时先别读取 front。k&lt;=0、k&gt;n 与空输入在基础函数中返回空数组。</p></div><div class="deep-block" id="s3-before-4"><h3>3.4 与堆、树及普通滑动窗口比较</h3><p>朴素逐窗口扫描 O(nk)。平衡树维护窗口内多重集合可做到 O(n log k)，需按实例删除重复值。普通优先队列配合队首懒惰过期删除可能累积 O(n) 个无效元素，最坏空间 O(n)、时间 O(n log n)，不能不加条件就写 O(k) 空间。</p><p>单调队列利用最值候选的支配关系得到 O(n) 时间和 O(k) 辅助空间，输出另外占 O(n-k+1)。如果要维护中位数，不存在同样简单的支配关系，不能只改一个比较符解决。</p></div><div class="invariant"><span>推导 / 不变量</span><p>队列保存下标，对应值递减。新值 x 到来时，队尾所有 &lt;=x 的旧值都可淘汰：x 更大且更晚过期。查询前移除下标 &lt;= i-k 的元素。</p></div>
 <h3>手推一个例子</h3><p>[1,3,-1,-3,5]，k=3：3 淘汰 1；5 到来时移除过期的 3，并从尾部淘汰 -3、-1，窗口最大值依次为 3、3、5。</p><div class="codebox"><div class="codebar"><span>C++17</span><div><a href="examples/03.cpp" download>下载 .cpp</a><button type="button" class="copy">复制代码</button></div></div><pre tabindex="0" aria-label="C++17 代码"><code>vector&lt;<span class="keyword">int</span>&gt; maxSlidingWindow(<span class="keyword">const</span> vector&lt;<span class="keyword">int</span>&gt;&amp; a, <span class="keyword">int</span> k) {
     <span class="keyword">if</span> (k &lt;= <span class="number">0</span> || k &gt; (<span class="keyword">int</span>)a.size()) <span class="keyword">return</span> {};
     deque&lt;<span class="keyword">int</span>&gt; q;
@@ -73,9 +251,46 @@
     <span class="keyword">return</span> ans;
 }</code></pre></div>
 <dl class="analysis-grid"><div><dt>复杂度</dt><dd>时间 O(n)，辅助空间 O(k)，输出空间 O(n-k+1)。</dd></div><div><dt>易错点与边界</dt><dd>队列中存值会失去精确过期信息；若使用值，需要另行处理重复值及其数量。</dd></div></dl>
-<div class="practice"><h3>经典考点与练习</h3><p>练习：LeetCode 239 滑动窗口最大值、862 和至少为 K 的最短子数组。</p><details><summary>面试官可能继续问什么？</summary><p>为什么删除队尾旧的小值是安全的？窗口最小值改哪个比较符？</p><p class="muted">先用自己的话回答，再回到本节的前提、不变量和边界检查论证。</p></details></div>
+<div class="deep-block" id="s3-after-1"><h3>3.5 两个单调队列：最大值减最小值不超过 limit 的最长窗口</h3><p>前提 limit&gt;=0 时，单元素窗口必定合法，所以缩窗过程不会在需要再次读取时把两个队列全部清空。差值先转 long long，避免 INT_MAX-INT_MIN 溢出。例 [8,2,4,7]、limit=4，答案 2。</p><p>窗口扩张不会减小 max-min，收缩不会增大它，因此可以用双指针修复不合法状态。每个下标在两个队列中各入出至多一次，总 O(n)、最坏空间 O(n)。</p><div class="codebox"><div class="codebar"><span>C++17</span><div><a href="examples/detail-bounded-window.cpp" download>下载 .cpp</a><button type="button" class="copy">复制代码</button></div></div><pre tabindex="0" aria-label="C++17 代码"><code><span class="keyword">int</span> longestBoundedWindow(<span class="keyword">const</span> vector&lt;<span class="keyword">int</span>&gt;&amp; a, <span class="keyword">long</span> <span class="keyword">long</span> limit) {
+    <span class="keyword">if</span> (limit &lt; <span class="number">0</span>) <span class="keyword">return</span> <span class="number">0</span>;
+    deque&lt;<span class="keyword">int</span>&gt; maximum, minimum;
+    <span class="keyword">int</span> left = <span class="number">0</span>, best = <span class="number">0</span>;
+    <span class="keyword">for</span> (<span class="keyword">int</span> right = <span class="number">0</span>; right &lt; (<span class="keyword">int</span>)a.size(); ++right) {
+        <span class="keyword">while</span> (!maximum.empty() &amp;&amp; a[maximum.back()] &lt;= a[right])
+            maximum.pop_back();
+        <span class="keyword">while</span> (!minimum.empty() &amp;&amp; a[minimum.back()] &gt;= a[right])
+            minimum.pop_back();
+        maximum.push_back(right);
+        minimum.push_back(right);
+        <span class="keyword">while</span> ((<span class="keyword">long</span> <span class="keyword">long</span>)a[maximum.front()] - a[minimum.front()] &gt; limit) {
+            <span class="keyword">if</span> (maximum.front() == left) maximum.pop_front();
+            <span class="keyword">if</span> (minimum.front() == left) minimum.pop_front();
+            ++left;
+        }
+        best = max(best, right - left + <span class="number">1</span>);
+    }
+    <span class="keyword">return</span> best;
+}</code></pre></div></div><div class="deep-block" id="s3-after-2"><h3>3.6 含负数的最短子数组：普通和窗口为什么失效</h3><p>目标是找非空区间，其和至少为 K，长度最短。若数组全为正数，和随右端点扩张增加、随左端点收缩减少；允许负数后不再成立。例如 [1,-1,3]、K=3：得到总和 3 后，普通缩窗先删 1，和为 2 就停，却漏掉继续删 -1 后得到的单元素 [3]。</p><p>改用前缀和 P[0]=0，P[i] 表示前 i 个数的和；区间 [j,i) 满足 P[i]-P[j]&gt;=K，长度为 i-j。队列保存可能作为左端点的前缀下标，按下标递增且前缀值严格递增。</p></div><div class="deep-block" id="s3-after-3"><h3>3.7 前缀队列为什么能从两端永久删除</h3><p>队首 j 满足 P[i]-P[j]&gt;=K 时，先更新 i-j，再弹出 j。对于未来右端点 r&gt;i，同一个 j 只会产生更长区间，所以 j 不会再改善全局最短答案。需要 while 而不是 if，因为可能有多个可行起点，越靠后的起点给出越短区间。</p><p>队尾 j 若满足 P[j]&gt;=P[i]，可直接删除：对于任意未来右端点 r，P[r]-P[i]&gt;=P[r]-P[j]，且 r-i&lt;r-j。新的 i 在“更容易满足和约束”和“长度更短”两个方面都不差于 j。每个前缀最多入出一次。</p></div><div class="deep-block" id="s3-after-4"><h3>3.8 前缀和单调队列：和至少 K 的最短非空子数组</h3><p>约定 n&lt;=100000、|a[i]|&lt;=100000，k 为 long long；前缀及其差不会溢出。查询放在压入 i 之前，确保不会选择 j=i 的空区间，即使 K&lt;=0 也保持“非空”语义。空数组返回 -1。时间与空间均为 O(n)。</p><div class="codebox"><div class="codebar"><span>C++17</span><div><a href="examples/detail-shortest-subarray.cpp" download>下载 .cpp</a><button type="button" class="copy">复制代码</button></div></div><pre tabindex="0" aria-label="C++17 代码"><code><span class="keyword">int</span> shortestSubarray(<span class="keyword">const</span> vector&lt;<span class="keyword">int</span>&gt;&amp; a, <span class="keyword">long</span> <span class="keyword">long</span> k) {
+    <span class="keyword">int</span> n = (<span class="keyword">int</span>)a.size();
+    vector&lt;<span class="keyword">long</span> <span class="keyword">long</span>&gt; prefix(n + <span class="number">1</span>, <span class="number">0</span>);
+    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; n; ++i) prefix[i + <span class="number">1</span>] = prefix[i] + a[i];
+    deque&lt;<span class="keyword">int</span>&gt; candidates;
+    <span class="keyword">int</span> best = INT_MAX;
+    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt;= n; ++i) {
+        <span class="keyword">while</span> (!candidates.empty() &amp;&amp;
+               prefix[i] - prefix[candidates.front()] &gt;= k) {
+            best = min(best, i - candidates.front());
+            candidates.pop_front();
+        }
+        <span class="keyword">while</span> (!candidates.empty() &amp;&amp;
+               prefix[candidates.back()] &gt;= prefix[i])
+            candidates.pop_back();
+        candidates.push_back(i);
+    }
+    <span class="keyword">return</span> best == INT_MAX ? -<span class="number">1</span> : best;
+}</code></pre></div></div><div class="deep-block" id="s3-after-5"><h3>3.9 [1,-1,3]，K=3：前缀队列手推</h3><p class="table-hint">窄屏下可左右滑动表格，查看完整内容。</p><div class="study-table" tabindex="0" role="region" aria-label="3.9 [1,-1,3]，K=3：前缀队列手推"><table><thead><tr><th scope="col">i / P[i]</th><th scope="col">先结算队首</th><th scope="col">再清理队尾</th><th scope="col">最终候选下标</th><th scope="col">当前答案</th></tr></thead><tbody><tr><td>0 / 0</td><td>无</td><td>无</td><td>0</td><td>无</td></tr><tr><td>1 / 1</td><td>差1&lt;3</td><td>无</td><td>0,1</td><td>无</td></tr><tr><td>2 / 0</td><td>差0&lt;3</td><td>弹1（1&gt;=0）、弹0（0&gt;=0）</td><td>2</td><td>无</td></tr><tr><td>3 / 3</td><td>弹2，长度3-2=1</td><td>无</td><td>3</td><td>1</td></tr></tbody></table></div></div><div class="practice"><h3>经典考点与练习</h3><p>练习：LeetCode 239 滑动窗口最大值、862 和至少为 K 的最短子数组。</p><h3>面试追问：关键点完整解答</h3><dl class="answer-list"><div><dt>为什么新元素可以淘汰队尾更小的旧元素？</dt><dd><p>需要同时满足值更优和有效期更晚。未来只要旧元素仍在一个向右移动的窗口里，新元素也在；旧元素过期以后更无资格。因此删掉旧元素不会损失任何未来最大值。只比较数值、不比较时间顺序是不完整的证明。</p></dd></div><div><dt>相等值用 &lt; 还是 &lt;= 删除？</dt><dd><p>两种都能求出最大值。用 &lt;= 保留最新的相等值，队列更短、过期更晚；用 &lt; 保留所有相等候选也正确，但必须按下标分别过期。如果题目要求最大值的最早下标，应保留旧的相等值，不能直接套 &lt;=。</p></dd></div><div><dt>窗口最小值改哪里？</dt><dd><p>队尾清理从 a[q.back()]&lt;=a[i] 改成 &gt;=，使值严格递增。下标仍递增、过期条件仍是 q.front()&lt;=i-k、答案仍在队首。改变的是优劣关系，不是时间顺序。</p></dd></div><div><dt>为什么不能先取答案再清理过期下标？</dt><dd><p>队首可能已经离开当前窗口。例如 [9,1,2]、k=2，在处理下标2时，9不在 [1,2] 内；先读队首就会错误输出9。入队和清理之间可有等价安排，但输出前必须同时满足有效期与单调性。</p></dd></div><div><dt>最短子数组为什么不用普通单调栈？</dt><dd><p>它同时需要淘汰队尾较差的前缀，以及从队首结算已可行起点，单端栈不能同时高效完成。deque 提供两端 O(1) 操作，恰好对应这两种不同的删除依据。</p></dd></div><div><dt>最短子数组在队首可行后立即弹出，会不会错过更好答案？</dt><dd><p>已经用当前右端点 i 记录 i-j；未来右端点只会增大，因此以同一个 j 为起点的区间不可能更短。这个删除逻辑适用于全局最短长度，不意味着该起点对其他任务（例如统计所有可行区间数）也可以删除。</p></dd></div></dl></div>
 <label class="learned"><input type="checkbox" data-progress="04-03">我能独立实现，并解释正确性与边界</label></section><section class="lesson" id="s4"><div class="lesson-heading"><span class="lesson-number">04.04</span><h2>两个栈实现队列与均摊分析</h2></div>
-<h3>知识与适用场景</h3><p>输入栈接收新元素，输出栈负责弹出最旧元素。当输出栈为空时，把输入栈全部倒入，顺序就被反转。输出栈非空时不能把新元素混入。</p><div class="invariant"><span>推导 / 不变量</span><p>每个元素最多压入输入栈一次、转入输出栈一次、弹出一次。虽然某次 pop 可能耗时 O(n)，一串 n 次操作的总成本是 O(n)。</p></div>
+<h3>知识与适用场景</h3><p>输入栈接收新元素，输出栈负责弹出最旧元素。当输出栈为空时，把输入栈全部倒入，顺序就被反转。输出栈非空时不能把新元素混入。</p><div class="deep-block" id="s4-before-1"><h3>4.1 用一个式子描述两栈队列的逻辑顺序</h3><p>把 out 从顶到底读取，再把 in 从底到顶读取，拼起来就是队列从头到尾的逻辑顺序。push 只向 in 加元素；pop/front 优先访问 out；仅当 out 为空时才把 in 全部倒入 out。</p><p>不能在 out 非空时继续倒栈。反例：push(1),push(2),pop() 后 out 留着 2；再 push(3)，如果立刻把 3 压到 out 顶部，下次会先弹出 3，违反先进先出。</p></div><div class="deep-block" id="s4-before-2"><h3>4.2 两栈队列逐步跟踪</h3><p class="table-hint">窄屏下可左右滑动表格，查看完整内容。</p><div class="study-table" tabindex="0" role="region" aria-label="4.2 两栈队列逐步跟踪"><table><thead><tr><th scope="col">操作</th><th scope="col">in（底→顶）</th><th scope="col">out（底→顶）</th><th scope="col">逻辑队列（头→尾）</th></tr></thead><tbody><tr><td>push(1), push(2)</td><td>1,2</td><td>空</td><td>1,2</td></tr><tr><td>front()=1</td><td>空</td><td>2,1</td><td>1,2</td></tr><tr><td>pop()=1</td><td>空</td><td>2</td><td>2</td></tr><tr><td>push(3)</td><td>3</td><td>2</td><td>2,3</td></tr><tr><td>pop()=2</td><td>3</td><td>空</td><td>3</td></tr><tr><td>pop()=3</td><td>空</td><td>空</td><td>空</td></tr></tbody></table></div></div><div class="deep-block" id="s4-before-3"><h3>4.3 均摊不是概率平均：记账法与势能法</h3><p>记账法：一个元素入 in 一次，之后最多从 in 弹出一次、压入 out 一次、从 out 弹出一次，生命周期内基本栈操作不超过四次。一串 m 次队列操作总工作量 O(m)，所以每次均摊 O(1)，不依赖输入随机性。</p><p>势能法取 Φ=2*|in|，把每个基本栈 push/pop 的费用记为 1。队列 push 实际费用1、势能增加2，均摊3；倒入 t 个元素再 pop 实际费用2t+1、势能减少2t，均摊1；不需要倒栈的 pop 费用1、势能不变。front 的读操作再加常数即可。势能从0开始且始终非负，所以总实际成本被总均摊成本控制。</p><p>面试应完整说：push 最坏 O(1)，pop/front 单次最坏 O(n)、均摊 O(1)，总空间 O(n)。实时系统若要求每次请求都有严格常数延迟，这个简单实现并不能保证。</p></div><div class="invariant"><span>推导 / 不变量</span><p>每个元素最多压入输入栈一次、转入输出栈一次、弹出一次。虽然某次 pop 可能耗时 O(n)，一串 n 次操作的总成本是 O(n)。</p></div>
 <h3>手推一个例子</h3><p>push(1)、push(2)、pop()：倒入输出栈后栈顶为 1；再 push(3) 不影响输出栈中的 2，下一次 pop 仍返回 2。</p><div class="codebox"><div class="codebar"><span>C++17</span><div><a href="examples/04.cpp" download>下载 .cpp</a><button type="button" class="copy">复制代码</button></div></div><pre tabindex="0" aria-label="C++17 代码"><code><span class="keyword">class</span> TwoStackQueue {
     stack&lt;<span class="keyword">int</span>&gt; in, out;
     <span class="keyword">void</span> transfer() {
@@ -98,5 +313,306 @@
     }
 };</code></pre></div>
 <dl class="analysis-grid"><div><dt>复杂度</dt><dd>push 最坏 O(1)；pop/front 均摊 O(1)、单次最坏 O(n)；空间 O(n)。</dd></div><div><dt>易错点与边界</dt><dd>空队列行为要与接口约定一致。使用队列做 BFS 时入队就标记，防止重复入队。</dd></div></dl>
-<div class="practice"><h3>经典考点与练习</h3><p>练习：LeetCode 232 用栈实现队列、225 用队列实现栈。</p><details><summary>面试官可能继续问什么？</summary><p>单次最坏和均摊有什么区别？为什么不能每次 pop 都执行倒栈？</p><p class="muted">先用自己的话回答，再回到本节的前提、不变量和边界检查论证。</p></details></div>
-<label class="learned"><input type="checkbox" data-progress="04-04">我能独立实现，并解释正确性与边界</label></section><nav class="chapter-pager" aria-label="相邻章节"><a href="../03-链表/index.html"><small>上一章</small>← 链表</a><a href="../05-哈希集合与位运算/index.html"><small>下一章</small>哈希、集合与位运算 →</a></nav><footer>秋招算法学习讲义 · C++17<br>例题编号供检索；难度与覆盖范围按学习顺序组织。</footer></main><aside class="toc" aria-label="本页目录"><p class="rail-label">本章小节</p><a href="#s1"><span>01</span>括号匹配与栈中的待解决问题</a><a href="#s2"><span>02</span>单调栈：下一个更大元素</a><a href="#s3"><span>03</span>单调队列：窗口最大值</a><a href="#s4"><span>04</span>两个栈实现队列与均摊分析</a></aside></div><div class="toast" role="status" aria-live="polite"></div></body></html>
+<div class="deep-block" id="s4-after-1"><h3>4.4 一个队列实现栈：把新元素旋转到队首</h3><p>保持队首是最新压入者，push 最坏 O(n)，pop/top 最坏 O(1)，空间 O(n)。另一种实现让 push 为 O(1)，把搬运成本放到 pop；题目若明确要求两个队列，也可用第二个队列接收搬运结果。无论哪种方案，都要说清昂贵的是哪个操作，不能照搬两栈队列的均摊结论。</p><div class="codebox"><div class="codebar"><span>C++17</span><div><a href="examples/detail-queue-stack.cpp" download>下载 .cpp</a><button type="button" class="copy">复制代码</button></div></div><pre tabindex="0" aria-label="C++17 代码"><code><span class="keyword">class</span> QueueStack {
+    queue&lt;<span class="keyword">int</span>&gt; q;
+<span class="keyword">public</span>:
+    <span class="keyword">bool</span> empty() <span class="keyword">const</span> { <span class="keyword">return</span> q.empty(); }
+    <span class="keyword">void</span> push(<span class="keyword">int</span> x) {
+        size_t oldSize = q.size();
+        q.push(x);
+        <span class="keyword">for</span> (size_t i = <span class="number">0</span>; i &lt; oldSize; ++i) {
+            <span class="keyword">int</span> front = q.front(); q.pop();
+            q.push(front);
+        }
+    }
+    <span class="keyword">int</span> pop() {
+        <span class="keyword">if</span> (q.empty()) <span class="keyword">throw</span> out_of_range(<span class="string">&quot;empty stack&quot;</span>);
+        <span class="keyword">int</span> value = q.front(); q.pop();
+        <span class="keyword">return</span> value;
+    }
+    <span class="keyword">int</span> top() <span class="keyword">const</span> {
+        <span class="keyword">if</span> (q.empty()) <span class="keyword">throw</span> out_of_range(<span class="string">&quot;empty stack&quot;</span>);
+        <span class="keyword">return</span> q.front();
+    }
+};</code></pre></div></div><div class="deep-block" id="s4-after-2"><h3>4.5 固定容量循环队列：用 size 区分空与满</h3><p>head 指向下一次要读取的位置，写入位置为 (head+used)%capacity。满时返回 false，不覆盖旧数据。容量1、装满后弹出再写入、跨尾回绕都要测。初始化 O(capacity)，之后各接口最坏 O(1)，空间 O(capacity)。这是普通单线程实现，不是无锁并发队列。</p><div class="codebox"><div class="codebar"><span>C++17</span><div><a href="examples/detail-ring-queue.cpp" download>下载 .cpp</a><button type="button" class="copy">复制代码</button></div></div><pre tabindex="0" aria-label="C++17 代码"><code><span class="keyword">class</span> RingQueue {
+    vector&lt;<span class="keyword">int</span>&gt; data;
+    size_t head = <span class="number">0</span>, used = <span class="number">0</span>;
+<span class="keyword">public</span>:
+    <span class="keyword">explicit</span> RingQueue(<span class="keyword">int</span> capacity) {
+        <span class="keyword">if</span> (capacity &lt;= <span class="number">0</span>) <span class="keyword">throw</span> invalid_argument(<span class="string">&quot;capacity must be positive&quot;</span>);
+        data.resize((size_t)capacity);
+    }
+    <span class="keyword">bool</span> empty() <span class="keyword">const</span> { <span class="keyword">return</span> used == <span class="number">0</span>; }
+    <span class="keyword">bool</span> full() <span class="keyword">const</span> { <span class="keyword">return</span> used == data.size(); }
+    <span class="keyword">bool</span> push(<span class="keyword">int</span> value) {
+        <span class="keyword">if</span> (full()) <span class="keyword">return</span> <span class="keyword">false</span>;
+        data[(head + used) % data.size()] = value;
+        ++used;
+        <span class="keyword">return</span> <span class="keyword">true</span>;
+    }
+    optional&lt;<span class="keyword">int</span>&gt; pop() {
+        <span class="keyword">if</span> (empty()) <span class="keyword">return</span> nullopt;
+        <span class="keyword">int</span> value = data[head];
+        head = (head + <span class="number">1</span>) % data.size();
+        --used;
+        <span class="keyword">return</span> value;
+    }
+    optional&lt;<span class="keyword">int</span>&gt; front() <span class="keyword">const</span> {
+        <span class="keyword">if</span> (empty()) <span class="keyword">return</span> nullopt;
+        <span class="keyword">return</span> data[head];
+    }
+};</code></pre></div></div><div class="deep-block" id="s4-after-3"><h3>4.6 BFS 为何入队就标记</h3><p>队列按距离非递减顺序处理无权图节点。第一次发现节点 v 时就设置距离并入队，保证每个节点只入队一次。若到出队才标记，菱形图 0→1、0→2、1→3、2→3 会让 3 被重复入队。</p><p>对于有权图，第一次发现不一定是最短路；0-1 BFS 使用双端队列与松弛，Dijkstra 使用优先队列，不能直接照搬普通 BFS 的首次发现即定值。</p></div><div class="deep-block" id="s4-after-4"><h3>4.7 无权图最短距离：入队时确定访问状态</h3><p>邻接表可表示有向或无向图；边权视为1。不可达点距离为-1。时间 O(V+E)，辅助空间 O(V)，不含图的存储。若按层输出，必须先保存本层 queue.size()，不要在本层循环中反复读取变化的长度。</p><div class="codebox"><div class="codebar"><span>C++17</span><div><a href="examples/detail-bfs.cpp" download>下载 .cpp</a><button type="button" class="copy">复制代码</button></div></div><pre tabindex="0" aria-label="C++17 代码"><code>vector&lt;<span class="keyword">int</span>&gt; bfsDistance(<span class="keyword">const</span> vector&lt;vector&lt;<span class="keyword">int</span>&gt;&gt;&amp; graph, <span class="keyword">int</span> source) {
+    <span class="keyword">int</span> n = (<span class="keyword">int</span>)graph.size();
+    <span class="keyword">if</span> (source &lt; <span class="number">0</span> || source &gt;= n) <span class="keyword">throw</span> out_of_range(<span class="string">&quot;invalid source&quot;</span>);
+    vector&lt;<span class="keyword">int</span>&gt; distance(n, -<span class="number">1</span>);
+    queue&lt;<span class="keyword">int</span>&gt; pending;
+    distance[source] = <span class="number">0</span>;
+    pending.push(source);
+    <span class="keyword">while</span> (!pending.empty()) {
+        <span class="keyword">int</span> u = pending.front(); pending.pop();
+        <span class="keyword">for</span> (<span class="keyword">int</span> v : graph[u]) {
+            <span class="keyword">if</span> (v &lt; <span class="number">0</span> || v &gt;= n) <span class="keyword">throw</span> out_of_range(<span class="string">&quot;invalid neighbor&quot;</span>);
+            <span class="keyword">if</span> (distance[v] != -<span class="number">1</span>) continue;
+            distance[v] = distance[u] + <span class="number">1</span>;
+            pending.push(v);
+        }
+    }
+    <span class="keyword">return</span> distance;
+}</code></pre></div></div><div class="deep-block" id="s4-after-5"><h3>4.8 撤销与重做：两个栈维护的不是队列顺序</h3><p>undo 栈保存历史操作，redo 栈保存刚被撤销的操作。撤销时将操作从 undo 移到 redo 并执行逆操作；重做时反向移动并重新执行。产生新的编辑时必须清空 redo，因为旧的未来分支已经失效。</p><p>实际工程中还要选择保存完整快照、差量还是可逆命令，并处理一次业务操作包含多个修改的原子性。本章只讨论历史顺序，不把这些要求混同于两栈队列的倒栈逻辑。</p></div><div class="practice"><h3>经典考点与练习</h3><p>练习：LeetCode 232 用栈实现队列、225 用队列实现栈。</p><h3>面试追问：关键点完整解答</h3><dl class="answer-list"><div><dt>为什么只有 out 为空才倒栈？</dt><dd><p>out 保存更早进入的一批元素，其顶部应先出队；in 保存后来进入的一批元素。如果提前把新批次放在 out 顶部，就让晚到者越过早到者。等 out 消耗完，才允许反转新批次。</p></dd></div><div><dt>front 为什么也可能是 O(n)？</dt><dd><p>若 out 为空而 in 有 n 个元素，读取最早元素之前也必须完成倒栈。虽然 front 不减少逻辑队列长度，但会改变内部布局；第一次 O(n)，随后不再重复倒同一批元素，因此仍是均摊 O(1)。</p></dd></div><div><dt>均摊 O(1) 与平均 O(1) 区别是什么？</dt><dd><p>均摊分析对任意合法操作序列给出总成本上界，不要求某种输入概率分布；平均复杂度通常需要说明随机输入或随机算法模型。均摊也不是单次最坏保证。</p></dd></div><div><dt>循环队列 head==tail 为什么可能有歧义？</dt><dd><p>若只让 head 和 tail 指向环上位置，空队列与绕一圈后的满队列可能落在相同位置。可以另存 size（本例）、增加满标记，或牺牲一个槽位。牺牲槽位时长度 k+1 的数组才存得下 k 个元素。</p></dd></div><div><dt>一个队列实现栈的连续 push 总成本是多少？</dt><dd><p>本例第 i 次 push 要旋转之前的 i-1 个元素，连续 n 次 push 总成本为 0+1+…+(n-1)=O(n²)。这里同一个老元素会被多次搬运，所以不能用“每个元素只搬一次”的两栈队列证明。</p></dd></div><div><dt>BFS 入队标记是否适用于所有最短路？</dt><dd><p>只适用于普通无权或等权边 BFS 的首次发现定距离性质。有权图可能后来找到更短路径，需要松弛和相应的数据结构；即使都用 deque，0-1 BFS 也不能机械复制本例的 visited 规则。</p></dd></div></dl></div>
+<label class="learned"><input type="checkbox" data-progress="04-04">我能独立实现，并解释正确性与边界</label></section><section class="chapter-review" id="chapter-review"><p class="eyebrow">PRACTICE / 把本章方法用起来</p><h2>综合例题与章末自测</h2><div class="deep-block" id="review-1"><h3>练习路线：从能套模板到能解释变式</h3><p class="table-hint">窄屏下可左右滑动表格，查看完整内容。</p><div class="study-table" tabindex="0" role="region" aria-label="练习路线：从能套模板到能解释变式"><table><thead><tr><th scope="col">阶段</th><th scope="col">经典题</th><th scope="col">必须回答的关键点</th><th scope="col">最小自测</th></tr></thead><tbody><tr><td>基础栈</td><td>20 有效括号；155 最小栈；150 逆波兰</td><td>前缀合法；重复最小值；左右操作数</td><td>([)]；1,1 后弹出；5 2 -</td></tr><tr><td>单调栈入门</td><td>739 每日温度；503 下一个更大元素 II</td><td>待解决者与候选者；循环第二遍不重复压栈</td><td>全相等；严格递减；[1,2,1]</td></tr><tr><td>边界与贡献</td><td>84 最大矩形；42 接雨水；907 最小值之和</td><td>宽度减1；水层不重叠；相等值唯一归属</td><td>[2,2]；[3,0,1,3]；[2,2]</td></tr><tr><td>单调队列</td><td>239 窗口最大值；1438 最长连续子数组</td><td>两端删除的区别；下标过期；差值溢出</td><td>k=1；k=n；全相等；极值</td></tr><tr><td>进阶前缀</td><td>862 最短子数组</td><td>负数破坏和窗口；队首结算和队尾支配</td><td>[1,-1,3]、K=3；无解；K&lt;=0</td></tr><tr><td>接口设计</td><td>232 两栈队列；225 队列栈；622 循环队列</td><td>逻辑顺序；均摊与最坏；空满及回绕</td><td>交替入出；容量1；空读；满写</td></tr></tbody></table></div></div><div class="deep-block" id="review-2"><h3>综合测试：小规模暴力对照与状态机测试</h3><p>算法代码容易在相等值、负数和边界位置出错。下面提供一个带 main 的独立测试文件：将五个线性算法与朴素枚举对照，并将循环队列与标准 deque 的受限容量模型逐步对照。固定随机种子以便重现。</p><p>下载文件已经包含被测函数，不依赖拼接其他示例。手动编译运行：g++ -std=c++17 -O2 -Wall -Wextra detail-structure-tests.cpp -o chapter04-tests，然后运行生成的程序。随机测试使用小数组，不代表覆盖了所有情况；它用于发现错误，不能替代前面的正确性证明。此处提供的是可运行测试源码，不表示已在当前环境执行通过。</p></div><div class="deep-block" id="review-3"><h3>完整测试程序：重复值、负数、宽整数与循环回绕</h3><p>覆盖 1000 组小数组、三种容量各 1000 次队列操作，以及一组有针对性的固定反例。使用显式 require，避免 NDEBUG 禁用 assert 后测试失效。</p><div class="codebox"><div class="codebar"><span>C++17</span><div><a href="examples/detail-structure-tests.cpp" download>下载 .cpp</a><button type="button" class="copy">复制代码</button></div></div><pre tabindex="0" aria-label="C++17 代码"><code><span class="keyword">long</span> <span class="keyword">long</span> largestRectangle(<span class="keyword">const</span> vector&lt;<span class="keyword">int</span>&gt;&amp; h) {
+    <span class="keyword">int</span> n = (<span class="keyword">int</span>)h.size();
+    vector&lt;<span class="keyword">int</span>&gt; st;
+    <span class="keyword">long</span> <span class="keyword">long</span> best = <span class="number">0</span>;
+    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt;= n; ++i) {
+        <span class="keyword">int</span> current = i == n ? <span class="number">0</span> : h[i];
+        <span class="keyword">while</span> (!st.empty() &amp;&amp; h[st.back()] &gt; current) {
+            <span class="keyword">int</span> j = st.back(); st.pop_back();
+            <span class="keyword">int</span> left = st.empty() ? -<span class="number">1</span> : st.back();
+            best = max(best, <span class="number">1LL</span> * h[j] * (i - left - <span class="number">1</span>));
+        }
+        <span class="keyword">if</span> (i &lt; n) st.push_back(i);
+    }
+    <span class="keyword">return</span> best;
+}
+
+<span class="keyword">long</span> <span class="keyword">long</span> trapRain(<span class="keyword">const</span> vector&lt;<span class="keyword">int</span>&gt;&amp; h) {
+    vector&lt;<span class="keyword">int</span>&gt; st;
+    <span class="keyword">long</span> <span class="keyword">long</span> water = <span class="number">0</span>;
+    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; (<span class="keyword">int</span>)h.size(); ++i) {
+        <span class="keyword">while</span> (!st.empty() &amp;&amp; h[i] &gt; h[st.back()]) {
+            <span class="keyword">int</span> bottom = st.back(); st.pop_back();
+            <span class="keyword">if</span> (st.empty()) break;
+            <span class="keyword">int</span> left = st.back();
+            <span class="keyword">long</span> <span class="keyword">long</span> depth = (<span class="keyword">long</span> <span class="keyword">long</span>)min(h[left], h[i]) - h[bottom];
+            water += depth * (i - left - <span class="number">1</span>);
+        }
+        st.push_back(i);
+    }
+    <span class="keyword">return</span> water;
+}
+
+<span class="keyword">int</span> sumSubarrayMins(<span class="keyword">const</span> vector&lt;<span class="keyword">int</span>&gt;&amp; a) {
+    <span class="keyword">const</span> <span class="keyword">long</span> <span class="keyword">long</span> MOD = <span class="number">1000000007</span>;
+    <span class="keyword">int</span> n = (<span class="keyword">int</span>)a.size();
+    vector&lt;<span class="keyword">int</span>&gt; left(n), right(n), st;
+    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; n; ++i) {
+        <span class="keyword">while</span> (!st.empty() &amp;&amp; a[st.back()] &gt;= a[i]) st.pop_back();
+        left[i] = st.empty() ? -<span class="number">1</span> : st.back();
+        st.push_back(i);
+    }
+    st.clear();
+    <span class="keyword">for</span> (<span class="keyword">int</span> i = n - <span class="number">1</span>; i &gt;= <span class="number">0</span>; --i) {
+        <span class="keyword">while</span> (!st.empty() &amp;&amp; a[st.back()] &gt; a[i]) st.pop_back();
+        right[i] = st.empty() ? n : st.back();
+        st.push_back(i);
+    }
+    <span class="keyword">long</span> <span class="keyword">long</span> result = <span class="number">0</span>;
+    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; n; ++i) {
+        <span class="keyword">long</span> <span class="keyword">long</span> contribution = (<span class="keyword">long</span> <span class="keyword">long</span>)a[i] * (i - left[i]) % MOD;
+        contribution = contribution * (right[i] - i) % MOD;
+        result = (result + contribution) % MOD;
+    }
+    <span class="keyword">return</span> (<span class="keyword">int</span>)result;
+}
+
+<span class="keyword">int</span> shortestSubarray(<span class="keyword">const</span> vector&lt;<span class="keyword">int</span>&gt;&amp; a, <span class="keyword">long</span> <span class="keyword">long</span> k) {
+    <span class="keyword">int</span> n = (<span class="keyword">int</span>)a.size();
+    vector&lt;<span class="keyword">long</span> <span class="keyword">long</span>&gt; prefix(n + <span class="number">1</span>, <span class="number">0</span>);
+    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; n; ++i) prefix[i + <span class="number">1</span>] = prefix[i] + a[i];
+    deque&lt;<span class="keyword">int</span>&gt; candidates;
+    <span class="keyword">int</span> best = INT_MAX;
+    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt;= n; ++i) {
+        <span class="keyword">while</span> (!candidates.empty() &amp;&amp;
+               prefix[i] - prefix[candidates.front()] &gt;= k) {
+            best = min(best, i - candidates.front());
+            candidates.pop_front();
+        }
+        <span class="keyword">while</span> (!candidates.empty() &amp;&amp;
+               prefix[candidates.back()] &gt;= prefix[i])
+            candidates.pop_back();
+        candidates.push_back(i);
+    }
+    <span class="keyword">return</span> best == INT_MAX ? -<span class="number">1</span> : best;
+}
+
+<span class="keyword">int</span> longestBoundedWindow(<span class="keyword">const</span> vector&lt;<span class="keyword">int</span>&gt;&amp; a, <span class="keyword">long</span> <span class="keyword">long</span> limit) {
+    <span class="keyword">if</span> (limit &lt; <span class="number">0</span>) <span class="keyword">return</span> <span class="number">0</span>;
+    deque&lt;<span class="keyword">int</span>&gt; maximum, minimum;
+    <span class="keyword">int</span> left = <span class="number">0</span>, best = <span class="number">0</span>;
+    <span class="keyword">for</span> (<span class="keyword">int</span> right = <span class="number">0</span>; right &lt; (<span class="keyword">int</span>)a.size(); ++right) {
+        <span class="keyword">while</span> (!maximum.empty() &amp;&amp; a[maximum.back()] &lt;= a[right])
+            maximum.pop_back();
+        <span class="keyword">while</span> (!minimum.empty() &amp;&amp; a[minimum.back()] &gt;= a[right])
+            minimum.pop_back();
+        maximum.push_back(right);
+        minimum.push_back(right);
+        <span class="keyword">while</span> ((<span class="keyword">long</span> <span class="keyword">long</span>)a[maximum.front()] - a[minimum.front()] &gt; limit) {
+            <span class="keyword">if</span> (maximum.front() == left) maximum.pop_front();
+            <span class="keyword">if</span> (minimum.front() == left) minimum.pop_front();
+            ++left;
+        }
+        best = max(best, right - left + <span class="number">1</span>);
+    }
+    <span class="keyword">return</span> best;
+}
+
+<span class="keyword">class</span> RingQueue {
+    vector&lt;<span class="keyword">int</span>&gt; data;
+    size_t head = <span class="number">0</span>, used = <span class="number">0</span>;
+<span class="keyword">public</span>:
+    <span class="keyword">explicit</span> RingQueue(<span class="keyword">int</span> capacity) {
+        <span class="keyword">if</span> (capacity &lt;= <span class="number">0</span>) <span class="keyword">throw</span> invalid_argument(<span class="string">&quot;capacity must be positive&quot;</span>);
+        data.resize((size_t)capacity);
+    }
+    <span class="keyword">bool</span> empty() <span class="keyword">const</span> { <span class="keyword">return</span> used == <span class="number">0</span>; }
+    <span class="keyword">bool</span> full() <span class="keyword">const</span> { <span class="keyword">return</span> used == data.size(); }
+    <span class="keyword">bool</span> push(<span class="keyword">int</span> value) {
+        <span class="keyword">if</span> (full()) <span class="keyword">return</span> <span class="keyword">false</span>;
+        data[(head + used) % data.size()] = value;
+        ++used;
+        <span class="keyword">return</span> <span class="keyword">true</span>;
+    }
+    optional&lt;<span class="keyword">int</span>&gt; pop() {
+        <span class="keyword">if</span> (empty()) <span class="keyword">return</span> nullopt;
+        <span class="keyword">int</span> value = data[head];
+        head = (head + <span class="number">1</span>) % data.size();
+        --used;
+        <span class="keyword">return</span> value;
+    }
+    optional&lt;<span class="keyword">int</span>&gt; front() <span class="keyword">const</span> {
+        <span class="keyword">if</span> (empty()) <span class="keyword">return</span> nullopt;
+        <span class="keyword">return</span> data[head];
+    }
+};
+
+<span class="keyword">void</span> require(<span class="keyword">bool</span> ok, <span class="keyword">const</span> string&amp; message) {
+    <span class="keyword">if</span> (!ok) <span class="keyword">throw</span> runtime_error(message);
+}
+<span class="keyword">long</span> <span class="keyword">long</span> bruteRectangle(<span class="keyword">const</span> vector&lt;<span class="keyword">int</span>&gt;&amp; a) {
+    <span class="keyword">long</span> <span class="keyword">long</span> best = <span class="number">0</span>;
+    <span class="keyword">for</span> (<span class="keyword">int</span> l = <span class="number">0</span>; l &lt; (<span class="keyword">int</span>)a.size(); ++l) {
+        <span class="keyword">int</span> mn = INT_MAX;
+        <span class="keyword">for</span> (<span class="keyword">int</span> r = l; r &lt; (<span class="keyword">int</span>)a.size(); ++r) {
+            mn = min(mn, a[r]);
+            best = max(best, <span class="number">1LL</span> * mn * (r - l + <span class="number">1</span>));
+        }
+    }
+    <span class="keyword">return</span> best;
+}
+<span class="keyword">long</span> <span class="keyword">long</span> bruteRain(<span class="keyword">const</span> vector&lt;<span class="keyword">int</span>&gt;&amp; a) {
+    <span class="keyword">long</span> <span class="keyword">long</span> sum = <span class="number">0</span>;
+    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; (<span class="keyword">int</span>)a.size(); ++i) {
+        <span class="keyword">int</span> left = a[i], right = a[i];
+        <span class="keyword">for</span> (<span class="keyword">int</span> j = <span class="number">0</span>; j &lt; i; ++j) left = max(left, a[j]);
+        <span class="keyword">for</span> (<span class="keyword">int</span> j = i + <span class="number">1</span>; j &lt; (<span class="keyword">int</span>)a.size(); ++j) right = max(right, a[j]);
+        sum += min(left, right) - a[i];
+    }
+    <span class="keyword">return</span> sum;
+}
+<span class="keyword">int</span> bruteMins(<span class="keyword">const</span> vector&lt;<span class="keyword">int</span>&gt;&amp; a) {
+    <span class="keyword">long</span> <span class="keyword">long</span> total = <span class="number">0</span>;
+    <span class="keyword">for</span> (<span class="keyword">int</span> l = <span class="number">0</span>; l &lt; (<span class="keyword">int</span>)a.size(); ++l) {
+        <span class="keyword">int</span> mn = INT_MAX;
+        <span class="keyword">for</span> (<span class="keyword">int</span> r = l; r &lt; (<span class="keyword">int</span>)a.size(); ++r) {
+            mn = min(mn, a[r]);
+            total += mn;
+        }
+    }
+    <span class="keyword">return</span> (<span class="keyword">int</span>)(total % <span class="number">1000000007</span>);
+}
+<span class="keyword">int</span> bruteShortest(<span class="keyword">const</span> vector&lt;<span class="keyword">int</span>&gt;&amp; a, <span class="keyword">long</span> <span class="keyword">long</span> k) {
+    <span class="keyword">int</span> best = INT_MAX;
+    <span class="keyword">for</span> (<span class="keyword">int</span> l = <span class="number">0</span>; l &lt; (<span class="keyword">int</span>)a.size(); ++l) {
+        <span class="keyword">long</span> <span class="keyword">long</span> sum = <span class="number">0</span>;
+        <span class="keyword">for</span> (<span class="keyword">int</span> r = l; r &lt; (<span class="keyword">int</span>)a.size(); ++r) {
+            sum += a[r];
+            <span class="keyword">if</span> (sum &gt;= k) best = min(best, r - l + <span class="number">1</span>);
+        }
+    }
+    <span class="keyword">return</span> best == INT_MAX ? -<span class="number">1</span> : best;
+}
+<span class="keyword">int</span> bruteBounded(<span class="keyword">const</span> vector&lt;<span class="keyword">int</span>&gt;&amp; a, <span class="keyword">long</span> <span class="keyword">long</span> limit) {
+    <span class="keyword">int</span> best = <span class="number">0</span>;
+    <span class="keyword">for</span> (<span class="keyword">int</span> l = <span class="number">0</span>; l &lt; (<span class="keyword">int</span>)a.size(); ++l) {
+        <span class="keyword">int</span> mn = INT_MAX, mx = INT_MIN;
+        <span class="keyword">for</span> (<span class="keyword">int</span> r = l; r &lt; (<span class="keyword">int</span>)a.size(); ++r) {
+            mn = min(mn, a[r]); mx = max(mx, a[r]);
+            <span class="keyword">if</span> ((<span class="keyword">long</span> <span class="keyword">long</span>)mx - mn &lt;= limit) best = max(best, r - l + <span class="number">1</span>);
+        }
+    }
+    <span class="keyword">return</span> best;
+}
+<span class="keyword">int</span> main() {
+    require(largestRectangle({<span class="number">2</span>,<span class="number">1</span>,<span class="number">5</span>,<span class="number">6</span>,<span class="number">2</span>,<span class="number">3</span>}) == <span class="number">10</span>, <span class="string">&quot;histogram example&quot;</span>);
+    require(largestRectangle({<span class="number">2</span>,<span class="number">2</span>}) == <span class="number">4</span>, <span class="string">&quot;equal heights&quot;</span>);
+    require(trapRain({<span class="number">3</span>,<span class="number">0</span>,<span class="number">1</span>,<span class="number">3</span>}) == <span class="number">5</span>, <span class="string">&quot;layered rain&quot;</span>);
+    require(sumSubarrayMins({<span class="number">2</span>,<span class="number">2</span>}) == <span class="number">6</span>, <span class="string">&quot;equal minimum ownership&quot;</span>);
+    require(shortestSubarray({<span class="number">1</span>,-<span class="number">1</span>,<span class="number">3</span>}, <span class="number">3</span>) == <span class="number">1</span>, <span class="string">&quot;negative counterexample&quot;</span>);
+    require(shortestSubarray({}, <span class="number">0</span>) == -<span class="number">1</span>, <span class="string">&quot;nonempty interval contract&quot;</span>);
+    require(longestBoundedWindow({INT_MIN, INT_MAX}, <span class="number">4294967295LL</span>) == <span class="number">2</span>,
+            <span class="string">&quot;wide integer subtraction&quot;</span>);
+    mt19937 rng(<span class="number">20260920</span>);
+    uniform_int_distribution&lt;<span class="keyword">int</span>&gt; length(<span class="number">0</span>, <span class="number">12</span>), value(-<span class="number">5</span>, <span class="number">5</span>), target(-<span class="number">8</span>, <span class="number">16</span>);
+    <span class="keyword">for</span> (<span class="keyword">int</span> run = <span class="number">0</span>; run &lt; <span class="number">1000</span>; ++run) {
+        vector&lt;<span class="keyword">int</span>&gt; a(length(rng));
+        <span class="keyword">for</span> (<span class="keyword">int</span>&amp; x : a) x = value(rng);
+        <span class="keyword">int</span> k = target(rng);
+        require(shortestSubarray(a, k) == bruteShortest(a, k), <span class="string">&quot;shortest mismatch&quot;</span>);
+        <span class="keyword">int</span> limit = target(rng);
+        require(longestBoundedWindow(a, limit) == bruteBounded(a, limit),
+                <span class="string">&quot;bounded mismatch&quot;</span>);
+        vector&lt;<span class="keyword">int</span>&gt; heights, positive;
+        <span class="keyword">for</span> (<span class="keyword">int</span> x : a) {
+            heights.push_back(abs(x));
+            positive.push_back(abs(x) + <span class="number">1</span>);
+        }
+        require(largestRectangle(heights) == bruteRectangle(heights),
+                <span class="string">&quot;rectangle mismatch&quot;</span>);
+        require(trapRain(heights) == bruteRain(heights), <span class="string">&quot;rain mismatch&quot;</span>);
+        require(sumSubarrayMins(positive) == bruteMins(positive), <span class="string">&quot;minimum mismatch&quot;</span>);
+    }
+    <span class="keyword">for</span> (<span class="keyword">int</span> capacity : {<span class="number">1</span>, <span class="number">2</span>, <span class="number">7</span>}) {
+        RingQueue actual(capacity);
+        deque&lt;<span class="keyword">int</span>&gt; reference;
+        <span class="keyword">for</span> (<span class="keyword">int</span> step = <span class="number">0</span>; step &lt; <span class="number">1000</span>; ++step) {
+            <span class="keyword">if</span> (rng() % <span class="number">2</span> == <span class="number">0</span>) {
+                <span class="keyword">int</span> x = value(rng);
+                <span class="keyword">bool</span> expected = reference.size() &lt; (size_t)capacity;
+                require(actual.push(x) == expected, <span class="string">&quot;ring push&quot;</span>);
+                <span class="keyword">if</span> (expected) reference.push_back(x);
+            } <span class="keyword">else</span> {
+                optional&lt;<span class="keyword">int</span>&gt; expected;
+                <span class="keyword">if</span> (!reference.empty()) {
+                    expected = reference.front(); reference.pop_front();
+                }
+                require(actual.pop() == expected, <span class="string">&quot;ring pop&quot;</span>);
+            }
+            optional&lt;<span class="keyword">int</span>&gt; expectedFront;
+            <span class="keyword">if</span> (!reference.empty()) expectedFront = reference.front();
+            require(actual.front() == expectedFront, <span class="string">&quot;ring front&quot;</span>);
+            require(actual.empty() == reference.empty(), <span class="string">&quot;ring empty&quot;</span>);
+            require(actual.full() == (reference.size() == (size_t)capacity), <span class="string">&quot;ring full&quot;</span>);
+        }
+    }
+    cout &lt;&lt; <span class="string">&quot;All chapter 4 checks passed&quot;</span> &lt;&lt; endl;
+}</code></pre></div></div><div class="deep-block" id="review-4"><h3>章末自测：遮住答案，先自己说明</h3><dl class="answer-list"><div><dt>1. 每日温度 [70,70,71] 的答案是什么？相等值要弹出吗？</dt><dd><p>答案 [2,1,0]。左到右结算模板中两个70都应等待71，相等时不弹出；71到来时按顺序弹出下标1与0，距离分别是1与2。</p></dd></div><div><dt>2. 柱状图 [2,2] 中先弹出右柱只得到面积2，是否漏解？</dt><dd><p>没有。尾部0先结算右柱宽度1，再结算左柱宽度2得到4。此实现用更左的相等柱子代表覆盖整个等高区间的矩形。</p></dd></div><div><dt>3. [2,2] 的所有子数组最小值之和为什么是6而不是8？</dt><dd><p>三个非空子数组分别是下标[0]、[1]、[0,1]，最小值均为2，总和6。若两端都找严格更小，整段会分别归给两个位置并重复计算，得到8。</p></dd></div><div><dt>4. 窗口最大值 [9,1,2]、k=2 的输出是什么？</dt><dd><p>输出 [9,2]。处理下标2时必须先让下标0过期；之后2从队尾淘汰1。队首过期与队尾支配是两件独立的事。</p></dd></div><div><dt>5. 为什么 [1,-1,3]、K=3 能击穿正数版最短和窗口？</dt><dd><p>删去开头1后和从3降到2，正数版算法会停止缩窗；但继续删去-1会使和重新升到3，得到长度1。这证明含负数时“当前不足就停止收缩”的推理不成立。</p></dd></div><div><dt>6. 两栈队列 out 里还有2、in 里有3，应该返回谁？</dt><dd><p>返回2。out保存更老的一批元素；in不能在out非空时倒进去，否则3会插队。逻辑顺序是out顶到底，接着in底到顶。</p></dd></div><div><dt>7. 用一句话解释为什么单调结构整体线性但单步可能线性？</dt><dd><p>每个元素一生只入结构一次、出结构至多一次，所以总成本线性；但某个新值可以一次性使之前的所有候选出结构，因此这一轮仍可能花O(n)。</p></dd></div><div><dt>8. 面试完成编码后，最低限度要测哪些输入？</dt><dd><p>空输入和单元素；全相等、递增、递减；k=1与k=n及非法k；负数与无解；柱状图尾部结算；循环队列空满与回绕；表达式一元负号、除零及操作数顺序。按题目约束补极值，先提升类型再做可能溢出的运算。</p></dd></div></dl></div></section><nav class="chapter-pager" aria-label="相邻章节"><a href="../03-链表/index.html"><small>上一章</small>← 链表</a><a href="../05-哈希集合与位运算/index.html"><small>下一章</small>哈希、集合与位运算 →</a></nav><footer>秋招算法学习讲义 · C++17<br>例题编号供检索；难度与覆盖范围按学习顺序组织。</footer></main><aside class="toc" aria-label="本页目录"><p class="rail-label">本章小节</p><a href="#s1"><span>01</span>括号匹配与栈中的待解决问题</a><a href="#s2"><span>02</span>单调栈：下一个更大元素</a><a href="#s3"><span>03</span>单调队列：窗口最大值</a><a href="#s4"><span>04</span>两个栈实现队列与均摊分析</a><a href="#chapter-review"><span>练</span>综合例题与自测答案</a></aside></div><div class="toast" role="status" aria-live="polite"></div></body></html>
