@@ -3,7 +3,7 @@
 <meta name="description" content="秋招算法手撕学习讲义：知识推导、经典考点、C++17 示例与面试训练。">
 <title>哈希、集合与位运算 · 算法手撕讲义</title><link rel="stylesheet" href="../assets/style.css"><script src="../assets/app.js" defer></script></head>
 <body><a class="skip" href="#main">跳到正文</a><header class="topbar"><a class="brand" href="../index.html"><span class="brand-mark">a[i]</span><span>算法手撕讲义<small>秋招学习工作区 / C++17</small></span></a><button type="button" class="nav-toggle" aria-expanded="false" aria-controls="chapter-nav">章节目录</button><a class="home-link" href="../index.html">全部章节 ↗</a></header>
-<div class="layout"><aside class="sidebar" id="chapter-nav" aria-label="章节导航"><p class="rail-label">LEARNING PATH · 学习路径</p><nav><a class="chapter-link"  href="../01-复杂度与解题方法/index.html"><span>01</span>复杂度与解题方法</a><a class="chapter-link"  href="../02-数组字符串与矩阵/index.html"><span>02</span>数组、字符串与矩阵</a><a class="chapter-link"  href="../03-链表/index.html"><span>03</span>链表</a><a class="chapter-link"  href="../04-栈队列与单调结构/index.html"><span>04</span>栈、队列与单调结构</a><a class="chapter-link active" aria-current=page href="../05-哈希集合与位运算/index.html"><span>05</span>哈希、集合与位运算</a><a class="chapter-link"  href="../06-排序与二分查找/index.html"><span>06</span>排序与二分查找</a><a class="chapter-link"  href="../07-树与二叉搜索树/index.html"><span>07</span>树与二叉搜索树</a><a class="chapter-link"  href="../08-堆与优先队列/index.html"><span>08</span>堆与优先队列</a><a class="chapter-link"  href="../09-递归回溯与分治/index.html"><span>09</span>递归、回溯与分治</a><a class="chapter-link"  href="../10-图论/index.html"><span>10</span>图论</a><a class="chapter-link"  href="../11-贪心/index.html"><span>11</span>贪心</a><a class="chapter-link"  href="../12-动态规划/index.html"><span>12</span>动态规划</a><a class="chapter-link"  href="../13-并查集与高级数据结构/index.html"><span>13</span>并查集与高级数据结构</a><a class="chapter-link"  href="../14-高频技巧与综合题型/index.html"><span>14</span>高频技巧与综合题型</a><a class="chapter-link"  href="../15-面试表达与训练计划/index.html"><span>15</span>面试表达与训练计划</a></nav><div class="sidebar-note">读懂不变量，独立写代码。<br>共 15 章 · 63 个小节<br>无需联网，浏览器直接打开。</div></aside><main id="main"><header class="chapter-header"><p class="eyebrow">CHAPTER 05 / 15</p><h1>哈希、集合与位运算</h1><p class="lead">把重复查找压缩成状态映射，把小集合编码成二进制。重点是选择正确的键、保存足够的信息，并说明平均复杂度的前提。</p><div class="chapter-meta"><span>4 个小节</span><span>C++17 示例</span><a href="README.md">原始知识摘要 ↗</a></div></header><div class="reading-guide"><strong>本章怎么学</strong><p>先读原理与不变量，遮住代码手推例子，再独立实现。最后用面试追问检查理解，按练习条目做变式。</p></div><details class="environment"><summary>代码使用说明与通用头文件</summary><p>示例统一采用 C++17。页面展示核心函数或类，下载的 .cpp 已包含以下头文件，可独立编译。不同小节可能重用类型名，应分别编译；含 main 的示例可直接运行，其余需自行补充调用与测试。复制按钮复制当前代码块。</p><div class="codebox"><div class="codebar"><span>C++17</span><div><button type="button" class="copy">复制代码</button></div></div><pre tabindex="0" aria-label="C++17 代码"><code>#include &lt;algorithm&gt;
+<div class="layout"><aside class="sidebar" id="chapter-nav" aria-label="章节导航"><p class="rail-label">LEARNING PATH · 学习路径</p><nav><a class="chapter-link"  href="../01-复杂度与解题方法/index.html"><span>01</span>复杂度与解题方法</a><a class="chapter-link"  href="../02-数组字符串与矩阵/index.html"><span>02</span>数组、字符串与矩阵</a><a class="chapter-link"  href="../03-链表/index.html"><span>03</span>链表</a><a class="chapter-link"  href="../04-栈队列与单调结构/index.html"><span>04</span>栈、队列与单调结构</a><a class="chapter-link active" aria-current=page href="../05-哈希集合与位运算/index.html"><span>05</span>哈希、集合与位运算</a><a class="chapter-link"  href="../06-排序与二分查找/index.html"><span>06</span>排序与二分查找</a><a class="chapter-link"  href="../07-树与二叉搜索树/index.html"><span>07</span>树与二叉搜索树</a><a class="chapter-link"  href="../08-堆与优先队列/index.html"><span>08</span>堆与优先队列</a><a class="chapter-link"  href="../09-递归回溯与分治/index.html"><span>09</span>递归、回溯与分治</a><a class="chapter-link"  href="../10-图论/index.html"><span>10</span>图论</a><a class="chapter-link"  href="../11-贪心/index.html"><span>11</span>贪心</a><a class="chapter-link"  href="../12-动态规划/index.html"><span>12</span>动态规划</a><a class="chapter-link"  href="../13-并查集与高级数据结构/index.html"><span>13</span>并查集与高级数据结构</a><a class="chapter-link"  href="../14-高频技巧与综合题型/index.html"><span>14</span>高频技巧与综合题型</a><a class="chapter-link"  href="../15-面试表达与训练计划/index.html"><span>15</span>面试表达与训练计划</a></nav><div class="sidebar-note">读懂不变量，独立写代码。<br>共 15 章 · 63 个小节<br>无需联网，浏览器直接打开。</div></aside><main id="main"><header class="chapter-header"><p class="eyebrow">CHAPTER 05 / 15</p><h1>哈希、集合与位运算</h1><p class="lead">把重复查找压缩成状态映射，把小集合编码成二进制。重点是选择正确的键、保存足够的信息，并说明平均复杂度的前提。</p><div class="chapter-meta"><span>4 个小节</span><span>C++17 示例</span><a href="README.md">原始知识摘要 ↗</a></div></header><div class="reading-guide"><strong>本章怎么学</strong><p>先读原理与不变量，遮住代码手推例子，再独立实现。最后用面试追问检查理解，按练习条目做变式。</p></div><div class="deep-intro"><div class="deep-block" id="guide-1"><h3>本章主线：相同的状态应被识别，不同的目标应保存不同信息</h3><p>哈希表不是看到查找就套的万能容器。先确定哪些对象在题意上等价，再选择能完整代表它们的键；接着根据目标决定保存存在性、频次、最近位置还是最早位置。位掩码则为小集合提供无歧义的编码，减少状态存储和比较成本。</p><p>本章保留四个主小节：哈希映射、集合、异或与位计数、子集编码。前两节重点是状态设计，后两节重点是证明与 C++17 的整数边界。所有数组下标假定长度可由 int 表示；各例另列更严格的运算与规模约束。</p></div><div class="deep-block" id="guide-2"><h3>先选信息，再选容器</h3><p class="table-hint">窄屏下可左右滑动表格，查看完整内容。</p><div class="study-table" tabindex="0" role="region" aria-label="先选信息，再选容器"><table><thead><tr><th scope="col">问题目标</th><th scope="col">键表示什么</th><th scope="col">value 或结构</th><th scope="col">典型题</th></tr></thead><tbody><tr><td>此前出现过吗</td><td>数值或完整状态</td><td>unordered_set</td><td>349、202</td></tr><tr><td>返回一组位置</td><td>元素值</td><td>某个历史下标</td><td>1</td></tr><tr><td>统计所有合法区间</td><td>前缀和或余数</td><td>此前状态的频次</td><td>560、974</td></tr><tr><td>求最长区间</td><td>前缀和或平衡状态</td><td>首次出现下标</td><td>325、525</td></tr><tr><td>限定距离内重复</td><td>元素值</td><td>最近下标或滑动集合</td><td>219</td></tr><tr><td>分组同类对象</td><td>排序串或完整频次数组</td><td>组编号/成员列表</td><td>49</td></tr><tr><td>枚举小集合</td><td>第 i 位对应第 i 个对象</td><td>整数 mask</td><td>78、状态压缩 DP</td></tr></tbody></table></div></div><div class="deep-block" id="guide-3"><h3>建议练习顺序</h3><p>先练两数之和、异位词与最长连续序列，再将“前缀和+次数”和“前缀和+最早下标”对照实现；随后练单个与两个单次数字，最后学习子掩码枚举和状态压缩。进阶代码用于理解模型，不要求第一次学习就背下全部实现。</p><p>每题先回答：两个状态为什么算相同？表里是否只包含当前时刻之前的数据？相等状态遇到第二次时，是累加、覆盖还是保持原值？位操作则补充：类型多宽、移位多少、是否有符号，以及题目保证了什么次数规律。</p></div></div><nav class="chapter-outline" aria-label="本章阅读路线"><strong>直接跳到</strong><a href="#s1">01 哈希映射：存在、下标还是次数</a><a href="#s2">02 集合：最长连续序列为何是线性</a><a href="#s3">03 异或与二进制计数</a><a href="#s4">04 位掩码表示子集</a><a href="#chapter-review">综合例题与自测答案</a></nav><details class="environment"><summary>代码使用说明与通用头文件</summary><p>示例统一采用 C++17。页面展示核心函数或类，下载的 .cpp 已包含以下头文件，可独立编译。不同小节可能重用类型名，应分别编译；含 main 的示例可直接运行，其余需自行补充调用与测试。复制按钮复制当前代码块。</p><div class="codebox"><div class="codebar"><span>C++17</span><div><button type="button" class="copy">复制代码</button></div></div><pre tabindex="0" aria-label="C++17 代码"><code>#include &lt;algorithm&gt;
 #include &lt;array&gt;
 #include &lt;cassert&gt;
 #include &lt;climits&gt;
@@ -27,7 +27,31 @@
 #include &lt;vector&gt;
 <span class="keyword">using</span> <span class="keyword">namespace</span> std;
 </code></pre></div><p>检查单个示例：<code>g++ -std=c++17 -Wall -Wextra -c sample.cpp</code>。这只检查编译；验证结果还需要调用函数并覆盖边界输入。代码按题目约束编写，各节明确其适用前提。</p></details><section class="lesson" id="s1"><div class="lesson-heading"><span class="lesson-number">05.01</span><h2>哈希映射：存在、下标还是次数</h2></div>
-<h3>知识与适用场景</h3><p>哈希表的 value 必须服务于问题目标：判断存在用 set，返回位置保存下标，统计数量保存频次，求最长区间常保存最早下标。键必须能完整代表你要比较的状态。</p><div class="invariant"><span>推导 / 不变量</span><p>两数之和先查询补数，再插入当前数，保证不会重复使用同一个位置。此前所有元素都在表中，因此当前元素作为较晚端点的解不会被遗漏。</p></div>
+<h3>知识与适用场景</h3><p>哈希表的 value 必须服务于问题目标：判断存在用 set，返回位置保存下标，统计数量保存频次，求最长区间常保存最早下标。键必须能完整代表你要比较的状态。</p><div class="deep-block" id="s1-before-1"><h3>1.1 平均 O(1) 的来源与边界</h3><p>unordered_map 通常将哈希值映射到桶，然后用键的相等比较找到目标。不同键可进入同一桶，这叫冲突，不代表答案错误；正确性依赖相等比较，而不依赖哈希值唯一。桶分布良好且负载受控时，查找、插入、删除平均 O(1)，极端冲突可退化为 O(n)。</p><p>因此 n 次操作平均 O(n)、最坏可能 O(n²)。reserve 可减少扩容带来的重哈希，但不能消灭冲突或把复杂度变成最坏 O(1)。需要确定性上界时可以考虑排序加扫描或有序树，代价常为 O(n log n)。字符串和数组键还要计入构造、计算哈希及比较键的成本。</p></div><div class="deep-block" id="s1-before-2"><h3>1.2 同一个键，不同的 value 会解不同问题</h3><p class="table-hint">窄屏下可左右滑动表格，查看完整内容。</p><div class="study-table" tabindex="0" role="region" aria-label="1.2 同一个键，不同的 value 会解不同问题"><table><thead><tr><th scope="col">任务</th><th scope="col">value</th><th scope="col">遇到重复键怎么做</th><th scope="col">为什么</th></tr></thead><tbody><tr><td>任意一组两数之和</td><td>某个下标</td><td>可覆盖为更近位置</td><td>任何历史位置都满足不复用当前下标</td></tr><tr><td>所有下标对</td><td>下标列表</td><td>追加</td><td>不同历史位置对应不同输出</td></tr><tr><td>数值对去重</td><td>存在性与结果去重规则</td><td>不能只累加次数</td><td>相同数值的多组位置可能只算一对</td></tr><tr><td>和为 K 的子数组数量</td><td>前缀出现次数</td><td>累加</td><td>每个历史起点都贡献一个区间</td></tr><tr><td>和为 K 的最长子数组</td><td>前缀首次位置</td><td>不覆盖</td><td>越早的左端点能形成越长区间</td></tr><tr><td>最近重复距离</td><td>最后一次出现位置</td><td>覆盖</td><td>最近位置给出最短距离</td></tr></tbody></table></div></div><div class="deep-block" id="s1-before-3"><h3>1.3 两数之和：表中只保存严格早于 i 的元素</h3><p>扫描下标 i 之前，pos 中每个位置都小于 i。先查 target-a[i]，命中后与当前 i 组成两个不同下标；再保存 a[i]。如果先写入当前元素，a[i]*2=target 时可能把自己使用两次。</p><p>基础示例 target 是 long long，但宽类型仍有范围。本章将两数之和及前缀示例约定为 n&lt;=100000、|a[i]|&lt;=10^9、|target|或|k|&lt;=10^14；如此差值和前缀计算均在 long long 内。若允许任意 LLONG_MIN/LLONG_MAX 参数，须另外检查减法溢出，不能认为 long long 永远安全。</p><p>若要求所有下标对，value 改成历史下标列表，每次查询将列表中的 j 与 i 输出，然后追加 i。总时间应写平均 O(n+输出对数)，全为0且target=0时有 n(n-1)/2 个答案，任何完整输出算法都不能是 O(n)。</p></div><div class="deep-block" id="s1-before-4"><h3>1.4 C++17 哈希接口：哪些操作会改变容器</h3><p class="table-hint">窄屏下可左右滑动表格，查看完整内容。</p><div class="study-table" tabindex="0" role="region" aria-label="1.4 C++17 哈希接口：哪些操作会改变容器"><table><thead><tr><th scope="col">操作</th><th scope="col">用途</th><th scope="col">注意事项</th></tr></thead><tbody><tr><td>find(key) / count(key)</td><td>纯查询</td><td>不存在时不插入；unordered_map 的 count 为0或1</td></tr><tr><td>table[key]</td><td>读写映射值</td><td>不存在则插入默认构造的值，查询也会改变表</td></tr><tr><td>emplace(key,value)</td><td>仅在不存在时插入</td><td>适合保留首次下标；已有键不会覆盖</td></tr><tr><td>table[key]=value</td><td>插入或覆盖</td><td>适合最近下标，不适合最长区间的首次位置</td></tr><tr><td>erase(iterator)</td><td>删除当前项</td><td>可用返回的下一迭代器继续遍历</td></tr><tr><td>reserve / rehash / 触发扩容的插入</td><td>调整桶布局</td><td>rehash 使迭代器失效；不要继续用旧迭代器</td></tr></tbody></table></div></div><div class="deep-block" id="s1-before-5"><h3>1.5 自定义键：相等就必须有相同哈希</h3><p>规则是 key_equal(a,b) 为真时 hash(a)==hash(b)。反方向不要求成立；两个不同键有相同哈希是合法冲突，容器会继续检查相等性。若只把一个短哈希值作为真正的键而丢弃原状态，就失去了这一步校验，可能错误合并对象。</p><p>异位词可以用排序后的字符串作键，也可以用26维频次作键。用无分隔数字直接拼接会有歧义，例如两格计数 (1,11) 与 (11,1) 都能变成111。下面直接使用 array&lt;int,26&gt;，其相等比较保留了完整信息。</p></div><div class="deep-block" id="s1-before-6"><h3>1.6 字母异位词分组：完整频次键与稳定的组顺序</h3><p>前提：每个词长度&lt;=100000，只允许小写 a-z。该哈希只是教学实现，不是抗恶意冲突的安全哈希。桶冲突由完整数组相等比较区分，不会错误分组。</p><p>平均时间 O(L+26m)，L为总字符数、m为词数；最坏冲突时查找可退化到 O(26m²)，另加读入字符成本。结果按每个组首次出现顺序排列、组内保持输入顺序；这是由 result 控制的，不是依赖哈希表遍历顺序。空字符串的键全为0，可以正常成组。</p><div class="codebox"><div class="codebar"><span>C++17</span><div><a href="examples/detail-group-anagrams.cpp" download>下载 .cpp</a><button type="button" class="copy">复制代码</button></div></div><pre tabindex="0" aria-label="C++17 代码"><code><span class="keyword">struct</span> LetterCountsHash {
+    size_t operator()(<span class="keyword">const</span> array&lt;<span class="keyword">int</span>, <span class="number">26</span>&gt;&amp; key) <span class="keyword">const</span> noexcept {
+        size_t hash = <span class="number">0</span>;
+        <span class="keyword">for</span> (<span class="keyword">int</span> count : key)
+            hash = hash * size_t{<span class="number">131</span>} + static_cast&lt;size_t&gt;(count);
+        <span class="keyword">return</span> hash; <span class="comment">// unsigned overflow is defined; collisions are allowed</span>
+    }
+};
+vector&lt;vector&lt;string&gt;&gt; groupAnagrams(<span class="keyword">const</span> vector&lt;string&gt;&amp; words) {
+    unordered_map&lt;array&lt;<span class="keyword">int</span>, <span class="number">26</span>&gt;, size_t, LetterCountsHash&gt; groups;
+    groups.reserve(words.size());
+    vector&lt;vector&lt;string&gt;&gt; result;
+    <span class="keyword">for</span> (<span class="keyword">const</span> string&amp; word : words) {
+        array&lt;<span class="keyword">int</span>, <span class="number">26</span>&gt; key{};
+        <span class="keyword">for</span> (<span class="keyword">char</span> ch : word) {
+            <span class="keyword">if</span> (ch &lt; &#x27;a&#x27; || ch &gt; &#x27;z&#x27;)
+                <span class="keyword">throw</span> invalid_argument(<span class="string">&quot;lowercase a-z required&quot;</span>);
+            ++key[ch - &#x27;a&#x27;];
+        }
+        <span class="keyword">auto</span> [it, inserted] = groups.emplace(key, result.size());
+        <span class="keyword">if</span> (inserted) result.push_back({});
+        result[it-&gt;second].push_back(word);
+    }
+    <span class="keyword">return</span> result;
+}</code></pre></div></div><div class="invariant"><span>推导 / 不变量</span><p>两数之和先查询补数，再插入当前数，保证不会重复使用同一个位置。此前所有元素都在表中，因此当前元素作为较晚端点的解不会被遗漏。</p></div>
 <h3>手推一个例子</h3><p>[3,3]，target=6：第一个 3 只入表；第二个 3 查到下标 0，返回 [0,1]。若先插入当前值，可能错误得到同一个下标两次。</p><div class="codebox"><div class="codebar"><span>C++17</span><div><a href="examples/01.cpp" download>下载 .cpp</a><button type="button" class="copy">复制代码</button></div></div><pre tabindex="0" aria-label="C++17 代码"><code>vector&lt;<span class="keyword">int</span>&gt; twoSum(<span class="keyword">const</span> vector&lt;<span class="keyword">int</span>&gt;&amp; a, <span class="keyword">long</span> <span class="keyword">long</span> target) {
     unordered_map&lt;<span class="keyword">long</span> <span class="keyword">long</span>, <span class="keyword">int</span>&gt; pos;
     <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; (<span class="keyword">int</span>)a.size(); ++i) {
@@ -38,9 +62,59 @@
     <span class="keyword">return</span> {};
 }</code></pre></div>
 <dl class="analysis-grid"><div><dt>复杂度</dt><dd>平均时间 O(n)，最坏 O(n²)，空间 O(n)。</dd></div><div><dt>易错点与边界</dt><dd>operator[] 查询不存在的键会插入默认值；纯查询优先 find。rehash 会使迭代器失效，遍历中修改需谨慎。</dd></div></dl>
-<div class="practice"><h3>经典考点与练习</h3><p>练习：LeetCode 1 两数之和、49 字母异位词分组、205 同构字符串。</p><details><summary>面试官可能继续问什么？</summary><p>如果要返回所有下标对，value 应改成什么？返回值为空代表什么？</p><p class="muted">先用自己的话回答，再回到本节的前提、不变量和边界检查论证。</p></details></div>
+<div class="deep-block" id="s1-after-1"><h3>1.7 同构字符串：两个方向都要唯一</h3><p>egg 与 add 可同构；ab 与 aa 不可同构，单向映射会漏掉不同源字符指向同一目标字符的冲突。代码按字节处理，使用 unsigned char 避免负下标；UTF-8中文要先解码成码点，不能直接把字节当作字符。时间 O(n)，固定256字节字符空间 O(1)。</p><div class="codebox"><div class="codebar"><span>C++17</span><div><a href="examples/detail-isomorphic.cpp" download>下载 .cpp</a><button type="button" class="copy">复制代码</button></div></div><pre tabindex="0" aria-label="C++17 代码"><code><span class="keyword">bool</span> isIsomorphic(<span class="keyword">const</span> string&amp; s, <span class="keyword">const</span> string&amp; t) {
+    <span class="keyword">if</span> (s.size() != t.size()) <span class="keyword">return</span> <span class="keyword">false</span>;
+    array&lt;<span class="keyword">int</span>, <span class="number">256</span>&gt; forward, backward;
+    forward.fill(-<span class="number">1</span>); backward.fill(-<span class="number">1</span>);
+    <span class="keyword">for</span> (size_t i = <span class="number">0</span>; i &lt; s.size(); ++i) {
+        unsigned <span class="keyword">char</span> a = static_cast&lt;unsigned <span class="keyword">char</span>&gt;(s[i]);
+        unsigned <span class="keyword">char</span> b = static_cast&lt;unsigned <span class="keyword">char</span>&gt;(t[i]);
+        <span class="keyword">if</span> (forward[a] == -<span class="number">1</span> &amp;&amp; backward[b] == -<span class="number">1</span>) {
+            forward[a] = b; backward[b] = a;
+        } <span class="keyword">else</span> <span class="keyword">if</span> (forward[a] != b || backward[b] != a) {
+            <span class="keyword">return</span> <span class="keyword">false</span>;
+        }
+    }
+    <span class="keyword">return</span> <span class="keyword">true</span>;
+}</code></pre></div></div><div class="deep-block" id="s1-after-2"><h3>1.8 前缀和+哈希：从等式反推查找的键</h3><p>定义 P[0]=0、P[i] 为前 i 个数之和。区间 [j,i) 的和为 P[i]-P[j]。要让区间和等于 K，只需查 P[j]=P[i]-K。扫描每个右端点 i，用一张表汇总此前的 P[j]，就能避免枚举所有 j。</p><p>求数量时，同一前缀出现几次就贡献几个区间；求最长时，只要知道同一前缀出现得最早的位置。两个任务的键相同，value 与更新规则不同。负数不妨碍等式成立，所以这套方法不依赖正数滑动窗口的单调性。</p></div><div class="deep-block" id="s1-after-3"><h3>1.9 和为 K 的子数组计数：先查询，再增加当前前缀</h3><p>约定 n&lt;=100000、|a[i]|&lt;=10^9、|k|&lt;=10^14。frequency[0]=1 表示数组之前的空前缀，而不是把空子数组计为答案；查询时表中只有更早前缀，确保区间非空。</p><p>全为0的长度n数组、K=0时答案 n(n+1)/2，需 long long。时间平均 O(n)、最坏 O(n²)，空间 O(n)。用 find 查询不会插入不存在的补数；递增 frequency[prefix] 则有意使用 operator[]。</p><div class="codebox"><div class="codebar"><span>C++17</span><div><a href="examples/detail-prefix-count.cpp" download>下载 .cpp</a><button type="button" class="copy">复制代码</button></div></div><pre tabindex="0" aria-label="C++17 代码"><code><span class="keyword">long</span> <span class="keyword">long</span> countSubarraysWithSum(<span class="keyword">const</span> vector&lt;<span class="keyword">int</span>&gt;&amp; a, <span class="keyword">long</span> <span class="keyword">long</span> k) {
+    unordered_map&lt;<span class="keyword">long</span> <span class="keyword">long</span>, <span class="keyword">long</span> <span class="keyword">long</span>&gt; frequency;
+    frequency[<span class="number">0</span>] = <span class="number">1</span>;
+    <span class="keyword">long</span> <span class="keyword">long</span> prefix = <span class="number">0</span>, answer = <span class="number">0</span>;
+    <span class="keyword">for</span> (<span class="keyword">int</span> value : a) {
+        prefix += value;
+        <span class="keyword">auto</span> it = frequency.find(prefix - k);
+        <span class="keyword">if</span> (it != frequency.end()) answer += it-&gt;second;
+        ++frequency[prefix];
+    }
+    <span class="keyword">return</span> answer;
+}</code></pre></div></div><div class="deep-block" id="s1-after-4"><h3>1.10 [1,-1,1]，K=1：频次不能改成集合</h3><p class="table-hint">窄屏下可左右滑动表格，查看完整内容。</p><div class="study-table" tabindex="0" role="region" aria-label="1.10 [1,-1,1]，K=1：频次不能改成集合"><table><thead><tr><th scope="col">处理元素</th><th scope="col">当前前缀</th><th scope="col">查询的键 prefix-K</th><th scope="col">命中次数</th><th scope="col">累计答案 / 更新</th></tr></thead><tbody><tr><td>扫描前</td><td>0</td><td>尚不查询</td><td>无</td><td>frequency[0]=1</td></tr><tr><td>1</td><td>1</td><td>0</td><td>1</td><td>答案1；frequency[1]=1</td></tr><tr><td>-1</td><td>0</td><td>-1</td><td>0</td><td>答案1；frequency[0]=2</td></tr><tr><td>1</td><td>1</td><td>0</td><td>2</td><td>答案3；frequency[1]=2</td></tr></tbody></table></div></div><div class="deep-block" id="s1-after-5"><h3>1.11 和为 K 的最长子数组：只保留首次位置</h3><p>采用与计数示例相同的数值约束。P[0] 的位置是0，长度直接为 i-j；也可用元素下标-1表示初始前缀，但不能混用两种下标定义。平均 O(n)、最坏 O(n²)、空间 O(n)。</p><p>变式：0与1数量相等，把0视为-1、1视为+1，再找和为0的最长区间。此时前缀状态表示两种数量之差。</p><div class="codebox"><div class="codebar"><span>C++17</span><div><a href="examples/detail-longest-prefix.cpp" download>下载 .cpp</a><button type="button" class="copy">复制代码</button></div></div><pre tabindex="0" aria-label="C++17 代码"><code><span class="keyword">int</span> longestSubarrayWithSum(<span class="keyword">const</span> vector&lt;<span class="keyword">int</span>&gt;&amp; a, <span class="keyword">long</span> <span class="keyword">long</span> k) {
+    unordered_map&lt;<span class="keyword">long</span> <span class="keyword">long</span>, <span class="keyword">int</span>&gt; first;
+    first.emplace(<span class="number">0</span>, <span class="number">0</span>); <span class="comment">// prefix index, not element index</span>
+    <span class="keyword">long</span> <span class="keyword">long</span> prefix = <span class="number">0</span>;
+    <span class="keyword">int</span> best = <span class="number">0</span>;
+    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">1</span>; i &lt;= (<span class="keyword">int</span>)a.size(); ++i) {
+        prefix += a[i - <span class="number">1</span>];
+        <span class="keyword">auto</span> it = first.find(prefix - k);
+        <span class="keyword">if</span> (it != first.end()) best = max(best, i - it-&gt;second);
+        first.emplace(prefix, i); <span class="comment">// do not overwrite earlier occurrence</span>
+    }
+    <span class="keyword">return</span> best;
+}</code></pre></div></div><div class="deep-block" id="s1-after-6"><h3>1.12 子数组和可被 K 整除：规范化负余数</h3><p>P[i]-P[j] 能被 K 整除等价于两者同余。C++ 中 -1%5 是-1而不是4，必须把余数规范到 [0,K-1]，否则会漏掉等价状态。示例 [-1,5]、K=5 中两个后续前缀都规范为4，计出 [5]。</p><p>只维护余数而不累计完整前缀：remainder+value 以 long long 计算，int 输入不会导致这一步溢出；约定 n&lt;=100000，计数放 long long。平均 O(n)，额外空间 O(min(n+1,K))；若 K 小而固定，vector&lt;long long&gt;(K) 常更直接。</p><div class="codebox"><div class="codebar"><span>C++17</span><div><a href="examples/detail-divisible-prefix.cpp" download>下载 .cpp</a><button type="button" class="copy">复制代码</button></div></div><pre tabindex="0" aria-label="C++17 代码"><code><span class="keyword">long</span> <span class="keyword">long</span> countDivisibleSubarrays(<span class="keyword">const</span> vector&lt;<span class="keyword">int</span>&gt;&amp; a, <span class="keyword">int</span> k) {
+    <span class="keyword">if</span> (k &lt;= <span class="number">0</span>) <span class="keyword">throw</span> invalid_argument(<span class="string">&quot;k must be positive&quot;</span>);
+    unordered_map&lt;<span class="keyword">long</span> <span class="keyword">long</span>, <span class="keyword">long</span> <span class="keyword">long</span>&gt; frequency;
+    frequency[<span class="number">0</span>] = <span class="number">1</span>;
+    <span class="keyword">long</span> <span class="keyword">long</span> remainder = <span class="number">0</span>, answer = <span class="number">0</span>;
+    <span class="keyword">for</span> (<span class="keyword">int</span> value : a) {
+        remainder = (remainder + value) % k;
+        <span class="keyword">if</span> (remainder &lt; <span class="number">0</span>) remainder += k;
+        <span class="keyword">auto</span> it = frequency.find(remainder);
+        <span class="keyword">if</span> (it != frequency.end()) answer += it-&gt;second;
+        ++frequency[remainder];
+    }
+    <span class="keyword">return</span> answer;
+}</code></pre></div></div><div class="practice"><h3>经典考点与练习</h3><p>练习：LeetCode 1 两数之和、49 字母异位词分组、205 同构字符串。</p><h3>面试追问：关键点完整解答</h3><dl class="answer-list"><div><dt>如果两数之和要返回所有下标对，应该怎么改？</dt><dd><p>值映射到历史下标列表；当前补数命中时输出列表中每个下标与当前下标，再把当前下标追加进去。先查后写避免使用自己。复杂度要包含输出规模：全0输入会产生二次量级的下标对。</p></dd></div><div><dt>为什么不能把前缀频次表换成 unordered_set？</dt><dd><p>集合只知道某个前缀出现过，无法知道有几个不同起点。[1,-1,1] 的前缀0出现两次，最后一个右端点会贡献两个答案；集合只能贡献一个，造成漏计。</p></dd></div><div><dt>frequency[0]=1 与 first[0]=0 各代表什么？</dt><dd><p>两者都代表数组之前的空前缀P[0]。前者保存次数1，后者保存位置0。这样从第一个元素开始的合法区间无需特判；它们的 value 语义不同，不能机械互换。</p></dd></div><div><dt>计数时先 ++frequency[prefix] 再查询会怎样？</dt><dd><p>K=0时会把当前前缀与自己配对，计入长度0的空区间。表中必须只存严格早于当前右端点的前缀。先查后写维护了这一时间边界。</p></dd></div><div><dt>两个不同键的哈希值相同是否会错误合并？</dt><dd><p>正确的 unordered_map 不会：哈希定位候选桶后还要比较完整键。若自己只保留哈希摘要作为真正键，则没有完整状态可供复核，才可能把冲突误认为相等。</p></dd></div><div><dt>最长区间遇到同一个前缀，为什么不更新为最新位置？</dt><dd><p>对未来固定的右端点i，较早的j使i-j更大。覆盖掉最早位置会丢失可能的最优解。使用 emplace 保持首次位置；求最短或最近距离时，更新策略可能恰好相反。</p></dd></div></dl></div>
 <label class="learned"><input type="checkbox" data-progress="05-01">我能独立实现，并解释正确性与边界</label></section><section class="lesson" id="s2"><div class="lesson-heading"><span class="lesson-number">05.02</span><h2>集合：最长连续序列为何是线性</h2></div>
-<h3>知识与适用场景</h3><p>把所有数放进集合后，仅从没有前驱 x-1 的数启动向后扩展。这保证每段连续区间只被扫描一次，而不是对每个起点重复扫描整段。</p><div class="invariant"><span>推导 / 不变量</span><p>集合去重后，连续块只有一个最小值能触发扩展。扫描集合一次，加上各块内总共 O(n) 次扩展，平均总成本 O(n)。</p></div>
+<h3>知识与适用场景</h3><p>把所有数放进集合后，仅从没有前驱 x-1 的数启动向后扩展。这保证每段连续区间只被扫描一次，而不是对每个起点重复扫描整段。</p><div class="deep-block" id="s2-before-1"><h3>2.1 集合是去重后的状态空间，不是有序数组</h3><p>unordered_set 表示存在性，不保存次数和位置，也不保证按数值或插入顺序遍历。需要有序输出时，显式排序答案；需要重复次数时用 map&lt;值,次数&gt; 的思路或 unordered_map，不能把信息丢掉后再试图恢复。</p><p>固定且较小的整数取值域可用布尔数组、计数数组或位集合替代哈希。例如只含小写字母的成员判断用26位即可；但范围大且稀疏时，按最大值分配数组会浪费内存。</p></div><div class="deep-block" id="s2-before-2"><h3>2.2 最长连续序列：一次分块，而不是每个数都试着扩展</h3><p>先将输入去重。从一个值 x 开始向右搜索前，检查 x-1 是否存在；存在就跳过，因为 x 位于某个连续块内部。只有块的最小值会启动搜索，且会把该块完整扫描一次。</p><p>若有 m 个不同数和 c 个连续块，外层前驱查询m次；各块成功扩展总计m次，终止失败查询c次，所以哈希查询总数 O(m)。再加构建集合 O(n) 次插入，平均 O(n)、最坏 O(n²)，额外空间 O(m)。这不是依赖“看起来循环没跑很多”，而是将操作分摊到互不重叠的连续块。</p></div><div class="deep-block" id="s2-before-3"><h3>2.3 [100,4,200,1,3,2,2] 的起点判定</h3><p class="table-hint">窄屏下可左右滑动表格，查看完整内容。</p><div class="study-table" tabindex="0" role="region" aria-label="2.3 [100,4,200,1,3,2,2] 的起点判定"><table><thead><tr><th scope="col">值（此处按数值列示）</th><th scope="col">前驱存在吗</th><th scope="col">是否启动扩展</th><th scope="col">被扫描的连续块</th></tr></thead><tbody><tr><td>1</td><td>0不存在</td><td>是</td><td>1,2,3,4；遇5停止</td></tr><tr><td>2</td><td>1存在</td><td>否</td><td>属于以1开始的块</td></tr><tr><td>3</td><td>2存在</td><td>否</td><td>属于以1开始的块</td></tr><tr><td>4</td><td>3存在</td><td>否</td><td>属于以1开始的块</td></tr><tr><td>100</td><td>99不存在</td><td>是</td><td>100；遇101停止</td></tr><tr><td>200</td><td>199不存在</td><td>是</td><td>200；遇201停止</td></tr></tbody></table></div></div><div class="deep-block" id="s2-before-4"><h3>2.4 两个常见的伪线性写法</h3><p>第一种：从每个不同值都向右扩展。输入1..m时，总扩展次数为m+(m-1)+…+1，退化为O(m²)。第二种：虽然检查了前驱，但外层遍历原数组；若最小值1重复r次，后面又有2..m，每个1都会启动长度m的扩展，总O(rm)。</p><p>基础代码外层遍历去重集合，因此没有上述重复。集合存 long long、输入为 int，所以 x-1、y++ 不会在 INT_MIN 或 INT_MAX 附近发生有符号溢出。不要把相同代码直接推广到任意 long long 极值输入而不加保护。</p></div><div class="invariant"><span>推导 / 不变量</span><p>集合去重后，连续块只有一个最小值能触发扩展。扫描集合一次，加上各块内总共 O(n) 次扩展，平均总成本 O(n)。</p></div>
 <h3>手推一个例子</h3><p>[100,4,200,1,3,2,2] 去重后，只从 1、100、200 扩展。1 找到 2、3、4，长度 4；2、3、4 因为存在前驱不启动搜索。</p><div class="codebox"><div class="codebar"><span>C++17</span><div><a href="examples/02.cpp" download>下载 .cpp</a><button type="button" class="copy">复制代码</button></div></div><pre tabindex="0" aria-label="C++17 代码"><code><span class="keyword">int</span> longestConsecutive(<span class="keyword">const</span> vector&lt;<span class="keyword">int</span>&gt;&amp; a) {
     unordered_set&lt;<span class="keyword">long</span> <span class="keyword">long</span>&gt; values(a.begin(), a.end());
     <span class="keyword">int</span> ans = <span class="number">0</span>;
@@ -53,9 +127,55 @@
     <span class="keyword">return</span> ans;
 }</code></pre></div>
 <dl class="analysis-grid"><div><dt>复杂度</dt><dd>平均时间 O(n)，空间 O(n)，哈希最坏时间可能退化。</dd></div><div><dt>易错点与边界</dt><dd>使用 long long 存储 int 输入，避免 INT_MIN-1、INT_MAX+1 溢出。外层如果遍历含大量重复值的原数组，可能重复扩展同一长区间。</dd></div></dl>
-<div class="practice"><h3>经典考点与练习</h3><p>练习：LeetCode 128 最长连续序列、349 两个数组的交集。</p><details><summary>面试官可能继续问什么？</summary><p>为什么嵌套 while 不是 O(n²)？如果不去重会怎样？</p><p class="muted">先用自己的话回答，再回到本节的前提、不变量和边界检查论证。</p></details></div>
+<div class="deep-block" id="s2-after-1"><h3>2.5 唯一交集：命中后删除，天然避免重复输出</h3><p>erase(value) 返回删掉的元素数，对集合是0或1。第一次命中后删除，即使b里该值重复也不会再输出。结果按b中首次命中的顺序排列，不是数值排序。平均 O(n+m)，空间 O(n)，若要求输出有序再排序。</p><p>多重交集是另一题：若a里有两个2、b里有三个2，应输出两个2。此时改用计数表，每命中一次输出并扣减一次，不能使用本例的一次性删除。</p><div class="codebox"><div class="codebar"><span>C++17</span><div><a href="examples/detail-intersection.cpp" download>下载 .cpp</a><button type="button" class="copy">复制代码</button></div></div><pre tabindex="0" aria-label="C++17 代码"><code>vector&lt;<span class="keyword">int</span>&gt; uniqueIntersection(<span class="keyword">const</span> vector&lt;<span class="keyword">int</span>&gt;&amp; a, <span class="keyword">const</span> vector&lt;<span class="keyword">int</span>&gt;&amp; b) {
+    unordered_set&lt;<span class="keyword">int</span>&gt; remaining(a.begin(), a.end());
+    vector&lt;<span class="keyword">int</span>&gt; answer;
+    <span class="keyword">for</span> (<span class="keyword">int</span> value : b) {
+        <span class="keyword">if</span> (remaining.erase(value) != <span class="number">0</span>) answer.push_back(value);
+    }
+    <span class="keyword">return</span> answer;
+}</code></pre></div></div><div class="deep-block" id="s2-after-2"><h3>2.6 快乐数：集合检测重复状态</h3><p>从一个正整数出发，下一状态由十进制各位平方和唯一决定；状态重复就会进入相同循环，不可能突然逃出到1。对32位正int，首次转换后最多810，此后也落在有限范围内，因此一定结束。</p><p>19→82→68→100→1 为真；2进入不含1的循环为假。以D表示初始位数、S表示访问的不同状态数，平均时间 O(D+S)、空间 O(S)；32位int下二者均有固定上界。可用Floyd快慢指针将额外空间降为O(1)，思想与链表判环相同，但状态转移变成数位计算。</p><div class="codebox"><div class="codebar"><span>C++17</span><div><a href="examples/detail-happy-number.cpp" download>下载 .cpp</a><button type="button" class="copy">复制代码</button></div></div><pre tabindex="0" aria-label="C++17 代码"><code><span class="keyword">int</span> digitSquareSum(<span class="keyword">int</span> x) {
+    <span class="keyword">int</span> result = <span class="number">0</span>;
+    <span class="keyword">while</span> (x &gt; <span class="number">0</span>) {
+        <span class="keyword">int</span> digit = x % <span class="number">10</span>;
+        result += digit * digit;
+        x /= <span class="number">10</span>;
+    }
+    <span class="keyword">return</span> result;
+}
+<span class="keyword">bool</span> isHappy(<span class="keyword">int</span> n) {
+    <span class="keyword">if</span> (n &lt;= <span class="number">0</span>) <span class="keyword">return</span> <span class="keyword">false</span>;
+    unordered_set&lt;<span class="keyword">int</span>&gt; seen;
+    <span class="keyword">while</span> (n != <span class="number">1</span>) {
+        <span class="keyword">if</span> (!seen.insert(n).second) <span class="keyword">return</span> <span class="keyword">false</span>;
+        n = digitSquareSum(n);
+    }
+    <span class="keyword">return</span> <span class="keyword">true</span>;
+}</code></pre></div></div><div class="deep-block" id="s2-after-3"><h3>2.7 距离不超过 K 的重复元素：只保留最近 K 个位置的集合</h3><p>查询a[i]之前，集合代表下标[max(0,i-k),i-1]中的值。相等下标之间距离至多K就能命中；注意移出的是i-k-1，不是仍应保留的i-k。</p><p>为什么集合不需要计数？只要窗口里出现重复就已经返回true，能够继续执行的窗口必然没有重复，因此删除一个旧值不会误删另一个仍有效的同值。若改成统计所有重复或不提前返回，则要重新考虑频次。平均时间O(n)，辅助空间O(min(n,K+1))。</p><div class="codebox"><div class="codebar"><span>C++17</span><div><a href="examples/detail-nearby-duplicate.cpp" download>下载 .cpp</a><button type="button" class="copy">复制代码</button></div></div><pre tabindex="0" aria-label="C++17 代码"><code><span class="keyword">bool</span> containsNearbyDuplicate(<span class="keyword">const</span> vector&lt;<span class="keyword">int</span>&gt;&amp; a, <span class="keyword">int</span> k) {
+    <span class="keyword">if</span> (k &lt;= <span class="number">0</span>) <span class="keyword">return</span> <span class="keyword">false</span>;
+    unordered_set&lt;<span class="keyword">int</span>&gt; window;
+    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; (<span class="keyword">int</span>)a.size(); ++i) {
+        <span class="keyword">if</span> (i &gt; k) window.erase(a[i - k - <span class="number">1</span>]);
+        <span class="keyword">if</span> (window.find(a[i]) != window.end()) <span class="keyword">return</span> <span class="keyword">true</span>;
+        window.insert(a[i]);
+    }
+    <span class="keyword">return</span> <span class="keyword">false</span>;
+}</code></pre></div></div><div class="practice"><h3>经典考点与练习</h3><p>练习：LeetCode 128 最长连续序列、349 两个数组的交集。</p><h3>面试追问：关键点完整解答</h3><dl class="answer-list"><div><dt>最长连续序列的连续，是下标连续还是数值连续？</dt><dd><p>要求数值能排列为x,x+1,…，不要求它们在原数组相邻，也不保留原顺序。因此可去重后用集合；若题目要求原数组中的连续子数组，就不能用这套方法。</p></dd></div><div><dt>为什么集合遍历顺序随机也不影响最长连续序列？</dt><dd><p>是否启动只由前驱存在性决定，与遍历时间顺序无关；集合在扫描期间保持不变。无论何时访问一个块的最小值，都能沿成员查询遍历完整块。</p></dd></div><div><dt>嵌套 while 的线性证明是什么？</dt><dd><p>只有每个连续块的最小值进入while；不同连续块没有重叠，每个不同元素只会作为成功扩展被访问一次。加上前驱查询与各块结束的失败查询，总查询次数线性；哈希单次成本仍只是平均常数。</p></dd></div><div><dt>交集为什么要先确认是唯一交集还是多重交集？</dt><dd><p>两者对重复的定义不同。a=[2,2]、b=[2,2,2]，唯一交集是[2]，多重交集是[2,2]。集合只保留存在性，丢掉了计算多重交集所需的次数信息。</p></dd></div><div><dt>能一边 range-for 遍历 unordered_set，一边插入吗？</dt><dd><p>插入可能引发rehash而使当前迭代器失效，不应这样写。读取阶段与修改阶段分开最稳妥；删除当前项时可采用显式迭代器 it=container.erase(it)。rehash通常不使未删除元素的引用和指针失效，但不能因此继续使用旧迭代器。</p></dd></div><div><dt>附近重复题中，距离恰好 K 的元素应该移除吗？</dt><dd><p>不应该。当前位置i仍应与i-K比较，过期的是下标小于i-K的元素。本例每次删除i-K-1，再查询当前值；[1,2,1]、K=2应返回true，K=1应返回false。</p></dd></div></dl></div>
 <label class="learned"><input type="checkbox" data-progress="05-02">我能独立实现，并解释正确性与边界</label></section><section class="lesson" id="s3"><div class="lesson-heading"><span class="lesson-number">05.03</span><h2>异或与二进制计数</h2></div>
-<h3>知识与适用场景</h3><p>异或满足交换律、结合律，且 x^x=0，因此偶数次出现的元素会抵消。但不能把这个结论套到出现三次的问题，后者需要按位计数或状态机。</p><div class="invariant"><span>推导 / 不变量</span><p>x&amp;(x-1) 每次清除最低位的 1：x-1 把最低位 1 变为 0，并把其右侧的 0 变成 1，相与后只删除该位。使用无符号类型使位级语义明确。</p></div>
+<h3>知识与适用场景</h3><p>异或满足交换律、结合律，且 x^x=0，因此偶数次出现的元素会抵消。但不能把这个结论套到出现三次的问题，后者需要按位计数或状态机。</p><div class="deep-block" id="s3-before-1"><h3>3.1 先明确按位与逻辑，再写表达式</h3><p>&amp;、|、^ 对整数的每个二进制位操作；&amp;&amp;、|| 将表达式按真假求值且具有短路行为。例如2&amp;1为0，2&amp;&amp;1为true。~是按位取反，!是逻辑非；~0不是一个只包含业务范围内有效位的集合。</p><p>运算优先级常导致误读。判断某位是否为0，写 (x &amp; mask)==0，不要写 x &amp; mask==0，后者按 x &amp; (mask==0) 解释。即使能背优先级，面试代码也应主动加括号。</p></div><div class="deep-block" id="s3-before-2"><h3>3.2 以 uint32_t 为例：位操作与合法范围</h3><p class="table-hint">窄屏下可左右滑动表格，查看完整内容。</p><div class="study-table" tabindex="0" role="region" aria-label="3.2 以 uint32_t 为例：位操作与合法范围"><table><thead><tr><th scope="col">目标</th><th scope="col">表达式</th><th scope="col">约束或说明</th></tr></thead><tbody><tr><td>检查第k位</td><td>((x&gt;&gt;k)&amp;uint32_t{1})!=0</td><td>0&lt;=k&lt;32，最低位编号0</td></tr><tr><td>置1</td><td>x | (uint32_t{1}&lt;&lt;k)</td><td>用无符号左操作数</td></tr><tr><td>清0</td><td>x &amp; ~(uint32_t{1}&lt;&lt;k)</td><td>仅清指定位置</td></tr><tr><td>翻转</td><td>x ^ (uint32_t{1}&lt;&lt;k)</td><td>0变1、1变0</td></tr><tr><td>删除最低位1</td><td>x &amp; (x-1)</td><td>x=0结果仍为0，但通常在while(x)中使用</td></tr><tr><td>提取最低位1</td><td>x &amp; (uint32_t{0}-x)</td><td>无符号减法按模2^32定义，x=0返回0</td></tr><tr><td>判断2的幂</td><td>x!=0 &amp;&amp; (x&amp;(x-1))==0</td><td>必须单独排除0</td></tr></tbody></table></div></div><div class="deep-block" id="s3-before-3"><h3>3.3 C++17 位移：类型要在运算前就正确</h3><p>位移量为负数或不小于左操作数提升后的位宽会产生未定义行为。uint64_t{1}&lt;&lt;63 合法，uint64_t{1}&lt;&lt;64不合法；赋值给64位变量也不能补救先执行了32位的1&lt;&lt;40。必须先选好左操作数类型。</p><p>有符号负数左移在C++17中有未定义行为，负数右移的结果依赖实现；因此位模式算法优先使用uint32_t/uint64_t。无符号加减乘按2^w取模，有符号溢出却不是合法的环绕。本章不用 -INT_MIN 求lowbit，而用无符号的0-x。</p></div><div class="deep-block" id="s3-before-4"><h3>3.4 带边界检查的位工具</h3><p>移位检查把负数转成unsigned后的大值也一并拒绝。除popcount外操作均为常数时间；popcount循环次数等于1的个数，最多32次。C++17尚无std::popcount，GCC/Clang的__builtin_popcount属于编译器扩展；C++20才有标准&lt;bit&gt;接口。</p><div class="codebox"><div class="codebar"><span>C++17</span><div><a href="examples/detail-bit-tools.cpp" download>下载 .cpp</a><button type="button" class="copy">复制代码</button></div></div><pre tabindex="0" aria-label="C++17 代码"><code>uint32_t bitAt(unsigned k) {
+    <span class="keyword">if</span> (k &gt;= <span class="number">32</span>) <span class="keyword">throw</span> out_of_range(<span class="string">&quot;bit index must be below 32&quot;</span>);
+    <span class="keyword">return</span> uint32_t{<span class="number">1</span>} &lt;&lt; k;
+}
+<span class="keyword">bool</span> testBit(uint32_t x, unsigned k) { <span class="keyword">return</span> (x &amp; bitAt(k)) != <span class="number">0</span>; }
+uint32_t setBit(uint32_t x, unsigned k) { <span class="keyword">return</span> x | bitAt(k); }
+uint32_t clearBit(uint32_t x, unsigned k) { <span class="keyword">return</span> x &amp; ~bitAt(k); }
+uint32_t toggleBit(uint32_t x, unsigned k) { <span class="keyword">return</span> x ^ bitAt(k); }
+uint32_t lowBit(uint32_t x) { <span class="keyword">return</span> x &amp; (uint32_t{<span class="number">0</span>} - x); }
+<span class="keyword">int</span> popcount32(uint32_t x) {
+    <span class="keyword">int</span> count = <span class="number">0</span>;
+    <span class="keyword">while</span> (x != <span class="number">0</span>) { x &amp;= x - <span class="number">1</span>; ++count; }
+    <span class="keyword">return</span> count;
+}</code></pre></div></div><div class="deep-block" id="s3-before-5"><h3>3.5 异或消去：答案由出现次数的奇偶决定</h3><p>按位看，异或是在模2意义下相加，相同位出现偶数次变0，奇数次保留。一个元素出现一次、其余各出现两次时，所有重复项成对消去，留下单次元素。其实“其余出现偶数次”就足够；若其他元素也出现奇数次，结果会混入它们。</p><p>异或不是计数器：它不能区分出现1次、3次或5次。数组为空时归约得到0也不能证明0是单次答案；题目对元素次数与存在性的保证是解法的一部分。</p></div><div class="deep-block" id="s3-before-6"><h3>3.6 两个单次数字：用异或结果的一个不同位分组</h3><p class="table-hint">窄屏下可左右滑动表格，查看完整内容。</p><div class="study-table" tabindex="0" role="region" aria-label="3.6 两个单次数字：用异或结果的一个不同位分组"><table><thead><tr><th scope="col">步骤</th><th scope="col">示例 [1,2,1,3,2,5]</th><th scope="col">推理</th></tr></thead><tbody><tr><td>全部异或</td><td>3^5=6，即0110</td><td>成对数字抵消</td></tr><tr><td>取最低位1</td><td>lowbit(6)=2，即0010</td><td>3和5在这一位不同</td></tr><tr><td>按该位为0分组</td><td>1,1,5 → 异或为5</td><td>每对相同数字进入同组并抵消</td></tr><tr><td>按该位为1分组</td><td>2,3,2 → 异或为3</td><td>另一个单次数字独立留下</td></tr></tbody></table></div></div><div class="invariant"><span>推导 / 不变量</span><p>x&amp;(x-1) 每次清除最低位的 1：x-1 把最低位 1 变为 0，并把其右侧的 0 变成 1，相与后只删除该位。使用无符号类型使位级语义明确。</p></div>
 <h3>手推一个例子</h3><p>x=12，即 1100；第一次变为 1000，第二次变为 0000，所以 popcount 为 2。</p><div class="codebox"><div class="codebar"><span>C++17</span><div><a href="examples/03.cpp" download>下载 .cpp</a><button type="button" class="copy">复制代码</button></div></div><pre tabindex="0" aria-label="C++17 代码"><code><span class="keyword">int</span> singleNumber(<span class="keyword">const</span> vector&lt;<span class="keyword">int</span>&gt;&amp; a) {
     <span class="keyword">int</span> ans = <span class="number">0</span>;
     <span class="keyword">for</span> (<span class="keyword">int</span> x : a) ans ^= x;
@@ -73,9 +193,47 @@
     <span class="keyword">return</span> x != <span class="number">0</span> &amp;&amp; (x &amp; (x - <span class="number">1</span>)) == <span class="number">0</span>;
 }</code></pre></div>
 <dl class="analysis-grid"><div><dt>复杂度</dt><dd>异或归约 O(n) 时间、O(1) 空间；位计数 O(b)，b 为 1 的个数，最多 32。</dd></div><div><dt>易错点与边界</dt><dd>0 不是 2 的幂。位移位数不能大于等于类型宽度；设置高位用 1ULL&lt;&lt;k，并确认 k&lt;64。</dd></div></dl>
-<div class="practice"><h3>经典考点与练习</h3><p>练习：LeetCode 136 只出现一次的数字、260 只出现一次的数字 III、191 位 1 的个数。</p><details><summary>面试官可能继续问什么？</summary><p>两个数各出现一次、其余两次时，如何用异或结果的最低位 1 分组？</p><p class="muted">先用自己的话回答，再回到本节的前提、不变量和边界检查论证。</p></details></div>
+<div class="deep-block" id="s3-after-1"><h3>3.7 两个数各一次、其余各两次：无符号分组</h3><p>契约：恰有两个不同uint32_t值各出现一次，其余值各出现两次。combined非0是必要条件，但检查它不能验证全部契约。输出顺序不限。时间O(n)、额外空间O(1)。</p><p>若题目输入为int32_t，可先转为uint32_t再做位运算；转回有符号数时不要依赖C++17对超范围无符号转有符号的实现定义行为。对u&gt;=2^31，可先在int64_t中计算u-2^32，再转换为可表示的int32_t。</p><div class="codebox"><div class="codebar"><span>C++17</span><div><a href="examples/detail-two-singles.cpp" download>下载 .cpp</a><button type="button" class="copy">复制代码</button></div></div><pre tabindex="0" aria-label="C++17 代码"><code>pair&lt;uint32_t, uint32_t&gt; twoSingleNumbers(<span class="keyword">const</span> vector&lt;uint32_t&gt;&amp; a) {
+    uint32_t combined = <span class="number">0</span>;
+    <span class="keyword">for</span> (uint32_t value : a) combined ^= value;
+    <span class="keyword">if</span> (combined == <span class="number">0</span>) <span class="keyword">throw</span> invalid_argument(<span class="string">&quot;required distinct singles missing&quot;</span>);
+    uint32_t split = combined &amp; (uint32_t{<span class="number">0</span>} - combined);
+    uint32_t first = <span class="number">0</span>, second = <span class="number">0</span>;
+    <span class="keyword">for</span> (uint32_t value : a) {
+        <span class="keyword">if</span> ((value &amp; split) == <span class="number">0</span>) first ^= value;
+        <span class="keyword">else</span> second ^= value;
+    }
+    <span class="keyword">return</span> {first, second};
+}</code></pre></div></div><div class="deep-block" id="s3-after-2"><h3>3.8 其他数字出现三次：逐位计数模3</h3><p>对每个二进制位，所有出现三次的数字总贡献都是3的倍数；取模3后只留下单次数字在该位的0或1。逐位恢复即可，不需要假设数值大小能被普通异或区分。</p><p>进阶可用ones、twos两个掩码实现每一位的三态计数器，但更新顺序容易错。先掌握32次扫描的直观证明；固定32位下O(32n)=O(n)，多一个常数并不会改变渐近复杂度。</p></div><div class="deep-block" id="s3-after-3"><h3>3.9 三次抵消，恢复有符号32位结果</h3><p>前提恰有一个int32_t值出现一次，其他值均出现三次；按位计数不负责验证输入次数是否合法。负数先转无符号，得到按模2^32定义的位模式；最后用int64_t中的减法恢复负值，覆盖INT32_MIN。时间O(32n)、额外空间O(1)。</p><div class="codebox"><div class="codebar"><span>C++17</span><div><a href="examples/detail-single-among-triples.cpp" download>下载 .cpp</a><button type="button" class="copy">复制代码</button></div></div><pre tabindex="0" aria-label="C++17 代码"><code>int32_t singleAmongTriples(<span class="keyword">const</span> vector&lt;int32_t&gt;&amp; a) {
+    uint32_t bits = <span class="number">0</span>;
+    <span class="keyword">for</span> (unsigned bit = <span class="number">0</span>; bit &lt; <span class="number">32</span>; ++bit) {
+        <span class="keyword">int</span> remainder = <span class="number">0</span>;
+        <span class="keyword">for</span> (int32_t value : a) {
+            uint32_t u = static_cast&lt;uint32_t&gt;(value);
+            remainder = (remainder + <span class="keyword">int</span>((u &gt;&gt; bit) &amp; uint32_t{<span class="number">1</span>})) % <span class="number">3</span>;
+        }
+        <span class="keyword">if</span> (remainder != <span class="number">0</span>) bits |= uint32_t{<span class="number">1</span>} &lt;&lt; bit;
+    }
+    int64_t signedValue = bits;
+    <span class="keyword">if</span> ((bits &amp; (uint32_t{<span class="number">1</span>} &lt;&lt; <span class="number">31</span>)) != <span class="number">0</span>)
+        signedValue -= (int64_t{<span class="number">1</span>} &lt;&lt; <span class="number">32</span>);
+    <span class="keyword">return</span> static_cast&lt;int32_t&gt;(signedValue);
+}</code></pre></div></div><div class="practice"><h3>经典考点与练习</h3><p>练习：LeetCode 136 只出现一次的数字、260 只出现一次的数字 III、191 位 1 的个数。</p><h3>面试追问：关键点完整解答</h3><dl class="answer-list"><div><dt>为什么 x&amp;(x-1) 恰好删除最低位的1？</dt><dd><p>把x写成高位前缀、一个最低1、若干尾随0。减1会将该1变0、尾随0变1，而更高前缀不变；相与后高位保留，原来的最低1清零，其右边仍为0。因此1的数量恰少一个。</p></dd></div><div><dt>x&amp;-x 为什么在有符号代码里有风险？</dt><dd><p>有符号最小值的相反数无法在同类型表示，-INT_MIN可能溢出。无符号类型用0-x具有明确的模2^w语义，x&amp;(0-x)才能安全覆盖最高位单独为1的情况。</p></dd></div><div><dt>异或能不能解决其他数出现三次？</dt><dd><p>不能直接归约。x^x^x=x，不会抵消；需要逐位计数模3或对应状态机。异或解法适用于其他数出现偶数次的消去模型，而不是任意重复次数。</p></dd></div><div><dt>两个单次数字为何一定能被lowbit分开？</dt><dd><p>它们不同，所以异或a^b不为0。异或结果中任一为1的位，恰好表示a、b该位不同；按该位分组时两者必定进入不同组，而每一对相同数字仍进入同一组并抵消。</p></dd></div><div><dt>为什么 1ULL&lt;&lt;64 仍不合法？</dt><dd><p>即使左操作数是64位，合法移位量也只有0到63。类型足够存一个结果，不代表可以按位宽本身移位。若要构造64位全1，使用~uint64_t{0}而不是(1ULL&lt;&lt;64)-1。</p></dd></div><div><dt>把负数强转为无符号会丢掉信息吗？</dt><dd><p>转换按模2^w定义，可用于固定宽度位模式处理。问题在于把超范围无符号结果直接转回有符号在C++17中是实现定义行为；本节先在更宽的int64_t中减去2^32，使结果落在int32_t范围内，再转换。</p></dd></div></dl></div>
 <label class="learned"><input type="checkbox" data-progress="05-03">我能独立实现，并解释正确性与边界</label></section><section class="lesson" id="s4"><div class="lesson-heading"><span class="lesson-number">05.04</span><h2>位掩码表示子集</h2></div>
-<h3>知识与适用场景</h3><p>n 个选或不选状态可用 n 位二进制编码，第 i 位为 1 表示选择第 i 个元素。这适合 n 较小的穷举、状态压缩 DP 和集合运算。</p><div class="invariant"><span>推导 / 不变量</span><p>遍历 0 到 2^n-1，每个整数唯一对应一个子集。判断成员用 mask&amp;(1ULL&lt;&lt;i)，集合并/交/差可以用按位或、与、与取反。</p></div>
+<h3>知识与适用场景</h3><p>n 个选或不选状态可用 n 位二进制编码，第 i 位为 1 表示选择第 i 个元素。这适合 n 较小的穷举、状态压缩 DP 和集合运算。</p><div class="deep-block" id="s4-before-1"><h3>4.1 位掩码表示的是下标集合</h3><p>给n个对象编号0..n-1，第i位为1表示选择对象i。不同整数在n位内有不同位模式，因此与下标子集一一对应；空集为0，全集为(1&lt;&lt;n)-1，但构造全集前必须确认移位类型与n的范围。</p><p>输入[a,b,c]中101表示选择下标0和2。若输入[1,1]，01和10是不同下标集合，但得到的值列表都为[1]。按位枚举本身不去除值重复；题目要求不同值子集时，需要排序加回溯去重或另行设计规范状态。</p></div><div class="deep-block" id="s4-before-2"><h3>4.2 小集合运算：先固定全集 U</h3><p class="table-hint">窄屏下可左右滑动表格，查看完整内容。</p><div class="study-table" tabindex="0" role="region" aria-label="4.2 小集合运算：先固定全集 U"><table><thead><tr><th scope="col">集合操作</th><th scope="col">位表达式</th><th scope="col">例 A=101，B=110，U=111</th></tr></thead><tbody><tr><td>并集</td><td>A | B</td><td>111</td></tr><tr><td>交集</td><td>A &amp; B</td><td>100</td></tr><tr><td>属于A但不属于B</td><td>A &amp; ~B</td><td>001</td></tr><tr><td>在U中的补集</td><td>U &amp; ~A</td><td>010</td></tr><tr><td>对称差</td><td>A ^ B</td><td>011</td></tr><tr><td>A是否为B的子集</td><td>(A &amp; B)==A</td><td>本例为false</td></tr><tr><td>A与B是否不相交</td><td>(A &amp; B)==0</td><td>本例为false</td></tr></tbody></table></div></div><div class="deep-block" id="s4-before-3"><h3>4.3 状态数与输出体积：位宽不是可行性</h3><p>n位可编码2^n个子集，但枚举所有子集仍需指数时间。逐个输出元素的总次数为n*2^(n-1)（n&gt;=1），所以完整返回所有子集的时间和输出空间通常为O(n*2^n)，不能只写O(2^n)。</p><p>基础示例把n限制在20，只是防止显然不可行的指数输出，并不保证n=20就适合所有内存限制。上百万个vector的对象开销、每个子集的分配开销和元素存储都要算入。只需要统计或求最优值时，可边枚举边处理，不必把所有子集保存下来。</p></div><div class="deep-block" id="s4-before-4"><h3>4.4 子掩码转移：为什么 (sub-1)&amp;mask 不会漏</h3><p>从sub=mask开始。sub-1会清除当前最低1并把其右侧位全部变成1，再与mask相与，删掉不属于全集mask的位，于是得到严格小于sub的最大合法子掩码。反复执行就会按数值递减枚举每个子掩码一次。</p><p>非空枚举写for(sub=mask;sub;sub=(sub-1)&amp;mask)。若要包含空集，必须在处理sub==0后break；对无符号sub而言，0-1会回绕为全1，再与mask得到mask，不退出就无限循环。</p></div><div class="deep-block" id="s4-before-5"><h3>4.5 mask=1010 的完整子掩码轨迹</h3><p class="table-hint">窄屏下可左右滑动表格，查看完整内容。</p><div class="study-table" tabindex="0" role="region" aria-label="4.5 mask=1010 的完整子掩码轨迹"><table><thead><tr><th scope="col">当前sub</th><th scope="col">sub-1（仅展示低4位）</th><th scope="col">与mask相与</th><th scope="col">对应选择</th></tr></thead><tbody><tr><td>1010</td><td>1001</td><td>1000</td><td>先处理下标1与3</td></tr><tr><td>1000</td><td>0111</td><td>0010</td><td>再处理下标3</td></tr><tr><td>0010</td><td>0001</td><td>0000</td><td>再处理下标1</td></tr><tr><td>0000</td><td>不再计算</td><td>退出</td><td>最后处理空集</td></tr></tbody></table></div></div><div class="deep-block" id="s4-before-6"><h3>4.6 枚举子掩码并统计：显式包含空集</h3><p>k为mask中1的个数，循环时间O(2^k)、额外空间O(1)，零掩码返回1。这里只为演示枚举而计数；若只问数量，可直接算2^k，但k=64时数量超过uint64_t可表示范围。</p><p>若对n位的每个mask再枚举其所有sub，包括空子集，总访问次数为3^n：每个元素只有不在mask、在mask但不在sub、在sub三种归属。这个复杂度常出现在集合划分DP中，不是O(2^n)。</p><div class="codebox"><div class="codebar"><span>C++17</span><div><a href="examples/detail-submasks.cpp" download>下载 .cpp</a><button type="button" class="copy">复制代码</button></div></div><pre tabindex="0" aria-label="C++17 代码"><code>uint64_t countSubmasks(uint64_t mask) {
+    unsigned selected = <span class="number">0</span>;
+    <span class="keyword">for</span> (uint64_t x = mask; x != <span class="number">0</span>; x &amp;= x - <span class="number">1</span>) ++selected;
+    <span class="keyword">if</span> (selected &gt; <span class="number">20</span>) <span class="keyword">throw</span> invalid_argument(<span class="string">&quot;too many submasks to enumerate&quot;</span>);
+    uint64_t count = <span class="number">0</span>;
+    uint64_t sub = mask;
+    <span class="keyword">for</span> (;;) {
+        <span class="comment">// Process this submask here; counting is only a demonstration.</span>
+        ++count;
+        <span class="keyword">if</span> (sub == <span class="number">0</span>) break;
+        sub = (sub - <span class="number">1</span>) &amp; mask;
+    }
+    <span class="keyword">return</span> count;
+}</code></pre></div></div><div class="invariant"><span>推导 / 不变量</span><p>遍历 0 到 2^n-1，每个整数唯一对应一个子集。判断成员用 mask&amp;(1ULL&lt;&lt;i)，集合并/交/差可以用按位或、与、与取反。</p></div>
 <h3>手推一个例子</h3><p>[a,b,c] 的掩码 101 表示选择 a 与 c；000 为空集，111 为全集。共有 8 个状态。</p><div class="codebox"><div class="codebar"><span>C++17</span><div><a href="examples/04.cpp" download>下载 .cpp</a><button type="button" class="copy">复制代码</button></div></div><pre tabindex="0" aria-label="C++17 代码"><code>vector&lt;vector&lt;<span class="keyword">int</span>&gt;&gt; subsetsByMask(<span class="keyword">const</span> vector&lt;<span class="keyword">int</span>&gt;&amp; a) {
     <span class="keyword">int</span> n = (<span class="keyword">int</span>)a.size();
     <span class="keyword">if</span> (n &gt; <span class="number">20</span>) <span class="keyword">throw</span> invalid_argument(<span class="string">&quot;exponential output too large&quot;</span>);
@@ -90,5 +248,310 @@
     <span class="keyword">return</span> ans;
 }</code></pre></div>
 <dl class="analysis-grid"><div><dt>复杂度</dt><dd>时间与输出空间 O(n·2^n)，临时单个子集 O(n)。</dd></div><div><dt>易错点与边界</dt><dd>位宽允许不代表内存允许；n=40 即使掩码放得下，也无法直接枚举全部子集。输入含重复值时会生成内容重复的子集。</dd></div></dl>
-<div class="practice"><h3>经典考点与练习</h3><p>练习：LeetCode 78 子集；进阶：旅行商状态 dp[mask][last]。</p><details><summary>面试官可能继续问什么？</summary><p>如何枚举 mask 的所有非空子集？提示 sub=(sub-1)&amp;mask。</p><p class="muted">先用自己的话回答，再回到本节的前提、不变量和边界检查论证。</p></details></div>
-<label class="learned"><input type="checkbox" data-progress="05-04">我能独立实现，并解释正确性与边界</label></section><nav class="chapter-pager" aria-label="相邻章节"><a href="../04-栈队列与单调结构/index.html"><small>上一章</small>← 栈、队列与单调结构</a><a href="../06-排序与二分查找/index.html"><small>下一章</small>排序与二分查找 →</a></nav><footer>秋招算法学习讲义 · C++17<br>例题编号供检索；难度与覆盖范围按学习顺序组织。</footer></main><aside class="toc" aria-label="本页目录"><p class="rail-label">本章小节</p><a href="#s1"><span>01</span>哈希映射：存在、下标还是次数</a><a href="#s2"><span>02</span>集合：最长连续序列为何是线性</a><a href="#s3"><span>03</span>异或与二进制计数</a><a href="#s4"><span>04</span>位掩码表示子集</a></aside></div><div class="toast" role="status" aria-live="polite"></div></body></html>
+<div class="deep-block" id="s4-after-1"><h3>4.7 快速幂：二进制按位拆分指数</h3><p>指数e的第i位为1，就需要乘入base^(2^i)。每轮检查最低位，必要时乘入答案；然后将base平方、e右移。循环不变量是 result*currentBase^remaining 等于原来的base^exponent（模mod意义下）。</p><p>指数0时，空乘积为1，所以返回1%mod；mod=1时结果为0。负指数需要逆元且逆元不一定存在，不属于这个无符号指数接口。</p></div><div class="deep-block" id="s4-after-2"><h3>4.8 模快速幂：限定模数以保证乘法不溢出</h3><p>乘法两端已规范到[0,mod-1]，限制mod&lt;=10^9+7后，乘积最多约10^18，小于LLONG_MAX。只在乘完后取模并不能修复已经发生的溢出；若放宽mod范围，应使用安全模乘算法，或在允许的编译器上使用更宽整数扩展。</p><p>时间O(log(exponent+1))、额外空间O(1)，对固定uint64_t最多64轮。示例(-2)^5 mod13=7。该接口约定指数为0时结果为1%mod，包括base=0的情况。</p><div class="codebox"><div class="codebar"><span>C++17</span><div><a href="examples/detail-mod-power.cpp" download>下载 .cpp</a><button type="button" class="copy">复制代码</button></div></div><pre tabindex="0" aria-label="C++17 代码"><code><span class="keyword">long</span> <span class="keyword">long</span> modularPower(<span class="keyword">long</span> <span class="keyword">long</span> base, uint64_t exponent, <span class="keyword">long</span> <span class="keyword">long</span> mod) {
+    <span class="keyword">if</span> (mod &lt;= <span class="number">0</span> || mod &gt; <span class="number">1000000007LL</span>)
+        <span class="keyword">throw</span> invalid_argument(<span class="string">&quot;require 1 &lt;= mod &lt;= 1000000007&quot;</span>);
+    base %= mod;
+    <span class="keyword">if</span> (base &lt; <span class="number">0</span>) base += mod;
+    <span class="keyword">long</span> <span class="keyword">long</span> result = <span class="number">1</span> % mod;
+    <span class="keyword">while</span> (exponent != <span class="number">0</span>) {
+        <span class="keyword">if</span> ((exponent &amp; uint64_t{<span class="number">1</span>}) != <span class="number">0</span>) result = result * base % mod;
+        base = base * base % mod;
+        exponent &gt;&gt;= <span class="number">1</span>;
+    }
+    <span class="keyword">return</span> result;
+}</code></pre></div></div><div class="deep-block" id="s4-after-3"><h3>4.9 状态压缩DP入门：n个人分配n个任务</h3><p>cost[i][j]表示第i个人承担任务j的费用，每个人与每个任务恰好出现一次。定义dp[mask]：已经将mask中的任务分配给前popcount(mask)个人时的最小费用。当前已分配人数k由mask唯一确定，不需要再加一维存k。</p><p>从dp[mask]出发，选一个未使用任务j，转移到mask|(1&lt;&lt;j)，新费用dp[mask]+cost[k][j]。初始dp[0]=0；答案dp[(1&lt;&lt;n)-1]。每次增加一个1，数值严格变大，按mask递增遍历是合法拓扑顺序。</p><p>正确性来自最后一步分解：任何可行方案都能删掉当前最后分配的人与任务，回到一个更小的合法状态；枚举所有未使用任务覆盖所有方案，再取最小不会漏掉最优。这里是状态建模演示，规模大时可用匈牙利算法等多项式方法。</p></div><div class="deep-block" id="s4-after-4"><h3>4.10 最小费用任务分配：O(n·2^n) 状态压缩</h3><p>cost=[[9,2],[3,7]]时，将任务1给人0、任务0给人1，费用2+3=5。空矩阵返回0。约束保证总费用&lt;=2*10^10，远小于INF，转移不会溢出。时间O(n*2^n)，DP额外空间O(2^n)，不含输入矩阵。n=20时dp约8MiB，但仍有千万量级转移，应结合实际时限评估。</p><div class="codebox"><div class="codebar"><span>C++17</span><div><a href="examples/detail-assignment-dp.cpp" download>下载 .cpp</a><button type="button" class="copy">复制代码</button></div></div><pre tabindex="0" aria-label="C++17 代码"><code><span class="keyword">long</span> <span class="keyword">long</span> minimumAssignmentCost(<span class="keyword">const</span> vector&lt;vector&lt;<span class="keyword">int</span>&gt;&gt;&amp; cost) {
+    <span class="keyword">int</span> n = (<span class="keyword">int</span>)cost.size();
+    <span class="keyword">if</span> (n &gt; <span class="number">20</span>) <span class="keyword">throw</span> invalid_argument(<span class="string">&quot;n must not exceed 20&quot;</span>);
+    <span class="keyword">for</span> (<span class="keyword">const</span> <span class="keyword">auto</span>&amp; row : cost) {
+        <span class="keyword">if</span> ((<span class="keyword">int</span>)row.size() != n) <span class="keyword">throw</span> invalid_argument(<span class="string">&quot;square matrix required&quot;</span>);
+        <span class="keyword">for</span> (<span class="keyword">int</span> value : row)
+            <span class="keyword">if</span> (value &lt; <span class="number">0</span> || value &gt; <span class="number">1000000000</span>)
+                <span class="keyword">throw</span> invalid_argument(<span class="string">&quot;cost outside supported range&quot;</span>);
+    }
+    size_t total = size_t{<span class="number">1</span>} &lt;&lt; n;
+    <span class="keyword">const</span> <span class="keyword">long</span> <span class="keyword">long</span> INF = LLONG_MAX / <span class="number">4</span>;
+    vector&lt;<span class="keyword">long</span> <span class="keyword">long</span>&gt; dp(total, INF);
+    dp[<span class="number">0</span>] = <span class="number">0</span>;
+    <span class="keyword">for</span> (size_t mask = <span class="number">0</span>; mask &lt; total; ++mask) {
+        <span class="keyword">int</span> person = <span class="number">0</span>;
+        <span class="keyword">for</span> (size_t bits = mask; bits != <span class="number">0</span>; bits &amp;= bits - <span class="number">1</span>) ++person;
+        <span class="keyword">if</span> (person == n || dp[mask] == INF) continue;
+        <span class="keyword">for</span> (<span class="keyword">int</span> job = <span class="number">0</span>; job &lt; n; ++job) {
+            size_t bit = size_t{<span class="number">1</span>} &lt;&lt; job;
+            <span class="keyword">if</span> ((mask &amp; bit) != <span class="number">0</span>) continue;
+            size_t next = mask | bit;
+            dp[next] = min(dp[next], dp[mask] + cost[person][job]);
+        }
+    }
+    <span class="keyword">return</span> dp.back();
+}</code></pre></div></div><div class="practice"><h3>经典考点与练习</h3><p>练习：LeetCode 78 子集；进阶：旅行商状态 dp[mask][last]。</p><h3>面试追问：关键点完整解答</h3><dl class="answer-list"><div><dt>n=40能放进uint64_t，为什么还不能枚举全部子集？</dt><dd><p>可编码不等于可遍历。2^40约为一万亿个状态，完整枚举时间已经不可接受，若返回所有子集还要更大存储。需要利用其他结构、剪枝、折半搜索或改变算法，而不是只换整数类型。</p></dd></div><div><dt>~mask为什么不等于业务集合的补集？</dt><dd><p>按位取反会翻转整个整数宽度，包括没有分配给业务对象的高位。必须用全集U进行截断：U&amp;~mask。若mask本来就是U的子集，U^mask也等价。</p></dd></div><div><dt>sub枚举到0后继续更新会怎样？</dt><dd><p>无符号0-1回绕为全1，(sub-1)&amp;mask重新变成mask，于是从头循环。包含空集的写法应在处理0后立刻break；非空枚举则直接把sub!=0作为条件。</p></dd></div><div><dt>为什么枚举所有mask的所有sub是3^n？</dt><dd><p>对每个元素分别选择：不在mask；在mask但不在sub；同时在mask和sub。n个元素独立选择得到3^n种(mask,sub)组合，等于所有子掩码枚举次数之和。</p></dd></div><div><dt>快速幂为什么仍需考虑乘法溢出？</dt><dd><p>取模发生在乘法之后，若有符号乘法先越界，结果已经不合法，后续%无法补救。本例限制模数保证乘积能用long long表示；更大模数需要安全模乘。</p></dd></div><div><dt>任务分配DP为什么不再存person这一维？</dt><dd><p>在该模型中，每一步恰好分配一个任务给下一个人，所以已分配人数恰等于mask的1的个数，person完全由mask决定。若模型允许跳过人员或一次分配多个任务，就必须重新评估状态是否仍包含足够信息。</p></dd></div></dl></div>
+<label class="learned"><input type="checkbox" data-progress="05-04">我能独立实现，并解释正确性与边界</label></section><section class="chapter-review" id="chapter-review"><p class="eyebrow">PRACTICE / 把本章方法用起来</p><h2>综合例题与章末自测</h2><div class="deep-block" id="review-1"><h3>经典考点与分层练习清单</h3><p class="table-hint">窄屏下可左右滑动表格，查看完整内容。</p><div class="study-table" tabindex="0" role="region" aria-label="经典考点与分层练习清单"><table><thead><tr><th scope="col">层次</th><th scope="col">题目</th><th scope="col">必须能解释</th><th scope="col">关键反例或边界</th></tr></thead><tbody><tr><td>基础哈希</td><td>1 两数之和；49 异位词分组；205 同构字符串</td><td>完整键；先查后写；双向映射</td><td>[3,3]；空串；ab与aa</td></tr><tr><td>前缀状态</td><td>560 和为K；525 连续数组；974 可整除子数组</td><td>频次与最早位置；空前缀；负余数</td><td>全0；正负交替；[-1,5]</td></tr><tr><td>集合</td><td>128 最长连续序列；349 交集；202 快乐数；219 附近重复</td><td>分块线性；去重语义；状态环；窗口边界</td><td>重复起点；INT极值；距离恰为K</td></tr><tr><td>位消去</td><td>136 单次数；260 两个单次数；137 三次数；191 位1个数</td><td>次数前提；不同位分组；无符号语义</td><td>0；最高位1；INT32_MIN</td></tr><tr><td>集合编码</td><td>78 子集；子掩码枚举</td><td>下标集合与值集合；空子集退出；3^n</td><td>重复值；mask=0；非法位移</td></tr><tr><td>进阶应用</td><td>快速幂；最小费用任务分配</td><td>不变量；模乘上界；状态是否充分</td><td>指数0；模1；空矩阵；规模上限</td></tr></tbody></table></div></div><div class="deep-block" id="review-2"><h3>综合验证：用暴力方法检验状态设计</h3><p>下方测试文件独立包含被测函数与main：前缀数量、最长区间、可整除数量和附近重复与双循环枚举对照；位计数与逐位扫描对照；子掩码数量与2^popcount对照；快速幂与重复乘法对照；任务分配与全排列对照。</p><p>采用固定随机种子，提供1000组小输入、100组小费用矩阵以及零、负数、最高位和INT32_MIN等固定用例。随机用例用于发现实现问题，不替代完整正确性证明；测试仅覆盖列出的算法，不意味着所有本章示例都已得到验证。</p><p>下载后可执行 g++ -std=c++17 -O2 -Wall -Wextra detail-state-tests.cpp -o chapter05-tests，再运行生成的程序。当前讲义提供测试源码；是否实际编译运行以全站验证记录为准。</p></div><div class="deep-block" id="review-3"><h3>完整测试源码：前缀状态、位边界与分配DP</h3><p>用显式require检查条件，避免编译时定义NDEBUG导致assert被关闭后误以为完成了验证。各算法的输入范围仍以原小节说明为准。</p><div class="codebox"><div class="codebar"><span>C++17</span><div><a href="examples/detail-state-tests.cpp" download>下载 .cpp</a><button type="button" class="copy">复制代码</button></div></div><pre tabindex="0" aria-label="C++17 代码"><code><span class="keyword">long</span> <span class="keyword">long</span> countSubarraysWithSum(<span class="keyword">const</span> vector&lt;<span class="keyword">int</span>&gt;&amp; a, <span class="keyword">long</span> <span class="keyword">long</span> k) {
+    unordered_map&lt;<span class="keyword">long</span> <span class="keyword">long</span>, <span class="keyword">long</span> <span class="keyword">long</span>&gt; frequency;
+    frequency[<span class="number">0</span>] = <span class="number">1</span>;
+    <span class="keyword">long</span> <span class="keyword">long</span> prefix = <span class="number">0</span>, answer = <span class="number">0</span>;
+    <span class="keyword">for</span> (<span class="keyword">int</span> value : a) {
+        prefix += value;
+        <span class="keyword">auto</span> it = frequency.find(prefix - k);
+        <span class="keyword">if</span> (it != frequency.end()) answer += it-&gt;second;
+        ++frequency[prefix];
+    }
+    <span class="keyword">return</span> answer;
+}
+
+<span class="keyword">int</span> longestSubarrayWithSum(<span class="keyword">const</span> vector&lt;<span class="keyword">int</span>&gt;&amp; a, <span class="keyword">long</span> <span class="keyword">long</span> k) {
+    unordered_map&lt;<span class="keyword">long</span> <span class="keyword">long</span>, <span class="keyword">int</span>&gt; first;
+    first.emplace(<span class="number">0</span>, <span class="number">0</span>); <span class="comment">// prefix index, not element index</span>
+    <span class="keyword">long</span> <span class="keyword">long</span> prefix = <span class="number">0</span>;
+    <span class="keyword">int</span> best = <span class="number">0</span>;
+    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">1</span>; i &lt;= (<span class="keyword">int</span>)a.size(); ++i) {
+        prefix += a[i - <span class="number">1</span>];
+        <span class="keyword">auto</span> it = first.find(prefix - k);
+        <span class="keyword">if</span> (it != first.end()) best = max(best, i - it-&gt;second);
+        first.emplace(prefix, i); <span class="comment">// do not overwrite earlier occurrence</span>
+    }
+    <span class="keyword">return</span> best;
+}
+
+<span class="keyword">long</span> <span class="keyword">long</span> countDivisibleSubarrays(<span class="keyword">const</span> vector&lt;<span class="keyword">int</span>&gt;&amp; a, <span class="keyword">int</span> k) {
+    <span class="keyword">if</span> (k &lt;= <span class="number">0</span>) <span class="keyword">throw</span> invalid_argument(<span class="string">&quot;k must be positive&quot;</span>);
+    unordered_map&lt;<span class="keyword">long</span> <span class="keyword">long</span>, <span class="keyword">long</span> <span class="keyword">long</span>&gt; frequency;
+    frequency[<span class="number">0</span>] = <span class="number">1</span>;
+    <span class="keyword">long</span> <span class="keyword">long</span> remainder = <span class="number">0</span>, answer = <span class="number">0</span>;
+    <span class="keyword">for</span> (<span class="keyword">int</span> value : a) {
+        remainder = (remainder + value) % k;
+        <span class="keyword">if</span> (remainder &lt; <span class="number">0</span>) remainder += k;
+        <span class="keyword">auto</span> it = frequency.find(remainder);
+        <span class="keyword">if</span> (it != frequency.end()) answer += it-&gt;second;
+        ++frequency[remainder];
+    }
+    <span class="keyword">return</span> answer;
+}
+
+<span class="keyword">bool</span> containsNearbyDuplicate(<span class="keyword">const</span> vector&lt;<span class="keyword">int</span>&gt;&amp; a, <span class="keyword">int</span> k) {
+    <span class="keyword">if</span> (k &lt;= <span class="number">0</span>) <span class="keyword">return</span> <span class="keyword">false</span>;
+    unordered_set&lt;<span class="keyword">int</span>&gt; window;
+    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; (<span class="keyword">int</span>)a.size(); ++i) {
+        <span class="keyword">if</span> (i &gt; k) window.erase(a[i - k - <span class="number">1</span>]);
+        <span class="keyword">if</span> (window.find(a[i]) != window.end()) <span class="keyword">return</span> <span class="keyword">true</span>;
+        window.insert(a[i]);
+    }
+    <span class="keyword">return</span> <span class="keyword">false</span>;
+}
+
+uint32_t bitAt(unsigned k) {
+    <span class="keyword">if</span> (k &gt;= <span class="number">32</span>) <span class="keyword">throw</span> out_of_range(<span class="string">&quot;bit index must be below 32&quot;</span>);
+    <span class="keyword">return</span> uint32_t{<span class="number">1</span>} &lt;&lt; k;
+}
+<span class="keyword">bool</span> testBit(uint32_t x, unsigned k) { <span class="keyword">return</span> (x &amp; bitAt(k)) != <span class="number">0</span>; }
+uint32_t setBit(uint32_t x, unsigned k) { <span class="keyword">return</span> x | bitAt(k); }
+uint32_t clearBit(uint32_t x, unsigned k) { <span class="keyword">return</span> x &amp; ~bitAt(k); }
+uint32_t toggleBit(uint32_t x, unsigned k) { <span class="keyword">return</span> x ^ bitAt(k); }
+uint32_t lowBit(uint32_t x) { <span class="keyword">return</span> x &amp; (uint32_t{<span class="number">0</span>} - x); }
+<span class="keyword">int</span> popcount32(uint32_t x) {
+    <span class="keyword">int</span> count = <span class="number">0</span>;
+    <span class="keyword">while</span> (x != <span class="number">0</span>) { x &amp;= x - <span class="number">1</span>; ++count; }
+    <span class="keyword">return</span> count;
+}
+
+pair&lt;uint32_t, uint32_t&gt; twoSingleNumbers(<span class="keyword">const</span> vector&lt;uint32_t&gt;&amp; a) {
+    uint32_t combined = <span class="number">0</span>;
+    <span class="keyword">for</span> (uint32_t value : a) combined ^= value;
+    <span class="keyword">if</span> (combined == <span class="number">0</span>) <span class="keyword">throw</span> invalid_argument(<span class="string">&quot;required distinct singles missing&quot;</span>);
+    uint32_t split = combined &amp; (uint32_t{<span class="number">0</span>} - combined);
+    uint32_t first = <span class="number">0</span>, second = <span class="number">0</span>;
+    <span class="keyword">for</span> (uint32_t value : a) {
+        <span class="keyword">if</span> ((value &amp; split) == <span class="number">0</span>) first ^= value;
+        <span class="keyword">else</span> second ^= value;
+    }
+    <span class="keyword">return</span> {first, second};
+}
+
+int32_t singleAmongTriples(<span class="keyword">const</span> vector&lt;int32_t&gt;&amp; a) {
+    uint32_t bits = <span class="number">0</span>;
+    <span class="keyword">for</span> (unsigned bit = <span class="number">0</span>; bit &lt; <span class="number">32</span>; ++bit) {
+        <span class="keyword">int</span> remainder = <span class="number">0</span>;
+        <span class="keyword">for</span> (int32_t value : a) {
+            uint32_t u = static_cast&lt;uint32_t&gt;(value);
+            remainder = (remainder + <span class="keyword">int</span>((u &gt;&gt; bit) &amp; uint32_t{<span class="number">1</span>})) % <span class="number">3</span>;
+        }
+        <span class="keyword">if</span> (remainder != <span class="number">0</span>) bits |= uint32_t{<span class="number">1</span>} &lt;&lt; bit;
+    }
+    int64_t signedValue = bits;
+    <span class="keyword">if</span> ((bits &amp; (uint32_t{<span class="number">1</span>} &lt;&lt; <span class="number">31</span>)) != <span class="number">0</span>)
+        signedValue -= (int64_t{<span class="number">1</span>} &lt;&lt; <span class="number">32</span>);
+    <span class="keyword">return</span> static_cast&lt;int32_t&gt;(signedValue);
+}
+
+uint64_t countSubmasks(uint64_t mask) {
+    unsigned selected = <span class="number">0</span>;
+    <span class="keyword">for</span> (uint64_t x = mask; x != <span class="number">0</span>; x &amp;= x - <span class="number">1</span>) ++selected;
+    <span class="keyword">if</span> (selected &gt; <span class="number">20</span>) <span class="keyword">throw</span> invalid_argument(<span class="string">&quot;too many submasks to enumerate&quot;</span>);
+    uint64_t count = <span class="number">0</span>;
+    uint64_t sub = mask;
+    <span class="keyword">for</span> (;;) {
+        <span class="comment">// Process this submask here; counting is only a demonstration.</span>
+        ++count;
+        <span class="keyword">if</span> (sub == <span class="number">0</span>) break;
+        sub = (sub - <span class="number">1</span>) &amp; mask;
+    }
+    <span class="keyword">return</span> count;
+}
+
+<span class="keyword">long</span> <span class="keyword">long</span> modularPower(<span class="keyword">long</span> <span class="keyword">long</span> base, uint64_t exponent, <span class="keyword">long</span> <span class="keyword">long</span> mod) {
+    <span class="keyword">if</span> (mod &lt;= <span class="number">0</span> || mod &gt; <span class="number">1000000007LL</span>)
+        <span class="keyword">throw</span> invalid_argument(<span class="string">&quot;require 1 &lt;= mod &lt;= 1000000007&quot;</span>);
+    base %= mod;
+    <span class="keyword">if</span> (base &lt; <span class="number">0</span>) base += mod;
+    <span class="keyword">long</span> <span class="keyword">long</span> result = <span class="number">1</span> % mod;
+    <span class="keyword">while</span> (exponent != <span class="number">0</span>) {
+        <span class="keyword">if</span> ((exponent &amp; uint64_t{<span class="number">1</span>}) != <span class="number">0</span>) result = result * base % mod;
+        base = base * base % mod;
+        exponent &gt;&gt;= <span class="number">1</span>;
+    }
+    <span class="keyword">return</span> result;
+}
+
+<span class="keyword">long</span> <span class="keyword">long</span> minimumAssignmentCost(<span class="keyword">const</span> vector&lt;vector&lt;<span class="keyword">int</span>&gt;&gt;&amp; cost) {
+    <span class="keyword">int</span> n = (<span class="keyword">int</span>)cost.size();
+    <span class="keyword">if</span> (n &gt; <span class="number">20</span>) <span class="keyword">throw</span> invalid_argument(<span class="string">&quot;n must not exceed 20&quot;</span>);
+    <span class="keyword">for</span> (<span class="keyword">const</span> <span class="keyword">auto</span>&amp; row : cost) {
+        <span class="keyword">if</span> ((<span class="keyword">int</span>)row.size() != n) <span class="keyword">throw</span> invalid_argument(<span class="string">&quot;square matrix required&quot;</span>);
+        <span class="keyword">for</span> (<span class="keyword">int</span> value : row)
+            <span class="keyword">if</span> (value &lt; <span class="number">0</span> || value &gt; <span class="number">1000000000</span>)
+                <span class="keyword">throw</span> invalid_argument(<span class="string">&quot;cost outside supported range&quot;</span>);
+    }
+    size_t total = size_t{<span class="number">1</span>} &lt;&lt; n;
+    <span class="keyword">const</span> <span class="keyword">long</span> <span class="keyword">long</span> INF = LLONG_MAX / <span class="number">4</span>;
+    vector&lt;<span class="keyword">long</span> <span class="keyword">long</span>&gt; dp(total, INF);
+    dp[<span class="number">0</span>] = <span class="number">0</span>;
+    <span class="keyword">for</span> (size_t mask = <span class="number">0</span>; mask &lt; total; ++mask) {
+        <span class="keyword">int</span> person = <span class="number">0</span>;
+        <span class="keyword">for</span> (size_t bits = mask; bits != <span class="number">0</span>; bits &amp;= bits - <span class="number">1</span>) ++person;
+        <span class="keyword">if</span> (person == n || dp[mask] == INF) continue;
+        <span class="keyword">for</span> (<span class="keyword">int</span> job = <span class="number">0</span>; job &lt; n; ++job) {
+            size_t bit = size_t{<span class="number">1</span>} &lt;&lt; job;
+            <span class="keyword">if</span> ((mask &amp; bit) != <span class="number">0</span>) continue;
+            size_t next = mask | bit;
+            dp[next] = min(dp[next], dp[mask] + cost[person][job]);
+        }
+    }
+    <span class="keyword">return</span> dp.back();
+}
+
+<span class="keyword">void</span> require(<span class="keyword">bool</span> ok, <span class="keyword">const</span> string&amp; message) {
+    <span class="keyword">if</span> (!ok) <span class="keyword">throw</span> runtime_error(message);
+}
+<span class="keyword">long</span> <span class="keyword">long</span> bruteCount(<span class="keyword">const</span> vector&lt;<span class="keyword">int</span>&gt;&amp; a, <span class="keyword">long</span> <span class="keyword">long</span> k) {
+    <span class="keyword">long</span> <span class="keyword">long</span> result = <span class="number">0</span>;
+    <span class="keyword">for</span> (<span class="keyword">int</span> left = <span class="number">0</span>; left &lt; (<span class="keyword">int</span>)a.size(); ++left) {
+        <span class="keyword">long</span> <span class="keyword">long</span> sum = <span class="number">0</span>;
+        <span class="keyword">for</span> (<span class="keyword">int</span> right = left; right &lt; (<span class="keyword">int</span>)a.size(); ++right) {
+            sum += a[right];
+            <span class="keyword">if</span> (sum == k) ++result;
+        }
+    }
+    <span class="keyword">return</span> result;
+}
+<span class="keyword">int</span> bruteLongest(<span class="keyword">const</span> vector&lt;<span class="keyword">int</span>&gt;&amp; a, <span class="keyword">long</span> <span class="keyword">long</span> k) {
+    <span class="keyword">int</span> result = <span class="number">0</span>;
+    <span class="keyword">for</span> (<span class="keyword">int</span> left = <span class="number">0</span>; left &lt; (<span class="keyword">int</span>)a.size(); ++left) {
+        <span class="keyword">long</span> <span class="keyword">long</span> sum = <span class="number">0</span>;
+        <span class="keyword">for</span> (<span class="keyword">int</span> right = left; right &lt; (<span class="keyword">int</span>)a.size(); ++right) {
+            sum += a[right];
+            <span class="keyword">if</span> (sum == k) result = max(result, right - left + <span class="number">1</span>);
+        }
+    }
+    <span class="keyword">return</span> result;
+}
+<span class="keyword">long</span> <span class="keyword">long</span> bruteDivisible(<span class="keyword">const</span> vector&lt;<span class="keyword">int</span>&gt;&amp; a, <span class="keyword">int</span> k) {
+    <span class="keyword">long</span> <span class="keyword">long</span> result = <span class="number">0</span>;
+    <span class="keyword">for</span> (<span class="keyword">int</span> left = <span class="number">0</span>; left &lt; (<span class="keyword">int</span>)a.size(); ++left) {
+        <span class="keyword">long</span> <span class="keyword">long</span> sum = <span class="number">0</span>;
+        <span class="keyword">for</span> (<span class="keyword">int</span> right = left; right &lt; (<span class="keyword">int</span>)a.size(); ++right) {
+            sum += a[right];
+            <span class="keyword">if</span> (sum % k == <span class="number">0</span>) ++result;
+        }
+    }
+    <span class="keyword">return</span> result;
+}
+<span class="keyword">bool</span> bruteNearby(<span class="keyword">const</span> vector&lt;<span class="keyword">int</span>&gt;&amp; a, <span class="keyword">int</span> k) {
+    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; (<span class="keyword">int</span>)a.size(); ++i)
+        <span class="keyword">for</span> (<span class="keyword">int</span> j = i + <span class="number">1</span>; j &lt; (<span class="keyword">int</span>)a.size(); ++j)
+            <span class="keyword">if</span> (j - i &lt;= k &amp;&amp; a[i] == a[j]) <span class="keyword">return</span> <span class="keyword">true</span>;
+    <span class="keyword">return</span> <span class="keyword">false</span>;
+}
+<span class="keyword">long</span> <span class="keyword">long</span> bruteAssignment(<span class="keyword">const</span> vector&lt;vector&lt;<span class="keyword">int</span>&gt;&gt;&amp; cost) {
+    <span class="keyword">int</span> n = (<span class="keyword">int</span>)cost.size();
+    vector&lt;<span class="keyword">int</span>&gt; permutation(n);
+    iota(permutation.begin(), permutation.end(), <span class="number">0</span>);
+    <span class="keyword">long</span> <span class="keyword">long</span> best = LLONG_MAX;
+    do {
+        <span class="keyword">long</span> <span class="keyword">long</span> value = <span class="number">0</span>;
+        <span class="keyword">for</span> (<span class="keyword">int</span> person = <span class="number">0</span>; person &lt; n; ++person)
+            value += cost[person][permutation[person]];
+        best = min(best, value);
+    } <span class="keyword">while</span> (next_permutation(permutation.begin(), permutation.end()));
+    <span class="keyword">return</span> best;
+}
+<span class="keyword">int</span> main() {
+    require(countSubarraysWithSum({<span class="number">0</span>,<span class="number">0</span>,<span class="number">0</span>}, <span class="number">0</span>) == <span class="number">6</span>, <span class="string">&quot;empty interval excluded&quot;</span>);
+    require(longestSubarrayWithSum({<span class="number">1</span>,-<span class="number">1</span>,<span class="number">1</span>,-<span class="number">1</span>}, <span class="number">0</span>) == <span class="number">4</span>, <span class="string">&quot;earliest prefix&quot;</span>);
+    require(countDivisibleSubarrays({-<span class="number">1</span>,<span class="number">5</span>}, <span class="number">5</span>) == <span class="number">1</span>, <span class="string">&quot;negative remainder&quot;</span>);
+    require(containsNearbyDuplicate({<span class="number">1</span>,<span class="number">2</span>,<span class="number">1</span>}, <span class="number">2</span>), <span class="string">&quot;inclusive distance&quot;</span>);
+    require(!containsNearbyDuplicate({<span class="number">1</span>,<span class="number">2</span>,<span class="number">1</span>}, <span class="number">1</span>), <span class="string">&quot;expired element&quot;</span>);
+    require(lowBit(uint32_t{<span class="number">1</span>} &lt;&lt; <span class="number">31</span>) == (uint32_t{<span class="number">1</span>} &lt;&lt; <span class="number">31</span>), <span class="string">&quot;high lowbit&quot;</span>);
+    require(popcount32(~uint32_t{<span class="number">0</span>}) == <span class="number">32</span>, <span class="string">&quot;all bits set&quot;</span>);
+    require(toggleBit(toggleBit(<span class="number">123</span>, <span class="number">31</span>), <span class="number">31</span>) == <span class="number">123</span>, <span class="string">&quot;toggle involution&quot;</span>);
+    require(setBit(<span class="number">0</span>, <span class="number">31</span>) == (uint32_t{<span class="number">1</span>} &lt;&lt; <span class="number">31</span>), <span class="string">&quot;set high bit&quot;</span>);
+    require(clearBit(~uint32_t{<span class="number">0</span>}, <span class="number">31</span>) == 0x7fffffffU, <span class="string">&quot;clear high bit&quot;</span>);
+    <span class="keyword">bool</span> rejected = <span class="keyword">false</span>;
+    try { (<span class="keyword">void</span>)bitAt(<span class="number">32</span>); } catch (<span class="keyword">const</span> out_of_range&amp;) { rejected = <span class="keyword">true</span>; }
+    require(rejected, <span class="string">&quot;invalid shift rejected&quot;</span>);
+    <span class="keyword">auto</span> singles = twoSingleNumbers({<span class="number">0</span>, uint32_t{<span class="number">1</span>} &lt;&lt; <span class="number">31</span>, <span class="number">7</span>, <span class="number">7</span>});
+    require((singles.first == <span class="number">0</span> &amp;&amp; singles.second == (uint32_t{<span class="number">1</span>} &lt;&lt; <span class="number">31</span>)) ||
+            (singles.second == <span class="number">0</span> &amp;&amp; singles.first == (uint32_t{<span class="number">1</span>} &lt;&lt; <span class="number">31</span>)),
+            <span class="string">&quot;two single numbers with high bit&quot;</span>);
+    require(singleAmongTriples({INT32_MIN,<span class="number">5</span>,<span class="number">5</span>,<span class="number">5</span>}) == INT32_MIN, <span class="string">&quot;signed minimum&quot;</span>);
+    require(singleAmongTriples({-<span class="number">7</span>,<span class="number">2</span>,<span class="number">2</span>,<span class="number">2</span>}) == -<span class="number">7</span>, <span class="string">&quot;negative single&quot;</span>);
+    require(countSubmasks(<span class="number">0</span>) == <span class="number">1</span> &amp;&amp; countSubmasks(<span class="number">10</span>) == <span class="number">4</span>, <span class="string">&quot;submasks&quot;</span>);
+    require(modularPower(-<span class="number">2</span>, <span class="number">5</span>, <span class="number">13</span>) == <span class="number">7</span>, <span class="string">&quot;negative modular base&quot;</span>);
+    require(modularPower(<span class="number">0</span>, <span class="number">0</span>, <span class="number">1</span>) == <span class="number">0</span>, <span class="string">&quot;exponent zero modulo one&quot;</span>);
+    require(minimumAssignmentCost({{<span class="number">9</span>,<span class="number">2</span>},{<span class="number">3</span>,<span class="number">7</span>}}) == <span class="number">5</span>, <span class="string">&quot;assignment example&quot;</span>);
+    mt19937 rng(<span class="number">20260920</span>);
+    uniform_int_distribution&lt;<span class="keyword">int</span>&gt; length(<span class="number">0</span>, <span class="number">12</span>), value(-<span class="number">5</span>, <span class="number">5</span>), target(-<span class="number">8</span>, <span class="number">8</span>);
+    <span class="keyword">for</span> (<span class="keyword">int</span> run = <span class="number">0</span>; run &lt; <span class="number">1000</span>; ++run) {
+        vector&lt;<span class="keyword">int</span>&gt; a(length(rng));
+        <span class="keyword">for</span> (<span class="keyword">int</span>&amp; x : a) x = value(rng);
+        <span class="keyword">int</span> k = target(rng);
+        require(countSubarraysWithSum(a, k) == bruteCount(a, k), <span class="string">&quot;prefix count&quot;</span>);
+        require(longestSubarrayWithSum(a, k) == bruteLongest(a, k), <span class="string">&quot;longest prefix&quot;</span>);
+        <span class="keyword">int</span> divisor = <span class="number">1</span> + <span class="keyword">int</span>(rng() % <span class="number">7</span>);
+        require(countDivisibleSubarrays(a, divisor) == bruteDivisible(a, divisor),
+                <span class="string">&quot;divisible prefix&quot;</span>);
+        <span class="keyword">int</span> distance = target(rng);
+        require(containsNearbyDuplicate(a, distance) == bruteNearby(a, distance),
+                <span class="string">&quot;nearby duplicate&quot;</span>);
+        uint32_t bits = static_cast&lt;uint32_t&gt;(rng());
+        <span class="keyword">int</span> count = <span class="number">0</span>;
+        <span class="keyword">for</span> (unsigned bit = <span class="number">0</span>; bit &lt; <span class="number">32</span>; ++bit) count += <span class="keyword">int</span>((bits &gt;&gt; bit) &amp; 1U);
+        require(popcount32(bits) == count, <span class="string">&quot;popcount&quot;</span>);
+        uint64_t mask = bits &amp; 255U;
+        require(countSubmasks(mask) == (uint64_t{<span class="number">1</span>} &lt;&lt; popcount32((uint32_t)mask)),
+                <span class="string">&quot;submask count&quot;</span>);
+        <span class="keyword">long</span> <span class="keyword">long</span> base = value(rng), mod = <span class="number">1</span> + rng() % <span class="number">97</span>;
+        uint64_t exponent = rng() % <span class="number">16</span>;
+        <span class="keyword">long</span> <span class="keyword">long</span> expected = <span class="number">1</span> % mod;
+        <span class="keyword">long</span> <span class="keyword">long</span> normalized = (base % mod + mod) % mod;
+        <span class="keyword">for</span> (uint64_t i = <span class="number">0</span>; i &lt; exponent; ++i) expected = expected * normalized % mod;
+        require(modularPower(base, exponent, mod) == expected, <span class="string">&quot;modular power&quot;</span>);
+    }
+    <span class="keyword">for</span> (<span class="keyword">int</span> run = <span class="number">0</span>; run &lt; <span class="number">100</span>; ++run) {
+        <span class="keyword">int</span> n = <span class="keyword">int</span>(rng() % <span class="number">7</span>);
+        vector&lt;vector&lt;<span class="keyword">int</span>&gt;&gt; cost(n, vector&lt;<span class="keyword">int</span>&gt;(n));
+        <span class="keyword">for</span> (<span class="keyword">auto</span>&amp; row : cost)
+            <span class="keyword">for</span> (<span class="keyword">int</span>&amp; x : row) x = <span class="keyword">int</span>(rng() % <span class="number">21</span>);
+        require(minimumAssignmentCost(cost) == bruteAssignment(cost), <span class="string">&quot;assignment DP&quot;</span>);
+    }
+    cout &lt;&lt; <span class="string">&quot;All chapter 5 checks passed&quot;</span> &lt;&lt; endl;
+}</code></pre></div></div><div class="deep-block" id="review-4"><h3>章末自测与完整解答</h3><dl class="answer-list"><div><dt>1. [3,3]、target=6为什么不能先插入当前值？</dt><dd><p>先插入会使补数查询直接命中当前下标，可能返回同一个元素两次。先查后插，在处理第二个3时返回下标0和1，保持历史位置严格早于当前位置。</p></dd></div><div><dt>2. 三个0中，和为0的非空子数组一共有多少？</dt><dd><p>有3个长度1、2个长度2、1个长度3，共6个。前缀0的历史次数依次为1、2、3，每一步都先贡献历史次数再加当前前缀，不能把空区间加入。</p></dd></div><div><dt>3. 最长连续序列外层遍历原数组，会怎样退化？</dt><dd><p>输入包含大量1及2..m时，每个1都没有前驱0，会重复扩展整段。外层遍历去重集合才能保证每个连续块只启动一次；仅仅给查询套上哈希表并不能保证线性。</p></dd></div><div><dt>4. 两个不同的异位词频次键能有相同哈希吗？</dt><dd><p>可以，哈希冲突本来就允许。容器会继续用完整array比较相等性，因此不会合并。若只把哈希摘要作为键并丢弃原频次信息，才无法区分碰撞。</p></dd></div><div><dt>5. 数字0能作为两个单次数字之一吗？</dt><dd><p>可以，只要另一个数字与0不同，全部异或仍非0，可以找到一个区分位。异或结果为0表示不满足两个不同单次数字加成对其余数字的契约，而不是简单说明其中存在0。</p></dd></div><div><dt>6. mask=1010的子掩码有哪些？</dt><dd><p>按(sub-1)&amp;mask递减枚举为1010、1000、0010、0000，共4个。它有两个置1位，所以子集数为2²；处理0后必须退出，不能再更新回mask。</p></dd></div><div><dt>7. [1,1]按位枚举有几个下标子集、几个不同值子集？</dt><dd><p>下标子集有4个：空、选第一个、选第二个、全选；不同的值列表只有3种：[]、[1]、[1,1]。位模式保证下标集合唯一，不保证值列表去重。</p></dd></div><div><dt>8. 面试讲哈希O(n)和位运算O(1)时应补哪些限定？</dt><dd><p>哈希O(n)通常是平均复杂度，需考虑键处理成本及最坏冲突；位运算常数时间是固定宽度整数下的模型，枚举2^n个掩码仍是指数。还应说明数值范围、移位范围、输出大小及题目给定的出现次数前提。</p></dd></div></dl></div></section><nav class="chapter-pager" aria-label="相邻章节"><a href="../04-栈队列与单调结构/index.html"><small>上一章</small>← 栈、队列与单调结构</a><a href="../06-排序与二分查找/index.html"><small>下一章</small>排序与二分查找 →</a></nav><footer>秋招算法学习讲义 · C++17<br>例题编号供检索；难度与覆盖范围按学习顺序组织。</footer></main><aside class="toc" aria-label="本页目录"><p class="rail-label">本章小节</p><a href="#s1"><span>01</span>哈希映射：存在、下标还是次数</a><a href="#s2"><span>02</span>集合：最长连续序列为何是线性</a><a href="#s3"><span>03</span>异或与二进制计数</a><a href="#s4"><span>04</span>位掩码表示子集</a><a href="#chapter-review"><span>练</span>综合例题与自测答案</a></aside></div><div class="toast" role="status" aria-live="polite"></div></body></html>
