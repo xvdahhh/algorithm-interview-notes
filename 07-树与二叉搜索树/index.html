@@ -3,7 +3,7 @@
 <meta name="description" content="秋招算法手撕学习讲义：知识推导、经典考点、C++17 示例与面试训练。">
 <title>树与二叉搜索树 · 算法手撕讲义</title><link rel="stylesheet" href="../assets/style.css"><script src="../assets/app.js" defer></script></head>
 <body><a class="skip" href="#main">跳到正文</a><header class="topbar"><a class="brand" href="../index.html"><span class="brand-mark">a[i]</span><span>算法手撕讲义<small>秋招学习工作区 / C++17</small></span></a><button type="button" class="nav-toggle" aria-expanded="false" aria-controls="chapter-nav">章节目录</button><a class="home-link" href="../index.html">全部章节 ↗</a></header>
-<div class="layout"><aside class="sidebar" id="chapter-nav" aria-label="章节导航"><p class="rail-label">LEARNING PATH · 学习路径</p><nav><a class="chapter-link"  href="../01-复杂度与解题方法/index.html"><span>01</span>复杂度与解题方法</a><a class="chapter-link"  href="../02-数组字符串与矩阵/index.html"><span>02</span>数组、字符串与矩阵</a><a class="chapter-link"  href="../03-链表/index.html"><span>03</span>链表</a><a class="chapter-link"  href="../04-栈队列与单调结构/index.html"><span>04</span>栈、队列与单调结构</a><a class="chapter-link"  href="../05-哈希集合与位运算/index.html"><span>05</span>哈希、集合与位运算</a><a class="chapter-link"  href="../06-排序与二分查找/index.html"><span>06</span>排序与二分查找</a><a class="chapter-link active" aria-current=page href="../07-树与二叉搜索树/index.html"><span>07</span>树与二叉搜索树</a><a class="chapter-link"  href="../08-堆与优先队列/index.html"><span>08</span>堆与优先队列</a><a class="chapter-link"  href="../09-递归回溯与分治/index.html"><span>09</span>递归、回溯与分治</a><a class="chapter-link"  href="../10-图论/index.html"><span>10</span>图论</a><a class="chapter-link"  href="../11-贪心/index.html"><span>11</span>贪心</a><a class="chapter-link"  href="../12-动态规划/index.html"><span>12</span>动态规划</a><a class="chapter-link"  href="../13-并查集与高级数据结构/index.html"><span>13</span>并查集与高级数据结构</a><a class="chapter-link"  href="../14-高频技巧与综合题型/index.html"><span>14</span>高频技巧与综合题型</a><a class="chapter-link"  href="../15-面试表达与训练计划/index.html"><span>15</span>面试表达与训练计划</a></nav><div class="sidebar-note">读懂不变量，独立写代码。<br>共 15 章 · 63 个小节<br>无需联网，浏览器直接打开。</div></aside><main id="main"><header class="chapter-header"><p class="eyebrow">CHAPTER 07 / 15</p><h1>树与二叉搜索树</h1><p class="lead">树题的突破口是递归函数的返回值：孩子应该向父节点汇报什么？把这个问题回答清楚，遍历、路径和树形 DP 就有了共同基础。</p><div class="chapter-meta"><span>4 个小节</span><span>C++17 示例</span><a href="README.md">原始知识摘要 ↗</a></div></header><div class="reading-guide"><strong>本章怎么学</strong><p>先读原理与不变量，遮住代码手推例子，再独立实现。最后用面试追问检查理解，按练习条目做变式。</p></div><details class="environment"><summary>代码使用说明与通用头文件</summary><p>示例统一采用 C++17。页面展示核心函数或类，下载的 .cpp 已包含以下头文件，可独立编译。不同小节可能重用类型名，应分别编译；含 main 的示例可直接运行，其余需自行补充调用与测试。复制按钮复制当前代码块。</p><div class="codebox"><div class="codebar"><span>C++17</span><div><button type="button" class="copy">复制代码</button></div></div><pre tabindex="0" aria-label="C++17 代码"><code>#include &lt;algorithm&gt;
+<div class="layout"><aside class="sidebar" id="chapter-nav" aria-label="章节导航"><p class="rail-label">LEARNING PATH · 学习路径</p><nav><a class="chapter-link"  href="../01-复杂度与解题方法/index.html"><span>01</span>复杂度与解题方法</a><a class="chapter-link"  href="../02-数组字符串与矩阵/index.html"><span>02</span>数组、字符串与矩阵</a><a class="chapter-link"  href="../03-链表/index.html"><span>03</span>链表</a><a class="chapter-link"  href="../04-栈队列与单调结构/index.html"><span>04</span>栈、队列与单调结构</a><a class="chapter-link"  href="../05-哈希集合与位运算/index.html"><span>05</span>哈希、集合与位运算</a><a class="chapter-link"  href="../06-排序与二分查找/index.html"><span>06</span>排序与二分查找</a><a class="chapter-link active" aria-current=page href="../07-树与二叉搜索树/index.html"><span>07</span>树与二叉搜索树</a><a class="chapter-link"  href="../08-堆与优先队列/index.html"><span>08</span>堆与优先队列</a><a class="chapter-link"  href="../09-递归回溯与分治/index.html"><span>09</span>递归、回溯与分治</a><a class="chapter-link"  href="../10-图论/index.html"><span>10</span>图论</a><a class="chapter-link"  href="../11-贪心/index.html"><span>11</span>贪心</a><a class="chapter-link"  href="../12-动态规划/index.html"><span>12</span>动态规划</a><a class="chapter-link"  href="../13-并查集与高级数据结构/index.html"><span>13</span>并查集与高级数据结构</a><a class="chapter-link"  href="../14-高频技巧与综合题型/index.html"><span>14</span>高频技巧与综合题型</a><a class="chapter-link"  href="../15-面试表达与训练计划/index.html"><span>15</span>面试表达与训练计划</a></nav><div class="sidebar-note">读懂不变量，独立写代码。<br>共 15 章 · 63 个小节<br>无需联网，浏览器直接打开。</div></aside><main id="main"><header class="chapter-header"><p class="eyebrow">CHAPTER 07 / 15</p><h1>树与二叉搜索树</h1><p class="lead">树题的突破口是递归函数的返回值：孩子应该向父节点汇报什么？把这个问题回答清楚，遍历、路径和树形 DP 就有了共同基础。</p><div class="chapter-meta"><span>4 个小节</span><span>C++17 示例</span><a href="README.md">原始知识摘要 ↗</a></div></header><div class="reading-guide"><strong>本章怎么学</strong><p>先读原理与不变量，遮住代码手推例子，再独立实现。最后用面试追问检查理解，按练习条目做变式。</p></div><div class="deep-intro"><div class="deep-block" id="guide-1"><h3>本章目标：把树题拆成一份可组合的子树报告</h3><p>树题不是只会前中后序就够了。真正的难点是给递归返回值一个精确含义：它是高度、单边路径收益、整棵子树的最优值，还是目标节点是否存在？一个函数可以返回供父节点连接的信息，同时更新完整答案，但这两类信息不能混用。</p><p>本章沿用四个主小节，补齐遍历、路径与汇总、BST、LCA及重建序列化。默认输入是一棵有限、无环、无共享孩子的二叉树；若指针形成图，直接递归可能死循环或重复计数，需要访问标记等图算法。</p></div><div class="deep-block" id="guide-2"><h3>先看题目依赖什么信息，再选遍历</h3><p class="table-hint">窄屏下可左右滑动表格，查看完整内容。</p><div class="study-table" tabindex="0" role="region" aria-label="先看题目依赖什么信息，再选遍历"><table><thead><tr><th scope="col">需求</th><th scope="col">访问时机 / 状态</th><th scope="col">典型返回值</th><th scope="col">经典题</th></tr></thead><tbody><tr><td>复制、根到叶路径</td><td>前序向下传参</td><td>是否找到 / 路径缓冲</td><td>112、113</td></tr><tr><td>BST排序与第K小</td><td>中序左根右</td><td>上一键值 / 已访问数</td><td>98、230</td></tr><tr><td>高度、平衡、直径、路径和</td><td>后序汇总孩子</td><td>高度 / 单边最大收益</td><td>104、110、543、124</td></tr><tr><td>逐层统计与最短根叶距离</td><td>BFS按层</td><td>当前层 / 队列</td><td>102、111、199</td></tr><tr><td>普通树LCA</td><td>后序合并目标信息</td><td>命中状态 / 分叉节点</td><td>236</td></tr><tr><td>重建与解码</td><td>根决定左右递归范围</td><td>新子树根指针</td><td>105、297</td></tr></tbody></table></div></div><div class="deep-block" id="guide-3"><h3>统一约定：单位、规模与所有权</h3><p>n为节点数，h为最长根到叶路径的节点数，w为最大层宽。空树高度0、叶子高度1；直径按边数，单节点直径0。节点深度可按边数从根的0开始，与这里高度的节点数单位要分开。所有路径和示例约定n&lt;=100000、|节点值|&lt;=10^9、|目标和|&lt;=10^14，运算使用long long。</p><p>示例中的TreeNode*默认是非拥有指针：遍历、查询不释放节点，删除示例只把节点从树中摘除。分配型示例使用TreeArena统一拥有节点，arena销毁时回收，使用者不能对节点单独delete。不同下载文件各自包含类型定义，应分别编译，不可直接拼接重名结构。</p><p>递归额外空间O(h)不等于O(logn)。十万节点链状树可能栈溢出；这里的规模说明用于数值上界，不承诺系统调用栈可承受同样深度。极深输入应使用显式栈或迭代实现。</p></div></div><nav class="chapter-outline" aria-label="本章阅读路线"><strong>直接跳到</strong><a href="#s1">01 遍历顺序与显式栈</a><a href="#s2">02 后序汇总：平衡性与直径</a><a href="#s3">03 BST 的全局范围约束</a><a href="#s4">04 最近公共祖先与返回值语义</a><a href="#chapter-review">综合例题与自测答案</a></nav><details class="environment"><summary>代码使用说明与通用头文件</summary><p>示例统一采用 C++17。页面展示核心函数或类，下载的 .cpp 已包含以下头文件，可独立编译。不同小节可能重用类型名，应分别编译；含 main 的示例可直接运行，其余需自行补充调用与测试。复制按钮复制当前代码块。</p><div class="codebox"><div class="codebar"><span>C++17</span><div><button type="button" class="copy">复制代码</button></div></div><pre tabindex="0" aria-label="C++17 代码"><code>#include &lt;algorithm&gt;
 #include &lt;array&gt;
 #include &lt;cassert&gt;
 #include &lt;climits&gt;
@@ -27,7 +27,28 @@
 #include &lt;vector&gt;
 <span class="keyword">using</span> <span class="keyword">namespace</span> std;
 </code></pre></div><p>检查单个示例：<code>g++ -std=c++17 -Wall -Wextra -c sample.cpp</code>。这只检查编译；验证结果还需要调用函数并覆盖边界输入。代码按题目约束编写，各节明确其适用前提。</p></details><section class="lesson" id="s1"><div class="lesson-heading"><span class="lesson-number">07.01</span><h2>遍历顺序与显式栈</h2></div>
-<h3>知识与适用场景</h3><p>前序在进入节点时处理，中序在左子树完成后处理，后序在两个孩子完成后处理。层序使用队列。选择顺序取决于当前计算依赖父节点还是孩子信息。</p><div class="invariant"><span>推导 / 不变量</span><p>迭代中序用栈保存暂时搁置的祖先：先沿左链入栈，弹出访问，再转到右子树。每个节点入栈、出栈各一次。</p></div>
+<h3>知识与适用场景</h3><p>前序在进入节点时处理，中序在左子树完成后处理，后序在两个孩子完成后处理。层序使用队列。选择顺序取决于当前计算依赖父节点还是孩子信息。</p><div class="deep-block" id="s1-before-1"><h3>1.1 三个访问时机与递归调用帧</h3><p>在函数进入节点时处理是前序；左子树返回后处理是中序；两个孩子都返回后处理是后序。遍历次序取决于依赖，而不是任意背三个字：若父节点需要孩子高度，必须等孩子结果；若孩子需要父路径信息，则在下降前准备。</p><p>递归栈保存的不只是节点，还有执行位置、局部变量和返回地址。转成迭代时也要保存等价信息。仅存一个节点指针，不一定能判断后序节点是否已经完成两侧子树。</p></div><div class="deep-block" id="s1-before-2"><h3>1.2 同一棵树的四种访问结果</h3><p class="table-hint">窄屏下可左右滑动表格，查看完整内容。</p><div class="study-table" tabindex="0" role="region" aria-label="1.2 同一棵树的四种访问结果"><table><thead><tr><th scope="col">树或顺序</th><th scope="col">结果</th><th scope="col">访问依据</th></tr></thead><tbody><tr><td>结构</td><td>根4；左2（孩子1、3）；右6（左孩子5）</td><td>右6没有右孩子</td></tr><tr><td>前序</td><td>4,2,1,3,6,5</td><td>先父节点，再左右孩子</td></tr><tr><td>中序</td><td>1,2,3,4,5,6</td><td>左子树之后访问根</td></tr><tr><td>后序</td><td>1,3,2,5,6,4</td><td>两个孩子之后访问根</td></tr><tr><td>层序</td><td>[4] / [2,6] / [1,3,5]</td><td>按离根距离分层</td></tr></tbody></table></div></div><div class="deep-block" id="s1-before-3"><h3>1.3 迭代中序的栈里究竟存什么</h3><p>基础代码沿左链入栈时，这些祖先都还没被访问；最上面的节点已没有更左的未访问后代，所以可以弹出访问，再转入它的右子树。栈顶不是“下一个随意取出的点”，而是一个尚未完成中序流程的上下文。</p><p>每个节点只入栈、出栈一次，时间O(n)。栈中祖先链长度最多h，辅助空间O(h)，输出数组另占O(n)。若把输出也算进去，就不能把总空间写成O(h)。</p></div><div class="deep-block" id="s1-before-4"><h3>1.4 递归三序遍历：只改变记录位置</h3><p>这是对照学习工具，一次DFS生成三个输出，时间O(n)，调用栈O(h)，三个输出合计仍O(n)。真正只需要一种遍历时，只保留对应输出。所有状态在一次调用内创建，不会被上一棵树的结果污染。</p><div class="codebox"><div class="codebar"><span>C++17</span><div><a href="examples/detail-recursive-traversals.cpp" download>下载 .cpp</a><button type="button" class="copy">复制代码</button></div></div><pre tabindex="0" aria-label="C++17 代码"><code><span class="keyword">struct</span> TreeNode {
+    <span class="keyword">int</span> val;
+    TreeNode *left = <span class="keyword">nullptr</span>, *right = <span class="keyword">nullptr</span>;
+    <span class="keyword">explicit</span> TreeNode(<span class="keyword">int</span> value) : val(value) {}
+};
+
+<span class="keyword">struct</span> Traversals {
+    vector&lt;<span class="keyword">int</span>&gt; preorder, inorder, postorder;
+};
+<span class="keyword">void</span> visitOrders(TreeNode* node, Traversals&amp; result) {
+    <span class="keyword">if</span> (!node) <span class="keyword">return</span>;
+    result.preorder.push_back(node-&gt;val);
+    visitOrders(node-&gt;left, result);
+    result.inorder.push_back(node-&gt;val);
+    visitOrders(node-&gt;right, result);
+    result.postorder.push_back(node-&gt;val);
+}
+Traversals recursiveOrders(TreeNode* root) {
+    Traversals result;
+    visitOrders(root, result);
+    <span class="keyword">return</span> result;
+}</code></pre></div></div><div class="invariant"><span>推导 / 不变量</span><p>迭代中序用栈保存暂时搁置的祖先：先沿左链入栈，弹出访问，再转到右子树。每个节点入栈、出栈各一次。</p></div>
 <h3>手推一个例子</h3><p>树 2 的左右孩子为 1、3：压入 2、1，弹出 1；随后弹出 2，再进入 3，输出 1、2、3。</p><div class="codebox"><div class="codebar"><span>C++17</span><div><a href="examples/01.cpp" download>下载 .cpp</a><button type="button" class="copy">复制代码</button></div></div><pre tabindex="0" aria-label="C++17 代码"><code><span class="keyword">struct</span> TreeNode {
     <span class="keyword">int</span> val; TreeNode *left=<span class="keyword">nullptr</span>, *right=<span class="keyword">nullptr</span>;
     <span class="keyword">explicit</span> TreeNode(<span class="keyword">int</span> v):val(v){}
@@ -45,9 +66,107 @@ vector&lt;<span class="keyword">int</span>&gt; inorder(TreeNode* root) {
     <span class="keyword">return</span> ans;
 }</code></pre></div>
 <dl class="analysis-grid"><div><dt>复杂度</dt><dd>时间 O(n)，辅助栈 O(h)，输出 O(n)。退化树 h=n，平衡树 h=O(log n)。</dd></div><div><dt>易错点与边界</dt><dd>BFS 分层时，进入本层前保存队列大小，不能让新加入的下一层节点参与本层循环。</dd></div></dl>
-<div class="practice"><h3>经典考点与练习</h3><p>练习：LeetCode 94 中序遍历、102 层序遍历、199 二叉树的右视图。</p><details><summary>面试官可能继续问什么？</summary><p>迭代前序为何先压右孩子？后序如何记录节点是否已经完成右子树？</p><p class="muted">先用自己的话回答，再回到本节的前提、不变量和边界检查论证。</p></details></div>
+<div class="deep-block" id="s1-after-1"><h3>1.5 迭代前序和后序：显式保存待处理阶段</h3><p>后序首次遇到节点，先把“回到这里输出”的帧压入，再压右孩子、左孩子。LIFO保证左右处理完后才回到已展开帧。时间O(n)，辅助栈O(h)，输出O(n)。双栈法也可实现后序，但第二个栈保存全部节点时辅助空间为O(n)。</p><div class="codebox"><div class="codebar"><span>C++17</span><div><a href="examples/detail-iterative-traversals.cpp" download>下载 .cpp</a><button type="button" class="copy">复制代码</button></div></div><pre tabindex="0" aria-label="C++17 代码"><code><span class="keyword">struct</span> TreeNode {
+    <span class="keyword">int</span> val;
+    TreeNode *left = <span class="keyword">nullptr</span>, *right = <span class="keyword">nullptr</span>;
+    <span class="keyword">explicit</span> TreeNode(<span class="keyword">int</span> value) : val(value) {}
+};
+
+vector&lt;<span class="keyword">int</span>&gt; preorderIterative(TreeNode* root) {
+    vector&lt;<span class="keyword">int</span>&gt; result;
+    <span class="keyword">if</span> (!root) <span class="keyword">return</span> result;
+    vector&lt;TreeNode*&gt; pending{root};
+    <span class="keyword">while</span> (!pending.empty()) {
+        TreeNode* node = pending.back(); pending.pop_back();
+        result.push_back(node-&gt;val);
+        <span class="keyword">if</span> (node-&gt;right) pending.push_back(node-&gt;right);
+        <span class="keyword">if</span> (node-&gt;left) pending.push_back(node-&gt;left);
+    }
+    <span class="keyword">return</span> result;
+}
+vector&lt;<span class="keyword">int</span>&gt; postorderIterative(TreeNode* root) {
+    vector&lt;<span class="keyword">int</span>&gt; result;
+    <span class="keyword">if</span> (!root) <span class="keyword">return</span> result;
+    vector&lt;pair&lt;TreeNode*, <span class="keyword">bool</span>&gt;&gt; pending{{root, <span class="keyword">false</span>}};
+    <span class="keyword">while</span> (!pending.empty()) {
+        <span class="keyword">auto</span> [node, expanded] = pending.back(); pending.pop_back();
+        <span class="keyword">if</span> (expanded) { result.push_back(node-&gt;val); continue; }
+        pending.push_back({node, <span class="keyword">true</span>});
+        <span class="keyword">if</span> (node-&gt;right) pending.push_back({node-&gt;right, <span class="keyword">false</span>});
+        <span class="keyword">if</span> (node-&gt;left) pending.push_back({node-&gt;left, <span class="keyword">false</span>});
+    }
+    <span class="keyword">return</span> result;
+}</code></pre></div></div><div class="deep-block" id="s1-after-2"><h3>1.6 层序、右视图与最小深度</h3><p>一层开始时保存队列长度，避免把新入队的下一层算进当前层。BFS首次遇到叶子的深度最小，因为节点按深度非递减出队。只有一个孩子的节点不是叶子。</p><p>层序时间O(n)、队列O(w)、输出O(n)。本例右视图为复用逻辑，先生成所有层，故总额外存储O(n)；只需右视图时可直接在BFS每层最后一次出队时记录，将辅助空间降为O(w)。最小深度最坏O(n)、队列O(w)。</p><div class="codebox"><div class="codebar"><span>C++17</span><div><a href="examples/detail-level-order.cpp" download>下载 .cpp</a><button type="button" class="copy">复制代码</button></div></div><pre tabindex="0" aria-label="C++17 代码"><code><span class="keyword">struct</span> TreeNode {
+    <span class="keyword">int</span> val;
+    TreeNode *left = <span class="keyword">nullptr</span>, *right = <span class="keyword">nullptr</span>;
+    <span class="keyword">explicit</span> TreeNode(<span class="keyword">int</span> value) : val(value) {}
+};
+
+vector&lt;vector&lt;<span class="keyword">int</span>&gt;&gt; levelOrder(TreeNode* root) {
+    vector&lt;vector&lt;<span class="keyword">int</span>&gt;&gt; result;
+    <span class="keyword">if</span> (!root) <span class="keyword">return</span> result;
+    queue&lt;TreeNode*&gt; pending;
+    pending.push(root);
+    <span class="keyword">while</span> (!pending.empty()) {
+        size_t width = pending.size();
+        vector&lt;<span class="keyword">int</span>&gt; level;
+        <span class="keyword">for</span> (size_t i = <span class="number">0</span>; i &lt; width; ++i) {
+            TreeNode* node = pending.front(); pending.pop();
+            level.push_back(node-&gt;val);
+            <span class="keyword">if</span> (node-&gt;left) pending.push(node-&gt;left);
+            <span class="keyword">if</span> (node-&gt;right) pending.push(node-&gt;right);
+        }
+        result.push_back(move(level));
+    }
+    <span class="keyword">return</span> result;
+}
+vector&lt;<span class="keyword">int</span>&gt; rightSideView(TreeNode* root) {
+    vector&lt;<span class="keyword">int</span>&gt; result;
+    <span class="keyword">for</span> (<span class="keyword">const</span> <span class="keyword">auto</span>&amp; level : levelOrder(root)) result.push_back(level.back());
+    <span class="keyword">return</span> result;
+}
+<span class="keyword">int</span> minimumDepth(TreeNode* root) {
+    <span class="keyword">if</span> (!root) <span class="keyword">return</span> <span class="number">0</span>;
+    queue&lt;TreeNode*&gt; pending;
+    pending.push(root);
+    <span class="keyword">int</span> depth = <span class="number">1</span>;
+    <span class="keyword">while</span> (!pending.empty()) {
+        size_t width = pending.size();
+        <span class="keyword">for</span> (size_t i = <span class="number">0</span>; i &lt; width; ++i) {
+            TreeNode* node = pending.front(); pending.pop();
+            <span class="keyword">if</span> (!node-&gt;left &amp;&amp; !node-&gt;right) <span class="keyword">return</span> depth;
+            <span class="keyword">if</span> (node-&gt;left) pending.push(node-&gt;left);
+            <span class="keyword">if</span> (node-&gt;right) pending.push(node-&gt;right);
+        }
+        ++depth;
+    }
+    <span class="keyword">return</span> <span class="number">0</span>;
+}</code></pre></div></div><div class="deep-block" id="s1-after-3"><h3>1.7 深度、最小深度与Morris遍历的边界</h3><p>根深度是从根走来的距离，子树高度是从当前点往下能走多远。用节点数定义最大深度时可写1+max(左高,右高)；最小深度不能无条件写1+min，因为不存在的孩子返回0会被错误当作一条到叶路径。根只有左叶子时最小深度是2，不是1。</p><p>Morris遍历通过临时建立前驱到祖先的线索，以O(1)辅助空间完成某些遍历，但会临时修改树。必须恢复每条线索；提前return或异常中断可能留下环。共享读树、并发访问或不允许修改输入时不应直接使用。本章主要模板采用不改结构的栈/队列方法。</p></div><div class="practice"><h3>经典考点与练习</h3><p>练习：LeetCode 94 中序遍历、102 层序遍历、199 二叉树的右视图。</p><h3>面试追问：关键点完整解答</h3><dl class="answer-list"><div><dt>迭代前序为什么先压右孩子？</dt><dd><p>栈是后进先出，后压左孩子会先访问左子树，从而得到根左右。若先压左再压右，得到的是根右左。压栈顺序和访问顺序相反。</p></dd></div><div><dt>后序显式栈中的expanded标记表示什么？</dt><dd><p>它表示这个节点的孩子任务已经在栈中安排，回到该帧时应访问节点而不再展开。先压回访帧再压孩子，保证回访发生在两侧任务完成之后。</p></dd></div><div><dt>BFS为什么不能在for条件里反复用queue.size()？</dt><dd><p>处理本层时会弹出当前层、加入下一层，队列大小不断变化。必须先固定本层节点数，否则可能过早结束或混入下一层，破坏层号和右视图结果。</p></dd></div><div><dt>最小深度为什么不是1+min(leftDepth,rightDepth)？</dt><dd><p>若一侧为空，它不是一条到叶的有效路径；返回0会错误优于真实孩子。递归写法要单独处理缺失孩子，或者用BFS在第一次遇到真正叶子时返回。</p></dd></div><div><dt>树遍历的空间为什么不总是O(logn)？</dt><dd><p>普通二叉树可能退化为链，h=n，DFS栈最坏线性。BFS存储取决于层宽w，完全二叉树底层可能有约n/2个节点。输出数组还需另算。</p></dd></div><div><dt>前序和中序为什么能重建树，只有前序为什么不行？</dt><dd><p>无重复值时前序首项确定根，中序根位置划出左右子树，再递归决定结构；只有前序无法区分“根的左孩子”和“根的右孩子”，除非补上空节点标记或其他结构约束。</p></dd></div></dl></div>
 <label class="learned"><input type="checkbox" data-progress="07-01">我能独立实现，并解释正确性与边界</label></section><section class="lesson" id="s2"><div class="lesson-heading"><span class="lesson-number">07.02</span><h2>后序汇总：平衡性与直径</h2></div>
-<h3>知识与适用场景</h3><p>一个子树可以同时返回结构信息并帮助更新全局答案。判断平衡需要高度；直径需要左右高度之和，但向父节点只能返回可继续连接的单边高度。</p><div class="invariant"><span>推导 / 不变量</span><p>平衡检查用 -1 代表不平衡。先算左右子树，只要任何一侧失败或高度差大于 1，立刻向上传递失败；否则返回当前高度。</p></div>
+<h3>知识与适用场景</h3><p>一个子树可以同时返回结构信息并帮助更新全局答案。判断平衡需要高度；直径需要左右高度之和，但向父节点只能返回可继续连接的单边高度。</p><div class="deep-block" id="s2-before-1"><h3>2.1 后序报告：先写空树值，再写合并公式</h3><p>空树高度0、节点数0、直径0、平衡为true，是一份可以直接参与合并的子树报告。非空节点高度为1+max(左高,右高)，节点数为左数+右数+1，平衡要求左右都平衡且高度差至多1。</p><p>直径是一条任意两节点之间的简单路径，按边计。经过当前节点的候选直径是左高+右高；整棵子树的直径还要与左右子树内部的直径取max。不一定经过整棵树的根。</p></div><div class="deep-block" id="s2-before-2"><h3>2.2 向上返回与整棵子树答案是两种信息</h3><p class="table-hint">窄屏下可左右滑动表格，查看完整内容。</p><div class="study-table" tabindex="0" role="region" aria-label="2.2 向上返回与整棵子树答案是两种信息"><table><thead><tr><th scope="col">问题</th><th scope="col">向父节点可连接的信息</th><th scope="col">当前节点可形成的完整候选</th><th scope="col">空树约定</th></tr></thead><tbody><tr><td>高度</td><td>1+max(lh,rh)</td><td>就是当前高度</td><td>0</td></tr><tr><td>平衡</td><td>高度或失败标记</td><td>两侧平衡且差&lt;=1</td><td>平衡，高度0</td></tr><tr><td>直径（边）</td><td>单边高度</td><td>lh+rh</td><td>直径0</td></tr><tr><td>最大路径和</td><td>节点值+max(0,左收益,右收益)</td><td>节点值+max(0,左收益)+max(0,右收益)</td><td>没有非空路径</td></tr><tr><td>节点总数</td><td>左数+右数+1</td><td>整棵子树的节点数</td><td>0</td></tr></tbody></table></div></div><div class="deep-block" id="s2-before-3"><h3>2.3 一次后序同时计算高度、节点数、平衡与直径</h3><p>约定n&lt;=100000，计数与高度可用int。每个节点只合并一次，时间O(n)、栈O(h)，不依赖全局变量。基础平衡示例用-1提前传递失败更简洁；这里为教学展示多个信息如何一次合并，所以即使已发现不平衡仍会求其他统计。</p><div class="codebox"><div class="codebar"><span>C++17</span><div><a href="examples/detail-tree-summary.cpp" download>下载 .cpp</a><button type="button" class="copy">复制代码</button></div></div><pre tabindex="0" aria-label="C++17 代码"><code><span class="keyword">struct</span> TreeNode {
+    <span class="keyword">int</span> val;
+    TreeNode *left = <span class="keyword">nullptr</span>, *right = <span class="keyword">nullptr</span>;
+    <span class="keyword">explicit</span> TreeNode(<span class="keyword">int</span> value) : val(value) {}
+};
+
+<span class="keyword">struct</span> TreeSummary {
+    <span class="keyword">int</span> height = <span class="number">0</span>;
+    <span class="keyword">int</span> nodes = <span class="number">0</span>;
+    <span class="keyword">int</span> diameter = <span class="number">0</span>;
+    <span class="keyword">bool</span> balanced = <span class="keyword">true</span>;
+};
+TreeSummary summarizeTree(TreeNode* root) {
+    <span class="keyword">if</span> (!root) <span class="keyword">return</span> {};
+    TreeSummary left = summarizeTree(root-&gt;left);
+    TreeSummary right = summarizeTree(root-&gt;right);
+    TreeSummary result;
+    result.height = <span class="number">1</span> + max(left.height, right.height);
+    result.nodes = <span class="number">1</span> + left.nodes + right.nodes;
+    result.balanced = left.balanced &amp;&amp; right.balanced &amp;&amp;
+                      abs(left.height - right.height) &lt;= <span class="number">1</span>;
+    result.diameter = max({left.diameter, right.diameter, left.height + right.height});
+    <span class="keyword">return</span> result;
+}</code></pre></div></div><div class="deep-block" id="s2-before-4"><h3>2.4 朴素重复求高度为什么可能二次</h3><p>若每个节点先分别调用height求左右高度，再递归检查孩子，同一后代会被祖先反复扫描。链状树在不做有效短路的情况下累计n+(n-1)+…+1=O(n²)。后序把高度作为返回值传回，每个节点只处理常数次。</p><p>不要为了降低参数数量，把所有信息都塞入持久成员变量却忘记重置。把结果作为返回结构，或在公开入口里初始化局部答案再调用辅助DFS，更适合反复调用测试。</p></div><div class="invariant"><span>推导 / 不变量</span><p>平衡检查用 -1 代表不平衡。先算左右子树，只要任何一侧失败或高度差大于 1，立刻向上传递失败；否则返回当前高度。</p></div>
 <h3>手推一个例子</h3><p>一个节点左高 3、右高 1，高度差 2，整棵树在这里失败。祖先无需重复遍历子树计算高度。</p><div class="codebox"><div class="codebar"><span>C++17</span><div><a href="examples/02.cpp" download>下载 .cpp</a><button type="button" class="copy">复制代码</button></div></div><pre tabindex="0" aria-label="C++17 代码"><code><span class="keyword">struct</span> TreeNode {
     <span class="keyword">int</span> val; TreeNode *left=<span class="keyword">nullptr</span>, *right=<span class="keyword">nullptr</span>;
     <span class="keyword">explicit</span> TreeNode(<span class="keyword">int</span> v):val(v){}
@@ -64,9 +183,109 @@ vector&lt;<span class="keyword">int</span>&gt; inorder(TreeNode* root) {
     <span class="keyword">return</span> balancedHeight(root)!=-<span class="number">1</span>;
 }</code></pre></div>
 <dl class="analysis-grid"><div><dt>复杂度</dt><dd>时间 O(n)，空间 O(h)。逐节点重新求高度的朴素实现最坏 O(n²)。</dd></div><div><dt>易错点与边界</dt><dd>直径若以边数计，用 leftHeight+rightHeight；以节点数计再加 1。最大路径和中向上返回不能同时选左右两边。</dd></div></dl>
-<div class="practice"><h3>经典考点与练习</h3><p>练习：LeetCode 110 平衡二叉树、543 二叉树的直径、124 二叉树中的最大路径和。</p><details><summary>面试官可能继续问什么？</summary><p>为什么最大路径和可以用左右两边更新答案，却只能返回单边？</p><p class="muted">先用自己的话回答，再回到本节的前提、不变量和边界检查论证。</p></details></div>
+<div class="deep-block" id="s2-after-1"><h3>2.5 最大路径和：完整路径可拐弯，返回值只能单边</h3><p>一条简单路径在当前节点可以连接左右两支，但若把这条双分支路径再接父节点，就会出现三叉，不再是一条路径。因此更新best可以两边都取，向上只能返回一边。负收益不取，但当前节点必须取，以保证路径非空。</p><p>全负树必须返回最大那个节点，例如[-3,-2,-5]返回-2；best不能初始化为0。空树用nullopt表示不存在非空路径。时间O(n)、栈O(h)，路径和满足本章long long数值约束。</p><div class="codebox"><div class="codebar"><span>C++17</span><div><a href="examples/detail-maximum-path.cpp" download>下载 .cpp</a><button type="button" class="copy">复制代码</button></div></div><pre tabindex="0" aria-label="C++17 代码"><code><span class="keyword">struct</span> TreeNode {
+    <span class="keyword">int</span> val;
+    TreeNode *left = <span class="keyword">nullptr</span>, *right = <span class="keyword">nullptr</span>;
+    <span class="keyword">explicit</span> TreeNode(<span class="keyword">int</span> value) : val(value) {}
+};
+
+optional&lt;<span class="keyword">long</span> <span class="keyword">long</span>&gt; maximumPathSum(TreeNode* root) {
+    <span class="keyword">if</span> (!root) <span class="keyword">return</span> nullopt;
+    <span class="keyword">long</span> <span class="keyword">long</span> best = LLONG_MIN;
+    function&lt;<span class="keyword">long</span> <span class="keyword">long</span>(TreeNode*)&gt; gain = [&amp;](TreeNode* node) -&gt; <span class="keyword">long</span> <span class="keyword">long</span> {
+        <span class="keyword">if</span> (!node) <span class="keyword">return</span> <span class="number">0</span>;
+        <span class="keyword">long</span> <span class="keyword">long</span> left = max(<span class="number">0LL</span>, gain(node-&gt;left));
+        <span class="keyword">long</span> <span class="keyword">long</span> right = max(<span class="number">0LL</span>, gain(node-&gt;right));
+        best = max(best, (<span class="keyword">long</span> <span class="keyword">long</span>)node-&gt;val + left + right);
+        <span class="keyword">return</span> (<span class="keyword">long</span> <span class="keyword">long</span>)node-&gt;val + max(left, right);
+    };
+    gain(root);
+    <span class="keyword">return</span> best;
+}</code></pre></div></div><div class="deep-block" id="s2-after-2"><h3>2.6 路径题先确认起止规则</h3><p class="table-hint">窄屏下可左右滑动表格，查看完整内容。</p><div class="study-table" tabindex="0" role="region" aria-label="2.6 路径题先确认起止规则"><table><thead><tr><th scope="col">题意</th><th scope="col">起点 / 终点</th><th scope="col">能否拐弯</th><th scope="col">典型做法</th></tr></thead><tbody><tr><td>根到叶是否存在指定和</td><td>固定根 / 任一叶子</td><td>只能向下</td><td>DFS剩余和或累计和</td></tr><tr><td>输出所有根叶路径</td><td>固定根 / 任一叶子</td><td>只能向下</td><td>路径缓冲+回溯</td></tr><tr><td>任意向下路径计数</td><td>任一祖先 / 任一后代</td><td>不能从左跨到右</td><td>前缀和+当前祖先频次</td></tr><tr><td>最大路径和</td><td>任意两节点</td><td>可在一个最高节点处拐弯</td><td>单边收益+全局最优</td></tr></tbody></table></div></div><div class="deep-block" id="s2-after-3"><h3>2.7 根到叶路径总和：只有叶子才能完成答案</h3><p>内部节点累计和恰好等于目标也不能提前当作根叶路径。允许负数时，累计和大于目标不能直接剪枝，后续负值可能使和下降。path.push_back与pop_back配对，左右分支共享缓冲却不会混入对方节点。</p><p>时间O(n+输出路径总长度)，辅助路径与栈O(h)，答案存储单独按输出体积计算。这里收集所有路径；只问存在性时可返回bool并在命中叶子后短路。</p><div class="codebox"><div class="codebar"><span>C++17</span><div><a href="examples/detail-root-leaf-paths.cpp" download>下载 .cpp</a><button type="button" class="copy">复制代码</button></div></div><pre tabindex="0" aria-label="C++17 代码"><code><span class="keyword">struct</span> TreeNode {
+    <span class="keyword">int</span> val;
+    TreeNode *left = <span class="keyword">nullptr</span>, *right = <span class="keyword">nullptr</span>;
+    <span class="keyword">explicit</span> TreeNode(<span class="keyword">int</span> value) : val(value) {}
+};
+
+vector&lt;vector&lt;<span class="keyword">int</span>&gt;&gt; rootLeafPaths(TreeNode* root, <span class="keyword">long</span> <span class="keyword">long</span> target) {
+    vector&lt;vector&lt;<span class="keyword">int</span>&gt;&gt; answer;
+    vector&lt;<span class="keyword">int</span>&gt; path;
+    function&lt;<span class="keyword">void</span>(TreeNode*, <span class="keyword">long</span> <span class="keyword">long</span>)&gt; dfs = [&amp;](TreeNode* node, <span class="keyword">long</span> <span class="keyword">long</span> sum) {
+        <span class="keyword">if</span> (!node) <span class="keyword">return</span>;
+        path.push_back(node-&gt;val);
+        sum += node-&gt;val;
+        <span class="keyword">if</span> (!node-&gt;left &amp;&amp; !node-&gt;right) {
+            <span class="keyword">if</span> (sum == target) answer.push_back(path);
+        } <span class="keyword">else</span> {
+            dfs(node-&gt;left, sum);
+            dfs(node-&gt;right, sum);
+        }
+        path.pop_back();
+    };
+    dfs(root, <span class="number">0</span>);
+    <span class="keyword">return</span> answer;
+}</code></pre></div></div><div class="deep-block" id="s2-after-4"><h3>2.8 树上前缀和：哈希表只包含当前祖先链</h3><p>设当前根到节点累计和为S，若某个祖先之前的累计和为S-target，两者之间的向下路径和即为target。进入节点时先查询，再将S频次加一；递归左右孩子后把S频次减一。初始频次0为1，代表根之前的空前缀。</p><p>数组前缀表越走越长，因为所有过去位置都可能作为起点；树上兄弟节点不是祖先关系，不能共享已经退出分支的前缀。这里回溯不仅是节省空间，更是正确性的必要条件。</p></div><div class="deep-block" id="s2-after-5"><h3>2.9 任意起点的向下路径数量：退出时撤销前缀</h3><p>使用本章路径和范围，prefix-target也在long long内。每个节点平均常数次哈希操作，平均O(n)，冲突极端时最坏可达O(n²)；递归栈和当前路径前缀条目O(h)。回溯后重新find迭代器，避免使用递归插入可能触发rehash前保存的旧迭代器。</p><div class="codebox"><div class="codebar"><span>C++17</span><div><a href="examples/detail-downward-path-count.cpp" download>下载 .cpp</a><button type="button" class="copy">复制代码</button></div></div><pre tabindex="0" aria-label="C++17 代码"><code><span class="keyword">struct</span> TreeNode {
+    <span class="keyword">int</span> val;
+    TreeNode *left = <span class="keyword">nullptr</span>, *right = <span class="keyword">nullptr</span>;
+    <span class="keyword">explicit</span> TreeNode(<span class="keyword">int</span> value) : val(value) {}
+};
+
+<span class="keyword">long</span> <span class="keyword">long</span> countDownwardPaths(TreeNode* root, <span class="keyword">long</span> <span class="keyword">long</span> target) {
+    unordered_map&lt;<span class="keyword">long</span> <span class="keyword">long</span>, <span class="keyword">long</span> <span class="keyword">long</span>&gt; frequency;
+    frequency[<span class="number">0</span>] = <span class="number">1</span>;
+    function&lt;<span class="keyword">long</span> <span class="keyword">long</span>(TreeNode*, <span class="keyword">long</span> <span class="keyword">long</span>)&gt; dfs =
+        [&amp;](TreeNode* node, <span class="keyword">long</span> <span class="keyword">long</span> prefix) -&gt; <span class="keyword">long</span> <span class="keyword">long</span> {
+            <span class="keyword">if</span> (!node) <span class="keyword">return</span> <span class="number">0</span>;
+            prefix += node-&gt;val;
+            <span class="keyword">long</span> <span class="keyword">long</span> result = <span class="number">0</span>;
+            <span class="keyword">auto</span> found = frequency.find(prefix - target);
+            <span class="keyword">if</span> (found != frequency.end()) result += found-&gt;second;
+            ++frequency[prefix];
+            result += dfs(node-&gt;left, prefix);
+            result += dfs(node-&gt;right, prefix);
+            <span class="keyword">auto</span> current = frequency.find(prefix);
+            <span class="keyword">if</span> (--current-&gt;second == <span class="number">0</span>) frequency.erase(current);
+            <span class="keyword">return</span> result;
+        };
+    <span class="keyword">return</span> dfs(root, <span class="number">0</span>);
+}</code></pre></div></div><div class="deep-block" id="s2-after-6"><h3>2.10 根1、左右孩子均-1，target=0</h3><p class="table-hint">窄屏下可左右滑动表格，查看完整内容。</p><div class="study-table" tabindex="0" role="region" aria-label="2.10 根1、左右孩子均-1，target=0"><table><thead><tr><th scope="col">事件</th><th scope="col">当前前缀</th><th scope="col">查询贡献</th><th scope="col">回溯后的状态</th></tr></thead><tbody><tr><td>进入根1</td><td>1</td><td>freq[1]=0</td><td>加入前缀1</td></tr><tr><td>进入左-1</td><td>0</td><td>freq[0]=1，计[根,左]</td><td>左退出后freq[0]恢复1</td></tr><tr><td>进入右-1</td><td>0</td><td>freq[0]=1，计[根,右]</td><td>右退出后freq[0]恢复1</td></tr><tr><td>根退出</td><td>1</td><td>总答案2</td><td>移除前缀1，只留初始0</td></tr></tbody></table></div></div><div class="practice"><h3>经典考点与练习</h3><p>练习：LeetCode 110 平衡二叉树、543 二叉树的直径、124 二叉树中的最大路径和。</p><h3>面试追问：关键点完整解答</h3><dl class="answer-list"><div><dt>直径为什么是左高+右高，不需要再加1？</dt><dd><p>本章子树高度按节点数计，而直径按边数计。左子树到当前点的连接路径恰有leftHeight条边，右侧同理，加起来就是左右端点之间的边数；若题目按节点数定义路径长度，则再加1。</p></dd></div><div><dt>最大路径和为什么更新答案取两边，返回时只取一边？</dt><dd><p>完整路径可以以当前点为最高点连接左右两支，但父节点接入时只能连接一条向下链。把两支一起向上传递会造成当前节点连接三条边，不是一条简单路径。</p></dd></div><div><dt>负收益可以丢掉，为什么全负树答案不能是0？</dt><dd><p>题目要求非空路径，至少选一个节点。只允许丢掉孩子贡献，当前节点值仍参与候选；best初始化为负无穷，最终会选全树最大负值，而不是一条不存在的空路径。</p></dd></div><div><dt>根到叶路径中，和达到target就可以返回成功吗？</dt><dd><p>只有当前节点同时没有左右孩子时才符合终点条件。内部节点和恰好匹配不够；若允许负数，后续和还可能增减，所以也不能仅凭当前和超目标就剪枝。</p></dd></div><div><dt>树上前缀频次为什么一定要回溯？</dt><dd><p>遍历右子树时，左子树中的节点不是它的祖先。若残留左分支前缀，会把跨兄弟的状态差当作合法向下路径。撤销保证哈希表始终只描述当前祖先链。</p></dd></div><div><dt>为什么退出前缀后还要删除计数为0的键？</dt><dd><p>减到0已足以避免答案多计，但保留零频次键会让表随全树不同前缀增长到O(n)。删除后活跃条目与当前路径相关，条目空间保持O(h)；查询使用find也避免插入无用的补数键。</p></dd></div></dl></div>
 <label class="learned"><input type="checkbox" data-progress="07-02">我能独立实现，并解释正确性与边界</label></section><section class="lesson" id="s3"><div class="lesson-heading"><span class="lesson-number">07.03</span><h2>BST 的全局范围约束</h2></div>
-<h3>知识与适用场景</h3><p>BST 不仅要求左孩子小于根，还要求整个左子树都小于根。验证时把祖先施加的上下界一路传下去；默认不允许重复值。</p><div class="invariant"><span>推导 / 不变量</span><p>当前节点必须落在开区间 (lo,hi)。左子树的上界收紧为当前值，右子树的下界收紧为当前值。使用 long long 边界覆盖所有 int 节点值。</p></div>
+<h3>知识与适用场景</h3><p>BST 不仅要求左孩子小于根，还要求整个左子树都小于根。验证时把祖先施加的上下界一路传下去；默认不允许重复值。</p><div class="deep-block" id="s3-before-1"><h3>3.1 BST约束覆盖整棵子树，不是只看两条边</h3><p>默认所有键互异。每个节点的左子树所有键都小于它，右子树所有键都大于它。基础范围验证从(LLONG_MIN,LLONG_MAX)开始，左递归收紧上界、右递归收紧下界，因此祖先约束不会在下一层丢失。</p><p>节点值是int，所以long long极值可作为严格外部边界。如果节点本身改成long long，不能再用同类型极值当排除边界，应改成optional边界或显式开闭标记。</p></div><div class="deep-block" id="s3-before-2"><h3>3.2 根10、左孩子5、5的右孩子12</h3><p class="table-hint">窄屏下可左右滑动表格，查看完整内容。</p><div class="study-table" tabindex="0" role="region" aria-label="3.2 根10、左孩子5、5的右孩子12"><table><thead><tr><th scope="col">节点</th><th scope="col">继承的合法区间</th><th scope="col">局部父子比较</th><th scope="col">全局结论</th></tr></thead><tbody><tr><td>10</td><td>(-∞,+∞)</td><td>无父节点</td><td>合法</td></tr><tr><td>5</td><td>(-∞,10)</td><td>5&lt;10</td><td>合法</td></tr><tr><td>12</td><td>(5,10)</td><td>12&gt;5看似合理</td><td>12&gt;=10，违反祖先约束</td></tr></tbody></table></div></div><div class="deep-block" id="s3-before-3"><h3>3.3 中序严格递增与全局合法范围等价</h3><p>严格BST中，左子树的所有值小于根、右侧所有值大于根，递归中序得到严格递增序列。反过来，对二叉树中序序列逐个检查严格递增，也能保证左、根、右的全局次序。用一个prev指针或optional保存前项即可，不能把prev值初始化成INT_MIN并立即比较。</p><p>若允许重复且只放右子树，中序仅非递减是必要但不充分：根2的左孩子2也会生成非递减序列，却违反重复放右的规则。需要把约束改成左侧上界不含根、右侧下界包含根，并明确每个边界的开闭性。</p></div><div class="deep-block" id="s3-before-4"><h3>3.4 迭代验证、搜索与第K小</h3><p>验证时间O(n)、栈O(h)。搜索依赖输入已是严格BST，时间O(h)、空间O(1)。第K小中序提前结束，时间O(h+k)（合法K时）、栈O(h)，非法K返回nullopt。前项用optional，节点INT_MIN可以合法成为最小键。</p><div class="codebox"><div class="codebar"><span>C++17</span><div><a href="examples/detail-bst-queries.cpp" download>下载 .cpp</a><button type="button" class="copy">复制代码</button></div></div><pre tabindex="0" aria-label="C++17 代码"><code><span class="keyword">struct</span> TreeNode {
+    <span class="keyword">int</span> val;
+    TreeNode *left = <span class="keyword">nullptr</span>, *right = <span class="keyword">nullptr</span>;
+    <span class="keyword">explicit</span> TreeNode(<span class="keyword">int</span> value) : val(value) {}
+};
+
+<span class="keyword">bool</span> validBSTIterative(TreeNode* root) {
+    vector&lt;TreeNode*&gt; pending;
+    TreeNode* current = root;
+    optional&lt;<span class="keyword">int</span>&gt; previous;
+    <span class="keyword">while</span> (current || !pending.empty()) {
+        <span class="keyword">while</span> (current) { pending.push_back(current); current = current-&gt;left; }
+        current = pending.back(); pending.pop_back();
+        <span class="keyword">if</span> (previous &amp;&amp; current-&gt;val &lt;= *previous) <span class="keyword">return</span> <span class="keyword">false</span>;
+        previous = current-&gt;val;
+        current = current-&gt;right;
+    }
+    <span class="keyword">return</span> <span class="keyword">true</span>;
+}
+TreeNode* searchBST(TreeNode* root, <span class="keyword">int</span> key) {
+    <span class="keyword">while</span> (root &amp;&amp; root-&gt;val != key)
+        root = key &lt; root-&gt;val ? root-&gt;left : root-&gt;right;
+    <span class="keyword">return</span> root;
+}
+optional&lt;<span class="keyword">int</span>&gt; kthSmallestBST(TreeNode* root, <span class="keyword">int</span> k) {
+    <span class="keyword">if</span> (k &lt;= <span class="number">0</span>) <span class="keyword">return</span> nullopt;
+    vector&lt;TreeNode*&gt; pending;
+    TreeNode* current = root;
+    <span class="keyword">while</span> (current || !pending.empty()) {
+        <span class="keyword">while</span> (current) { pending.push_back(current); current = current-&gt;left; }
+        current = pending.back(); pending.pop_back();
+        <span class="keyword">if</span> (--k == <span class="number">0</span>) <span class="keyword">return</span> current-&gt;val;
+        current = current-&gt;right;
+    }
+    <span class="keyword">return</span> nullopt;
+}</code></pre></div></div><div class="invariant"><span>推导 / 不变量</span><p>当前节点必须落在开区间 (lo,hi)。左子树的上界收紧为当前值，右子树的下界收紧为当前值。使用 long long 边界覆盖所有 int 节点值。</p></div>
 <h3>手推一个例子</h3><p>根 10，左孩子 5，5 的右孩子 12。虽然每条父子边看似合理，但 12 位于 10 的左子树，违反上界 10。</p><div class="codebox"><div class="codebar"><span>C++17</span><div><a href="examples/03.cpp" download>下载 .cpp</a><button type="button" class="copy">复制代码</button></div></div><pre tabindex="0" aria-label="C++17 代码"><code><span class="keyword">struct</span> TreeNode {
     <span class="keyword">int</span> val; TreeNode *left=<span class="keyword">nullptr</span>, *right=<span class="keyword">nullptr</span>;
     <span class="keyword">explicit</span> TreeNode(<span class="keyword">int</span> v):val(v){}
@@ -81,9 +300,129 @@ vector&lt;<span class="keyword">int</span>&gt; inorder(TreeNode* root) {
     <span class="keyword">return</span> validRange(root,LLONG_MIN,LLONG_MAX);
 }</code></pre></div>
 <dl class="analysis-grid"><div><dt>复杂度</dt><dd>时间 O(n)，空间 O(h)。BST 查找平均 O(log n)，退化时 O(n)，普通 BST 不自动平衡。</dd></div><div><dt>易错点与边界</dt><dd>中序检查也能验证，但前一个值不能初始化为 INT_MIN 后直接严格比较，否则节点值等于 INT_MIN 时出错。</dd></div></dl>
-<div class="practice"><h3>经典考点与练习</h3><p>练习：LeetCode 98 验证二叉搜索树、230 二叉搜索树中第 K 小的元素、450 删除二叉搜索树中的节点。</p><details><summary>面试官可能继续问什么？</summary><p>允许重复值只放右侧时，上下界语义如何变化？如何求第 K 小？</p><p class="muted">先用自己的话回答，再回到本节的前提、不变量和边界检查论证。</p></details></div>
+<div class="deep-block" id="s3-after-1"><h3>3.5 BST的复杂度取决于高度，不会自动平衡</h3><p class="table-hint">窄屏下可左右滑动表格，查看完整内容。</p><div class="study-table" tabindex="0" role="region" aria-label="3.5 BST的复杂度取决于高度，不会自动平衡"><table><thead><tr><th scope="col">操作</th><th scope="col">普通BST复杂度</th><th scope="col">平衡时</th><th scope="col">退化链时</th></tr></thead><tbody><tr><td>搜索 / 插入 / 删除</td><td>O(h)</td><td>O(logn)</td><td>O(n)</td></tr><tr><td>中序求第K小</td><td>O(h+k)</td><td>O(logn+k)</td><td>O(n)最坏</td></tr><tr><td>带子树size的选秩</td><td>O(h)，更新时维护size</td><td>O(logn)</td><td>O(n)</td></tr><tr><td>完整验证 / 遍历</td><td>O(n)</td><td>仍需访问所有节点</td><td>O(n)</td></tr></tbody></table></div></div><div class="deep-block" id="s3-after-2"><h3>3.6 插入与删除：树的根本身也可能改变</h3><p>插入沿键值方向走到空链接，将新节点接入。返回根或以TreeNode*&amp;更新根，不能只改变函数内根指针副本。重复键在本章接口中拒绝，传入节点必须是由调用者持有的孤立节点，不得已经属于其他树。</p><p>删除分三类：叶子用空替代；单孩子用孩子替代；双孩子用右子树最小节点（后继）替代。常见实现复制后继值再删后继，但会改变某个节点的值；如果外部持有节点身份，这种语义要说明。下面采用物理移植后继，保留其他节点的值与身份。</p></div><div class="deep-block" id="s3-after-3"><h3>3.7 非拥有式插入与删除：摘除节点但不释放</h3><p>两函数假设原树为严格BST，时间O(h)、额外空间O(1)。detach返回被摘除的原节点；不存在则返回nullptr。TreeNode**让同一段逻辑既能更新根链接也能更新父节点孩子链接。</p><p>不调用delete，因为节点可能来自arena、栈或外部统一管理。若调用者用new单独分配且拥有该节点，摘除后可自行释放；若来自TreeArena，不得单独delete。节点摘除后左右指针清空，便于检查与复用。</p><div class="codebox"><div class="codebar"><span>C++17</span><div><a href="examples/detail-bst-updates.cpp" download>下载 .cpp</a><button type="button" class="copy">复制代码</button></div></div><pre tabindex="0" aria-label="C++17 代码"><code><span class="keyword">struct</span> TreeNode {
+    <span class="keyword">int</span> val;
+    TreeNode *left = <span class="keyword">nullptr</span>, *right = <span class="keyword">nullptr</span>;
+    <span class="keyword">explicit</span> TreeNode(<span class="keyword">int</span> value) : val(value) {}
+};
+
+<span class="keyword">bool</span> insertBST(TreeNode*&amp; root, TreeNode* fresh) {
+    <span class="keyword">if</span> (!fresh || fresh-&gt;left || fresh-&gt;right)
+        <span class="keyword">throw</span> invalid_argument(<span class="string">&quot;detached leaf required&quot;</span>);
+    TreeNode** link = &amp;root;
+    <span class="keyword">while</span> (*link) {
+        <span class="keyword">if</span> ((*link)-&gt;val == fresh-&gt;val) <span class="keyword">return</span> <span class="keyword">false</span>;
+        link = fresh-&gt;val &lt; (*link)-&gt;val ? &amp;(*link)-&gt;left : &amp;(*link)-&gt;right;
+    }
+    *link = fresh;
+    <span class="keyword">return</span> <span class="keyword">true</span>;
+}
+TreeNode* detachBST(TreeNode*&amp; root, <span class="keyword">int</span> key) {
+    TreeNode** link = &amp;root;
+    <span class="keyword">while</span> (*link &amp;&amp; (*link)-&gt;val != key)
+        link = key &lt; (*link)-&gt;val ? &amp;(*link)-&gt;left : &amp;(*link)-&gt;right;
+    <span class="keyword">if</span> (!*link) <span class="keyword">return</span> <span class="keyword">nullptr</span>;
+    TreeNode* victim = *link;
+    <span class="keyword">if</span> (!victim-&gt;left) *link = victim-&gt;right;
+    <span class="keyword">else</span> <span class="keyword">if</span> (!victim-&gt;right) *link = victim-&gt;left;
+    <span class="keyword">else</span> {
+        TreeNode** nextLink = &amp;victim-&gt;right;
+        <span class="keyword">while</span> ((*nextLink)-&gt;left) nextLink = &amp;(*nextLink)-&gt;left;
+        TreeNode* successor = *nextLink;
+        *nextLink = successor-&gt;right;
+        successor-&gt;left = victim-&gt;left;
+        successor-&gt;right = victim-&gt;right;
+        *link = successor;
+    }
+    victim-&gt;left = victim-&gt;right = <span class="keyword">nullptr</span>;
+    <span class="keyword">return</span> victim;
+}</code></pre></div></div><div class="deep-block" id="s3-after-4"><h3>3.8 BST惰性迭代器：一次next不一定是常数时间</h3><p>构造O(h)、辅助空间O(h)。一次next可能压入长左链而耗时O(h)，但遍历所有节点时每个节点入出栈一次，整体O(n)，next按完整遍历均摊O(1)。若只取k个，含初始化成本为O(h+k)。</p><p>迭代器不拥有节点。使用期间树必须存活且不进行会改变这些连接或释放节点的操作；它没有自动跟踪BST插入删除的能力。</p><div class="codebox"><div class="codebar"><span>C++17</span><div><a href="examples/detail-bst-iterator.cpp" download>下载 .cpp</a><button type="button" class="copy">复制代码</button></div></div><pre tabindex="0" aria-label="C++17 代码"><code><span class="keyword">struct</span> TreeNode {
+    <span class="keyword">int</span> val;
+    TreeNode *left = <span class="keyword">nullptr</span>, *right = <span class="keyword">nullptr</span>;
+    <span class="keyword">explicit</span> TreeNode(<span class="keyword">int</span> value) : val(value) {}
+};
+
+<span class="keyword">class</span> BSTIterator {
+    vector&lt;TreeNode*&gt; pending;
+    <span class="keyword">void</span> pushLeft(TreeNode* node) {
+        <span class="keyword">while</span> (node) { pending.push_back(node); node = node-&gt;left; }
+    }
+<span class="keyword">public</span>:
+    <span class="keyword">explicit</span> BSTIterator(TreeNode* root) { pushLeft(root); }
+    <span class="keyword">bool</span> hasNext() <span class="keyword">const</span> { <span class="keyword">return</span> !pending.empty(); }
+    <span class="keyword">int</span> next() {
+        <span class="keyword">if</span> (pending.empty()) <span class="keyword">throw</span> out_of_range(<span class="string">&quot;iterator exhausted&quot;</span>);
+        TreeNode* node = pending.back(); pending.pop_back();
+        pushLeft(node-&gt;right);
+        <span class="keyword">return</span> node-&gt;val;
+    }
+};</code></pre></div></div><div class="deep-block" id="s3-after-5"><h3>3.9 恢复恰好两个交换值的BST</h3><p>契约是原树为互异键BST，恰有两个节点的值被交换且连接不变。中序相邻位置交换形成一个下降点，非相邻交换通常形成两个；记录第一次下降的前项与最后一次下降的后项并交换。时间O(n)、栈O(h)。</p><p>返回true只表示执行了交换，不代表能修复任意非法二叉树。该函数会改变值，不移动节点；合法未交换的BST返回false。不要把它用作通用排序整棵树的算法。</p><div class="codebox"><div class="codebar"><span>C++17</span><div><a href="examples/detail-recover-bst.cpp" download>下载 .cpp</a><button type="button" class="copy">复制代码</button></div></div><pre tabindex="0" aria-label="C++17 代码"><code><span class="keyword">struct</span> TreeNode {
+    <span class="keyword">int</span> val;
+    TreeNode *left = <span class="keyword">nullptr</span>, *right = <span class="keyword">nullptr</span>;
+    <span class="keyword">explicit</span> TreeNode(<span class="keyword">int</span> value) : val(value) {}
+};
+
+<span class="keyword">bool</span> recoverSwappedBST(TreeNode* root) {
+    vector&lt;TreeNode*&gt; pending;
+    TreeNode *current = root, *previous = <span class="keyword">nullptr</span>;
+    TreeNode *first = <span class="keyword">nullptr</span>, *second = <span class="keyword">nullptr</span>;
+    <span class="keyword">while</span> (current || !pending.empty()) {
+        <span class="keyword">while</span> (current) { pending.push_back(current); current = current-&gt;left; }
+        current = pending.back(); pending.pop_back();
+        <span class="keyword">if</span> (previous &amp;&amp; previous-&gt;val &gt; current-&gt;val) {
+            <span class="keyword">if</span> (!first) first = previous;
+            second = current;
+        }
+        previous = current;
+        current = current-&gt;right;
+    }
+    <span class="keyword">if</span> (!first) <span class="keyword">return</span> <span class="keyword">false</span>;
+    swap(first-&gt;val, second-&gt;val);
+    <span class="keyword">return</span> <span class="keyword">true</span>;
+}</code></pre></div></div><div class="practice"><h3>经典考点与练习</h3><p>练习：LeetCode 98 验证二叉搜索树、230 二叉搜索树中第 K 小的元素、450 删除二叉搜索树中的节点。</p><h3>面试追问：关键点完整解答</h3><dl class="answer-list"><div><dt>为什么只比较node和直接左右孩子不够？</dt><dd><p>后代还要满足所有祖先的范围。例如10的左孩子5、5的右孩子12，每条直接边都满足大小方向，但12仍位于10的左子树而大于10。</p></dd></div><div><dt>普通BST搜索为什么不能无条件写O(logn)？</dt><dd><p>每次只排除一个子树，但剩余子树未必只有一半。顺序插入1..n会形成高度n的链，搜索最坏O(n)。只有平衡性或合适随机模型下才能得到对数高度结论。</p></dd></div><div><dt>重复只允许放右边时，中序非递减能充分验证吗？</dt><dd><p>不能。根2左孩子2同样中序非递减，却违反重复放右。要用带开闭性的上下界，确保左子树严格小于根、右子树允许等于根，并继承祖先限制。</p></dd></div><div><dt>删除双孩子节点为什么后继没有左孩子？</dt><dd><p>后继是右子树中不断向左走到的最小节点。如果它还有左孩子，这个孩子会更小，与最小性矛盾。它可能有右孩子，移植时必须接回后继原位置，不能丢掉。</p></dd></div><div><dt>维护子树size为何能加速多次第K小查询？</dt><dd><p>知道左子树节点数L，就可判断K&lt;=L去左边、K=L+1取根、否则去右边找K-L-1。每层只走一侧，时间O(h)；插入删除和旋转时必须同步维护size，不能使用过期统计。</p></dd></div><div><dt>迭代器next均摊O(1)能推出每次延迟都是O(1)吗？</dt><dd><p>不能。某次next可能展开深右子树的整条左链，花O(h)。均摊只说明完整序列的总成本线性；严格实时延迟要求需要另外的接口和数据结构设计。</p></dd></div></dl></div>
 <label class="learned"><input type="checkbox" data-progress="07-03">我能独立实现，并解释正确性与边界</label></section><section class="lesson" id="s4"><div class="lesson-heading"><span class="lesson-number">07.04</span><h2>最近公共祖先与返回值语义</h2></div>
-<h3>知识与适用场景</h3><p>对普通二叉树，递归返回“该子树中找到的目标节点或它们的 LCA”。若左右各找到一个，当前根就是分叉点；若只找到一侧，答案向上传递。</p><div class="invariant"><span>推导 / 不变量</span><p>遇到 p 或 q 直接返回；左右非空时返回当前节点，否则返回非空一侧。这个简洁版本要求 p、q 都确实存在于树中。</p></div>
+<h3>知识与适用场景</h3><p>对普通二叉树，递归返回“该子树中找到的目标节点或它们的 LCA”。若左右各找到一个，当前根就是分叉点；若只找到一侧，答案向上传递。</p><div class="deep-block" id="s4-before-1"><h3>4.1 普通LCA的返回语义与存在性前提</h3><p>基础lca遇到p或q直接返回，左右各返回非空时当前点就是汇合点，只有一边非空就继续向上传。它允许节点是自己的祖先，因此p本身在q上方时返回p恰好正确。</p><p>但“找到了一个目标”和“两个目标的祖先”都被编码为同一种非空指针。若q不存在，基础版可能返回p，却不能说明已经找齐两者。面试要先问是否保证目标存在；不保证时应统计命中信息或先验证。</p></div><div class="deep-block" id="s4-before-2"><h3>4.2 LCA合并的四种情况</h3><p class="table-hint">窄屏下可左右滑动表格，查看完整内容。</p><div class="study-table" tabindex="0" role="region" aria-label="4.2 LCA合并的四种情况"><table><thead><tr><th scope="col">左子树报告</th><th scope="col">右子树报告</th><th scope="col">当前点情况</th><th scope="col">处理</th></tr></thead><tbody><tr><td>未命中</td><td>未命中</td><td>不是目标</td><td>返回未命中</td></tr><tr><td>命中目标</td><td>未命中</td><td>不是目标</td><td>向上传左侧结果</td></tr><tr><td>命中p</td><td>命中q</td><td>不是目标</td><td>当前点为分叉LCA</td></tr><tr><td>某子树已找到完整LCA</td><td>另一侧无新目标</td><td>任意</td><td>继续传已有LCA</td></tr><tr><td>p与q是同一节点</td><td>不需要两个不同对象</td><td>访问到该指针</td><td>该节点同时满足两目标</td></tr></tbody></table></div></div><div class="deep-block" id="s4-before-3"><h3>4.3 目标可能不存在的LCA，以及验证身份后的BST版本</h3><p>普通树按指针身份比较，允许相同值和p==q，时间O(n)、栈O(h)。两个目标位在同一节点命中时own=3，不会误要求找到两个不同节点。</p><p>BST版本要求互异键严格BST，先按键搜索并确认找到的确实是同一指针，拒绝仅值相同的树外节点。确认存在后，两个键都小于当前点向左、都大于向右，否则当前点即分叉或目标祖先。时间O(h)、空间O(1)。</p><div class="codebox"><div class="codebar"><span>C++17</span><div><a href="examples/detail-lca-checked.cpp" download>下载 .cpp</a><button type="button" class="copy">复制代码</button></div></div><pre tabindex="0" aria-label="C++17 代码"><code><span class="keyword">struct</span> TreeNode {
+    <span class="keyword">int</span> val;
+    TreeNode *left = <span class="keyword">nullptr</span>, *right = <span class="keyword">nullptr</span>;
+    <span class="keyword">explicit</span> TreeNode(<span class="keyword">int</span> value) : val(value) {}
+};
+
+<span class="keyword">struct</span> LcaReport {
+    unsigned mask = <span class="number">0</span>; <span class="comment">// bit 0: p found, bit 1: q found</span>
+    TreeNode* ancestor = <span class="keyword">nullptr</span>;
+};
+LcaReport reportLca(TreeNode* node, TreeNode* p, TreeNode* q) {
+    <span class="keyword">if</span> (!node) <span class="keyword">return</span> {};
+    LcaReport left = reportLca(node-&gt;left, p, q);
+    LcaReport right = reportLca(node-&gt;right, p, q);
+    unsigned own = (node == p ? 1U : 0U) | (node == q ? 2U : 0U);
+    unsigned mask = left.mask | right.mask | own;
+    TreeNode* ancestor = left.ancestor ? left.ancestor : right.ancestor;
+    <span class="keyword">if</span> (!ancestor &amp;&amp; mask == 3U) ancestor = node;
+    <span class="keyword">return</span> {mask, ancestor};
+}
+TreeNode* lcaChecked(TreeNode* root, TreeNode* p, TreeNode* q) {
+    <span class="keyword">if</span> (!p || !q) <span class="keyword">return</span> <span class="keyword">nullptr</span>;
+    LcaReport result = reportLca(root, p, q);
+    <span class="keyword">return</span> result.mask == 3U ? result.ancestor : <span class="keyword">nullptr</span>;
+}
+TreeNode* lcaBSTChecked(TreeNode* root, TreeNode* p, TreeNode* q) {
+    <span class="keyword">if</span> (!p || !q) <span class="keyword">return</span> <span class="keyword">nullptr</span>;
+    <span class="keyword">auto</span> containsIdentity = [&amp;](TreeNode* target) {
+        TreeNode* node = root;
+        <span class="keyword">while</span> (node &amp;&amp; node-&gt;val != target-&gt;val)
+            node = target-&gt;val &lt; node-&gt;val ? node-&gt;left : node-&gt;right;
+        <span class="keyword">return</span> node == target;
+    };
+    <span class="keyword">if</span> (!containsIdentity(p) || !containsIdentity(q)) <span class="keyword">return</span> <span class="keyword">nullptr</span>;
+    <span class="keyword">int</span> low = min(p-&gt;val, q-&gt;val), high = max(p-&gt;val, q-&gt;val);
+    <span class="keyword">while</span> (root) {
+        <span class="keyword">if</span> (root-&gt;val &lt; low) root = root-&gt;right;
+        <span class="keyword">else</span> <span class="keyword">if</span> (root-&gt;val &gt; high) root = root-&gt;left;
+        <span class="keyword">else</span> <span class="keyword">return</span> root;
+    }
+    <span class="keyword">return</span> <span class="keyword">nullptr</span>;
+}</code></pre></div></div><div class="deep-block" id="s4-before-4"><h3>4.4 多次LCA查询：用预处理交换查询成本</h3><p>若同一棵静态树有十万次查询，每次DFS总O(nq)可能太慢。可先赋予节点编号、记录深度与父节点，再建up[v][j]表示2^j层祖先：先把深节点提到同深度，再从高位往低位一起跳，最后返回父节点。预处理O(nlogn)、查询O(logn)、空间O(nlogn)。</p><p>另一条路线是Euler游走记录节点与深度，将LCA变为首次出现位置间的最小深度查询，再用RMQ结构处理。这里只介绍选择依据；树结构发生改变后，静态预处理信息不能继续无条件复用。</p></div><div class="invariant"><span>推导 / 不变量</span><p>遇到 p 或 q 直接返回；左右非空时返回当前节点，否则返回非空一侧。这个简洁版本要求 p、q 都确实存在于树中。</p></div>
 <h3>手推一个例子</h3><p>若 p 在左子树、q 在右子树，当前节点是首次汇合点；若 p 本身是 q 的祖先，递归到 p 时返回 p，正好符合祖先可以是自身的定义。</p><div class="codebox"><div class="codebar"><span>C++17</span><div><a href="examples/04.cpp" download>下载 .cpp</a><button type="button" class="copy">复制代码</button></div></div><pre tabindex="0" aria-label="C++17 代码"><code><span class="keyword">struct</span> TreeNode {
     <span class="keyword">int</span> val; TreeNode *left=<span class="keyword">nullptr</span>, *right=<span class="keyword">nullptr</span>;
     <span class="keyword">explicit</span> TreeNode(<span class="keyword">int</span> v):val(v){}
@@ -96,5 +435,696 @@ TreeNode* lca(TreeNode* root, TreeNode* p, TreeNode* q) {
     <span class="keyword">return</span> a ? a : b;
 }</code></pre></div>
 <dl class="analysis-grid"><div><dt>复杂度</dt><dd>时间 O(n)，空间 O(h)。BST 的 LCA 可利用键值方向迭代，时间 O(h)、空间 O(1)。</dd></div><div><dt>易错点与边界</dt><dd>按节点身份比较指针，不能靠值区分重复节点。若目标可能不存在，需要额外统计找到的目标数或预先验证。</dd></div></dl>
-<div class="practice"><h3>经典考点与练习</h3><p>练习：LeetCode 236 二叉树的最近公共祖先、235 二叉搜索树的最近公共祖先、105 从前序与中序遍历构造二叉树。</p><details><summary>面试官可能继续问什么？</summary><p>如果有十万次 LCA 查询，单次 DFS 是否合适？了解倍增预处理作为进阶方向。</p><p class="muted">先用自己的话回答，再回到本节的前提、不变量和边界检查论证。</p></details></div>
-<label class="learned"><input type="checkbox" data-progress="07-04">我能独立实现，并解释正确性与边界</label></section><nav class="chapter-pager" aria-label="相邻章节"><a href="../06-排序与二分查找/index.html"><small>上一章</small>← 排序与二分查找</a><a href="../08-堆与优先队列/index.html"><small>下一章</small>堆与优先队列 →</a></nav><footer>秋招算法学习讲义 · C++17<br>例题编号供检索；难度与覆盖范围按学习顺序组织。</footer></main><aside class="toc" aria-label="本页目录"><p class="rail-label">本章小节</p><a href="#s1"><span>01</span>遍历顺序与显式栈</a><a href="#s2"><span>02</span>后序汇总：平衡性与直径</a><a href="#s3"><span>03</span>BST 的全局范围约束</a><a href="#s4"><span>04</span>最近公共祖先与返回值语义</a></aside></div><div class="toast" role="status" aria-live="polite"></div></body></html>
+<div class="deep-block" id="s4-after-1"><h3>4.5 重建：前序消耗一个根，中序决定左右范围</h3><p>无重复值时，前序当前元素是子树根，中序中该值的位置m唯一确定左[l,m)、右[m+1,r)。维护一个共享前序游标，先构造左边再右边；中序位置用哈希索引，避免每次线性扫描，也避免对子数组进行反复拷贝。</p><p>前提不仅是长度相同，还要值集合相同、各自无重复，而且根必须落在当前中序范围。例如前序[1,2,3]、中序[3,1,2]集合相同却无法匹配递归范围，仍应拒绝。含重复值时不能用“值→唯一位置”的映射直接重建。</p></div><div class="deep-block" id="s4-after-2"><h3>4.6 前序[3,9,20,15,7]，中序[9,3,15,20,7]</h3><p class="table-hint">窄屏下可左右滑动表格，查看完整内容。</p><div class="study-table" tabindex="0" role="region" aria-label="4.6 前序[3,9,20,15,7]，中序[9,3,15,20,7]"><table><thead><tr><th scope="col">递归范围（中序）</th><th scope="col">当前前序根</th><th scope="col">中序位置</th><th scope="col">下一步</th></tr></thead><tbody><tr><td>[0,5)</td><td>3</td><td>1</td><td>左[0,1)，右[2,5)</td></tr><tr><td>[0,1)</td><td>9</td><td>0</td><td>两个孩子均为空</td></tr><tr><td>[2,5)</td><td>20</td><td>3</td><td>左[2,3)，右[4,5)</td></tr><tr><td>[2,3)</td><td>15</td><td>2</td><td>叶子</td></tr><tr><td>[4,5)</td><td>7</td><td>4</td><td>叶子</td></tr></tbody></table></div></div><div class="deep-block" id="s4-after-3"><h3>4.7 前序与中序重建：集中管理节点生命周期</h3><p>TreeArena使用deque尾部追加，已存在节点的引用/指针不会因追加失效；不暴露清空或擦除接口。arena不得复制或移动，必须比所有返回指针活得更久。不要改成随意增长的vector&lt;TreeNode&gt;，扩容可能让之前建立的孩子指针悬空。</p><p>平均时间O(n)、哈希最坏O(n²)，位置表O(n)、递归O(h)、新树O(n)。非法递归范围可能在部分节点已分配后抛异常；这些节点仍归arena持有，不泄漏，但本接口不承诺失败时回滚arena内存。长链同样存在递归栈风险。</p><div class="codebox"><div class="codebar"><span>C++17</span><div><a href="examples/detail-rebuild.cpp" download>下载 .cpp</a><button type="button" class="copy">复制代码</button></div></div><pre tabindex="0" aria-label="C++17 代码"><code><span class="keyword">struct</span> TreeNode {
+    <span class="keyword">int</span> val;
+    TreeNode *left = <span class="keyword">nullptr</span>, *right = <span class="keyword">nullptr</span>;
+    <span class="keyword">explicit</span> TreeNode(<span class="keyword">int</span> value) : val(value) {}
+};
+
+<span class="keyword">struct</span> TreeArena {
+<span class="keyword">private</span>:
+    deque&lt;TreeNode&gt; nodes;
+<span class="keyword">public</span>:
+    TreeArena() = default;
+    TreeArena(<span class="keyword">const</span> TreeArena&amp;) = delete;
+    TreeArena&amp; operator=(<span class="keyword">const</span> TreeArena&amp;) = delete;
+    TreeNode* make(<span class="keyword">int</span> value) {
+        nodes.emplace_back(value);
+        <span class="keyword">return</span> &amp;nodes.back();
+    }
+};
+
+TreeNode* rebuildPreIn(<span class="keyword">const</span> vector&lt;<span class="keyword">int</span>&gt;&amp; preorder, <span class="keyword">const</span> vector&lt;<span class="keyword">int</span>&gt;&amp; inorder,
+                       TreeArena&amp; arena) {
+    <span class="keyword">if</span> (preorder.size() != inorder.size() || preorder.size() &gt; <span class="number">100000</span>)
+        <span class="keyword">throw</span> invalid_argument(<span class="string">&quot;size mismatch or input too large&quot;</span>);
+    <span class="keyword">int</span> n = (<span class="keyword">int</span>)preorder.size();
+    unordered_map&lt;<span class="keyword">int</span>, <span class="keyword">int</span>&gt; position;
+    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; n; ++i)
+        <span class="keyword">if</span> (!position.emplace(inorder[i], i).second)
+            <span class="keyword">throw</span> invalid_argument(<span class="string">&quot;duplicate inorder key&quot;</span>);
+    unordered_set&lt;<span class="keyword">int</span>&gt; seen;
+    <span class="keyword">for</span> (<span class="keyword">int</span> value : preorder)
+        <span class="keyword">if</span> (!position.count(value) || !seen.insert(value).second)
+            <span class="keyword">throw</span> invalid_argument(<span class="string">&quot;different keys or duplicate preorder key&quot;</span>);
+    <span class="keyword">int</span> cursor = <span class="number">0</span>;
+    function&lt;TreeNode*(<span class="keyword">int</span>, <span class="keyword">int</span>)&gt; build = [&amp;](<span class="keyword">int</span> l, <span class="keyword">int</span> r) -&gt; TreeNode* {
+        <span class="keyword">if</span> (l == r) <span class="keyword">return</span> <span class="keyword">nullptr</span>;
+        <span class="keyword">if</span> (cursor == n) <span class="keyword">throw</span> invalid_argument(<span class="string">&quot;preorder exhausted&quot;</span>);
+        <span class="keyword">int</span> value = preorder[cursor++];
+        <span class="keyword">int</span> middle = position.at(value);
+        <span class="keyword">if</span> (middle &lt; l || middle &gt;= r) <span class="keyword">throw</span> invalid_argument(<span class="string">&quot;inconsistent traversals&quot;</span>);
+        TreeNode* root = arena.make(value);
+        root-&gt;left = build(l, middle);
+        root-&gt;right = build(middle + <span class="number">1</span>, r);
+        <span class="keyword">return</span> root;
+    };
+    TreeNode* root = build(<span class="number">0</span>, n);
+    <span class="keyword">if</span> (cursor != n) <span class="keyword">throw</span> invalid_argument(<span class="string">&quot;unused preorder entries&quot;</span>);
+    <span class="keyword">return</span> root;
+}</code></pre></div></div><div class="deep-block" id="s4-after-4"><h3>4.8 序列化必须保留结构，不只是遍历值</h3><p>只有值的前序序列[1,2]可能是1的左孩子2，也可能是右孩子2。把每个空孩子写成#，两棵树分别为1,2,#,#,#与1,#,2,#,#，才可唯一恢复。n个节点的完整前序空标记格式共有2n+1个token。</p><p>解码可用“待填槽位”预检查：初始一个根槽位；每个token消耗一个槽位；非空节点再增加两个孩子槽位。中途槽位不能已经为0却还有token，结束必须恰为0。这样可拒绝缺少空标记、额外尾部数据等格式错误。</p></div><div class="deep-block" id="s4-after-5"><h3>4.9 前序序列化与解码：空标记、验证与独立副本</h3><p>序列化输出vector&lt;string&gt;，可用逗号或换行连接成文本；调用解码前需按相同分隔约定切成token。整数解析采用stoi语义（允许符号及其接受的前导空白），序列化端输出规范十进制。#专用于空节点，空树编码为单个#。</p><p>解码在分配前验证全部token值和槽位结构，整数越界也会抛异常。新树节点全部从传入arena新建，值与结构保持，指针身份不与原树相同。时间O(n)（固定int长度）、token和解析缓存O(n)、递归O(h)、新树O(n)。它是普通树格式，不支持环或共享子节点图。</p><div class="codebox"><div class="codebar"><span>C++17</span><div><a href="examples/detail-codec.cpp" download>下载 .cpp</a><button type="button" class="copy">复制代码</button></div></div><pre tabindex="0" aria-label="C++17 代码"><code><span class="keyword">struct</span> TreeNode {
+    <span class="keyword">int</span> val;
+    TreeNode *left = <span class="keyword">nullptr</span>, *right = <span class="keyword">nullptr</span>;
+    <span class="keyword">explicit</span> TreeNode(<span class="keyword">int</span> value) : val(value) {}
+};
+
+<span class="keyword">struct</span> TreeArena {
+<span class="keyword">private</span>:
+    deque&lt;TreeNode&gt; nodes;
+<span class="keyword">public</span>:
+    TreeArena() = default;
+    TreeArena(<span class="keyword">const</span> TreeArena&amp;) = delete;
+    TreeArena&amp; operator=(<span class="keyword">const</span> TreeArena&amp;) = delete;
+    TreeNode* make(<span class="keyword">int</span> value) {
+        nodes.emplace_back(value);
+        <span class="keyword">return</span> &amp;nodes.back();
+    }
+};
+
+vector&lt;string&gt; serializeTree(TreeNode* root) {
+    vector&lt;string&gt; tokens;
+    function&lt;<span class="keyword">void</span>(TreeNode*)&gt; encode = [&amp;](TreeNode* node) {
+        <span class="keyword">if</span> (!node) { tokens.push_back(<span class="string">&quot;#&quot;</span>); <span class="keyword">return</span>; }
+        tokens.push_back(to_string(node-&gt;val));
+        encode(node-&gt;left);
+        encode(node-&gt;right);
+    };
+    encode(root);
+    <span class="keyword">return</span> tokens;
+}
+TreeNode* deserializeTree(<span class="keyword">const</span> vector&lt;string&gt;&amp; tokens, TreeArena&amp; arena) {
+    <span class="keyword">if</span> (tokens.empty() || tokens.size() &gt; <span class="number">200001</span>)
+        <span class="keyword">throw</span> invalid_argument(<span class="string">&quot;invalid token count&quot;</span>);
+    vector&lt;optional&lt;<span class="keyword">int</span>&gt;&gt; parsed;
+    <span class="keyword">long</span> <span class="keyword">long</span> slots = <span class="number">1</span>;
+    <span class="keyword">for</span> (<span class="keyword">const</span> string&amp; token : tokens) {
+        <span class="keyword">if</span> (slots == <span class="number">0</span>) <span class="keyword">throw</span> invalid_argument(<span class="string">&quot;trailing token&quot;</span>);
+        --slots;
+        <span class="keyword">if</span> (token == <span class="string">&quot;#&quot;</span>) parsed.push_back(nullopt);
+        <span class="keyword">else</span> {
+            size_t used = <span class="number">0</span>;
+            <span class="keyword">int</span> value = stoi(token, &amp;used);
+            <span class="keyword">if</span> (used != token.size()) <span class="keyword">throw</span> invalid_argument(<span class="string">&quot;bad integer token&quot;</span>);
+            parsed.push_back(value);
+            slots += <span class="number">2</span>;
+        }
+    }
+    <span class="keyword">if</span> (slots != <span class="number">0</span>) <span class="keyword">throw</span> invalid_argument(<span class="string">&quot;missing child token&quot;</span>);
+    size_t cursor = <span class="number">0</span>;
+    function&lt;TreeNode*()&gt; decode = [&amp;]() -&gt; TreeNode* {
+        optional&lt;<span class="keyword">int</span>&gt; value = parsed[cursor++];
+        <span class="keyword">if</span> (!value) <span class="keyword">return</span> <span class="keyword">nullptr</span>;
+        TreeNode* node = arena.make(*value);
+        node-&gt;left = decode();
+        node-&gt;right = decode();
+        <span class="keyword">return</span> node;
+    };
+    <span class="keyword">return</span> decode();
+}</code></pre></div></div><div class="practice"><h3>经典考点与练习</h3><p>练习：LeetCode 236 二叉树的最近公共祖先、235 二叉搜索树的最近公共祖先、105 从前序与中序遍历构造二叉树。</p><h3>面试追问：关键点完整解答</h3><dl class="answer-list"><div><dt>普通LCA为什么必须按指针而不是值比较？</dt><dd><p>两个不同节点可能有相同值。题目要找的是两个具体节点的共同祖先，仅按val会把其他同值节点误认成目标。指针身份代表对象，值只是对象的一个字段。</p></dd></div><div><dt>一个目标不存在时，基础LCA会返回什么？</dt><dd><p>它可能返回存在的那个目标，而不是nullptr，因为非空返回值没有区分“只找到一个”和“两个都找齐”。应采用命中位掩码或先检查目标存在性；本章checked接口找不齐返回nullptr。</p></dd></div><div><dt>p和q是同一个节点，需要特殊处理吗？</dt><dd><p>需要保证算法语义支持该情况。位掩码实现同一指针同时设置两个目标位，因此找到一次就命中两者；该节点就是自身与自身的最近公共祖先，若不在树里仍返回nullptr。</p></dd></div><div><dt>前序+中序有重复值时还保证唯一吗？</dt><dd><p>不保证。例如两个相同值无法唯一确定中序哪个位置是根，也无法区分单孩子方向。若要重建必须补充身份、结构标记或其他约束，不能简单把哈希表中的重复位置覆盖掉。</p></dd></div><div><dt>序列化为什么需要2n+1个token？</dt><dd><p>二叉树n个非空节点共有2n个孩子槽位，其中n-1个连接真实孩子，剩余n+1个为空。加上n个节点值，共2n+1个token；空树n=0时也有一个#。</p></dd></div><div><dt>重建返回的根指针谁负责释放？</dt><dd><p>本章分配型示例由TreeArena统一拥有。返回指针只是借用，在arena销毁后立即失效；不能单独delete。不同所有权模型可以实现同样算法，但必须统一，不能把arena节点当成独立new节点释放。</p></dd></div></dl></div>
+<label class="learned"><input type="checkbox" data-progress="07-04">我能独立实现，并解释正确性与边界</label></section><section class="chapter-review" id="chapter-review"><p class="eyebrow">PRACTICE / 把本章方法用起来</p><h2>综合例题与章末自测</h2><div class="deep-block" id="review-1"><h3>经典考点与递进练习路线</h3><p class="table-hint">窄屏下可左右滑动表格，查看完整内容。</p><div class="study-table" tabindex="0" role="region" aria-label="经典考点与递进练习路线"><table><thead><tr><th scope="col">阶段</th><th scope="col">经典题</th><th scope="col">必须能解释</th><th scope="col">边界输入</th></tr></thead><tbody><tr><td>遍历</td><td>94 中序；102 层序；199 右视图；111 最小深度</td><td>访问时机、栈帧、本层长度</td><td>空树、单链、仅右孩子</td></tr><tr><td>后序信息</td><td>110 平衡；543 直径；124 最大路径和</td><td>单位、单边返回与完整答案</td><td>单节点、全负、最优不经根</td></tr><tr><td>路径</td><td>112/113 路径总和；437 路径总和III</td><td>叶子要求、输出规模、前缀回溯</td><td>0值、负数、兄弟重复前缀</td></tr><tr><td>BST</td><td>98 验证；230 第K小；450 删除；173 迭代器；99 恢复</td><td>祖先范围、节点身份、均摊代价</td><td>INT_MIN、非法K、根删除、后继有右孩子</td></tr><tr><td>LCA</td><td>236 普通树；235 BST</td><td>身份、存在性、相同目标</td><td>缺失目标、重复值、祖先就是目标</td></tr><tr><td>重建与编码</td><td>105 前序中序；297 序列化</td><td>唯一性、空标记、所有权</td><td>重复键、非法token、空树、退化深树</td></tr></tbody></table></div></div><div class="deep-block" id="review-2"><h3>综合测试：不只比较值，还要比较结构与身份</h3><p>测试文件独立包含本章14份补充示例的实现，并统一使用一份TreeNode与TreeArena定义。通过500组小树，把直径与最大路径和同任意起点BFS枚举对照，把向下路径计数同逐起点DFS对照，把LCA同父节点链对照。</p><p>同时检查递归/迭代遍历一致、序列化解码后结构与值一致而地址不同、BST迭代与第K小、两值恢复、重建结果，以及依次摘除节点后无环、无共享孩子且BST有效。固定用例覆盖空树、全负单节点、INT_MIN、相同目标、缺失目标和非法输入。</p><p>测试使用小树避免系统递归栈风险，不能证明十万深度递归可运行，也不替代正确性证明。下载后可执行 g++ -std=c++17 -O2 -Wall -Wextra detail-tree-tests.cpp -o chapter07-tests，再运行程序；实际编译运行状态见全站验证记录。</p></div><div class="deep-block" id="review-3"><h3>完整结构与身份测试源码</h3><p>使用显式require而不是仅靠assert；arena在每轮测试结束时统一回收节点。摘除节点仍由原arena管理，测试不执行单节点delete。</p><div class="codebox"><div class="codebar"><span>C++17</span><div><a href="examples/detail-tree-tests.cpp" download>下载 .cpp</a><button type="button" class="copy">复制代码</button></div></div><pre tabindex="0" aria-label="C++17 代码"><code><span class="keyword">struct</span> TreeNode {
+    <span class="keyword">int</span> val;
+    TreeNode *left = <span class="keyword">nullptr</span>, *right = <span class="keyword">nullptr</span>;
+    <span class="keyword">explicit</span> TreeNode(<span class="keyword">int</span> value) : val(value) {}
+};
+
+<span class="keyword">struct</span> TreeArena {
+<span class="keyword">private</span>:
+    deque&lt;TreeNode&gt; nodes;
+<span class="keyword">public</span>:
+    TreeArena() = default;
+    TreeArena(<span class="keyword">const</span> TreeArena&amp;) = delete;
+    TreeArena&amp; operator=(<span class="keyword">const</span> TreeArena&amp;) = delete;
+    TreeNode* make(<span class="keyword">int</span> value) {
+        nodes.emplace_back(value);
+        <span class="keyword">return</span> &amp;nodes.back();
+    }
+};
+
+<span class="keyword">struct</span> Traversals {
+    vector&lt;<span class="keyword">int</span>&gt; preorder, inorder, postorder;
+};
+<span class="keyword">void</span> visitOrders(TreeNode* node, Traversals&amp; result) {
+    <span class="keyword">if</span> (!node) <span class="keyword">return</span>;
+    result.preorder.push_back(node-&gt;val);
+    visitOrders(node-&gt;left, result);
+    result.inorder.push_back(node-&gt;val);
+    visitOrders(node-&gt;right, result);
+    result.postorder.push_back(node-&gt;val);
+}
+Traversals recursiveOrders(TreeNode* root) {
+    Traversals result;
+    visitOrders(root, result);
+    <span class="keyword">return</span> result;
+}
+
+vector&lt;<span class="keyword">int</span>&gt; preorderIterative(TreeNode* root) {
+    vector&lt;<span class="keyword">int</span>&gt; result;
+    <span class="keyword">if</span> (!root) <span class="keyword">return</span> result;
+    vector&lt;TreeNode*&gt; pending{root};
+    <span class="keyword">while</span> (!pending.empty()) {
+        TreeNode* node = pending.back(); pending.pop_back();
+        result.push_back(node-&gt;val);
+        <span class="keyword">if</span> (node-&gt;right) pending.push_back(node-&gt;right);
+        <span class="keyword">if</span> (node-&gt;left) pending.push_back(node-&gt;left);
+    }
+    <span class="keyword">return</span> result;
+}
+vector&lt;<span class="keyword">int</span>&gt; postorderIterative(TreeNode* root) {
+    vector&lt;<span class="keyword">int</span>&gt; result;
+    <span class="keyword">if</span> (!root) <span class="keyword">return</span> result;
+    vector&lt;pair&lt;TreeNode*, <span class="keyword">bool</span>&gt;&gt; pending{{root, <span class="keyword">false</span>}};
+    <span class="keyword">while</span> (!pending.empty()) {
+        <span class="keyword">auto</span> [node, expanded] = pending.back(); pending.pop_back();
+        <span class="keyword">if</span> (expanded) { result.push_back(node-&gt;val); continue; }
+        pending.push_back({node, <span class="keyword">true</span>});
+        <span class="keyword">if</span> (node-&gt;right) pending.push_back({node-&gt;right, <span class="keyword">false</span>});
+        <span class="keyword">if</span> (node-&gt;left) pending.push_back({node-&gt;left, <span class="keyword">false</span>});
+    }
+    <span class="keyword">return</span> result;
+}
+
+vector&lt;vector&lt;<span class="keyword">int</span>&gt;&gt; levelOrder(TreeNode* root) {
+    vector&lt;vector&lt;<span class="keyword">int</span>&gt;&gt; result;
+    <span class="keyword">if</span> (!root) <span class="keyword">return</span> result;
+    queue&lt;TreeNode*&gt; pending;
+    pending.push(root);
+    <span class="keyword">while</span> (!pending.empty()) {
+        size_t width = pending.size();
+        vector&lt;<span class="keyword">int</span>&gt; level;
+        <span class="keyword">for</span> (size_t i = <span class="number">0</span>; i &lt; width; ++i) {
+            TreeNode* node = pending.front(); pending.pop();
+            level.push_back(node-&gt;val);
+            <span class="keyword">if</span> (node-&gt;left) pending.push(node-&gt;left);
+            <span class="keyword">if</span> (node-&gt;right) pending.push(node-&gt;right);
+        }
+        result.push_back(move(level));
+    }
+    <span class="keyword">return</span> result;
+}
+vector&lt;<span class="keyword">int</span>&gt; rightSideView(TreeNode* root) {
+    vector&lt;<span class="keyword">int</span>&gt; result;
+    <span class="keyword">for</span> (<span class="keyword">const</span> <span class="keyword">auto</span>&amp; level : levelOrder(root)) result.push_back(level.back());
+    <span class="keyword">return</span> result;
+}
+<span class="keyword">int</span> minimumDepth(TreeNode* root) {
+    <span class="keyword">if</span> (!root) <span class="keyword">return</span> <span class="number">0</span>;
+    queue&lt;TreeNode*&gt; pending;
+    pending.push(root);
+    <span class="keyword">int</span> depth = <span class="number">1</span>;
+    <span class="keyword">while</span> (!pending.empty()) {
+        size_t width = pending.size();
+        <span class="keyword">for</span> (size_t i = <span class="number">0</span>; i &lt; width; ++i) {
+            TreeNode* node = pending.front(); pending.pop();
+            <span class="keyword">if</span> (!node-&gt;left &amp;&amp; !node-&gt;right) <span class="keyword">return</span> depth;
+            <span class="keyword">if</span> (node-&gt;left) pending.push(node-&gt;left);
+            <span class="keyword">if</span> (node-&gt;right) pending.push(node-&gt;right);
+        }
+        ++depth;
+    }
+    <span class="keyword">return</span> <span class="number">0</span>;
+}
+
+<span class="keyword">struct</span> TreeSummary {
+    <span class="keyword">int</span> height = <span class="number">0</span>;
+    <span class="keyword">int</span> nodes = <span class="number">0</span>;
+    <span class="keyword">int</span> diameter = <span class="number">0</span>;
+    <span class="keyword">bool</span> balanced = <span class="keyword">true</span>;
+};
+TreeSummary summarizeTree(TreeNode* root) {
+    <span class="keyword">if</span> (!root) <span class="keyword">return</span> {};
+    TreeSummary left = summarizeTree(root-&gt;left);
+    TreeSummary right = summarizeTree(root-&gt;right);
+    TreeSummary result;
+    result.height = <span class="number">1</span> + max(left.height, right.height);
+    result.nodes = <span class="number">1</span> + left.nodes + right.nodes;
+    result.balanced = left.balanced &amp;&amp; right.balanced &amp;&amp;
+                      abs(left.height - right.height) &lt;= <span class="number">1</span>;
+    result.diameter = max({left.diameter, right.diameter, left.height + right.height});
+    <span class="keyword">return</span> result;
+}
+
+optional&lt;<span class="keyword">long</span> <span class="keyword">long</span>&gt; maximumPathSum(TreeNode* root) {
+    <span class="keyword">if</span> (!root) <span class="keyword">return</span> nullopt;
+    <span class="keyword">long</span> <span class="keyword">long</span> best = LLONG_MIN;
+    function&lt;<span class="keyword">long</span> <span class="keyword">long</span>(TreeNode*)&gt; gain = [&amp;](TreeNode* node) -&gt; <span class="keyword">long</span> <span class="keyword">long</span> {
+        <span class="keyword">if</span> (!node) <span class="keyword">return</span> <span class="number">0</span>;
+        <span class="keyword">long</span> <span class="keyword">long</span> left = max(<span class="number">0LL</span>, gain(node-&gt;left));
+        <span class="keyword">long</span> <span class="keyword">long</span> right = max(<span class="number">0LL</span>, gain(node-&gt;right));
+        best = max(best, (<span class="keyword">long</span> <span class="keyword">long</span>)node-&gt;val + left + right);
+        <span class="keyword">return</span> (<span class="keyword">long</span> <span class="keyword">long</span>)node-&gt;val + max(left, right);
+    };
+    gain(root);
+    <span class="keyword">return</span> best;
+}
+
+vector&lt;vector&lt;<span class="keyword">int</span>&gt;&gt; rootLeafPaths(TreeNode* root, <span class="keyword">long</span> <span class="keyword">long</span> target) {
+    vector&lt;vector&lt;<span class="keyword">int</span>&gt;&gt; answer;
+    vector&lt;<span class="keyword">int</span>&gt; path;
+    function&lt;<span class="keyword">void</span>(TreeNode*, <span class="keyword">long</span> <span class="keyword">long</span>)&gt; dfs = [&amp;](TreeNode* node, <span class="keyword">long</span> <span class="keyword">long</span> sum) {
+        <span class="keyword">if</span> (!node) <span class="keyword">return</span>;
+        path.push_back(node-&gt;val);
+        sum += node-&gt;val;
+        <span class="keyword">if</span> (!node-&gt;left &amp;&amp; !node-&gt;right) {
+            <span class="keyword">if</span> (sum == target) answer.push_back(path);
+        } <span class="keyword">else</span> {
+            dfs(node-&gt;left, sum);
+            dfs(node-&gt;right, sum);
+        }
+        path.pop_back();
+    };
+    dfs(root, <span class="number">0</span>);
+    <span class="keyword">return</span> answer;
+}
+
+<span class="keyword">long</span> <span class="keyword">long</span> countDownwardPaths(TreeNode* root, <span class="keyword">long</span> <span class="keyword">long</span> target) {
+    unordered_map&lt;<span class="keyword">long</span> <span class="keyword">long</span>, <span class="keyword">long</span> <span class="keyword">long</span>&gt; frequency;
+    frequency[<span class="number">0</span>] = <span class="number">1</span>;
+    function&lt;<span class="keyword">long</span> <span class="keyword">long</span>(TreeNode*, <span class="keyword">long</span> <span class="keyword">long</span>)&gt; dfs =
+        [&amp;](TreeNode* node, <span class="keyword">long</span> <span class="keyword">long</span> prefix) -&gt; <span class="keyword">long</span> <span class="keyword">long</span> {
+            <span class="keyword">if</span> (!node) <span class="keyword">return</span> <span class="number">0</span>;
+            prefix += node-&gt;val;
+            <span class="keyword">long</span> <span class="keyword">long</span> result = <span class="number">0</span>;
+            <span class="keyword">auto</span> found = frequency.find(prefix - target);
+            <span class="keyword">if</span> (found != frequency.end()) result += found-&gt;second;
+            ++frequency[prefix];
+            result += dfs(node-&gt;left, prefix);
+            result += dfs(node-&gt;right, prefix);
+            <span class="keyword">auto</span> current = frequency.find(prefix);
+            <span class="keyword">if</span> (--current-&gt;second == <span class="number">0</span>) frequency.erase(current);
+            <span class="keyword">return</span> result;
+        };
+    <span class="keyword">return</span> dfs(root, <span class="number">0</span>);
+}
+
+<span class="keyword">bool</span> validBSTIterative(TreeNode* root) {
+    vector&lt;TreeNode*&gt; pending;
+    TreeNode* current = root;
+    optional&lt;<span class="keyword">int</span>&gt; previous;
+    <span class="keyword">while</span> (current || !pending.empty()) {
+        <span class="keyword">while</span> (current) { pending.push_back(current); current = current-&gt;left; }
+        current = pending.back(); pending.pop_back();
+        <span class="keyword">if</span> (previous &amp;&amp; current-&gt;val &lt;= *previous) <span class="keyword">return</span> <span class="keyword">false</span>;
+        previous = current-&gt;val;
+        current = current-&gt;right;
+    }
+    <span class="keyword">return</span> <span class="keyword">true</span>;
+}
+TreeNode* searchBST(TreeNode* root, <span class="keyword">int</span> key) {
+    <span class="keyword">while</span> (root &amp;&amp; root-&gt;val != key)
+        root = key &lt; root-&gt;val ? root-&gt;left : root-&gt;right;
+    <span class="keyword">return</span> root;
+}
+optional&lt;<span class="keyword">int</span>&gt; kthSmallestBST(TreeNode* root, <span class="keyword">int</span> k) {
+    <span class="keyword">if</span> (k &lt;= <span class="number">0</span>) <span class="keyword">return</span> nullopt;
+    vector&lt;TreeNode*&gt; pending;
+    TreeNode* current = root;
+    <span class="keyword">while</span> (current || !pending.empty()) {
+        <span class="keyword">while</span> (current) { pending.push_back(current); current = current-&gt;left; }
+        current = pending.back(); pending.pop_back();
+        <span class="keyword">if</span> (--k == <span class="number">0</span>) <span class="keyword">return</span> current-&gt;val;
+        current = current-&gt;right;
+    }
+    <span class="keyword">return</span> nullopt;
+}
+
+<span class="keyword">bool</span> insertBST(TreeNode*&amp; root, TreeNode* fresh) {
+    <span class="keyword">if</span> (!fresh || fresh-&gt;left || fresh-&gt;right)
+        <span class="keyword">throw</span> invalid_argument(<span class="string">&quot;detached leaf required&quot;</span>);
+    TreeNode** link = &amp;root;
+    <span class="keyword">while</span> (*link) {
+        <span class="keyword">if</span> ((*link)-&gt;val == fresh-&gt;val) <span class="keyword">return</span> <span class="keyword">false</span>;
+        link = fresh-&gt;val &lt; (*link)-&gt;val ? &amp;(*link)-&gt;left : &amp;(*link)-&gt;right;
+    }
+    *link = fresh;
+    <span class="keyword">return</span> <span class="keyword">true</span>;
+}
+TreeNode* detachBST(TreeNode*&amp; root, <span class="keyword">int</span> key) {
+    TreeNode** link = &amp;root;
+    <span class="keyword">while</span> (*link &amp;&amp; (*link)-&gt;val != key)
+        link = key &lt; (*link)-&gt;val ? &amp;(*link)-&gt;left : &amp;(*link)-&gt;right;
+    <span class="keyword">if</span> (!*link) <span class="keyword">return</span> <span class="keyword">nullptr</span>;
+    TreeNode* victim = *link;
+    <span class="keyword">if</span> (!victim-&gt;left) *link = victim-&gt;right;
+    <span class="keyword">else</span> <span class="keyword">if</span> (!victim-&gt;right) *link = victim-&gt;left;
+    <span class="keyword">else</span> {
+        TreeNode** nextLink = &amp;victim-&gt;right;
+        <span class="keyword">while</span> ((*nextLink)-&gt;left) nextLink = &amp;(*nextLink)-&gt;left;
+        TreeNode* successor = *nextLink;
+        *nextLink = successor-&gt;right;
+        successor-&gt;left = victim-&gt;left;
+        successor-&gt;right = victim-&gt;right;
+        *link = successor;
+    }
+    victim-&gt;left = victim-&gt;right = <span class="keyword">nullptr</span>;
+    <span class="keyword">return</span> victim;
+}
+
+<span class="keyword">class</span> BSTIterator {
+    vector&lt;TreeNode*&gt; pending;
+    <span class="keyword">void</span> pushLeft(TreeNode* node) {
+        <span class="keyword">while</span> (node) { pending.push_back(node); node = node-&gt;left; }
+    }
+<span class="keyword">public</span>:
+    <span class="keyword">explicit</span> BSTIterator(TreeNode* root) { pushLeft(root); }
+    <span class="keyword">bool</span> hasNext() <span class="keyword">const</span> { <span class="keyword">return</span> !pending.empty(); }
+    <span class="keyword">int</span> next() {
+        <span class="keyword">if</span> (pending.empty()) <span class="keyword">throw</span> out_of_range(<span class="string">&quot;iterator exhausted&quot;</span>);
+        TreeNode* node = pending.back(); pending.pop_back();
+        pushLeft(node-&gt;right);
+        <span class="keyword">return</span> node-&gt;val;
+    }
+};
+
+<span class="keyword">bool</span> recoverSwappedBST(TreeNode* root) {
+    vector&lt;TreeNode*&gt; pending;
+    TreeNode *current = root, *previous = <span class="keyword">nullptr</span>;
+    TreeNode *first = <span class="keyword">nullptr</span>, *second = <span class="keyword">nullptr</span>;
+    <span class="keyword">while</span> (current || !pending.empty()) {
+        <span class="keyword">while</span> (current) { pending.push_back(current); current = current-&gt;left; }
+        current = pending.back(); pending.pop_back();
+        <span class="keyword">if</span> (previous &amp;&amp; previous-&gt;val &gt; current-&gt;val) {
+            <span class="keyword">if</span> (!first) first = previous;
+            second = current;
+        }
+        previous = current;
+        current = current-&gt;right;
+    }
+    <span class="keyword">if</span> (!first) <span class="keyword">return</span> <span class="keyword">false</span>;
+    swap(first-&gt;val, second-&gt;val);
+    <span class="keyword">return</span> <span class="keyword">true</span>;
+}
+
+<span class="keyword">struct</span> LcaReport {
+    unsigned mask = <span class="number">0</span>; <span class="comment">// bit 0: p found, bit 1: q found</span>
+    TreeNode* ancestor = <span class="keyword">nullptr</span>;
+};
+LcaReport reportLca(TreeNode* node, TreeNode* p, TreeNode* q) {
+    <span class="keyword">if</span> (!node) <span class="keyword">return</span> {};
+    LcaReport left = reportLca(node-&gt;left, p, q);
+    LcaReport right = reportLca(node-&gt;right, p, q);
+    unsigned own = (node == p ? 1U : 0U) | (node == q ? 2U : 0U);
+    unsigned mask = left.mask | right.mask | own;
+    TreeNode* ancestor = left.ancestor ? left.ancestor : right.ancestor;
+    <span class="keyword">if</span> (!ancestor &amp;&amp; mask == 3U) ancestor = node;
+    <span class="keyword">return</span> {mask, ancestor};
+}
+TreeNode* lcaChecked(TreeNode* root, TreeNode* p, TreeNode* q) {
+    <span class="keyword">if</span> (!p || !q) <span class="keyword">return</span> <span class="keyword">nullptr</span>;
+    LcaReport result = reportLca(root, p, q);
+    <span class="keyword">return</span> result.mask == 3U ? result.ancestor : <span class="keyword">nullptr</span>;
+}
+TreeNode* lcaBSTChecked(TreeNode* root, TreeNode* p, TreeNode* q) {
+    <span class="keyword">if</span> (!p || !q) <span class="keyword">return</span> <span class="keyword">nullptr</span>;
+    <span class="keyword">auto</span> containsIdentity = [&amp;](TreeNode* target) {
+        TreeNode* node = root;
+        <span class="keyword">while</span> (node &amp;&amp; node-&gt;val != target-&gt;val)
+            node = target-&gt;val &lt; node-&gt;val ? node-&gt;left : node-&gt;right;
+        <span class="keyword">return</span> node == target;
+    };
+    <span class="keyword">if</span> (!containsIdentity(p) || !containsIdentity(q)) <span class="keyword">return</span> <span class="keyword">nullptr</span>;
+    <span class="keyword">int</span> low = min(p-&gt;val, q-&gt;val), high = max(p-&gt;val, q-&gt;val);
+    <span class="keyword">while</span> (root) {
+        <span class="keyword">if</span> (root-&gt;val &lt; low) root = root-&gt;right;
+        <span class="keyword">else</span> <span class="keyword">if</span> (root-&gt;val &gt; high) root = root-&gt;left;
+        <span class="keyword">else</span> <span class="keyword">return</span> root;
+    }
+    <span class="keyword">return</span> <span class="keyword">nullptr</span>;
+}
+
+TreeNode* rebuildPreIn(<span class="keyword">const</span> vector&lt;<span class="keyword">int</span>&gt;&amp; preorder, <span class="keyword">const</span> vector&lt;<span class="keyword">int</span>&gt;&amp; inorder,
+                       TreeArena&amp; arena) {
+    <span class="keyword">if</span> (preorder.size() != inorder.size() || preorder.size() &gt; <span class="number">100000</span>)
+        <span class="keyword">throw</span> invalid_argument(<span class="string">&quot;size mismatch or input too large&quot;</span>);
+    <span class="keyword">int</span> n = (<span class="keyword">int</span>)preorder.size();
+    unordered_map&lt;<span class="keyword">int</span>, <span class="keyword">int</span>&gt; position;
+    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; n; ++i)
+        <span class="keyword">if</span> (!position.emplace(inorder[i], i).second)
+            <span class="keyword">throw</span> invalid_argument(<span class="string">&quot;duplicate inorder key&quot;</span>);
+    unordered_set&lt;<span class="keyword">int</span>&gt; seen;
+    <span class="keyword">for</span> (<span class="keyword">int</span> value : preorder)
+        <span class="keyword">if</span> (!position.count(value) || !seen.insert(value).second)
+            <span class="keyword">throw</span> invalid_argument(<span class="string">&quot;different keys or duplicate preorder key&quot;</span>);
+    <span class="keyword">int</span> cursor = <span class="number">0</span>;
+    function&lt;TreeNode*(<span class="keyword">int</span>, <span class="keyword">int</span>)&gt; build = [&amp;](<span class="keyword">int</span> l, <span class="keyword">int</span> r) -&gt; TreeNode* {
+        <span class="keyword">if</span> (l == r) <span class="keyword">return</span> <span class="keyword">nullptr</span>;
+        <span class="keyword">if</span> (cursor == n) <span class="keyword">throw</span> invalid_argument(<span class="string">&quot;preorder exhausted&quot;</span>);
+        <span class="keyword">int</span> value = preorder[cursor++];
+        <span class="keyword">int</span> middle = position.at(value);
+        <span class="keyword">if</span> (middle &lt; l || middle &gt;= r) <span class="keyword">throw</span> invalid_argument(<span class="string">&quot;inconsistent traversals&quot;</span>);
+        TreeNode* root = arena.make(value);
+        root-&gt;left = build(l, middle);
+        root-&gt;right = build(middle + <span class="number">1</span>, r);
+        <span class="keyword">return</span> root;
+    };
+    TreeNode* root = build(<span class="number">0</span>, n);
+    <span class="keyword">if</span> (cursor != n) <span class="keyword">throw</span> invalid_argument(<span class="string">&quot;unused preorder entries&quot;</span>);
+    <span class="keyword">return</span> root;
+}
+
+vector&lt;string&gt; serializeTree(TreeNode* root) {
+    vector&lt;string&gt; tokens;
+    function&lt;<span class="keyword">void</span>(TreeNode*)&gt; encode = [&amp;](TreeNode* node) {
+        <span class="keyword">if</span> (!node) { tokens.push_back(<span class="string">&quot;#&quot;</span>); <span class="keyword">return</span>; }
+        tokens.push_back(to_string(node-&gt;val));
+        encode(node-&gt;left);
+        encode(node-&gt;right);
+    };
+    encode(root);
+    <span class="keyword">return</span> tokens;
+}
+TreeNode* deserializeTree(<span class="keyword">const</span> vector&lt;string&gt;&amp; tokens, TreeArena&amp; arena) {
+    <span class="keyword">if</span> (tokens.empty() || tokens.size() &gt; <span class="number">200001</span>)
+        <span class="keyword">throw</span> invalid_argument(<span class="string">&quot;invalid token count&quot;</span>);
+    vector&lt;optional&lt;<span class="keyword">int</span>&gt;&gt; parsed;
+    <span class="keyword">long</span> <span class="keyword">long</span> slots = <span class="number">1</span>;
+    <span class="keyword">for</span> (<span class="keyword">const</span> string&amp; token : tokens) {
+        <span class="keyword">if</span> (slots == <span class="number">0</span>) <span class="keyword">throw</span> invalid_argument(<span class="string">&quot;trailing token&quot;</span>);
+        --slots;
+        <span class="keyword">if</span> (token == <span class="string">&quot;#&quot;</span>) parsed.push_back(nullopt);
+        <span class="keyword">else</span> {
+            size_t used = <span class="number">0</span>;
+            <span class="keyword">int</span> value = stoi(token, &amp;used);
+            <span class="keyword">if</span> (used != token.size()) <span class="keyword">throw</span> invalid_argument(<span class="string">&quot;bad integer token&quot;</span>);
+            parsed.push_back(value);
+            slots += <span class="number">2</span>;
+        }
+    }
+    <span class="keyword">if</span> (slots != <span class="number">0</span>) <span class="keyword">throw</span> invalid_argument(<span class="string">&quot;missing child token&quot;</span>);
+    size_t cursor = <span class="number">0</span>;
+    function&lt;TreeNode*()&gt; decode = [&amp;]() -&gt; TreeNode* {
+        optional&lt;<span class="keyword">int</span>&gt; value = parsed[cursor++];
+        <span class="keyword">if</span> (!value) <span class="keyword">return</span> <span class="keyword">nullptr</span>;
+        TreeNode* node = arena.make(*value);
+        node-&gt;left = decode();
+        node-&gt;right = decode();
+        <span class="keyword">return</span> node;
+    };
+    <span class="keyword">return</span> decode();
+}
+
+<span class="keyword">void</span> require(<span class="keyword">bool</span> ok, <span class="keyword">const</span> string&amp; message) {
+    <span class="keyword">if</span> (!ok) <span class="keyword">throw</span> runtime_error(message);
+}
+vector&lt;TreeNode*&gt; checkedNodes(TreeNode* root) {
+    vector&lt;TreeNode*&gt; result;
+    <span class="keyword">if</span> (!root) <span class="keyword">return</span> result;
+    unordered_set&lt;TreeNode*&gt; seen;
+    vector&lt;TreeNode*&gt; pending{root};
+    <span class="keyword">while</span> (!pending.empty()) {
+        TreeNode* node = pending.back(); pending.pop_back();
+        require(seen.insert(node).second, <span class="string">&quot;cycle or shared child&quot;</span>);
+        result.push_back(node);
+        <span class="keyword">if</span> (node-&gt;right) pending.push_back(node-&gt;right);
+        <span class="keyword">if</span> (node-&gt;left) pending.push_back(node-&gt;left);
+    }
+    <span class="keyword">return</span> result;
+}
+<span class="keyword">int</span> bruteMinimumDepth(TreeNode* node) {
+    <span class="keyword">if</span> (!node) <span class="keyword">return</span> <span class="number">0</span>;
+    <span class="keyword">if</span> (!node-&gt;left) <span class="keyword">return</span> <span class="number">1</span> + bruteMinimumDepth(node-&gt;right);
+    <span class="keyword">if</span> (!node-&gt;right) <span class="keyword">return</span> <span class="number">1</span> + bruteMinimumDepth(node-&gt;left);
+    <span class="keyword">return</span> <span class="number">1</span> + min(bruteMinimumDepth(node-&gt;left), bruteMinimumDepth(node-&gt;right));
+}
+<span class="keyword">long</span> <span class="keyword">long</span> bruteDownward(TreeNode* root, <span class="keyword">long</span> <span class="keyword">long</span> target) {
+    function&lt;<span class="keyword">long</span> <span class="keyword">long</span>(TreeNode*, <span class="keyword">long</span> <span class="keyword">long</span>)&gt; from =
+        [&amp;](TreeNode* node, <span class="keyword">long</span> <span class="keyword">long</span> sum) -&gt; <span class="keyword">long</span> <span class="keyword">long</span> {
+            <span class="keyword">if</span> (!node) <span class="keyword">return</span> <span class="number">0</span>;
+            sum += node-&gt;val;
+            <span class="keyword">return</span> (sum == target) + from(node-&gt;left, sum) + from(node-&gt;right, sum);
+        };
+    <span class="keyword">long</span> <span class="keyword">long</span> count = <span class="number">0</span>;
+    <span class="keyword">for</span> (TreeNode* node : checkedNodes(root)) count += from(node, <span class="number">0</span>);
+    <span class="keyword">return</span> count;
+}
+pair&lt;<span class="keyword">int</span>, optional&lt;<span class="keyword">long</span> <span class="keyword">long</span>&gt;&gt; bruteAllPaths(TreeNode* root) {
+    <span class="keyword">auto</span> nodes = checkedNodes(root);
+    <span class="keyword">if</span> (nodes.empty()) <span class="keyword">return</span> {<span class="number">0</span>, nullopt};
+    unordered_map&lt;TreeNode*, <span class="keyword">int</span>&gt; id;
+    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; (<span class="keyword">int</span>)nodes.size(); ++i) id[nodes[i]] = i;
+    vector&lt;vector&lt;<span class="keyword">int</span>&gt;&gt; edges(nodes.size());
+    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; (<span class="keyword">int</span>)nodes.size(); ++i) {
+        <span class="keyword">for</span> (TreeNode* child : {nodes[i]-&gt;left, nodes[i]-&gt;right}) {
+            <span class="keyword">if</span> (!child) continue;
+            <span class="keyword">int</span> j = id.at(child);
+            edges[i].push_back(j); edges[j].push_back(i);
+        }
+    }
+    <span class="keyword">int</span> diameter = <span class="number">0</span>;
+    <span class="keyword">long</span> <span class="keyword">long</span> best = LLONG_MIN;
+    <span class="keyword">for</span> (<span class="keyword">int</span> start = <span class="number">0</span>; start &lt; (<span class="keyword">int</span>)nodes.size(); ++start) {
+        vector&lt;<span class="keyword">int</span>&gt; distance(nodes.size(), -<span class="number">1</span>);
+        vector&lt;<span class="keyword">long</span> <span class="keyword">long</span>&gt; sum(nodes.size());
+        queue&lt;<span class="keyword">int</span>&gt; pending;
+        distance[start] = <span class="number">0</span>; sum[start] = nodes[start]-&gt;val; pending.push(start);
+        <span class="keyword">while</span> (!pending.empty()) {
+            <span class="keyword">int</span> u = pending.front(); pending.pop();
+            diameter = max(diameter, distance[u]);
+            best = max(best, sum[u]);
+            <span class="keyword">for</span> (<span class="keyword">int</span> v : edges[u]) <span class="keyword">if</span> (distance[v] == -<span class="number">1</span>) {
+                distance[v] = distance[u] + <span class="number">1</span>;
+                sum[v] = sum[u] + nodes[v]-&gt;val;
+                pending.push(v);
+            }
+        }
+    }
+    <span class="keyword">return</span> {diameter, best};
+}
+TreeNode* bruteLca(TreeNode* root, TreeNode* p, TreeNode* q) {
+    <span class="keyword">if</span> (!root || !p || !q) <span class="keyword">return</span> <span class="keyword">nullptr</span>;
+    unordered_map&lt;TreeNode*, TreeNode*&gt; parent;
+    parent[root] = <span class="keyword">nullptr</span>;
+    <span class="keyword">for</span> (TreeNode* node : checkedNodes(root)) {
+        <span class="keyword">if</span> (node-&gt;left) parent[node-&gt;left] = node;
+        <span class="keyword">if</span> (node-&gt;right) parent[node-&gt;right] = node;
+    }
+    <span class="keyword">if</span> (!parent.count(p) || !parent.count(q)) <span class="keyword">return</span> <span class="keyword">nullptr</span>;
+    unordered_set&lt;TreeNode*&gt; ancestors;
+    <span class="keyword">for</span> (; p; p = parent.at(p)) ancestors.insert(p);
+    <span class="keyword">for</span> (; q; q = parent.at(q)) <span class="keyword">if</span> (ancestors.count(q)) <span class="keyword">return</span> q;
+    <span class="keyword">return</span> <span class="keyword">nullptr</span>;
+}
+<span class="keyword">int</span> main() {
+    require(serializeTree(<span class="keyword">nullptr</span>) == vector&lt;string&gt;{<span class="string">&quot;#&quot;</span>}, <span class="string">&quot;empty serialization&quot;</span>);
+    require(!maximumPathSum(<span class="keyword">nullptr</span>), <span class="string">&quot;empty path&quot;</span>);
+    require(countDownwardPaths(<span class="keyword">nullptr</span>, <span class="number">0</span>) == <span class="number">0</span>, <span class="string">&quot;empty path count&quot;</span>);
+    TreeNode one(<span class="number">1</span>), a(-<span class="number">1</span>), b(-<span class="number">1</span>);
+    one.left = &amp;a; one.right = &amp;b;
+    require(countDownwardPaths(&amp;one, <span class="number">0</span>) == <span class="number">2</span>, <span class="string">&quot;branch rollback&quot;</span>);
+    require(countDownwardPaths(&amp;one, <span class="number">0</span>) == <span class="number">2</span>, <span class="string">&quot;repeated call reset&quot;</span>);
+    TreeNode negative(-<span class="number">7</span>);
+    require(maximumPathSum(&amp;negative) == optional&lt;<span class="keyword">long</span> <span class="keyword">long</span>&gt;{-<span class="number">7</span>}, <span class="string">&quot;negative path&quot;</span>);
+    TreeNode boundary(INT_MIN);
+    require(validBSTIterative(&amp;boundary), <span class="string">&quot;minimum int BST key&quot;</span>);
+    <span class="keyword">for</span> (<span class="keyword">const</span> <span class="keyword">auto</span>&amp; bad : vector&lt;vector&lt;string&gt;&gt;{{}, {<span class="string">&quot;1&quot;</span>,<span class="string">&quot;#&quot;</span>}, {<span class="string">&quot;#&quot;</span>,<span class="string">&quot;#&quot;</span>}, {<span class="string">&quot;x&quot;</span>,<span class="string">&quot;#&quot;</span>,<span class="string">&quot;#&quot;</span>}}) {
+        TreeArena owner;
+        <span class="keyword">bool</span> rejected = <span class="keyword">false</span>;
+        try { (<span class="keyword">void</span>)deserializeTree(bad, owner); }
+        catch (<span class="keyword">const</span> exception&amp;) { rejected = <span class="keyword">true</span>; }
+        require(rejected, <span class="string">&quot;invalid serialization&quot;</span>);
+    }
+    {
+        TreeArena owner;
+        <span class="keyword">bool</span> rejected = <span class="keyword">false</span>;
+        try { (<span class="keyword">void</span>)rebuildPreIn({<span class="number">1</span>,<span class="number">2</span>,<span class="number">3</span>}, {<span class="number">3</span>,<span class="number">1</span>,<span class="number">2</span>}, owner); }
+        catch (<span class="keyword">const</span> invalid_argument&amp;) { rejected = <span class="keyword">true</span>; }
+        require(rejected, <span class="string">&quot;inconsistent traversal ranges&quot;</span>);
+    }
+    mt19937 rng(<span class="number">20260920</span>);
+    uniform_int_distribution&lt;<span class="keyword">int</span>&gt; length(<span class="number">0</span>, <span class="number">12</span>), value(-<span class="number">5</span>, <span class="number">5</span>);
+    <span class="keyword">for</span> (<span class="keyword">int</span> run = <span class="number">0</span>; run &lt; <span class="number">500</span>; ++run) {
+        TreeArena owner;
+        TreeNode* root = <span class="keyword">nullptr</span>;
+        <span class="keyword">int</span> n = length(rng);
+        vector&lt;pair&lt;TreeNode*, <span class="keyword">bool</span>&gt;&gt; slots;
+        <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; n; ++i) {
+            TreeNode* fresh = owner.make(value(rng));
+            <span class="keyword">if</span> (!root) root = fresh;
+            <span class="keyword">else</span> {
+                size_t pick = rng() % slots.size();
+                <span class="keyword">auto</span> [parent, right] = slots[pick];
+                <span class="keyword">if</span> (right) parent-&gt;right = fresh; <span class="keyword">else</span> parent-&gt;left = fresh;
+                slots[pick] = slots.back(); slots.pop_back();
+            }
+            slots.push_back({fresh, <span class="keyword">false</span>});
+            slots.push_back({fresh, <span class="keyword">true</span>});
+        }
+        <span class="keyword">auto</span> nodes = checkedNodes(root);
+        <span class="keyword">auto</span> orders = recursiveOrders(root);
+        require(preorderIterative(root) == orders.preorder, <span class="string">&quot;preorder&quot;</span>);
+        require(postorderIterative(root) == orders.postorder, <span class="string">&quot;postorder&quot;</span>);
+        <span class="keyword">auto</span> levels = levelOrder(root);
+        TreeSummary summary = summarizeTree(root);
+        require(summary.nodes == n &amp;&amp; summary.height == (<span class="keyword">int</span>)levels.size(), <span class="string">&quot;summary&quot;</span>);
+        <span class="keyword">auto</span> allPaths = bruteAllPaths(root);
+        require(summary.diameter == allPaths.first, <span class="string">&quot;diameter&quot;</span>);
+        require(maximumPathSum(root) == allPaths.second, <span class="string">&quot;maximum path&quot;</span>);
+        require(minimumDepth(root) == bruteMinimumDepth(root), <span class="string">&quot;minimum depth&quot;</span>);
+        <span class="keyword">long</span> <span class="keyword">long</span> target = value(rng);
+        require(countDownwardPaths(root, target) == bruteDownward(root, target), <span class="string">&quot;path count&quot;</span>);
+        vector&lt;vector&lt;<span class="keyword">int</span>&gt;&gt; expectedPaths;
+        vector&lt;<span class="keyword">int</span>&gt; path;
+        function&lt;<span class="keyword">void</span>(TreeNode*)&gt; enumerate = [&amp;](TreeNode* node) {
+            <span class="keyword">if</span> (!node) <span class="keyword">return</span>;
+            path.push_back(node-&gt;val);
+            <span class="keyword">if</span> (!node-&gt;left &amp;&amp; !node-&gt;right &amp;&amp;
+                accumulate(path.begin(), path.end(), <span class="number">0LL</span>) == target)
+                expectedPaths.push_back(path);
+            enumerate(node-&gt;left); enumerate(node-&gt;right);
+            path.pop_back();
+        };
+        enumerate(root);
+        require(rootLeafPaths(root, target) == expectedPaths, <span class="string">&quot;root leaf paths&quot;</span>);
+        TreeArena cloneOwner;
+        <span class="keyword">auto</span> tokens = serializeTree(root);
+        TreeNode* clone = deserializeTree(tokens, cloneOwner);
+        require(serializeTree(clone) == tokens, <span class="string">&quot;serialization round trip&quot;</span>);
+        unordered_set&lt;TreeNode*&gt; original(nodes.begin(), nodes.end());
+        <span class="keyword">for</span> (TreeNode* copy : checkedNodes(clone))
+            require(!original.count(copy), <span class="string">&quot;clone identity must differ&quot;</span>);
+        TreeNode outsider(root ? root-&gt;val : <span class="number">0</span>);
+        require(lcaChecked(root, root, &amp;outsider) == <span class="keyword">nullptr</span>, <span class="string">&quot;missing target identity&quot;</span>);
+        <span class="keyword">if</span> (!nodes.empty()) {
+            TreeNode* p = nodes[rng() % nodes.size()];
+            TreeNode* q = nodes[rng() % nodes.size()];
+            require(lcaChecked(root, p, q) == bruteLca(root, p, q), <span class="string">&quot;LCA&quot;</span>);
+            require(lcaChecked(root, p, p) == p, <span class="string">&quot;same LCA target&quot;</span>);
+        }
+        TreeArena bstOwner;
+        TreeNode* bst = <span class="keyword">nullptr</span>;
+        vector&lt;<span class="keyword">int</span>&gt; keys(n);
+        iota(keys.begin(), keys.end(), -<span class="number">6</span>);
+        shuffle(keys.begin(), keys.end(), rng);
+        <span class="keyword">for</span> (<span class="keyword">int</span> key : keys) require(insertBST(bst, bstOwner.make(key)), <span class="string">&quot;insert&quot;</span>);
+        require(validBSTIterative(bst), <span class="string">&quot;inserted BST valid&quot;</span>);
+        sort(keys.begin(), keys.end());
+        BSTIterator iterator(bst);
+        vector&lt;<span class="keyword">int</span>&gt; iterated;
+        <span class="keyword">while</span> (iterator.hasNext()) iterated.push_back(iterator.next());
+        require(iterated == keys, <span class="string">&quot;iterator order&quot;</span>);
+        require(!kthSmallestBST(bst, <span class="number">0</span>) &amp;&amp; !kthSmallestBST(bst, n + <span class="number">1</span>), <span class="string">&quot;invalid rank&quot;</span>);
+        <span class="keyword">for</span> (<span class="keyword">int</span> k = <span class="number">1</span>; k &lt;= n; ++k)
+            require(kthSmallestBST(bst, k) == optional&lt;<span class="keyword">int</span>&gt;{keys[k - <span class="number">1</span>]}, <span class="string">&quot;kth rank&quot;</span>);
+        <span class="keyword">auto</span> bstOrders = recursiveOrders(bst);
+        TreeArena rebuiltOwner;
+        TreeNode* rebuilt = rebuildPreIn(bstOrders.preorder, bstOrders.inorder, rebuiltOwner);
+        require(serializeTree(rebuilt) == serializeTree(bst), <span class="string">&quot;reconstruction&quot;</span>);
+        <span class="keyword">if</span> (n &gt;= <span class="number">2</span>) {
+            TreeNode* p = searchBST(bst, keys.front());
+            TreeNode* q = searchBST(bst, keys.back());
+            require(lcaBSTChecked(bst, p, q) == bruteLca(bst, p, q), <span class="string">&quot;BST LCA&quot;</span>);
+            swap(p-&gt;val, q-&gt;val);
+            require(recoverSwappedBST(bst) &amp;&amp; validBSTIterative(bst), <span class="string">&quot;recover&quot;</span>);
+        }
+        shuffle(keys.begin(), keys.end(), rng);
+        <span class="keyword">for</span> (<span class="keyword">int</span> key : keys) {
+            TreeNode* expected = searchBST(bst, key);
+            TreeNode* detached = detachBST(bst, key);
+            require(detached == expected &amp;&amp; detached &amp;&amp;
+                    !detached-&gt;left &amp;&amp; !detached-&gt;right, <span class="string">&quot;detach identity&quot;</span>);
+            (<span class="keyword">void</span>)checkedNodes(bst);
+            require(validBSTIterative(bst) &amp;&amp; !searchBST(bst, key), <span class="string">&quot;delete structure&quot;</span>);
+        }
+        require(bst == <span class="keyword">nullptr</span>, <span class="string">&quot;delete all&quot;</span>);
+    }
+    cout &lt;&lt; <span class="string">&quot;All chapter 7 checks passed&quot;</span> &lt;&lt; endl;
+}</code></pre></div></div><div class="deep-block" id="review-4"><h3>章末自测：八个关键问题及答案</h3><dl class="answer-list"><div><dt>1. 根只有一个左叶子，最小深度和直径分别是多少？</dt><dd><p>按本章约定最小深度为2个节点，直径为1条边。空的右孩子不是可选的根叶路径，不能用min(1,0)+1得到1。</p></dd></div><div><dt>2. 左高3、右高2，当前高度和经过当前点的直径是多少？</dt><dd><p>当前高度为1+max(3,2)=4，经过当前点的直径为3+2=5条边。整棵子树直径还要与左右子树内部直径比较，不能只看当前候选。</p></dd></div><div><dt>3. 全负树的最大路径为什么不是空路径0？</dt><dd><p>定义要求至少一个节点。负的孩子收益可以舍弃，但当前节点仍需参加候选；最终选择最大负值节点，空树则通过optional单独表达无路径。</p></dd></div><div><dt>4. 根1、左右孩子都是-1，向下和为0的路径有几条？</dt><dd><p>只有根到左孩子、根到右孩子两条。左右孩子不构成合法向下祖先链，进入右分支前必须撤销左分支前缀，否则会多计。</p></dd></div><div><dt>5. 根10、左5、5右12是不是BST？</dt><dd><p>不是。12必须同时满足大于5和小于祖先10，即落在(5,10)，但实际越界。检查直接父子关系会漏掉这个反例。</p></dd></div><div><dt>6. p是树内节点，q是树外但同值节点，LCA该怎么返回？</dt><dd><p>带存在性验证的接口应返回nullptr。节点相等必须比较身份而非val，基础简洁LCA若缺少存在性契约可能只返回p，不能据此宣称找到了两个目标的祖先。</p></dd></div><div><dt>7. 前序1,2与前序1,2,#,#,#的信息量有什么不同？</dt><dd><p>前者可能是左孩子2或右孩子2，结构不唯一；后者带空标记，唯一表示根1的左孩子2、右孩子为空。空标记是结构的一部分，不应任意丢弃。</p></dd></div><div><dt>8. arena生成的节点从BST摘除后，能直接delete吗？</dt><dd><p>不能。arena仍是节点所有者，摘除只改变可达关系；节点存储最终随arena统一回收。手动delete一个deque中的对象地址不匹配分配方式，会造成错误。</p></dd></div></dl></div></section><nav class="chapter-pager" aria-label="相邻章节"><a href="../06-排序与二分查找/index.html"><small>上一章</small>← 排序与二分查找</a><a href="../08-堆与优先队列/index.html"><small>下一章</small>堆与优先队列 →</a></nav><footer>秋招算法学习讲义 · C++17<br>例题编号供检索；难度与覆盖范围按学习顺序组织。</footer></main><aside class="toc" aria-label="本页目录"><p class="rail-label">本章小节</p><a href="#s1"><span>01</span>遍历顺序与显式栈</a><a href="#s2"><span>02</span>后序汇总：平衡性与直径</a><a href="#s3"><span>03</span>BST 的全局范围约束</a><a href="#s4"><span>04</span>最近公共祖先与返回值语义</a><a href="#chapter-review"><span>练</span>综合例题与自测答案</a></aside></div><div class="toast" role="status" aria-live="polite"></div></body></html>

@@ -1,0 +1,908 @@
+{
+  "intro": [
+    {
+      "type": "text",
+      "title": "本章目标：把树题拆成一份可组合的子树报告",
+      "paragraphs": [
+        "树题不是只会前中后序就够了。真正的难点是给递归返回值一个精确含义：它是高度、单边路径收益、整棵子树的最优值，还是目标节点是否存在？一个函数可以返回供父节点连接的信息，同时更新完整答案，但这两类信息不能混用。",
+        "本章沿用四个主小节，补齐遍历、路径与汇总、BST、LCA及重建序列化。默认输入是一棵有限、无环、无共享孩子的二叉树；若指针形成图，直接递归可能死循环或重复计数，需要访问标记等图算法。"
+      ]
+    },
+    {
+      "type": "table",
+      "title": "先看题目依赖什么信息，再选遍历",
+      "columns": [
+        "需求",
+        "访问时机 / 状态",
+        "典型返回值",
+        "经典题"
+      ],
+      "rows": [
+        [
+          "复制、根到叶路径",
+          "前序向下传参",
+          "是否找到 / 路径缓冲",
+          "112、113"
+        ],
+        [
+          "BST排序与第K小",
+          "中序左根右",
+          "上一键值 / 已访问数",
+          "98、230"
+        ],
+        [
+          "高度、平衡、直径、路径和",
+          "后序汇总孩子",
+          "高度 / 单边最大收益",
+          "104、110、543、124"
+        ],
+        [
+          "逐层统计与最短根叶距离",
+          "BFS按层",
+          "当前层 / 队列",
+          "102、111、199"
+        ],
+        [
+          "普通树LCA",
+          "后序合并目标信息",
+          "命中状态 / 分叉节点",
+          "236"
+        ],
+        [
+          "重建与解码",
+          "根决定左右递归范围",
+          "新子树根指针",
+          "105、297"
+        ]
+      ]
+    },
+    {
+      "type": "text",
+      "title": "统一约定：单位、规模与所有权",
+      "paragraphs": [
+        "n为节点数，h为最长根到叶路径的节点数，w为最大层宽。空树高度0、叶子高度1；直径按边数，单节点直径0。节点深度可按边数从根的0开始，与这里高度的节点数单位要分开。所有路径和示例约定n<=100000、|节点值|<=10^9、|目标和|<=10^14，运算使用long long。",
+        "示例中的TreeNode*默认是非拥有指针：遍历、查询不释放节点，删除示例只把节点从树中摘除。分配型示例使用TreeArena统一拥有节点，arena销毁时回收，使用者不能对节点单独delete。不同下载文件各自包含类型定义，应分别编译，不可直接拼接重名结构。",
+        "递归额外空间O(h)不等于O(logn)。十万节点链状树可能栈溢出；这里的规模说明用于数值上界，不承诺系统调用栈可承受同样深度。极深输入应使用显式栈或迭代实现。"
+      ]
+    }
+  ],
+  "sections": {
+    "1": {
+      "before": [
+        {
+          "type": "text",
+          "title": "1.1 三个访问时机与递归调用帧",
+          "paragraphs": [
+            "在函数进入节点时处理是前序；左子树返回后处理是中序；两个孩子都返回后处理是后序。遍历次序取决于依赖，而不是任意背三个字：若父节点需要孩子高度，必须等孩子结果；若孩子需要父路径信息，则在下降前准备。",
+            "递归栈保存的不只是节点，还有执行位置、局部变量和返回地址。转成迭代时也要保存等价信息。仅存一个节点指针，不一定能判断后序节点是否已经完成两侧子树。"
+          ]
+        },
+        {
+          "type": "table",
+          "title": "1.2 同一棵树的四种访问结果",
+          "columns": [
+            "树或顺序",
+            "结果",
+            "访问依据"
+          ],
+          "rows": [
+            [
+              "结构",
+              "根4；左2（孩子1、3）；右6（左孩子5）",
+              "右6没有右孩子"
+            ],
+            [
+              "前序",
+              "4,2,1,3,6,5",
+              "先父节点，再左右孩子"
+            ],
+            [
+              "中序",
+              "1,2,3,4,5,6",
+              "左子树之后访问根"
+            ],
+            [
+              "后序",
+              "1,3,2,5,6,4",
+              "两个孩子之后访问根"
+            ],
+            [
+              "层序",
+              "[4] / [2,6] / [1,3,5]",
+              "按离根距离分层"
+            ]
+          ]
+        },
+        {
+          "type": "text",
+          "title": "1.3 迭代中序的栈里究竟存什么",
+          "paragraphs": [
+            "基础代码沿左链入栈时，这些祖先都还没被访问；最上面的节点已没有更左的未访问后代，所以可以弹出访问，再转入它的右子树。栈顶不是“下一个随意取出的点”，而是一个尚未完成中序流程的上下文。",
+            "每个节点只入栈、出栈一次，时间O(n)。栈中祖先链长度最多h，辅助空间O(h)，输出数组另占O(n)。若把输出也算进去，就不能把总空间写成O(h)。"
+          ]
+        },
+        {
+          "type": "code",
+          "title": "1.4 递归三序遍历：只改变记录位置",
+          "file": "detail-recursive-traversals.cpp",
+          "code": "struct TreeNode {\n    int val;\n    TreeNode *left = nullptr, *right = nullptr;\n    explicit TreeNode(int value) : val(value) {}\n};\n\nstruct Traversals {\n    vector<int> preorder, inorder, postorder;\n};\nvoid visitOrders(TreeNode* node, Traversals& result) {\n    if (!node) return;\n    result.preorder.push_back(node->val);\n    visitOrders(node->left, result);\n    result.inorder.push_back(node->val);\n    visitOrders(node->right, result);\n    result.postorder.push_back(node->val);\n}\nTraversals recursiveOrders(TreeNode* root) {\n    Traversals result;\n    visitOrders(root, result);\n    return result;\n}",
+          "paragraphs": [
+            "这是对照学习工具，一次DFS生成三个输出，时间O(n)，调用栈O(h)，三个输出合计仍O(n)。真正只需要一种遍历时，只保留对应输出。所有状态在一次调用内创建，不会被上一棵树的结果污染。"
+          ]
+        }
+      ],
+      "after": [
+        {
+          "type": "code",
+          "title": "1.5 迭代前序和后序：显式保存待处理阶段",
+          "file": "detail-iterative-traversals.cpp",
+          "code": "struct TreeNode {\n    int val;\n    TreeNode *left = nullptr, *right = nullptr;\n    explicit TreeNode(int value) : val(value) {}\n};\n\nvector<int> preorderIterative(TreeNode* root) {\n    vector<int> result;\n    if (!root) return result;\n    vector<TreeNode*> pending{root};\n    while (!pending.empty()) {\n        TreeNode* node = pending.back(); pending.pop_back();\n        result.push_back(node->val);\n        if (node->right) pending.push_back(node->right);\n        if (node->left) pending.push_back(node->left);\n    }\n    return result;\n}\nvector<int> postorderIterative(TreeNode* root) {\n    vector<int> result;\n    if (!root) return result;\n    vector<pair<TreeNode*, bool>> pending{{root, false}};\n    while (!pending.empty()) {\n        auto [node, expanded] = pending.back(); pending.pop_back();\n        if (expanded) { result.push_back(node->val); continue; }\n        pending.push_back({node, true});\n        if (node->right) pending.push_back({node->right, false});\n        if (node->left) pending.push_back({node->left, false});\n    }\n    return result;\n}",
+          "paragraphs": [
+            "后序首次遇到节点，先把“回到这里输出”的帧压入，再压右孩子、左孩子。LIFO保证左右处理完后才回到已展开帧。时间O(n)，辅助栈O(h)，输出O(n)。双栈法也可实现后序，但第二个栈保存全部节点时辅助空间为O(n)。"
+          ]
+        },
+        {
+          "type": "code",
+          "title": "1.6 层序、右视图与最小深度",
+          "file": "detail-level-order.cpp",
+          "code": "struct TreeNode {\n    int val;\n    TreeNode *left = nullptr, *right = nullptr;\n    explicit TreeNode(int value) : val(value) {}\n};\n\nvector<vector<int>> levelOrder(TreeNode* root) {\n    vector<vector<int>> result;\n    if (!root) return result;\n    queue<TreeNode*> pending;\n    pending.push(root);\n    while (!pending.empty()) {\n        size_t width = pending.size();\n        vector<int> level;\n        for (size_t i = 0; i < width; ++i) {\n            TreeNode* node = pending.front(); pending.pop();\n            level.push_back(node->val);\n            if (node->left) pending.push(node->left);\n            if (node->right) pending.push(node->right);\n        }\n        result.push_back(move(level));\n    }\n    return result;\n}\nvector<int> rightSideView(TreeNode* root) {\n    vector<int> result;\n    for (const auto& level : levelOrder(root)) result.push_back(level.back());\n    return result;\n}\nint minimumDepth(TreeNode* root) {\n    if (!root) return 0;\n    queue<TreeNode*> pending;\n    pending.push(root);\n    int depth = 1;\n    while (!pending.empty()) {\n        size_t width = pending.size();\n        for (size_t i = 0; i < width; ++i) {\n            TreeNode* node = pending.front(); pending.pop();\n            if (!node->left && !node->right) return depth;\n            if (node->left) pending.push(node->left);\n            if (node->right) pending.push(node->right);\n        }\n        ++depth;\n    }\n    return 0;\n}",
+          "paragraphs": [
+            "一层开始时保存队列长度，避免把新入队的下一层算进当前层。BFS首次遇到叶子的深度最小，因为节点按深度非递减出队。只有一个孩子的节点不是叶子。",
+            "层序时间O(n)、队列O(w)、输出O(n)。本例右视图为复用逻辑，先生成所有层，故总额外存储O(n)；只需右视图时可直接在BFS每层最后一次出队时记录，将辅助空间降为O(w)。最小深度最坏O(n)、队列O(w)。"
+          ]
+        },
+        {
+          "type": "text",
+          "title": "1.7 深度、最小深度与Morris遍历的边界",
+          "paragraphs": [
+            "根深度是从根走来的距离，子树高度是从当前点往下能走多远。用节点数定义最大深度时可写1+max(左高,右高)；最小深度不能无条件写1+min，因为不存在的孩子返回0会被错误当作一条到叶路径。根只有左叶子时最小深度是2，不是1。",
+            "Morris遍历通过临时建立前驱到祖先的线索，以O(1)辅助空间完成某些遍历，但会临时修改树。必须恢复每条线索；提前return或异常中断可能留下环。共享读树、并发访问或不允许修改输入时不应直接使用。本章主要模板采用不改结构的栈/队列方法。"
+          ]
+        }
+      ],
+      "answers": [
+        {
+          "question": "迭代前序为什么先压右孩子？",
+          "answer": [
+            "栈是后进先出，后压左孩子会先访问左子树，从而得到根左右。若先压左再压右，得到的是根右左。压栈顺序和访问顺序相反。"
+          ]
+        },
+        {
+          "question": "后序显式栈中的expanded标记表示什么？",
+          "answer": [
+            "它表示这个节点的孩子任务已经在栈中安排，回到该帧时应访问节点而不再展开。先压回访帧再压孩子，保证回访发生在两侧任务完成之后。"
+          ]
+        },
+        {
+          "question": "BFS为什么不能在for条件里反复用queue.size()？",
+          "answer": [
+            "处理本层时会弹出当前层、加入下一层，队列大小不断变化。必须先固定本层节点数，否则可能过早结束或混入下一层，破坏层号和右视图结果。"
+          ]
+        },
+        {
+          "question": "最小深度为什么不是1+min(leftDepth,rightDepth)？",
+          "answer": [
+            "若一侧为空，它不是一条到叶的有效路径；返回0会错误优于真实孩子。递归写法要单独处理缺失孩子，或者用BFS在第一次遇到真正叶子时返回。"
+          ]
+        },
+        {
+          "question": "树遍历的空间为什么不总是O(logn)？",
+          "answer": [
+            "普通二叉树可能退化为链，h=n，DFS栈最坏线性。BFS存储取决于层宽w，完全二叉树底层可能有约n/2个节点。输出数组还需另算。"
+          ]
+        },
+        {
+          "question": "前序和中序为什么能重建树，只有前序为什么不行？",
+          "answer": [
+            "无重复值时前序首项确定根，中序根位置划出左右子树，再递归决定结构；只有前序无法区分“根的左孩子”和“根的右孩子”，除非补上空节点标记或其他结构约束。"
+          ]
+        }
+      ]
+    },
+    "2": {
+      "before": [
+        {
+          "type": "text",
+          "title": "2.1 后序报告：先写空树值，再写合并公式",
+          "paragraphs": [
+            "空树高度0、节点数0、直径0、平衡为true，是一份可以直接参与合并的子树报告。非空节点高度为1+max(左高,右高)，节点数为左数+右数+1，平衡要求左右都平衡且高度差至多1。",
+            "直径是一条任意两节点之间的简单路径，按边计。经过当前节点的候选直径是左高+右高；整棵子树的直径还要与左右子树内部的直径取max。不一定经过整棵树的根。"
+          ]
+        },
+        {
+          "type": "table",
+          "title": "2.2 向上返回与整棵子树答案是两种信息",
+          "columns": [
+            "问题",
+            "向父节点可连接的信息",
+            "当前节点可形成的完整候选",
+            "空树约定"
+          ],
+          "rows": [
+            [
+              "高度",
+              "1+max(lh,rh)",
+              "就是当前高度",
+              "0"
+            ],
+            [
+              "平衡",
+              "高度或失败标记",
+              "两侧平衡且差<=1",
+              "平衡，高度0"
+            ],
+            [
+              "直径（边）",
+              "单边高度",
+              "lh+rh",
+              "直径0"
+            ],
+            [
+              "最大路径和",
+              "节点值+max(0,左收益,右收益)",
+              "节点值+max(0,左收益)+max(0,右收益)",
+              "没有非空路径"
+            ],
+            [
+              "节点总数",
+              "左数+右数+1",
+              "整棵子树的节点数",
+              "0"
+            ]
+          ]
+        },
+        {
+          "type": "code",
+          "title": "2.3 一次后序同时计算高度、节点数、平衡与直径",
+          "file": "detail-tree-summary.cpp",
+          "code": "struct TreeNode {\n    int val;\n    TreeNode *left = nullptr, *right = nullptr;\n    explicit TreeNode(int value) : val(value) {}\n};\n\nstruct TreeSummary {\n    int height = 0;\n    int nodes = 0;\n    int diameter = 0;\n    bool balanced = true;\n};\nTreeSummary summarizeTree(TreeNode* root) {\n    if (!root) return {};\n    TreeSummary left = summarizeTree(root->left);\n    TreeSummary right = summarizeTree(root->right);\n    TreeSummary result;\n    result.height = 1 + max(left.height, right.height);\n    result.nodes = 1 + left.nodes + right.nodes;\n    result.balanced = left.balanced && right.balanced &&\n                      abs(left.height - right.height) <= 1;\n    result.diameter = max({left.diameter, right.diameter, left.height + right.height});\n    return result;\n}",
+          "paragraphs": [
+            "约定n<=100000，计数与高度可用int。每个节点只合并一次，时间O(n)、栈O(h)，不依赖全局变量。基础平衡示例用-1提前传递失败更简洁；这里为教学展示多个信息如何一次合并，所以即使已发现不平衡仍会求其他统计。"
+          ]
+        },
+        {
+          "type": "text",
+          "title": "2.4 朴素重复求高度为什么可能二次",
+          "paragraphs": [
+            "若每个节点先分别调用height求左右高度，再递归检查孩子，同一后代会被祖先反复扫描。链状树在不做有效短路的情况下累计n+(n-1)+…+1=O(n²)。后序把高度作为返回值传回，每个节点只处理常数次。",
+            "不要为了降低参数数量，把所有信息都塞入持久成员变量却忘记重置。把结果作为返回结构，或在公开入口里初始化局部答案再调用辅助DFS，更适合反复调用测试。"
+          ]
+        }
+      ],
+      "after": [
+        {
+          "type": "code",
+          "title": "2.5 最大路径和：完整路径可拐弯，返回值只能单边",
+          "file": "detail-maximum-path.cpp",
+          "code": "struct TreeNode {\n    int val;\n    TreeNode *left = nullptr, *right = nullptr;\n    explicit TreeNode(int value) : val(value) {}\n};\n\noptional<long long> maximumPathSum(TreeNode* root) {\n    if (!root) return nullopt;\n    long long best = LLONG_MIN;\n    function<long long(TreeNode*)> gain = [&](TreeNode* node) -> long long {\n        if (!node) return 0;\n        long long left = max(0LL, gain(node->left));\n        long long right = max(0LL, gain(node->right));\n        best = max(best, (long long)node->val + left + right);\n        return (long long)node->val + max(left, right);\n    };\n    gain(root);\n    return best;\n}",
+          "paragraphs": [
+            "一条简单路径在当前节点可以连接左右两支，但若把这条双分支路径再接父节点，就会出现三叉，不再是一条路径。因此更新best可以两边都取，向上只能返回一边。负收益不取，但当前节点必须取，以保证路径非空。",
+            "全负树必须返回最大那个节点，例如[-3,-2,-5]返回-2；best不能初始化为0。空树用nullopt表示不存在非空路径。时间O(n)、栈O(h)，路径和满足本章long long数值约束。"
+          ]
+        },
+        {
+          "type": "table",
+          "title": "2.6 路径题先确认起止规则",
+          "columns": [
+            "题意",
+            "起点 / 终点",
+            "能否拐弯",
+            "典型做法"
+          ],
+          "rows": [
+            [
+              "根到叶是否存在指定和",
+              "固定根 / 任一叶子",
+              "只能向下",
+              "DFS剩余和或累计和"
+            ],
+            [
+              "输出所有根叶路径",
+              "固定根 / 任一叶子",
+              "只能向下",
+              "路径缓冲+回溯"
+            ],
+            [
+              "任意向下路径计数",
+              "任一祖先 / 任一后代",
+              "不能从左跨到右",
+              "前缀和+当前祖先频次"
+            ],
+            [
+              "最大路径和",
+              "任意两节点",
+              "可在一个最高节点处拐弯",
+              "单边收益+全局最优"
+            ]
+          ]
+        },
+        {
+          "type": "code",
+          "title": "2.7 根到叶路径总和：只有叶子才能完成答案",
+          "file": "detail-root-leaf-paths.cpp",
+          "code": "struct TreeNode {\n    int val;\n    TreeNode *left = nullptr, *right = nullptr;\n    explicit TreeNode(int value) : val(value) {}\n};\n\nvector<vector<int>> rootLeafPaths(TreeNode* root, long long target) {\n    vector<vector<int>> answer;\n    vector<int> path;\n    function<void(TreeNode*, long long)> dfs = [&](TreeNode* node, long long sum) {\n        if (!node) return;\n        path.push_back(node->val);\n        sum += node->val;\n        if (!node->left && !node->right) {\n            if (sum == target) answer.push_back(path);\n        } else {\n            dfs(node->left, sum);\n            dfs(node->right, sum);\n        }\n        path.pop_back();\n    };\n    dfs(root, 0);\n    return answer;\n}",
+          "paragraphs": [
+            "内部节点累计和恰好等于目标也不能提前当作根叶路径。允许负数时，累计和大于目标不能直接剪枝，后续负值可能使和下降。path.push_back与pop_back配对，左右分支共享缓冲却不会混入对方节点。",
+            "时间O(n+输出路径总长度)，辅助路径与栈O(h)，答案存储单独按输出体积计算。这里收集所有路径；只问存在性时可返回bool并在命中叶子后短路。"
+          ]
+        },
+        {
+          "type": "text",
+          "title": "2.8 树上前缀和：哈希表只包含当前祖先链",
+          "paragraphs": [
+            "设当前根到节点累计和为S，若某个祖先之前的累计和为S-target，两者之间的向下路径和即为target。进入节点时先查询，再将S频次加一；递归左右孩子后把S频次减一。初始频次0为1，代表根之前的空前缀。",
+            "数组前缀表越走越长，因为所有过去位置都可能作为起点；树上兄弟节点不是祖先关系，不能共享已经退出分支的前缀。这里回溯不仅是节省空间，更是正确性的必要条件。"
+          ]
+        },
+        {
+          "type": "code",
+          "title": "2.9 任意起点的向下路径数量：退出时撤销前缀",
+          "file": "detail-downward-path-count.cpp",
+          "code": "struct TreeNode {\n    int val;\n    TreeNode *left = nullptr, *right = nullptr;\n    explicit TreeNode(int value) : val(value) {}\n};\n\nlong long countDownwardPaths(TreeNode* root, long long target) {\n    unordered_map<long long, long long> frequency;\n    frequency[0] = 1;\n    function<long long(TreeNode*, long long)> dfs =\n        [&](TreeNode* node, long long prefix) -> long long {\n            if (!node) return 0;\n            prefix += node->val;\n            long long result = 0;\n            auto found = frequency.find(prefix - target);\n            if (found != frequency.end()) result += found->second;\n            ++frequency[prefix];\n            result += dfs(node->left, prefix);\n            result += dfs(node->right, prefix);\n            auto current = frequency.find(prefix);\n            if (--current->second == 0) frequency.erase(current);\n            return result;\n        };\n    return dfs(root, 0);\n}",
+          "paragraphs": [
+            "使用本章路径和范围，prefix-target也在long long内。每个节点平均常数次哈希操作，平均O(n)，冲突极端时最坏可达O(n²)；递归栈和当前路径前缀条目O(h)。回溯后重新find迭代器，避免使用递归插入可能触发rehash前保存的旧迭代器。"
+          ]
+        },
+        {
+          "type": "table",
+          "title": "2.10 根1、左右孩子均-1，target=0",
+          "columns": [
+            "事件",
+            "当前前缀",
+            "查询贡献",
+            "回溯后的状态"
+          ],
+          "rows": [
+            [
+              "进入根1",
+              "1",
+              "freq[1]=0",
+              "加入前缀1"
+            ],
+            [
+              "进入左-1",
+              "0",
+              "freq[0]=1，计[根,左]",
+              "左退出后freq[0]恢复1"
+            ],
+            [
+              "进入右-1",
+              "0",
+              "freq[0]=1，计[根,右]",
+              "右退出后freq[0]恢复1"
+            ],
+            [
+              "根退出",
+              "1",
+              "总答案2",
+              "移除前缀1，只留初始0"
+            ]
+          ]
+        }
+      ],
+      "answers": [
+        {
+          "question": "直径为什么是左高+右高，不需要再加1？",
+          "answer": [
+            "本章子树高度按节点数计，而直径按边数计。左子树到当前点的连接路径恰有leftHeight条边，右侧同理，加起来就是左右端点之间的边数；若题目按节点数定义路径长度，则再加1。"
+          ]
+        },
+        {
+          "question": "最大路径和为什么更新答案取两边，返回时只取一边？",
+          "answer": [
+            "完整路径可以以当前点为最高点连接左右两支，但父节点接入时只能连接一条向下链。把两支一起向上传递会造成当前节点连接三条边，不是一条简单路径。"
+          ]
+        },
+        {
+          "question": "负收益可以丢掉，为什么全负树答案不能是0？",
+          "answer": [
+            "题目要求非空路径，至少选一个节点。只允许丢掉孩子贡献，当前节点值仍参与候选；best初始化为负无穷，最终会选全树最大负值，而不是一条不存在的空路径。"
+          ]
+        },
+        {
+          "question": "根到叶路径中，和达到target就可以返回成功吗？",
+          "answer": [
+            "只有当前节点同时没有左右孩子时才符合终点条件。内部节点和恰好匹配不够；若允许负数，后续和还可能增减，所以也不能仅凭当前和超目标就剪枝。"
+          ]
+        },
+        {
+          "question": "树上前缀频次为什么一定要回溯？",
+          "answer": [
+            "遍历右子树时，左子树中的节点不是它的祖先。若残留左分支前缀，会把跨兄弟的状态差当作合法向下路径。撤销保证哈希表始终只描述当前祖先链。"
+          ]
+        },
+        {
+          "question": "为什么退出前缀后还要删除计数为0的键？",
+          "answer": [
+            "减到0已足以避免答案多计，但保留零频次键会让表随全树不同前缀增长到O(n)。删除后活跃条目与当前路径相关，条目空间保持O(h)；查询使用find也避免插入无用的补数键。"
+          ]
+        }
+      ]
+    },
+    "3": {
+      "before": [
+        {
+          "type": "text",
+          "title": "3.1 BST约束覆盖整棵子树，不是只看两条边",
+          "paragraphs": [
+            "默认所有键互异。每个节点的左子树所有键都小于它，右子树所有键都大于它。基础范围验证从(LLONG_MIN,LLONG_MAX)开始，左递归收紧上界、右递归收紧下界，因此祖先约束不会在下一层丢失。",
+            "节点值是int，所以long long极值可作为严格外部边界。如果节点本身改成long long，不能再用同类型极值当排除边界，应改成optional边界或显式开闭标记。"
+          ]
+        },
+        {
+          "type": "table",
+          "title": "3.2 根10、左孩子5、5的右孩子12",
+          "columns": [
+            "节点",
+            "继承的合法区间",
+            "局部父子比较",
+            "全局结论"
+          ],
+          "rows": [
+            [
+              "10",
+              "(-∞,+∞)",
+              "无父节点",
+              "合法"
+            ],
+            [
+              "5",
+              "(-∞,10)",
+              "5<10",
+              "合法"
+            ],
+            [
+              "12",
+              "(5,10)",
+              "12>5看似合理",
+              "12>=10，违反祖先约束"
+            ]
+          ]
+        },
+        {
+          "type": "text",
+          "title": "3.3 中序严格递增与全局合法范围等价",
+          "paragraphs": [
+            "严格BST中，左子树的所有值小于根、右侧所有值大于根，递归中序得到严格递增序列。反过来，对二叉树中序序列逐个检查严格递增，也能保证左、根、右的全局次序。用一个prev指针或optional保存前项即可，不能把prev值初始化成INT_MIN并立即比较。",
+            "若允许重复且只放右子树，中序仅非递减是必要但不充分：根2的左孩子2也会生成非递减序列，却违反重复放右的规则。需要把约束改成左侧上界不含根、右侧下界包含根，并明确每个边界的开闭性。"
+          ]
+        },
+        {
+          "type": "code",
+          "title": "3.4 迭代验证、搜索与第K小",
+          "file": "detail-bst-queries.cpp",
+          "code": "struct TreeNode {\n    int val;\n    TreeNode *left = nullptr, *right = nullptr;\n    explicit TreeNode(int value) : val(value) {}\n};\n\nbool validBSTIterative(TreeNode* root) {\n    vector<TreeNode*> pending;\n    TreeNode* current = root;\n    optional<int> previous;\n    while (current || !pending.empty()) {\n        while (current) { pending.push_back(current); current = current->left; }\n        current = pending.back(); pending.pop_back();\n        if (previous && current->val <= *previous) return false;\n        previous = current->val;\n        current = current->right;\n    }\n    return true;\n}\nTreeNode* searchBST(TreeNode* root, int key) {\n    while (root && root->val != key)\n        root = key < root->val ? root->left : root->right;\n    return root;\n}\noptional<int> kthSmallestBST(TreeNode* root, int k) {\n    if (k <= 0) return nullopt;\n    vector<TreeNode*> pending;\n    TreeNode* current = root;\n    while (current || !pending.empty()) {\n        while (current) { pending.push_back(current); current = current->left; }\n        current = pending.back(); pending.pop_back();\n        if (--k == 0) return current->val;\n        current = current->right;\n    }\n    return nullopt;\n}",
+          "paragraphs": [
+            "验证时间O(n)、栈O(h)。搜索依赖输入已是严格BST，时间O(h)、空间O(1)。第K小中序提前结束，时间O(h+k)（合法K时）、栈O(h)，非法K返回nullopt。前项用optional，节点INT_MIN可以合法成为最小键。"
+          ]
+        }
+      ],
+      "after": [
+        {
+          "type": "table",
+          "title": "3.5 BST的复杂度取决于高度，不会自动平衡",
+          "columns": [
+            "操作",
+            "普通BST复杂度",
+            "平衡时",
+            "退化链时"
+          ],
+          "rows": [
+            [
+              "搜索 / 插入 / 删除",
+              "O(h)",
+              "O(logn)",
+              "O(n)"
+            ],
+            [
+              "中序求第K小",
+              "O(h+k)",
+              "O(logn+k)",
+              "O(n)最坏"
+            ],
+            [
+              "带子树size的选秩",
+              "O(h)，更新时维护size",
+              "O(logn)",
+              "O(n)"
+            ],
+            [
+              "完整验证 / 遍历",
+              "O(n)",
+              "仍需访问所有节点",
+              "O(n)"
+            ]
+          ]
+        },
+        {
+          "type": "text",
+          "title": "3.6 插入与删除：树的根本身也可能改变",
+          "paragraphs": [
+            "插入沿键值方向走到空链接，将新节点接入。返回根或以TreeNode*&更新根，不能只改变函数内根指针副本。重复键在本章接口中拒绝，传入节点必须是由调用者持有的孤立节点，不得已经属于其他树。",
+            "删除分三类：叶子用空替代；单孩子用孩子替代；双孩子用右子树最小节点（后继）替代。常见实现复制后继值再删后继，但会改变某个节点的值；如果外部持有节点身份，这种语义要说明。下面采用物理移植后继，保留其他节点的值与身份。"
+          ]
+        },
+        {
+          "type": "code",
+          "title": "3.7 非拥有式插入与删除：摘除节点但不释放",
+          "file": "detail-bst-updates.cpp",
+          "code": "struct TreeNode {\n    int val;\n    TreeNode *left = nullptr, *right = nullptr;\n    explicit TreeNode(int value) : val(value) {}\n};\n\nbool insertBST(TreeNode*& root, TreeNode* fresh) {\n    if (!fresh || fresh->left || fresh->right)\n        throw invalid_argument(\"detached leaf required\");\n    TreeNode** link = &root;\n    while (*link) {\n        if ((*link)->val == fresh->val) return false;\n        link = fresh->val < (*link)->val ? &(*link)->left : &(*link)->right;\n    }\n    *link = fresh;\n    return true;\n}\nTreeNode* detachBST(TreeNode*& root, int key) {\n    TreeNode** link = &root;\n    while (*link && (*link)->val != key)\n        link = key < (*link)->val ? &(*link)->left : &(*link)->right;\n    if (!*link) return nullptr;\n    TreeNode* victim = *link;\n    if (!victim->left) *link = victim->right;\n    else if (!victim->right) *link = victim->left;\n    else {\n        TreeNode** nextLink = &victim->right;\n        while ((*nextLink)->left) nextLink = &(*nextLink)->left;\n        TreeNode* successor = *nextLink;\n        *nextLink = successor->right;\n        successor->left = victim->left;\n        successor->right = victim->right;\n        *link = successor;\n    }\n    victim->left = victim->right = nullptr;\n    return victim;\n}",
+          "paragraphs": [
+            "两函数假设原树为严格BST，时间O(h)、额外空间O(1)。detach返回被摘除的原节点；不存在则返回nullptr。TreeNode**让同一段逻辑既能更新根链接也能更新父节点孩子链接。",
+            "不调用delete，因为节点可能来自arena、栈或外部统一管理。若调用者用new单独分配且拥有该节点，摘除后可自行释放；若来自TreeArena，不得单独delete。节点摘除后左右指针清空，便于检查与复用。"
+          ]
+        },
+        {
+          "type": "code",
+          "title": "3.8 BST惰性迭代器：一次next不一定是常数时间",
+          "file": "detail-bst-iterator.cpp",
+          "code": "struct TreeNode {\n    int val;\n    TreeNode *left = nullptr, *right = nullptr;\n    explicit TreeNode(int value) : val(value) {}\n};\n\nclass BSTIterator {\n    vector<TreeNode*> pending;\n    void pushLeft(TreeNode* node) {\n        while (node) { pending.push_back(node); node = node->left; }\n    }\npublic:\n    explicit BSTIterator(TreeNode* root) { pushLeft(root); }\n    bool hasNext() const { return !pending.empty(); }\n    int next() {\n        if (pending.empty()) throw out_of_range(\"iterator exhausted\");\n        TreeNode* node = pending.back(); pending.pop_back();\n        pushLeft(node->right);\n        return node->val;\n    }\n};",
+          "paragraphs": [
+            "构造O(h)、辅助空间O(h)。一次next可能压入长左链而耗时O(h)，但遍历所有节点时每个节点入出栈一次，整体O(n)，next按完整遍历均摊O(1)。若只取k个，含初始化成本为O(h+k)。",
+            "迭代器不拥有节点。使用期间树必须存活且不进行会改变这些连接或释放节点的操作；它没有自动跟踪BST插入删除的能力。"
+          ]
+        },
+        {
+          "type": "code",
+          "title": "3.9 恢复恰好两个交换值的BST",
+          "file": "detail-recover-bst.cpp",
+          "code": "struct TreeNode {\n    int val;\n    TreeNode *left = nullptr, *right = nullptr;\n    explicit TreeNode(int value) : val(value) {}\n};\n\nbool recoverSwappedBST(TreeNode* root) {\n    vector<TreeNode*> pending;\n    TreeNode *current = root, *previous = nullptr;\n    TreeNode *first = nullptr, *second = nullptr;\n    while (current || !pending.empty()) {\n        while (current) { pending.push_back(current); current = current->left; }\n        current = pending.back(); pending.pop_back();\n        if (previous && previous->val > current->val) {\n            if (!first) first = previous;\n            second = current;\n        }\n        previous = current;\n        current = current->right;\n    }\n    if (!first) return false;\n    swap(first->val, second->val);\n    return true;\n}",
+          "paragraphs": [
+            "契约是原树为互异键BST，恰有两个节点的值被交换且连接不变。中序相邻位置交换形成一个下降点，非相邻交换通常形成两个；记录第一次下降的前项与最后一次下降的后项并交换。时间O(n)、栈O(h)。",
+            "返回true只表示执行了交换，不代表能修复任意非法二叉树。该函数会改变值，不移动节点；合法未交换的BST返回false。不要把它用作通用排序整棵树的算法。"
+          ]
+        }
+      ],
+      "answers": [
+        {
+          "question": "为什么只比较node和直接左右孩子不够？",
+          "answer": [
+            "后代还要满足所有祖先的范围。例如10的左孩子5、5的右孩子12，每条直接边都满足大小方向，但12仍位于10的左子树而大于10。"
+          ]
+        },
+        {
+          "question": "普通BST搜索为什么不能无条件写O(logn)？",
+          "answer": [
+            "每次只排除一个子树，但剩余子树未必只有一半。顺序插入1..n会形成高度n的链，搜索最坏O(n)。只有平衡性或合适随机模型下才能得到对数高度结论。"
+          ]
+        },
+        {
+          "question": "重复只允许放右边时，中序非递减能充分验证吗？",
+          "answer": [
+            "不能。根2左孩子2同样中序非递减，却违反重复放右。要用带开闭性的上下界，确保左子树严格小于根、右子树允许等于根，并继承祖先限制。"
+          ]
+        },
+        {
+          "question": "删除双孩子节点为什么后继没有左孩子？",
+          "answer": [
+            "后继是右子树中不断向左走到的最小节点。如果它还有左孩子，这个孩子会更小，与最小性矛盾。它可能有右孩子，移植时必须接回后继原位置，不能丢掉。"
+          ]
+        },
+        {
+          "question": "维护子树size为何能加速多次第K小查询？",
+          "answer": [
+            "知道左子树节点数L，就可判断K<=L去左边、K=L+1取根、否则去右边找K-L-1。每层只走一侧，时间O(h)；插入删除和旋转时必须同步维护size，不能使用过期统计。"
+          ]
+        },
+        {
+          "question": "迭代器next均摊O(1)能推出每次延迟都是O(1)吗？",
+          "answer": [
+            "不能。某次next可能展开深右子树的整条左链，花O(h)。均摊只说明完整序列的总成本线性；严格实时延迟要求需要另外的接口和数据结构设计。"
+          ]
+        }
+      ]
+    },
+    "4": {
+      "before": [
+        {
+          "type": "text",
+          "title": "4.1 普通LCA的返回语义与存在性前提",
+          "paragraphs": [
+            "基础lca遇到p或q直接返回，左右各返回非空时当前点就是汇合点，只有一边非空就继续向上传。它允许节点是自己的祖先，因此p本身在q上方时返回p恰好正确。",
+            "但“找到了一个目标”和“两个目标的祖先”都被编码为同一种非空指针。若q不存在，基础版可能返回p，却不能说明已经找齐两者。面试要先问是否保证目标存在；不保证时应统计命中信息或先验证。"
+          ]
+        },
+        {
+          "type": "table",
+          "title": "4.2 LCA合并的四种情况",
+          "columns": [
+            "左子树报告",
+            "右子树报告",
+            "当前点情况",
+            "处理"
+          ],
+          "rows": [
+            [
+              "未命中",
+              "未命中",
+              "不是目标",
+              "返回未命中"
+            ],
+            [
+              "命中目标",
+              "未命中",
+              "不是目标",
+              "向上传左侧结果"
+            ],
+            [
+              "命中p",
+              "命中q",
+              "不是目标",
+              "当前点为分叉LCA"
+            ],
+            [
+              "某子树已找到完整LCA",
+              "另一侧无新目标",
+              "任意",
+              "继续传已有LCA"
+            ],
+            [
+              "p与q是同一节点",
+              "不需要两个不同对象",
+              "访问到该指针",
+              "该节点同时满足两目标"
+            ]
+          ]
+        },
+        {
+          "type": "code",
+          "title": "4.3 目标可能不存在的LCA，以及验证身份后的BST版本",
+          "file": "detail-lca-checked.cpp",
+          "code": "struct TreeNode {\n    int val;\n    TreeNode *left = nullptr, *right = nullptr;\n    explicit TreeNode(int value) : val(value) {}\n};\n\nstruct LcaReport {\n    unsigned mask = 0; // bit 0: p found, bit 1: q found\n    TreeNode* ancestor = nullptr;\n};\nLcaReport reportLca(TreeNode* node, TreeNode* p, TreeNode* q) {\n    if (!node) return {};\n    LcaReport left = reportLca(node->left, p, q);\n    LcaReport right = reportLca(node->right, p, q);\n    unsigned own = (node == p ? 1U : 0U) | (node == q ? 2U : 0U);\n    unsigned mask = left.mask | right.mask | own;\n    TreeNode* ancestor = left.ancestor ? left.ancestor : right.ancestor;\n    if (!ancestor && mask == 3U) ancestor = node;\n    return {mask, ancestor};\n}\nTreeNode* lcaChecked(TreeNode* root, TreeNode* p, TreeNode* q) {\n    if (!p || !q) return nullptr;\n    LcaReport result = reportLca(root, p, q);\n    return result.mask == 3U ? result.ancestor : nullptr;\n}\nTreeNode* lcaBSTChecked(TreeNode* root, TreeNode* p, TreeNode* q) {\n    if (!p || !q) return nullptr;\n    auto containsIdentity = [&](TreeNode* target) {\n        TreeNode* node = root;\n        while (node && node->val != target->val)\n            node = target->val < node->val ? node->left : node->right;\n        return node == target;\n    };\n    if (!containsIdentity(p) || !containsIdentity(q)) return nullptr;\n    int low = min(p->val, q->val), high = max(p->val, q->val);\n    while (root) {\n        if (root->val < low) root = root->right;\n        else if (root->val > high) root = root->left;\n        else return root;\n    }\n    return nullptr;\n}",
+          "paragraphs": [
+            "普通树按指针身份比较，允许相同值和p==q，时间O(n)、栈O(h)。两个目标位在同一节点命中时own=3，不会误要求找到两个不同节点。",
+            "BST版本要求互异键严格BST，先按键搜索并确认找到的确实是同一指针，拒绝仅值相同的树外节点。确认存在后，两个键都小于当前点向左、都大于向右，否则当前点即分叉或目标祖先。时间O(h)、空间O(1)。"
+          ]
+        },
+        {
+          "type": "text",
+          "title": "4.4 多次LCA查询：用预处理交换查询成本",
+          "paragraphs": [
+            "若同一棵静态树有十万次查询，每次DFS总O(nq)可能太慢。可先赋予节点编号、记录深度与父节点，再建up[v][j]表示2^j层祖先：先把深节点提到同深度，再从高位往低位一起跳，最后返回父节点。预处理O(nlogn)、查询O(logn)、空间O(nlogn)。",
+            "另一条路线是Euler游走记录节点与深度，将LCA变为首次出现位置间的最小深度查询，再用RMQ结构处理。这里只介绍选择依据；树结构发生改变后，静态预处理信息不能继续无条件复用。"
+          ]
+        }
+      ],
+      "after": [
+        {
+          "type": "text",
+          "title": "4.5 重建：前序消耗一个根，中序决定左右范围",
+          "paragraphs": [
+            "无重复值时，前序当前元素是子树根，中序中该值的位置m唯一确定左[l,m)、右[m+1,r)。维护一个共享前序游标，先构造左边再右边；中序位置用哈希索引，避免每次线性扫描，也避免对子数组进行反复拷贝。",
+            "前提不仅是长度相同，还要值集合相同、各自无重复，而且根必须落在当前中序范围。例如前序[1,2,3]、中序[3,1,2]集合相同却无法匹配递归范围，仍应拒绝。含重复值时不能用“值→唯一位置”的映射直接重建。"
+          ]
+        },
+        {
+          "type": "table",
+          "title": "4.6 前序[3,9,20,15,7]，中序[9,3,15,20,7]",
+          "columns": [
+            "递归范围（中序）",
+            "当前前序根",
+            "中序位置",
+            "下一步"
+          ],
+          "rows": [
+            [
+              "[0,5)",
+              "3",
+              "1",
+              "左[0,1)，右[2,5)"
+            ],
+            [
+              "[0,1)",
+              "9",
+              "0",
+              "两个孩子均为空"
+            ],
+            [
+              "[2,5)",
+              "20",
+              "3",
+              "左[2,3)，右[4,5)"
+            ],
+            [
+              "[2,3)",
+              "15",
+              "2",
+              "叶子"
+            ],
+            [
+              "[4,5)",
+              "7",
+              "4",
+              "叶子"
+            ]
+          ]
+        },
+        {
+          "type": "code",
+          "title": "4.7 前序与中序重建：集中管理节点生命周期",
+          "file": "detail-rebuild.cpp",
+          "code": "struct TreeNode {\n    int val;\n    TreeNode *left = nullptr, *right = nullptr;\n    explicit TreeNode(int value) : val(value) {}\n};\n\nstruct TreeArena {\nprivate:\n    deque<TreeNode> nodes;\npublic:\n    TreeArena() = default;\n    TreeArena(const TreeArena&) = delete;\n    TreeArena& operator=(const TreeArena&) = delete;\n    TreeNode* make(int value) {\n        nodes.emplace_back(value);\n        return &nodes.back();\n    }\n};\n\nTreeNode* rebuildPreIn(const vector<int>& preorder, const vector<int>& inorder,\n                       TreeArena& arena) {\n    if (preorder.size() != inorder.size() || preorder.size() > 100000)\n        throw invalid_argument(\"size mismatch or input too large\");\n    int n = (int)preorder.size();\n    unordered_map<int, int> position;\n    for (int i = 0; i < n; ++i)\n        if (!position.emplace(inorder[i], i).second)\n            throw invalid_argument(\"duplicate inorder key\");\n    unordered_set<int> seen;\n    for (int value : preorder)\n        if (!position.count(value) || !seen.insert(value).second)\n            throw invalid_argument(\"different keys or duplicate preorder key\");\n    int cursor = 0;\n    function<TreeNode*(int, int)> build = [&](int l, int r) -> TreeNode* {\n        if (l == r) return nullptr;\n        if (cursor == n) throw invalid_argument(\"preorder exhausted\");\n        int value = preorder[cursor++];\n        int middle = position.at(value);\n        if (middle < l || middle >= r) throw invalid_argument(\"inconsistent traversals\");\n        TreeNode* root = arena.make(value);\n        root->left = build(l, middle);\n        root->right = build(middle + 1, r);\n        return root;\n    };\n    TreeNode* root = build(0, n);\n    if (cursor != n) throw invalid_argument(\"unused preorder entries\");\n    return root;\n}",
+          "paragraphs": [
+            "TreeArena使用deque尾部追加，已存在节点的引用/指针不会因追加失效；不暴露清空或擦除接口。arena不得复制或移动，必须比所有返回指针活得更久。不要改成随意增长的vector<TreeNode>，扩容可能让之前建立的孩子指针悬空。",
+            "平均时间O(n)、哈希最坏O(n²)，位置表O(n)、递归O(h)、新树O(n)。非法递归范围可能在部分节点已分配后抛异常；这些节点仍归arena持有，不泄漏，但本接口不承诺失败时回滚arena内存。长链同样存在递归栈风险。"
+          ]
+        },
+        {
+          "type": "text",
+          "title": "4.8 序列化必须保留结构，不只是遍历值",
+          "paragraphs": [
+            "只有值的前序序列[1,2]可能是1的左孩子2，也可能是右孩子2。把每个空孩子写成#，两棵树分别为1,2,#,#,#与1,#,2,#,#，才可唯一恢复。n个节点的完整前序空标记格式共有2n+1个token。",
+            "解码可用“待填槽位”预检查：初始一个根槽位；每个token消耗一个槽位；非空节点再增加两个孩子槽位。中途槽位不能已经为0却还有token，结束必须恰为0。这样可拒绝缺少空标记、额外尾部数据等格式错误。"
+          ]
+        },
+        {
+          "type": "code",
+          "title": "4.9 前序序列化与解码：空标记、验证与独立副本",
+          "file": "detail-codec.cpp",
+          "code": "struct TreeNode {\n    int val;\n    TreeNode *left = nullptr, *right = nullptr;\n    explicit TreeNode(int value) : val(value) {}\n};\n\nstruct TreeArena {\nprivate:\n    deque<TreeNode> nodes;\npublic:\n    TreeArena() = default;\n    TreeArena(const TreeArena&) = delete;\n    TreeArena& operator=(const TreeArena&) = delete;\n    TreeNode* make(int value) {\n        nodes.emplace_back(value);\n        return &nodes.back();\n    }\n};\n\nvector<string> serializeTree(TreeNode* root) {\n    vector<string> tokens;\n    function<void(TreeNode*)> encode = [&](TreeNode* node) {\n        if (!node) { tokens.push_back(\"#\"); return; }\n        tokens.push_back(to_string(node->val));\n        encode(node->left);\n        encode(node->right);\n    };\n    encode(root);\n    return tokens;\n}\nTreeNode* deserializeTree(const vector<string>& tokens, TreeArena& arena) {\n    if (tokens.empty() || tokens.size() > 200001)\n        throw invalid_argument(\"invalid token count\");\n    vector<optional<int>> parsed;\n    long long slots = 1;\n    for (const string& token : tokens) {\n        if (slots == 0) throw invalid_argument(\"trailing token\");\n        --slots;\n        if (token == \"#\") parsed.push_back(nullopt);\n        else {\n            size_t used = 0;\n            int value = stoi(token, &used);\n            if (used != token.size()) throw invalid_argument(\"bad integer token\");\n            parsed.push_back(value);\n            slots += 2;\n        }\n    }\n    if (slots != 0) throw invalid_argument(\"missing child token\");\n    size_t cursor = 0;\n    function<TreeNode*()> decode = [&]() -> TreeNode* {\n        optional<int> value = parsed[cursor++];\n        if (!value) return nullptr;\n        TreeNode* node = arena.make(*value);\n        node->left = decode();\n        node->right = decode();\n        return node;\n    };\n    return decode();\n}",
+          "paragraphs": [
+            "序列化输出vector<string>，可用逗号或换行连接成文本；调用解码前需按相同分隔约定切成token。整数解析采用stoi语义（允许符号及其接受的前导空白），序列化端输出规范十进制。#专用于空节点，空树编码为单个#。",
+            "解码在分配前验证全部token值和槽位结构，整数越界也会抛异常。新树节点全部从传入arena新建，值与结构保持，指针身份不与原树相同。时间O(n)（固定int长度）、token和解析缓存O(n)、递归O(h)、新树O(n)。它是普通树格式，不支持环或共享子节点图。"
+          ]
+        }
+      ],
+      "answers": [
+        {
+          "question": "普通LCA为什么必须按指针而不是值比较？",
+          "answer": [
+            "两个不同节点可能有相同值。题目要找的是两个具体节点的共同祖先，仅按val会把其他同值节点误认成目标。指针身份代表对象，值只是对象的一个字段。"
+          ]
+        },
+        {
+          "question": "一个目标不存在时，基础LCA会返回什么？",
+          "answer": [
+            "它可能返回存在的那个目标，而不是nullptr，因为非空返回值没有区分“只找到一个”和“两个都找齐”。应采用命中位掩码或先检查目标存在性；本章checked接口找不齐返回nullptr。"
+          ]
+        },
+        {
+          "question": "p和q是同一个节点，需要特殊处理吗？",
+          "answer": [
+            "需要保证算法语义支持该情况。位掩码实现同一指针同时设置两个目标位，因此找到一次就命中两者；该节点就是自身与自身的最近公共祖先，若不在树里仍返回nullptr。"
+          ]
+        },
+        {
+          "question": "前序+中序有重复值时还保证唯一吗？",
+          "answer": [
+            "不保证。例如两个相同值无法唯一确定中序哪个位置是根，也无法区分单孩子方向。若要重建必须补充身份、结构标记或其他约束，不能简单把哈希表中的重复位置覆盖掉。"
+          ]
+        },
+        {
+          "question": "序列化为什么需要2n+1个token？",
+          "answer": [
+            "二叉树n个非空节点共有2n个孩子槽位，其中n-1个连接真实孩子，剩余n+1个为空。加上n个节点值，共2n+1个token；空树n=0时也有一个#。"
+          ]
+        },
+        {
+          "question": "重建返回的根指针谁负责释放？",
+          "answer": [
+            "本章分配型示例由TreeArena统一拥有。返回指针只是借用，在arena销毁后立即失效；不能单独delete。不同所有权模型可以实现同样算法，但必须统一，不能把arena节点当成独立new节点释放。"
+          ]
+        }
+      ]
+    }
+  },
+  "outro": [
+    {
+      "type": "table",
+      "title": "经典考点与递进练习路线",
+      "columns": [
+        "阶段",
+        "经典题",
+        "必须能解释",
+        "边界输入"
+      ],
+      "rows": [
+        [
+          "遍历",
+          "94 中序；102 层序；199 右视图；111 最小深度",
+          "访问时机、栈帧、本层长度",
+          "空树、单链、仅右孩子"
+        ],
+        [
+          "后序信息",
+          "110 平衡；543 直径；124 最大路径和",
+          "单位、单边返回与完整答案",
+          "单节点、全负、最优不经根"
+        ],
+        [
+          "路径",
+          "112/113 路径总和；437 路径总和III",
+          "叶子要求、输出规模、前缀回溯",
+          "0值、负数、兄弟重复前缀"
+        ],
+        [
+          "BST",
+          "98 验证；230 第K小；450 删除；173 迭代器；99 恢复",
+          "祖先范围、节点身份、均摊代价",
+          "INT_MIN、非法K、根删除、后继有右孩子"
+        ],
+        [
+          "LCA",
+          "236 普通树；235 BST",
+          "身份、存在性、相同目标",
+          "缺失目标、重复值、祖先就是目标"
+        ],
+        [
+          "重建与编码",
+          "105 前序中序；297 序列化",
+          "唯一性、空标记、所有权",
+          "重复键、非法token、空树、退化深树"
+        ]
+      ]
+    },
+    {
+      "type": "text",
+      "title": "综合测试：不只比较值，还要比较结构与身份",
+      "paragraphs": [
+        "测试文件独立包含本章14份补充示例的实现，并统一使用一份TreeNode与TreeArena定义。通过500组小树，把直径与最大路径和同任意起点BFS枚举对照，把向下路径计数同逐起点DFS对照，把LCA同父节点链对照。",
+        "同时检查递归/迭代遍历一致、序列化解码后结构与值一致而地址不同、BST迭代与第K小、两值恢复、重建结果，以及依次摘除节点后无环、无共享孩子且BST有效。固定用例覆盖空树、全负单节点、INT_MIN、相同目标、缺失目标和非法输入。",
+        "测试使用小树避免系统递归栈风险，不能证明十万深度递归可运行，也不替代正确性证明。下载后可执行 g++ -std=c++17 -O2 -Wall -Wextra detail-tree-tests.cpp -o chapter07-tests，再运行程序；实际编译运行状态见全站验证记录。"
+      ]
+    },
+    {
+      "type": "code",
+      "title": "完整结构与身份测试源码",
+      "file": "detail-tree-tests.cpp",
+      "code": "struct TreeNode {\n    int val;\n    TreeNode *left = nullptr, *right = nullptr;\n    explicit TreeNode(int value) : val(value) {}\n};\n\nstruct TreeArena {\nprivate:\n    deque<TreeNode> nodes;\npublic:\n    TreeArena() = default;\n    TreeArena(const TreeArena&) = delete;\n    TreeArena& operator=(const TreeArena&) = delete;\n    TreeNode* make(int value) {\n        nodes.emplace_back(value);\n        return &nodes.back();\n    }\n};\n\nstruct Traversals {\n    vector<int> preorder, inorder, postorder;\n};\nvoid visitOrders(TreeNode* node, Traversals& result) {\n    if (!node) return;\n    result.preorder.push_back(node->val);\n    visitOrders(node->left, result);\n    result.inorder.push_back(node->val);\n    visitOrders(node->right, result);\n    result.postorder.push_back(node->val);\n}\nTraversals recursiveOrders(TreeNode* root) {\n    Traversals result;\n    visitOrders(root, result);\n    return result;\n}\n\nvector<int> preorderIterative(TreeNode* root) {\n    vector<int> result;\n    if (!root) return result;\n    vector<TreeNode*> pending{root};\n    while (!pending.empty()) {\n        TreeNode* node = pending.back(); pending.pop_back();\n        result.push_back(node->val);\n        if (node->right) pending.push_back(node->right);\n        if (node->left) pending.push_back(node->left);\n    }\n    return result;\n}\nvector<int> postorderIterative(TreeNode* root) {\n    vector<int> result;\n    if (!root) return result;\n    vector<pair<TreeNode*, bool>> pending{{root, false}};\n    while (!pending.empty()) {\n        auto [node, expanded] = pending.back(); pending.pop_back();\n        if (expanded) { result.push_back(node->val); continue; }\n        pending.push_back({node, true});\n        if (node->right) pending.push_back({node->right, false});\n        if (node->left) pending.push_back({node->left, false});\n    }\n    return result;\n}\n\nvector<vector<int>> levelOrder(TreeNode* root) {\n    vector<vector<int>> result;\n    if (!root) return result;\n    queue<TreeNode*> pending;\n    pending.push(root);\n    while (!pending.empty()) {\n        size_t width = pending.size();\n        vector<int> level;\n        for (size_t i = 0; i < width; ++i) {\n            TreeNode* node = pending.front(); pending.pop();\n            level.push_back(node->val);\n            if (node->left) pending.push(node->left);\n            if (node->right) pending.push(node->right);\n        }\n        result.push_back(move(level));\n    }\n    return result;\n}\nvector<int> rightSideView(TreeNode* root) {\n    vector<int> result;\n    for (const auto& level : levelOrder(root)) result.push_back(level.back());\n    return result;\n}\nint minimumDepth(TreeNode* root) {\n    if (!root) return 0;\n    queue<TreeNode*> pending;\n    pending.push(root);\n    int depth = 1;\n    while (!pending.empty()) {\n        size_t width = pending.size();\n        for (size_t i = 0; i < width; ++i) {\n            TreeNode* node = pending.front(); pending.pop();\n            if (!node->left && !node->right) return depth;\n            if (node->left) pending.push(node->left);\n            if (node->right) pending.push(node->right);\n        }\n        ++depth;\n    }\n    return 0;\n}\n\nstruct TreeSummary {\n    int height = 0;\n    int nodes = 0;\n    int diameter = 0;\n    bool balanced = true;\n};\nTreeSummary summarizeTree(TreeNode* root) {\n    if (!root) return {};\n    TreeSummary left = summarizeTree(root->left);\n    TreeSummary right = summarizeTree(root->right);\n    TreeSummary result;\n    result.height = 1 + max(left.height, right.height);\n    result.nodes = 1 + left.nodes + right.nodes;\n    result.balanced = left.balanced && right.balanced &&\n                      abs(left.height - right.height) <= 1;\n    result.diameter = max({left.diameter, right.diameter, left.height + right.height});\n    return result;\n}\n\noptional<long long> maximumPathSum(TreeNode* root) {\n    if (!root) return nullopt;\n    long long best = LLONG_MIN;\n    function<long long(TreeNode*)> gain = [&](TreeNode* node) -> long long {\n        if (!node) return 0;\n        long long left = max(0LL, gain(node->left));\n        long long right = max(0LL, gain(node->right));\n        best = max(best, (long long)node->val + left + right);\n        return (long long)node->val + max(left, right);\n    };\n    gain(root);\n    return best;\n}\n\nvector<vector<int>> rootLeafPaths(TreeNode* root, long long target) {\n    vector<vector<int>> answer;\n    vector<int> path;\n    function<void(TreeNode*, long long)> dfs = [&](TreeNode* node, long long sum) {\n        if (!node) return;\n        path.push_back(node->val);\n        sum += node->val;\n        if (!node->left && !node->right) {\n            if (sum == target) answer.push_back(path);\n        } else {\n            dfs(node->left, sum);\n            dfs(node->right, sum);\n        }\n        path.pop_back();\n    };\n    dfs(root, 0);\n    return answer;\n}\n\nlong long countDownwardPaths(TreeNode* root, long long target) {\n    unordered_map<long long, long long> frequency;\n    frequency[0] = 1;\n    function<long long(TreeNode*, long long)> dfs =\n        [&](TreeNode* node, long long prefix) -> long long {\n            if (!node) return 0;\n            prefix += node->val;\n            long long result = 0;\n            auto found = frequency.find(prefix - target);\n            if (found != frequency.end()) result += found->second;\n            ++frequency[prefix];\n            result += dfs(node->left, prefix);\n            result += dfs(node->right, prefix);\n            auto current = frequency.find(prefix);\n            if (--current->second == 0) frequency.erase(current);\n            return result;\n        };\n    return dfs(root, 0);\n}\n\nbool validBSTIterative(TreeNode* root) {\n    vector<TreeNode*> pending;\n    TreeNode* current = root;\n    optional<int> previous;\n    while (current || !pending.empty()) {\n        while (current) { pending.push_back(current); current = current->left; }\n        current = pending.back(); pending.pop_back();\n        if (previous && current->val <= *previous) return false;\n        previous = current->val;\n        current = current->right;\n    }\n    return true;\n}\nTreeNode* searchBST(TreeNode* root, int key) {\n    while (root && root->val != key)\n        root = key < root->val ? root->left : root->right;\n    return root;\n}\noptional<int> kthSmallestBST(TreeNode* root, int k) {\n    if (k <= 0) return nullopt;\n    vector<TreeNode*> pending;\n    TreeNode* current = root;\n    while (current || !pending.empty()) {\n        while (current) { pending.push_back(current); current = current->left; }\n        current = pending.back(); pending.pop_back();\n        if (--k == 0) return current->val;\n        current = current->right;\n    }\n    return nullopt;\n}\n\nbool insertBST(TreeNode*& root, TreeNode* fresh) {\n    if (!fresh || fresh->left || fresh->right)\n        throw invalid_argument(\"detached leaf required\");\n    TreeNode** link = &root;\n    while (*link) {\n        if ((*link)->val == fresh->val) return false;\n        link = fresh->val < (*link)->val ? &(*link)->left : &(*link)->right;\n    }\n    *link = fresh;\n    return true;\n}\nTreeNode* detachBST(TreeNode*& root, int key) {\n    TreeNode** link = &root;\n    while (*link && (*link)->val != key)\n        link = key < (*link)->val ? &(*link)->left : &(*link)->right;\n    if (!*link) return nullptr;\n    TreeNode* victim = *link;\n    if (!victim->left) *link = victim->right;\n    else if (!victim->right) *link = victim->left;\n    else {\n        TreeNode** nextLink = &victim->right;\n        while ((*nextLink)->left) nextLink = &(*nextLink)->left;\n        TreeNode* successor = *nextLink;\n        *nextLink = successor->right;\n        successor->left = victim->left;\n        successor->right = victim->right;\n        *link = successor;\n    }\n    victim->left = victim->right = nullptr;\n    return victim;\n}\n\nclass BSTIterator {\n    vector<TreeNode*> pending;\n    void pushLeft(TreeNode* node) {\n        while (node) { pending.push_back(node); node = node->left; }\n    }\npublic:\n    explicit BSTIterator(TreeNode* root) { pushLeft(root); }\n    bool hasNext() const { return !pending.empty(); }\n    int next() {\n        if (pending.empty()) throw out_of_range(\"iterator exhausted\");\n        TreeNode* node = pending.back(); pending.pop_back();\n        pushLeft(node->right);\n        return node->val;\n    }\n};\n\nbool recoverSwappedBST(TreeNode* root) {\n    vector<TreeNode*> pending;\n    TreeNode *current = root, *previous = nullptr;\n    TreeNode *first = nullptr, *second = nullptr;\n    while (current || !pending.empty()) {\n        while (current) { pending.push_back(current); current = current->left; }\n        current = pending.back(); pending.pop_back();\n        if (previous && previous->val > current->val) {\n            if (!first) first = previous;\n            second = current;\n        }\n        previous = current;\n        current = current->right;\n    }\n    if (!first) return false;\n    swap(first->val, second->val);\n    return true;\n}\n\nstruct LcaReport {\n    unsigned mask = 0; // bit 0: p found, bit 1: q found\n    TreeNode* ancestor = nullptr;\n};\nLcaReport reportLca(TreeNode* node, TreeNode* p, TreeNode* q) {\n    if (!node) return {};\n    LcaReport left = reportLca(node->left, p, q);\n    LcaReport right = reportLca(node->right, p, q);\n    unsigned own = (node == p ? 1U : 0U) | (node == q ? 2U : 0U);\n    unsigned mask = left.mask | right.mask | own;\n    TreeNode* ancestor = left.ancestor ? left.ancestor : right.ancestor;\n    if (!ancestor && mask == 3U) ancestor = node;\n    return {mask, ancestor};\n}\nTreeNode* lcaChecked(TreeNode* root, TreeNode* p, TreeNode* q) {\n    if (!p || !q) return nullptr;\n    LcaReport result = reportLca(root, p, q);\n    return result.mask == 3U ? result.ancestor : nullptr;\n}\nTreeNode* lcaBSTChecked(TreeNode* root, TreeNode* p, TreeNode* q) {\n    if (!p || !q) return nullptr;\n    auto containsIdentity = [&](TreeNode* target) {\n        TreeNode* node = root;\n        while (node && node->val != target->val)\n            node = target->val < node->val ? node->left : node->right;\n        return node == target;\n    };\n    if (!containsIdentity(p) || !containsIdentity(q)) return nullptr;\n    int low = min(p->val, q->val), high = max(p->val, q->val);\n    while (root) {\n        if (root->val < low) root = root->right;\n        else if (root->val > high) root = root->left;\n        else return root;\n    }\n    return nullptr;\n}\n\nTreeNode* rebuildPreIn(const vector<int>& preorder, const vector<int>& inorder,\n                       TreeArena& arena) {\n    if (preorder.size() != inorder.size() || preorder.size() > 100000)\n        throw invalid_argument(\"size mismatch or input too large\");\n    int n = (int)preorder.size();\n    unordered_map<int, int> position;\n    for (int i = 0; i < n; ++i)\n        if (!position.emplace(inorder[i], i).second)\n            throw invalid_argument(\"duplicate inorder key\");\n    unordered_set<int> seen;\n    for (int value : preorder)\n        if (!position.count(value) || !seen.insert(value).second)\n            throw invalid_argument(\"different keys or duplicate preorder key\");\n    int cursor = 0;\n    function<TreeNode*(int, int)> build = [&](int l, int r) -> TreeNode* {\n        if (l == r) return nullptr;\n        if (cursor == n) throw invalid_argument(\"preorder exhausted\");\n        int value = preorder[cursor++];\n        int middle = position.at(value);\n        if (middle < l || middle >= r) throw invalid_argument(\"inconsistent traversals\");\n        TreeNode* root = arena.make(value);\n        root->left = build(l, middle);\n        root->right = build(middle + 1, r);\n        return root;\n    };\n    TreeNode* root = build(0, n);\n    if (cursor != n) throw invalid_argument(\"unused preorder entries\");\n    return root;\n}\n\nvector<string> serializeTree(TreeNode* root) {\n    vector<string> tokens;\n    function<void(TreeNode*)> encode = [&](TreeNode* node) {\n        if (!node) { tokens.push_back(\"#\"); return; }\n        tokens.push_back(to_string(node->val));\n        encode(node->left);\n        encode(node->right);\n    };\n    encode(root);\n    return tokens;\n}\nTreeNode* deserializeTree(const vector<string>& tokens, TreeArena& arena) {\n    if (tokens.empty() || tokens.size() > 200001)\n        throw invalid_argument(\"invalid token count\");\n    vector<optional<int>> parsed;\n    long long slots = 1;\n    for (const string& token : tokens) {\n        if (slots == 0) throw invalid_argument(\"trailing token\");\n        --slots;\n        if (token == \"#\") parsed.push_back(nullopt);\n        else {\n            size_t used = 0;\n            int value = stoi(token, &used);\n            if (used != token.size()) throw invalid_argument(\"bad integer token\");\n            parsed.push_back(value);\n            slots += 2;\n        }\n    }\n    if (slots != 0) throw invalid_argument(\"missing child token\");\n    size_t cursor = 0;\n    function<TreeNode*()> decode = [&]() -> TreeNode* {\n        optional<int> value = parsed[cursor++];\n        if (!value) return nullptr;\n        TreeNode* node = arena.make(*value);\n        node->left = decode();\n        node->right = decode();\n        return node;\n    };\n    return decode();\n}\n\nvoid require(bool ok, const string& message) {\n    if (!ok) throw runtime_error(message);\n}\nvector<TreeNode*> checkedNodes(TreeNode* root) {\n    vector<TreeNode*> result;\n    if (!root) return result;\n    unordered_set<TreeNode*> seen;\n    vector<TreeNode*> pending{root};\n    while (!pending.empty()) {\n        TreeNode* node = pending.back(); pending.pop_back();\n        require(seen.insert(node).second, \"cycle or shared child\");\n        result.push_back(node);\n        if (node->right) pending.push_back(node->right);\n        if (node->left) pending.push_back(node->left);\n    }\n    return result;\n}\nint bruteMinimumDepth(TreeNode* node) {\n    if (!node) return 0;\n    if (!node->left) return 1 + bruteMinimumDepth(node->right);\n    if (!node->right) return 1 + bruteMinimumDepth(node->left);\n    return 1 + min(bruteMinimumDepth(node->left), bruteMinimumDepth(node->right));\n}\nlong long bruteDownward(TreeNode* root, long long target) {\n    function<long long(TreeNode*, long long)> from =\n        [&](TreeNode* node, long long sum) -> long long {\n            if (!node) return 0;\n            sum += node->val;\n            return (sum == target) + from(node->left, sum) + from(node->right, sum);\n        };\n    long long count = 0;\n    for (TreeNode* node : checkedNodes(root)) count += from(node, 0);\n    return count;\n}\npair<int, optional<long long>> bruteAllPaths(TreeNode* root) {\n    auto nodes = checkedNodes(root);\n    if (nodes.empty()) return {0, nullopt};\n    unordered_map<TreeNode*, int> id;\n    for (int i = 0; i < (int)nodes.size(); ++i) id[nodes[i]] = i;\n    vector<vector<int>> edges(nodes.size());\n    for (int i = 0; i < (int)nodes.size(); ++i) {\n        for (TreeNode* child : {nodes[i]->left, nodes[i]->right}) {\n            if (!child) continue;\n            int j = id.at(child);\n            edges[i].push_back(j); edges[j].push_back(i);\n        }\n    }\n    int diameter = 0;\n    long long best = LLONG_MIN;\n    for (int start = 0; start < (int)nodes.size(); ++start) {\n        vector<int> distance(nodes.size(), -1);\n        vector<long long> sum(nodes.size());\n        queue<int> pending;\n        distance[start] = 0; sum[start] = nodes[start]->val; pending.push(start);\n        while (!pending.empty()) {\n            int u = pending.front(); pending.pop();\n            diameter = max(diameter, distance[u]);\n            best = max(best, sum[u]);\n            for (int v : edges[u]) if (distance[v] == -1) {\n                distance[v] = distance[u] + 1;\n                sum[v] = sum[u] + nodes[v]->val;\n                pending.push(v);\n            }\n        }\n    }\n    return {diameter, best};\n}\nTreeNode* bruteLca(TreeNode* root, TreeNode* p, TreeNode* q) {\n    if (!root || !p || !q) return nullptr;\n    unordered_map<TreeNode*, TreeNode*> parent;\n    parent[root] = nullptr;\n    for (TreeNode* node : checkedNodes(root)) {\n        if (node->left) parent[node->left] = node;\n        if (node->right) parent[node->right] = node;\n    }\n    if (!parent.count(p) || !parent.count(q)) return nullptr;\n    unordered_set<TreeNode*> ancestors;\n    for (; p; p = parent.at(p)) ancestors.insert(p);\n    for (; q; q = parent.at(q)) if (ancestors.count(q)) return q;\n    return nullptr;\n}\nint main() {\n    require(serializeTree(nullptr) == vector<string>{\"#\"}, \"empty serialization\");\n    require(!maximumPathSum(nullptr), \"empty path\");\n    require(countDownwardPaths(nullptr, 0) == 0, \"empty path count\");\n    TreeNode one(1), a(-1), b(-1);\n    one.left = &a; one.right = &b;\n    require(countDownwardPaths(&one, 0) == 2, \"branch rollback\");\n    require(countDownwardPaths(&one, 0) == 2, \"repeated call reset\");\n    TreeNode negative(-7);\n    require(maximumPathSum(&negative) == optional<long long>{-7}, \"negative path\");\n    TreeNode boundary(INT_MIN);\n    require(validBSTIterative(&boundary), \"minimum int BST key\");\n    for (const auto& bad : vector<vector<string>>{{}, {\"1\",\"#\"}, {\"#\",\"#\"}, {\"x\",\"#\",\"#\"}}) {\n        TreeArena owner;\n        bool rejected = false;\n        try { (void)deserializeTree(bad, owner); }\n        catch (const exception&) { rejected = true; }\n        require(rejected, \"invalid serialization\");\n    }\n    {\n        TreeArena owner;\n        bool rejected = false;\n        try { (void)rebuildPreIn({1,2,3}, {3,1,2}, owner); }\n        catch (const invalid_argument&) { rejected = true; }\n        require(rejected, \"inconsistent traversal ranges\");\n    }\n    mt19937 rng(20260920);\n    uniform_int_distribution<int> length(0, 12), value(-5, 5);\n    for (int run = 0; run < 500; ++run) {\n        TreeArena owner;\n        TreeNode* root = nullptr;\n        int n = length(rng);\n        vector<pair<TreeNode*, bool>> slots;\n        for (int i = 0; i < n; ++i) {\n            TreeNode* fresh = owner.make(value(rng));\n            if (!root) root = fresh;\n            else {\n                size_t pick = rng() % slots.size();\n                auto [parent, right] = slots[pick];\n                if (right) parent->right = fresh; else parent->left = fresh;\n                slots[pick] = slots.back(); slots.pop_back();\n            }\n            slots.push_back({fresh, false});\n            slots.push_back({fresh, true});\n        }\n        auto nodes = checkedNodes(root);\n        auto orders = recursiveOrders(root);\n        require(preorderIterative(root) == orders.preorder, \"preorder\");\n        require(postorderIterative(root) == orders.postorder, \"postorder\");\n        auto levels = levelOrder(root);\n        TreeSummary summary = summarizeTree(root);\n        require(summary.nodes == n && summary.height == (int)levels.size(), \"summary\");\n        auto allPaths = bruteAllPaths(root);\n        require(summary.diameter == allPaths.first, \"diameter\");\n        require(maximumPathSum(root) == allPaths.second, \"maximum path\");\n        require(minimumDepth(root) == bruteMinimumDepth(root), \"minimum depth\");\n        long long target = value(rng);\n        require(countDownwardPaths(root, target) == bruteDownward(root, target), \"path count\");\n        vector<vector<int>> expectedPaths;\n        vector<int> path;\n        function<void(TreeNode*)> enumerate = [&](TreeNode* node) {\n            if (!node) return;\n            path.push_back(node->val);\n            if (!node->left && !node->right &&\n                accumulate(path.begin(), path.end(), 0LL) == target)\n                expectedPaths.push_back(path);\n            enumerate(node->left); enumerate(node->right);\n            path.pop_back();\n        };\n        enumerate(root);\n        require(rootLeafPaths(root, target) == expectedPaths, \"root leaf paths\");\n        TreeArena cloneOwner;\n        auto tokens = serializeTree(root);\n        TreeNode* clone = deserializeTree(tokens, cloneOwner);\n        require(serializeTree(clone) == tokens, \"serialization round trip\");\n        unordered_set<TreeNode*> original(nodes.begin(), nodes.end());\n        for (TreeNode* copy : checkedNodes(clone))\n            require(!original.count(copy), \"clone identity must differ\");\n        TreeNode outsider(root ? root->val : 0);\n        require(lcaChecked(root, root, &outsider) == nullptr, \"missing target identity\");\n        if (!nodes.empty()) {\n            TreeNode* p = nodes[rng() % nodes.size()];\n            TreeNode* q = nodes[rng() % nodes.size()];\n            require(lcaChecked(root, p, q) == bruteLca(root, p, q), \"LCA\");\n            require(lcaChecked(root, p, p) == p, \"same LCA target\");\n        }\n        TreeArena bstOwner;\n        TreeNode* bst = nullptr;\n        vector<int> keys(n);\n        iota(keys.begin(), keys.end(), -6);\n        shuffle(keys.begin(), keys.end(), rng);\n        for (int key : keys) require(insertBST(bst, bstOwner.make(key)), \"insert\");\n        require(validBSTIterative(bst), \"inserted BST valid\");\n        sort(keys.begin(), keys.end());\n        BSTIterator iterator(bst);\n        vector<int> iterated;\n        while (iterator.hasNext()) iterated.push_back(iterator.next());\n        require(iterated == keys, \"iterator order\");\n        require(!kthSmallestBST(bst, 0) && !kthSmallestBST(bst, n + 1), \"invalid rank\");\n        for (int k = 1; k <= n; ++k)\n            require(kthSmallestBST(bst, k) == optional<int>{keys[k - 1]}, \"kth rank\");\n        auto bstOrders = recursiveOrders(bst);\n        TreeArena rebuiltOwner;\n        TreeNode* rebuilt = rebuildPreIn(bstOrders.preorder, bstOrders.inorder, rebuiltOwner);\n        require(serializeTree(rebuilt) == serializeTree(bst), \"reconstruction\");\n        if (n >= 2) {\n            TreeNode* p = searchBST(bst, keys.front());\n            TreeNode* q = searchBST(bst, keys.back());\n            require(lcaBSTChecked(bst, p, q) == bruteLca(bst, p, q), \"BST LCA\");\n            swap(p->val, q->val);\n            require(recoverSwappedBST(bst) && validBSTIterative(bst), \"recover\");\n        }\n        shuffle(keys.begin(), keys.end(), rng);\n        for (int key : keys) {\n            TreeNode* expected = searchBST(bst, key);\n            TreeNode* detached = detachBST(bst, key);\n            require(detached == expected && detached &&\n                    !detached->left && !detached->right, \"detach identity\");\n            (void)checkedNodes(bst);\n            require(validBSTIterative(bst) && !searchBST(bst, key), \"delete structure\");\n        }\n        require(bst == nullptr, \"delete all\");\n    }\n    cout << \"All chapter 7 checks passed\" << endl;\n}",
+      "paragraphs": [
+        "使用显式require而不是仅靠assert；arena在每轮测试结束时统一回收节点。摘除节点仍由原arena管理，测试不执行单节点delete。"
+      ]
+    },
+    {
+      "type": "qa",
+      "title": "章末自测：八个关键问题及答案",
+      "items": [
+        {
+          "question": "1. 根只有一个左叶子，最小深度和直径分别是多少？",
+          "answer": [
+            "按本章约定最小深度为2个节点，直径为1条边。空的右孩子不是可选的根叶路径，不能用min(1,0)+1得到1。"
+          ]
+        },
+        {
+          "question": "2. 左高3、右高2，当前高度和经过当前点的直径是多少？",
+          "answer": [
+            "当前高度为1+max(3,2)=4，经过当前点的直径为3+2=5条边。整棵子树直径还要与左右子树内部直径比较，不能只看当前候选。"
+          ]
+        },
+        {
+          "question": "3. 全负树的最大路径为什么不是空路径0？",
+          "answer": [
+            "定义要求至少一个节点。负的孩子收益可以舍弃，但当前节点仍需参加候选；最终选择最大负值节点，空树则通过optional单独表达无路径。"
+          ]
+        },
+        {
+          "question": "4. 根1、左右孩子都是-1，向下和为0的路径有几条？",
+          "answer": [
+            "只有根到左孩子、根到右孩子两条。左右孩子不构成合法向下祖先链，进入右分支前必须撤销左分支前缀，否则会多计。"
+          ]
+        },
+        {
+          "question": "5. 根10、左5、5右12是不是BST？",
+          "answer": [
+            "不是。12必须同时满足大于5和小于祖先10，即落在(5,10)，但实际越界。检查直接父子关系会漏掉这个反例。"
+          ]
+        },
+        {
+          "question": "6. p是树内节点，q是树外但同值节点，LCA该怎么返回？",
+          "answer": [
+            "带存在性验证的接口应返回nullptr。节点相等必须比较身份而非val，基础简洁LCA若缺少存在性契约可能只返回p，不能据此宣称找到了两个目标的祖先。"
+          ]
+        },
+        {
+          "question": "7. 前序1,2与前序1,2,#,#,#的信息量有什么不同？",
+          "answer": [
+            "前者可能是左孩子2或右孩子2，结构不唯一；后者带空标记，唯一表示根1的左孩子2、右孩子为空。空标记是结构的一部分，不应任意丢弃。"
+          ]
+        },
+        {
+          "question": "8. arena生成的节点从BST摘除后，能直接delete吗？",
+          "answer": [
+            "不能。arena仍是节点所有者，摘除只改变可达关系；节点存储最终随arena统一回收。手动delete一个deque中的对象地址不匹配分配方式，会造成错误。"
+          ]
+        }
+      ]
+    }
+  ]
+}
