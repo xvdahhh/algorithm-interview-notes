@@ -188,6 +188,34 @@ const chapters = JSON.parse(fs.readFileSync(path.join(__dirname, 'chapters.json'
     await page.locator('#s3 .answer-list').scrollIntoViewIfNeeded();
     assert.ok(await page.locator('#s3 .answer-list dd').first().isVisible());
     await page.screenshot({ path: path.join(out, 'chapter05-mobile-answers.png') });
+    // Chapter 6: partition invariants, binary boundaries and answer searches.
+    await open(path.join(chapters[5].dir, 'index.html'));
+    assert.equal(await page.locator('.answer-list dt').count(), 32);
+    assert.equal(await page.locator('a[download][href*="detail-"]').count(), 16);
+    assert.equal(await page.locator('.study-table').count(), 10);
+    assert.equal(await page.locator('.chapter-outline a').count(), 5);
+    await page.setViewportSize({ width: 1440, height: 1000 });
+    await page.screenshot({ path: path.join(out, 'chapter06-desktop.png') });
+    await page.locator('#s2-before-2').scrollIntoViewIfNeeded();
+    await page.screenshot({ path: path.join(out, 'chapter06-partition.png') });
+    const searchExample = page.locator('.codebox').filter({
+      has: page.locator('a[href="examples/detail-median-two-sorted.cpp"]')
+    });
+    await searchExample.locator('.copy').click();
+    await page.waitForFunction(() => document.querySelector('.toast').textContent.includes('代码已'));
+    for (const width of [390, 320]) {
+      await page.setViewportSize({ width, height: 844 });
+      assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false);
+      const table = page.locator('.study-table').first();
+      await table.scrollIntoViewIfNeeded();
+      assert.ok(await table.evaluate(el => el.scrollWidth > el.clientWidth));
+    }
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.locator('#s3-before-2').scrollIntoViewIfNeeded();
+    await page.screenshot({ path: path.join(out, 'chapter06-mobile-boundary.png') });
+    await page.locator('#s4 .answer-list').scrollIntoViewIfNeeded();
+    assert.ok(await page.locator('#s4 .answer-list dd').first().isVisible());
+    await page.screenshot({ path: path.join(out, 'chapter06-mobile-answers.png') });
     assert.deepEqual(errors, []);
     console.log('PASS: all 16 pages open offline; search, copy, progress, mobile menu and mobile width checks pass.');
     console.log('Screenshots: ' + out);

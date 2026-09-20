@@ -1,0 +1,955 @@
+{
+  "intro": [
+    {
+      "type": "text",
+      "title": "本章学习目标：从背模板到能证明边界",
+      "paragraphs": [
+        "排序把无序信息组织成可利用的结构；二分则不断排除不可能包含答案的区域。两者都不能只记代码：排序要说明每个区域的含义，二分要说明哪部分已经被排除、答案为什么仍在剩余范围内。",
+        "本章保留四个主小节，增加经典题变式、推演表格、完整问答与可下载C++17源码。示例默认数组长度能用int表示；各算法另列更严格的数值或规模前提。递归区间、K的编号、函数是否修改输入，都属于接口的一部分。"
+      ]
+    },
+    {
+      "type": "table",
+      "title": "题型识别：先问需要什么结果",
+      "columns": [
+        "需求",
+        "首选思路",
+        "关键前提",
+        "重点考点"
+      ],
+      "rows": [
+        [
+          "全部元素有序",
+          "标准排序 / 归并 / 快排 / 堆排",
+          "比较器严格弱序",
+          "稳定性、时间与空间"
+        ],
+        [
+          "只要第K小或第K大",
+          "快速选择 / nth_element",
+          "K编号明确",
+          "只处理一边、重复区域"
+        ],
+        [
+          "有序数组的目标范围",
+          "lower_bound / upper_bound",
+          "数组按一致规则有序",
+          "返回n、重复值"
+        ],
+        [
+          "旋转数组或峰值",
+          "结构性二分",
+          "分清旋转、重复、相邻不等条件",
+          "保留有解的一侧"
+        ],
+        [
+          "最小可行资源",
+          "第一个true的答案二分",
+          "可行性false→true",
+          "边界、贪心判定证明"
+        ],
+        [
+          "最大可行间隔",
+          "最后一个true的答案二分",
+          "可行性true→false",
+          "上取整mid、防止停滞"
+        ]
+      ]
+    },
+    {
+      "type": "text",
+      "title": "推荐路线",
+      "paragraphs": [
+        "先手写稳定归并和左右边界；再画出三路分区四个区域并写快速选择；接着完成运力二分与最大最小间隔；最后学习旋转数组、峰值和中位数分割。不要把每道题都强行塞入同一组l、r更新语句。",
+        "面试口述顺序：定义问题和区间；说明不变量；解释每次排除的依据；说明终止与返回值；补空输入、重复值、数值极限及复杂度。二分优化的是调用check的次数，并不会让一个昂贵的check消失。"
+      ]
+    }
+  ],
+  "sections": {
+    "1": {
+      "before": [
+        {
+          "type": "text",
+          "title": "1.1 排序比较表中的前提不能省略",
+          "paragraphs": [
+            "比较排序在一般输入上需要区分n!种排列，决策树高度至少log₂(n!)=Ω(nlogn)。这不是说所有排序都必须nlogn：计数排序利用有限整数值域，突破的是比较模型前提，而不是信息论结论。",
+            "稳定是指键相等的记录保持原始相对顺序，不是说算法每次运行结果一样。只排int时肉眼不易看出区别；把元素表示为(分数,姓名)或(键,原始编号)就能观察。"
+          ]
+        },
+        {
+          "type": "table",
+          "title": "1.2 排序方法的准确比较",
+          "columns": [
+            "方法",
+            "时间",
+            "额外空间（含递归）",
+            "稳定性与适用条件"
+          ],
+          "rows": [
+            [
+              "归并排序",
+              "最坏O(nlogn)",
+              "数组缓存O(n)，栈O(logn)",
+              "相等时先取左侧可稳定"
+            ],
+            [
+              "普通递归快排",
+              "期望O(nlogn)，最坏O(n²)",
+              "期望O(logn)，最坏O(n)",
+              "通常不稳定；期望需随机模型"
+            ],
+            [
+              "本章随机三路快排",
+              "期望O(nlogn)，最坏O(n²)",
+              "只递归较短侧，栈最坏O(logn)",
+              "大量重复时可跳过相等区"
+            ],
+            [
+              "堆排序",
+              "最坏O(nlogn)",
+              "迭代下沉O(1)",
+              "不稳定；建堆O(n)"
+            ],
+            [
+              "插入排序",
+              "最坏O(n²)，有序时O(n)",
+              "O(1)",
+              "只搬动严格较大值时稳定"
+            ],
+            [
+              "稳定计数排序",
+              "O(n+K)",
+              "输出缓存O(n)+计数O(K)",
+              "整数值域有限；本节输出记录"
+            ],
+            [
+              "std::sort",
+              "C++17保证O(nlogn)比较",
+              "具体空间取决于实现",
+              "不保证稳定；常用内省排序实现"
+            ]
+          ]
+        },
+        {
+          "type": "text",
+          "title": "1.3 归并正确性：递归保证两半有序，合并只选最小未消费项",
+          "paragraphs": [
+            "使用半开区间[l,r)，长度不超过1时天然有序。递归得到[l,m)、[m,r)有序后，比较两侧首个未使用元素；更小者就是所有未使用元素的最小者。循环不断扩展一个有序输出前缀，直到两边耗尽。",
+            "相等时先拿左边可保持稳定：左区间的记录原本就先于右区间，同一区间内部顺序又由递归保持。每层合并总长度O(n)，树高O(logn)；只分配一次tmp并复用，避免每层反复创建大量临时数组。"
+          ]
+        },
+        {
+          "type": "code",
+          "title": "1.4 用带编号记录观察归并稳定性",
+          "file": "detail-stable-records.cpp",
+          "code": "struct Record {\n    int key;\n    int id; // original identity, not part of the sorting key\n};\nvoid stableMergeRange(vector<Record>& a, vector<Record>& tmp, int l, int r) {\n    if (r - l <= 1) return;\n    int m = l + (r - l) / 2;\n    stableMergeRange(a, tmp, l, m);\n    stableMergeRange(a, tmp, m, r);\n    int i = l, j = m, out = l;\n    while (i < m && j < r)\n        tmp[out++] = a[i].key <= a[j].key ? a[i++] : a[j++];\n    while (i < m) tmp[out++] = a[i++];\n    while (j < r) tmp[out++] = a[j++];\n    for (int k = l; k < r; ++k) a[k] = tmp[k];\n}\nvoid stableMergeSort(vector<Record>& a) {\n    vector<Record> tmp(a.size());\n    stableMergeRange(a, tmp, 0, (int)a.size());\n}",
+          "paragraphs": [
+            "输入(2,A),(1,B),(2,C),(1,D)按key排序后应为(1,B),(1,D),(2,A),(2,C)。代码id可用原下标表示A/B/C/D。改成<仍能按key有序，但跨半区相等时会先选右项，稳定性丢失。时间O(nlogn)、空间O(n)。"
+          ]
+        }
+      ],
+      "after": [
+        {
+          "type": "text",
+          "title": "1.5 逆序对：为什么一次加左半剩余长度",
+          "paragraphs": [
+            "逆序对要求原下标i<j且a[i]>a[j]。递归分别统计左右内部的逆序对；合并时，若右值a[j]小于左边当前a[i]，由于左半有序，a[i..m)的每个值都大于它，增加m-i。每个跨区间逆序对在选取其右端点时恰好计一次。",
+            "相等不构成逆序对，所以合并条件仍用<=优先取左侧。[2,2]应计0；长度n严格逆序最多n(n-1)/2，计数用long long。该实现会顺带将输入排序，若要保留原数组请先复制。"
+          ]
+        },
+        {
+          "type": "code",
+          "title": "1.6 归并统计逆序对",
+          "file": "detail-inversions.cpp",
+          "code": "long long inversionRange(vector<int>& a, vector<int>& tmp, int l, int r) {\n    if (r - l <= 1) return 0;\n    int m = l + (r - l) / 2;\n    long long answer = inversionRange(a, tmp, l, m);\n    answer += inversionRange(a, tmp, m, r);\n    int i = l, j = m, out = l;\n    while (i < m && j < r) {\n        if (a[i] <= a[j]) tmp[out++] = a[i++];\n        else { answer += m - i; tmp[out++] = a[j++]; }\n    }\n    while (i < m) tmp[out++] = a[i++];\n    while (j < r) tmp[out++] = a[j++];\n    for (int k = l; k < r; ++k) a[k] = tmp[k];\n    return answer;\n}\nlong long countInversions(vector<int>& a) {\n    vector<int> tmp(a.size());\n    return inversionRange(a, tmp, 0, (int)a.size());\n}",
+          "paragraphs": [
+            "时间O(nlogn)、空间O(n)。默认n能用int表示，此范围下最多约2.31×10^18对，仍在long long内；实践中内存约束会更早限制n。"
+          ]
+        },
+        {
+          "type": "table",
+          "title": "1.7 合并[2,4]与[1,3]：只统计跨半区贡献",
+          "columns": [
+            "当前左值 / 右值",
+            "取走谁",
+            "新增逆序对",
+            "合并结果前缀"
+          ],
+          "rows": [
+            [
+              "2 / 1",
+              "1",
+              "2：左侧2、4都大于1",
+              "1"
+            ],
+            [
+              "2 / 3",
+              "2",
+              "0",
+              "1,2"
+            ],
+            [
+              "4 / 3",
+              "3",
+              "1：4大于3",
+              "1,2,3"
+            ],
+            [
+              "4 / 右侧耗尽",
+              "4",
+              "0",
+              "1,2,3,4"
+            ]
+          ]
+        },
+        {
+          "type": "text",
+          "title": "1.8 比较器必须是严格弱序，不能写<=",
+          "paragraphs": [
+            "comp(x,x)必须为false；比较关系还需要传递，且由“互不小于”定义的等价关系也要传递。使用<=会让元素小于自身，违反标准算法要求，可能触发未定义行为，而不只是得到某种不稳定结果。",
+            "多字段排序可写：先比较score，score相同再比较id；或用tie(a.score,a.id)<tie(b.score,b.id)。不要用a.score-b.score<0，减法可能溢出。普通浮点<遇到NaN时也不满足所有输入上的严格弱序，应拒绝NaN或设计明确的全序规则。",
+            "std::stable_sort保证稳定，但C++17中的复杂度与可用额外内存相关：内存足够时O(nlogn)比较，否则可到O(nlog²n)。不要把std::sort实现细节和自己写的普通快排混为一谈。"
+          ]
+        },
+        {
+          "type": "code",
+          "title": "1.9 堆排序：迭代下沉与自底向上建堆",
+          "file": "detail-heap-sort.cpp",
+          "code": "void siftDown(vector<int>& a, int root, int size) {\n    while (root < size / 2) {\n        int child = root * 2 + 1;\n        if (child + 1 < size && a[child] < a[child + 1]) ++child;\n        if (a[root] >= a[child]) break;\n        swap(a[root], a[child]);\n        root = child;\n    }\n}\nvoid heapSort(vector<int>& a) {\n    int n = (int)a.size();\n    for (int root = n / 2 - 1; root >= 0; --root) siftDown(a, root, n);\n    for (int end = n - 1; end > 0; --end) {\n        swap(a[0], a[end]);\n        siftDown(a, 0, end);\n    }\n}",
+          "paragraphs": [
+            "维护最大堆，堆顶与未排序区末尾交换后，末尾就是本轮最大值，不再参与下沉。建堆从最后一个非叶节点开始；总成本是Σ(高度h的节点数·h)=O(n)，不是每个节点都下沉logn层。随后n次取顶总O(nlogn)，辅助空间O(1)，不稳定。"
+          ]
+        },
+        {
+          "type": "code",
+          "title": "1.10 稳定计数排序：累计末位置，逆向填入",
+          "file": "detail-counting-sort.cpp",
+          "code": "struct CountItem { int key; int id; };\nvector<CountItem> stableCountingSort(const vector<CountItem>& a, int keyCount) {\n    if (keyCount <= 0 || keyCount > 1000000)\n        throw invalid_argument(\"require 1 <= keyCount <= 1000000\");\n    vector<size_t> end(keyCount, 0);\n    for (const auto& item : a) {\n        if (item.key < 0 || item.key >= keyCount)\n            throw invalid_argument(\"key outside [0, keyCount)\");\n        ++end[item.key];\n    }\n    for (int key = 1; key < keyCount; ++key) end[key] += end[key - 1];\n    vector<CountItem> answer(a.size());\n    for (size_t i = a.size(); i > 0; --i) {\n        const auto& item = a[i - 1];\n        answer[--end[item.key]] = item;\n    }\n    return answer;\n}",
+          "paragraphs": [
+            "end[v]起初是键<=v的元素总数，也就是该键最后一个位置的后一位；逆向扫描并递减填入，使较晚的相等记录落在较后的位置，保持稳定。时间O(n+K)，含输出的空间O(n+K)。若只按频次重建整数数列，可只用O(K)额外计数，但那无法表达记录的稳定顺序。"
+          ]
+        }
+      ],
+      "answers": [
+        {
+          "question": "把归并中的<=改成<会改变什么？",
+          "answer": [
+            "数值排序仍然正确，但相等时会优先选右半元素。左半同键记录原本位于右半之前，这样会颠倒它们的相对顺序，失去稳定性。"
+          ]
+        },
+        {
+          "question": "逆序对为什么加m-i而不是1？",
+          "answer": [
+            "右值小于左半当前最小未消费值，所以也小于左半所有后续值。对应原下标都在左半，满足下标较小，故这m-i个元素各贡献一对。"
+          ]
+        },
+        {
+          "question": "比较器<=为什么不是一种合法的稳定排序办法？",
+          "answer": [
+            "稳定性由算法如何处理相等项决定，而<=违反严格弱序的自反排除要求comp(x,x)=false。标准排序依赖该要求，违规不能保证算法正确甚至不能保证正常结束。"
+          ]
+        },
+        {
+          "question": "为什么建堆O(n)，但反复插入建堆通常O(nlogn)？",
+          "answer": [
+            "自底向上下沉时，大部分节点靠近叶子，下沉高度很小；按高度汇总是线性。逐个插入会执行向上调整，每次最多logn，得到O(nlogn)上界，两种建堆过程不同。"
+          ]
+        },
+        {
+          "question": "计数排序O(n+K)能无条件替代比较排序吗？",
+          "answer": [
+            "不能。它要求可映射到较小离散值域，K太大会耗费大量初始化时间和内存；任意字符串或复杂比较关系不能直接当数组下标。稳定记录版本还需要O(n)输出缓存。"
+          ]
+        },
+        {
+          "question": "稳定排序与多字段排序有什么关系？",
+          "answer": [
+            "可先按次关键字排序，再用稳定排序按主关键字排序，保持同主键记录的次关键字顺序。也可一次用严格弱序的多字段比较器；这时稳定性只影响所有比较字段都相等的记录。"
+          ]
+        }
+      ]
+    },
+    "2": {
+      "before": [
+        {
+          "type": "text",
+          "title": "2.1 三路分区：一边分类，一边缩短未知区",
+          "paragraphs": [
+            "闭区间[l,r]中维护四段：[l,lt)小于pivot，[lt,i)等于pivot，[i,gt]未知，(gt,r]大于pivot。初始lt=i=l、gt=r，三个已知区为空。每次处理a[i]，未知区长度必须减少1。",
+            "小于pivot：与lt交换，然后lt和i同时增加；大于pivot：与gt交换，仅gt减少，因为换到i的值尚未分类；等于pivot：只增加i。结束时i=gt+1，未知区空，只需排序两侧，整个相等区无需再递归。pivot必须保存值的副本，不要用会被交换的数组元素引用。"
+          ]
+        },
+        {
+          "type": "table",
+          "title": "2.2 [2,3,1,2]，pivot=2的分区轨迹",
+          "columns": [
+            "动作后数组",
+            "lt / i / gt",
+            "下一步理由"
+          ],
+          "rows": [
+            [
+              "[2,3,1,2]",
+              "0 / 0 / 3",
+              "初始全部未知"
+            ],
+            [
+              "[2,3,1,2]",
+              "0 / 1 / 3",
+              "2相等，i前进"
+            ],
+            [
+              "[2,2,1,3]",
+              "0 / 1 / 2",
+              "3换到右侧，i不动"
+            ],
+            [
+              "[2,2,1,3]",
+              "0 / 2 / 2",
+              "换来的2相等，i前进"
+            ],
+            [
+              "[1,2,2,3]",
+              "1 / 3 / 2",
+              "1换到左侧，未知区为空"
+            ]
+          ]
+        },
+        {
+          "type": "text",
+          "title": "2.3 随机基准与递归栈是两个不同问题",
+          "paragraphs": [
+            "基础代码取中间位置的值，不等于取数值中位数，特殊输入仍可导致极不均衡分区。随机取基准能对固定输入给出期望O(nlogn)，但最坏时间仍是O(n²)。全相等输入用三路分区一轮即可结束，时间O(n)。",
+            "防栈溢出的另一个技巧：只递归较短的一侧，把较长的一侧放在while循环继续处理。每次真正深入递归的子问题至多原来一半，所以栈深最坏O(logn)，即使分区很差，时间仍可能二次。空间优化不等于消除了时间最坏情况。"
+          ]
+        },
+        {
+          "type": "code",
+          "title": "2.4 随机三路快排：短边递归、长边迭代",
+          "file": "detail-random-quick-sort.cpp",
+          "code": "void randomQuickRange(vector<int>& a, int l, int r, mt19937& rng) {\n    while (l < r) {\n        uniform_int_distribution<int> pick(l, r);\n        int pivot = a[pick(rng)];\n        int lt = l, i = l, gt = r;\n        while (i <= gt) {\n            if (a[i] < pivot) swap(a[lt++], a[i++]);\n            else if (a[i] > pivot) swap(a[i], a[gt--]);\n            else ++i;\n        }\n        if (lt - l < r - gt) {\n            randomQuickRange(a, l, lt - 1, rng);\n            l = gt + 1;\n        } else {\n            randomQuickRange(a, gt + 1, r, rng);\n            r = lt - 1;\n        }\n    }\n}\nvoid randomizedQuickSort(vector<int>& a, uint32_t seed) {\n    mt19937 rng(seed);\n    if (!a.empty()) randomQuickRange(a, 0, (int)a.size() - 1, rng);\n}",
+          "paragraphs": [
+            "显式传seed便于复现测试；期望时间的结论是对随机基准选择而言，固定seed并不能构成对恶意输入的最坏保证。原地修改、不稳定；辅助递归栈最坏O(logn)，不含固定大小随机数引擎状态。"
+          ]
+        }
+      ],
+      "after": [
+        {
+          "type": "text",
+          "title": "2.5 第K小：排序两侧是多余工作",
+          "paragraphs": [
+            "将K定义为1开始编号，目标下标target=K-1。分区后，[l,lt)的秩都更小，[lt,gt]都是pivot，[gt+1,r]都更大；若target落在相等区直接返回，否则只缩小到包含target的一边。",
+            "随机基准下，常数概率产生足够均衡的分区，期望剩余规模按常数比例下降，总扫描量为O(n)，不是每轮都花n再做logn轮。最坏持续只减少一个元素时仍为O(n²)。第K大可转成第n-K+1小，但先检查K合法。"
+          ]
+        },
+        {
+          "type": "code",
+          "title": "2.6 迭代快速选择：仅求第K小",
+          "file": "detail-quickselect.cpp",
+          "code": "int kthSmallest(vector<int>& a, int k, uint32_t seed) {\n    int n = (int)a.size();\n    if (k < 1 || k > n) throw out_of_range(\"k outside [1,n]\");\n    int target = k - 1, l = 0, r = n - 1;\n    mt19937 rng(seed);\n    while (l <= r) {\n        uniform_int_distribution<int> pick(l, r);\n        int pivot = a[pick(rng)];\n        int lt = l, i = l, gt = r;\n        while (i <= gt) {\n            if (a[i] < pivot) swap(a[lt++], a[i++]);\n            else if (a[i] > pivot) swap(a[i], a[gt--]);\n            else ++i;\n        }\n        if (target < lt) r = lt - 1;\n        else if (target > gt) l = gt + 1;\n        else return pivot;\n    }\n    throw logic_error(\"unreachable for valid input\");\n}",
+          "paragraphs": [
+            "会打乱输入，但不保证整体有序。期望O(n)、最坏O(n²)，额外空间O(1)，不计固定大小随机引擎。需要保持原数组时先复制。std::nth_element提供相同的选择用途，选择后两侧内部不保证有序；标准非并行版本为平均线性比较成本。"
+          ]
+        },
+        {
+          "type": "table",
+          "title": "2.7 排序、快速选择、堆如何选择",
+          "columns": [
+            "需求",
+            "方法",
+            "时间",
+            "不要误解"
+          ],
+          "rows": [
+            [
+              "输出所有元素有序",
+              "sort",
+              "O(nlogn)比较",
+              "一次排序可支持后续多次查询"
+            ],
+            [
+              "只查询一个K",
+              "快速选择 / nth_element",
+              "平均O(n)",
+              "左右两边不一定有序"
+            ],
+            [
+              "流式维护前K大",
+              "大小K的最小堆",
+              "O(nlogK)",
+              "无需一次保存所有输入"
+            ],
+            [
+              "输出有序前K个",
+              "选择后排序前K个",
+              "平均O(n)+O(KlogK)",
+              "只选择不能提供内部顺序"
+            ]
+          ]
+        },
+        {
+          "type": "code",
+          "title": "2.8 颜色分类：三路分区不一定需要递归",
+          "file": "detail-sort-colors.cpp",
+          "code": "void sortColors(vector<int>& a) {\n    for (int value : a)\n        if (value < 0 || value > 2) throw invalid_argument(\"only 0,1,2 allowed\");\n    int zero = 0, i = 0, two = (int)a.size() - 1;\n    while (i <= two) {\n        if (a[i] == 0) swap(a[zero++], a[i++]);\n        else if (a[i] == 2) swap(a[i], a[two--]);\n        else ++i;\n    }\n}",
+          "paragraphs": [
+            "只有0、1、2三类时，一轮分类已经完全有序，无需递归。预先验证数据合法，避免修改到一半才发现非法值；总时间仍O(n)、空间O(1)。与右端交换后i不前进的理由，与快排完全相同。"
+          ]
+        }
+      ],
+      "answers": [
+        {
+          "question": "为什么大于pivot时交换完不能++i？",
+          "answer": [
+            "右侧gt指向未知区，换回来的值还没有被检查。若直接跳过，可能把一个应去左侧的小值遗留在相等区。每轮只保证右边界缩小，而不是i也可以推进。"
+          ]
+        },
+        {
+          "question": "为什么pivot要保存成int值而非引用？",
+          "answer": [
+            "数组分区会交换元素。若pivot引用某个位置，该位置的值可能被换走，比较基准在中途改变，已经建立的四段不变量就失效。"
+          ]
+        },
+        {
+          "question": "中间位置作基准为什么不保证平衡？",
+          "answer": [
+            "位置的中间不代表值的中位数。该位置可能恰好是最小或最大值，构造输入也可让后续每轮继续如此。随机基准改善期望行为，不能给出最坏nlogn保证。"
+          ]
+        },
+        {
+          "question": "短边递归如何把最坏栈深降到logn？",
+          "answer": [
+            "相等区之外的两侧总长度小于当前长度，较短侧长度至多一半。只有这侧会新增调用栈层；较长侧在当前栈帧中循环处理，因此每深入一层规模至少减半。"
+          ]
+        },
+        {
+          "question": "快速选择遇到大量重复值是否还要逐个定位？",
+          "answer": [
+            "三路分区会给出整个等于pivot的秩区间。目标下标落在里面时答案就是pivot，无须区分某个相等元素的身份；若题目要按附加字段区分，则比较键必须包含该字段。"
+          ]
+        },
+        {
+          "question": "第K大为什么是下标n-K，而不是K-1？",
+          "answer": [
+            "升序排序后最大元素位于n-1，第二大位于n-2，所以第K大位于n-K。对应1开始的第n-K+1小。K不合法时必须先拒绝，不能让越界算术进入选择过程。"
+          ]
+        }
+      ]
+    },
+    "3": {
+      "before": [
+        {
+          "type": "text",
+          "title": "3.1 找边界前，先把命题写成false→true",
+          "paragraphs": [
+            "在升序数组中，P(i):a[i]>=x 从false变成true；lower_bound寻找第一个true。维护[0,l)全部false，[r,n)全部true，[l,r)尚未确定。r=n时右侧已知true区域为空，n作为“没有true”的返回哨兵，不需要读取a[n]。",
+            "若a[mid]>=x，mid和之后都可归入true区域，令r=mid，不能mid-1，因为mid自身可能就是第一个true。否则mid及之前都false，令l=mid+1。终止l=r时未知区为空，该位置恰好是分界。",
+            "注意：待检查元素区间是[l,r)，但最终边界位置可能等于r。不要将“元素候选范围”与“边界答案的位置范围”混为一谈；例如全false时返回n。"
+          ]
+        },
+        {
+          "type": "table",
+          "title": "3.2 [1,2,2,2,4]寻找lower_bound(2)",
+          "columns": [
+            "l / r（右开）",
+            "mid / 值",
+            "判断",
+            "更新"
+          ],
+          "rows": [
+            [
+              "0 / 5",
+              "2 / 2",
+              ">=2，mid可能是首个true",
+              "r=2"
+            ],
+            [
+              "0 / 2",
+              "1 / 2",
+              ">=2，继续向左找",
+              "r=1"
+            ],
+            [
+              "0 / 1",
+              "0 / 1",
+              "<2，排除mid",
+              "l=1"
+            ],
+            [
+              "1 / 1",
+              "不再读取",
+              "未知区为空",
+              "返回1"
+            ]
+          ]
+        },
+        {
+          "type": "code",
+          "title": "3.3 手写上下界：只改变谓词，不混改边界",
+          "file": "detail-bounds.cpp",
+          "code": "int lowerBoundIndex(const vector<int>& a, int x) {\n    int l = 0, r = (int)a.size();\n    while (l < r) {\n        int mid = l + (r - l) / 2;\n        if (a[mid] >= x) r = mid;\n        else l = mid + 1;\n    }\n    return l;\n}\nint upperBoundIndex(const vector<int>& a, int x) {\n    int l = 0, r = (int)a.size();\n    while (l < r) {\n        int mid = l + (r - l) / 2;\n        if (a[mid] > x) r = mid;\n        else l = mid + 1;\n    }\n    return l;\n}\nint lastAtMost(const vector<int>& a, int x) {\n    return upperBoundIndex(a, x) - 1;\n}",
+          "paragraphs": [
+            "前提a升序，时间O(logn)、空间O(1)。上下界返回范围[0,n]，最后一个<=x返回范围[-1,n-1]。成员判断还要检查p<n且a[p]==x。若upper_bound等于begin，不能对迭代器直接减1；本例转换成有符号下标后返回-1哨兵。"
+          ]
+        },
+        {
+          "type": "table",
+          "title": "3.4 四种常用边界与缺失情况",
+          "columns": [
+            "想找的边界",
+            "表达式",
+            "可能不存在时",
+            "例 [1,2,2,4]、x=2"
+          ],
+          "rows": [
+            [
+              "第一个>=x",
+              "lower_bound(x)",
+              "n",
+              "1"
+            ],
+            [
+              "第一个>x",
+              "upper_bound(x)",
+              "n",
+              "3"
+            ],
+            [
+              "最后一个<x",
+              "lower_bound(x)-1",
+              "-1",
+              "0"
+            ],
+            [
+              "最后一个<=x",
+              "upper_bound(x)-1",
+              "-1",
+              "2"
+            ],
+            [
+              "等于x的数量",
+              "upper_bound-lower_bound",
+              "0",
+              "2"
+            ]
+          ]
+        },
+        {
+          "type": "text",
+          "title": "3.5 标准库的比较器和迭代器要求",
+          "paragraphs": [
+            "lower_bound要求范围对给定比较谓词分区；升序有序是对所有查询都能满足该要求的常用前提。若数组按降序排序，二分也必须采用一致的比较规则。不要在未排序数组上调用后碰巧得到一个下标，就以为算法有效。",
+            "vector是随机访问迭代器，二分比较和移动都为O(logn)。list或set的通用lower_bound虽然比较次数O(logn)，迭代器前进总量可能O(n)；set/map应优先用成员lower_bound，利用树结构做到O(logn)。"
+          ]
+        }
+      ],
+      "after": [
+        {
+          "type": "text",
+          "title": "3.6 旋转数组：不是整体有序，但至少一半有序",
+          "paragraphs": [
+            "无重复的升序数组旋转后，比较a[l]与a[mid]：若a[l]<=a[mid]，左半[l,mid]有序；判断目标是否在[a[l],a[mid])即可决定去向。否则右半[mid,r]有序，判断目标是否在(a[mid],a[r]]。先单独检查a[mid]==target，再排除mid。",
+            "存在重复时，a[l]==a[mid]==a[r]无法判断断点在哪边。已知mid不是目标后，只能安全缩去两端相等值，可能退化成逐个排除；例如大量1中夹一个0。不能同时声称支持任意重复又保证最坏O(logn)。"
+          ]
+        },
+        {
+          "type": "code",
+          "title": "3.7 旋转数组搜索：无重复与允许重复的两个接口",
+          "file": "detail-rotated-search.cpp",
+          "code": "int searchRotatedDistinct(const vector<int>& a, int target) {\n    int l = 0, r = (int)a.size() - 1;\n    while (l <= r) {\n        int mid = l + (r - l) / 2;\n        if (a[mid] == target) return mid;\n        if (a[l] <= a[mid]) {\n            if (a[l] <= target && target < a[mid]) r = mid - 1;\n            else l = mid + 1;\n        } else {\n            if (a[mid] < target && target <= a[r]) l = mid + 1;\n            else r = mid - 1;\n        }\n    }\n    return -1;\n}\nbool searchRotatedWithDuplicates(const vector<int>& a, int target) {\n    int l = 0, r = (int)a.size() - 1;\n    while (l <= r) {\n        int mid = l + (r - l) / 2;\n        if (a[mid] == target) return true;\n        if (a[l] == a[mid] && a[mid] == a[r]) { ++l; --r; continue; }\n        if (a[l] <= a[mid]) {\n            if (a[l] <= target && target < a[mid]) r = mid - 1;\n            else l = mid + 1;\n        } else {\n            if (a[mid] < target && target <= a[r]) l = mid + 1;\n            else r = mid - 1;\n        }\n    }\n    return false;\n}",
+          "paragraphs": [
+            "输入必须分别来自严格递增/非递减数组的一次旋转；这两个函数不在内部花O(n)验证结构。无重复版O(logn)，允许重复版最坏O(n)，空间均O(1)。空输入返回-1或false。"
+          ]
+        },
+        {
+          "type": "code",
+          "title": "3.8 旋转数组最小值：mid与右端比较",
+          "file": "detail-rotated-minimum.cpp",
+          "code": "int minimumInRotated(const vector<int>& a) {\n    if (a.empty()) throw invalid_argument(\"empty array\");\n    int l = 0, r = (int)a.size() - 1;\n    while (l < r) {\n        int mid = l + (r - l) / 2;\n        if (a[mid] < a[r]) r = mid;\n        else if (a[mid] > a[r]) l = mid + 1;\n        else --r;\n    }\n    return a[l];\n}",
+          "paragraphs": [
+            "前提为非递减数组旋转，允许重复。a[mid]<a[r]时，右侧不跨断点，最小值在[l,mid]且可能就是mid；a[mid]>a[r]时断点在右侧，排除mid。相等时不能判断断点，但可删去一个重复的右端值，不会删掉所有最小值。无重复时O(logn)，有重复最坏O(n)，空间O(1)。"
+          ]
+        },
+        {
+          "type": "text",
+          "title": "3.9 峰值二分：保留的是“某个峰”，不是某个固定答案",
+          "paragraphs": [
+            "前提a相邻元素不相等，数组两端之外视为负无穷。若a[mid]<a[mid+1]，沿上坡向右走：要么某处转为下降形成峰，要么一直上升到右端，右端本身就是峰；因此右侧必存在峰。反方向同理。",
+            "数组可以有多个峰，不要求全局先增后减。这里的“上坡”布尔值并不在整个数组上单调，因此不能照搬“第一个true”的证明；正确依据是每次保留的区间仍包含一个峰以及边界斜率条件。"
+          ]
+        },
+        {
+          "type": "code",
+          "title": "3.10 寻找任意严格峰值",
+          "file": "detail-peak.cpp",
+          "code": "int findPeak(const vector<int>& a) {\n    if (a.empty()) return -1;\n    int l = 0, r = (int)a.size() - 1;\n    while (l < r) {\n        int mid = l + (r - l) / 2;\n        if (a[mid] < a[mid + 1]) l = mid + 1;\n        else r = mid;\n    }\n    return l;\n}",
+          "paragraphs": [
+            "当l<r时，下取整mid<=r-1，读取mid+1安全。单元素返回0；严格递增返回末尾，严格递减返回0。依赖相邻不相等的契约，若允许平台，可能不存在严格峰，本函数不能直接保证满足原定义。时间O(logn)、空间O(1)。"
+          ]
+        },
+        {
+          "type": "text",
+          "title": "3.11 两个有序数组中位数：二分分割线，而不是枚举数值",
+          "paragraphs": [
+            "在较短数组A上选择左边拿i个，另一个数组B拿j=(m+n+1)/2-i个，让总左侧比右侧最多多一个。只要A左最大<=B右最小且B左最大<=A右最小，所有左侧元素就不大于右侧；奇数总长度取左最大，偶数取左右边界均值。",
+            "若A左最大>B右最小，说明A左侧取多了，i减小；若B左最大>A右最小，说明A左侧取少了，i增大。在较短数组上二分可使j始终落在合法范围，边界为空时用长整型极值作哨兵。"
+          ]
+        },
+        {
+          "type": "code",
+          "title": "3.12 中位数分割：空侧、奇偶与均值溢出",
+          "file": "detail-median-two-sorted.cpp",
+          "code": "double medianOfSorted(const vector<int>& a, const vector<int>& b) {\n    if (a.size() > b.size()) return medianOfSorted(b, a);\n    int m = (int)a.size(), n = (int)b.size();\n    if (m == 0 && n == 0) throw invalid_argument(\"both arrays empty\");\n    int half = (int)(((long long)m + n + 1) / 2);\n    int l = 0, r = m;\n    while (l <= r) {\n        int i = l + (r - l) / 2, j = half - i;\n        long long al = i == 0 ? LLONG_MIN : a[i - 1];\n        long long ar = i == m ? LLONG_MAX : a[i];\n        long long bl = j == 0 ? LLONG_MIN : b[j - 1];\n        long long br = j == n ? LLONG_MAX : b[j];\n        if (al <= br && bl <= ar) {\n            if (((long long)m + n) % 2 != 0) return (double)max(al, bl);\n            return (max(al, bl) + min(ar, br)) / 2.0;\n        }\n        if (al > br) r = i - 1;\n        else l = i + 1;\n    }\n    throw invalid_argument(\"sorted input required\");\n}",
+          "paragraphs": [
+            "输入各自非递减有序，单个数组长度可由int表示。算法并不完整验证有序性，非法输入可能产生错误结果而不抛异常。总长度非零时，有效分割的两侧实际边界会排除无穷哨兵；两个int边界先提升为long long求和，避免INT_MAX+INT_MAX溢出。时间O(log(min(m,n)+1))，空间O(1)。"
+          ]
+        }
+      ],
+      "answers": [
+        {
+          "question": "二分模板用r=mid，为什么不会死循环？",
+          "answer": [
+            "当l<r时下取整mid<r，所以r=mid严格减小右边界；另一支l=mid+1严格增大左边界。关键是每个分支都减少r-l，而不是看到mid就随意加减1。"
+          ]
+        },
+        {
+          "question": "找不到目标时lower_bound返回n还是-1？",
+          "answer": [
+            "它返回插入边界，范围为[0,n]，可能在数组内部指向更大值，也可能等于n。判断存在必须同时检查p<n和a[p]==target；-1只是某些封装接口约定，不是lower_bound的语义。"
+          ]
+        },
+        {
+          "question": "最后一个<=x为什么用upper_bound减1？",
+          "answer": [
+            "upper_bound恰是第一个>x的位置，之前的最后一个元素就是最后一个<=x。若upper_bound位置为0，说明不存在符合项，返回有符号下标-1，不能对begin迭代器直接做非法前移。"
+          ]
+        },
+        {
+          "question": "旋转数组有重复时，为什么最坏只能线性？",
+          "answer": [
+            "大量相等值会隐藏断点位置，例如只有一个0而其他全为1。端点与中点相等时无法据此排除半边，只能逐步缩小。O(logn)保证依赖能确定哪半有序的额外信息。"
+          ]
+        },
+        {
+          "question": "峰值二分需要数组整体单峰吗？",
+          "answer": [
+            "不需要，但要求相邻不等且边界外为负无穷。比较中点斜率能证明某一侧必有一个峰，从而安全保留它；并不是在整个数组上寻找一个单调布尔谓词的边界。"
+          ]
+        },
+        {
+          "question": "中位数为什么在较短数组上二分分割？",
+          "answer": [
+            "这样i从0到m时，按左侧总数计算出的j自然在0..n范围内，搜索空间也更小。若在长数组上随意取i，j可能为负或超过短数组长度，还需额外限制i的上下界。"
+          ]
+        }
+      ]
+    },
+    "4": {
+      "before": [
+        {
+          "type": "text",
+          "title": "4.1 答案二分的四个证明义务",
+          "paragraphs": [
+            "第一，真实答案处于初始范围；第二，check(cap)确实等价于该容量可行，而不是一种不完整的尝试；第三，可行性具有单调性；第四，每轮保留答案并严格缩小范围。只看见“最小化最大值”不足以推出二分代码正确。",
+            "基础运力题规定货物顺序不变，每天装运一个连续前缀，重量为正。约定n<=100000、每件重量<=10^9、非空输入days>=1；这样总重和load+x都可用long long表示。空数组直接返回0，即使days<=0也不进入非空参数校验，这是基础接口的约定。"
+          ]
+        },
+        {
+          "type": "text",
+          "title": "4.2 为什么运力判定可以每天尽量装满",
+          "paragraphs": [
+            "固定容量cap，每天贪心装到再加一件就超容量。用归纳比较任何合法方案：第一天贪心能完成的前缀不短于它；若前t天贪心已经完成至少同样多货物，第t+1天也可从更靠后位置出发，正重量保证它不会比另一方案覆盖更少的前缀。因此贪心所需天数最少。",
+            "容量增大时，原来可行的装法仍可行，所以check从false变true。下界max(w)排除装不下单件的容量，上界sum(w)可在一天装完，必可行。每次check O(n)，二分次数O(log(S-M+1))；计入至少一次读入的统一写法为O(n·(1+log(S-M+1)))。"
+          ]
+        },
+        {
+          "type": "table",
+          "title": "4.3 [7,2,5,10,8]，D=2的容量判定",
+          "columns": [
+            "容量",
+            "贪心分组",
+            "所需天数",
+            "可行吗"
+          ],
+          "rows": [
+            [
+              "10",
+              "[7,2] / [5] / [10] / [8]",
+              "4",
+              "否"
+            ],
+            [
+              "15",
+              "[7,2,5] / [10] / [8]",
+              "3",
+              "否"
+            ],
+            [
+              "17",
+              "[7,2,5] / [10] / [8]",
+              "3",
+              "否"
+            ],
+            [
+              "18",
+              "[7,2,5] / [10,8]",
+              "2",
+              "是"
+            ],
+            [
+              "21",
+              "[7,2,5] / [10,8]",
+              "2",
+              "是"
+            ]
+          ]
+        },
+        {
+          "type": "table",
+          "title": "4.4 两种答案边界：别混用mid的取整方向",
+          "columns": [
+            "目标与单调性",
+            "维护的闭区间",
+            "mid",
+            "可行时 / 不可行时"
+          ],
+          "rows": [
+            [
+              "最小可行：false→true",
+              "[lo,hi]含答案，hi可行",
+              "lo+(hi-lo)/2",
+              "hi=mid / lo=mid+1"
+            ],
+            [
+              "最大可行：true→false",
+              "[lo,hi]含答案，lo可行",
+              "lo+(hi-lo+1)/2",
+              "lo=mid / hi=mid-1"
+            ]
+          ]
+        },
+        {
+          "type": "text",
+          "title": "4.5 把运力题变成分割数组：前提差一点，证明就变了",
+          "paragraphs": [
+            "非负数组分成至多D个连续非空段、最小化最大段和，与运力模型相同。若要求恰好D段且1<=D<=n，非负数下可把不足D段的方案继续拆开而不增加最大段和，因此可复用判定。",
+            "若允许负数，继续加入元素可能降低段和，原来的贪心和max(w)下界都可能失效。允许重排货物时，固定顺序尽量装满也不再是完备判定，例如[2,2,3,3]、容量5，顺序贪心用3天，但重排为[2,3]、[2,3]只用2天。可行性可能仍然单调，难点却变成如何正确实现check。"
+          ]
+        }
+      ],
+      "after": [
+        {
+          "type": "code",
+          "title": "4.6 最小吃香蕉速度：向上取整与不可行输入",
+          "file": "detail-banana-speed.cpp",
+          "code": "int minimumEatingSpeed(const vector<int>& piles, long long hours) {\n    if (piles.empty()) return 0;\n    if (hours <= 0) throw invalid_argument(\"hours must be positive\");\n    int hi = 0;\n    for (int value : piles) {\n        if (value <= 0) throw invalid_argument(\"piles must be positive\");\n        hi = max(hi, value);\n    }\n    if (hours < (long long)piles.size()) return -1;\n    auto feasible = [&](int speed) {\n        long long used = 0;\n        for (int value : piles) {\n            used += value / speed + (value % speed != 0);\n            if (used > hours) return false;\n        }\n        return true;\n    };\n    int lo = 1;\n    while (lo < hi) {\n        int mid = lo + (hi - lo) / 2;\n        if (feasible(mid)) hi = mid;\n        else lo = mid + 1;\n    }\n    return lo;\n}",
+          "paragraphs": [
+            "每小时只能吃一堆中的至多speed根，不能在同一小时切换堆，所以时间是各堆ceil(p/speed)之和，而不是ceil(总香蕉/speed)。[3,6,7,11]、hours=8答案为4。",
+            "输入n可用int表示，各堆为正int，最坏时间和不超过n*INT_MAX，在long long内。使用p/speed+(p%speed!=0)避免p+speed-1在int中溢出。时间O(n·(1+log M))、空间O(1)。hours<n时无解返回-1；空输入返回0。"
+          ]
+        },
+        {
+          "type": "code",
+          "title": "4.7 最大化最小距离：最后一个可行答案",
+          "file": "detail-max-min-distance.cpp",
+          "code": "long long maximumMinimumDistance(vector<int> positions, int count) {\n    int n = (int)positions.size();\n    if (count < 2 || count > n) throw invalid_argument(\"require 2 <= count <= n\");\n    sort(positions.begin(), positions.end());\n    auto feasible = [&](long long distance) {\n        int placed = 1;\n        long long last = positions[0];\n        for (int i = 1; i < n; ++i) {\n            if ((long long)positions[i] - last >= distance) {\n                last = positions[i];\n                if (++placed == count) return true;\n            }\n        }\n        return false;\n    };\n    long long lo = 0, hi = (long long)positions.back() - positions.front();\n    while (lo < hi) {\n        long long mid = lo + (hi - lo + 1) / 2;\n        if (feasible(mid)) lo = mid;\n        else hi = mid - 1;\n    }\n    return lo;\n}",
+          "paragraphs": [
+            "从最左位置开始，每次选择距离满足要求的最早位置。它为后续放置保留最多空间，可用交换论证把任意可行方案的当前点左移到贪心点而不损害未来，因此判定完备。距离变大只会更难，可行性true→false。",
+            "位置是int，差值先转long long，覆盖INT_MIN到INT_MAX。重复坐标按不同可选位置处理，因此距离0也可能是答案；若题目要求物理位置唯一，应先明确输入约定。接口复制并排序，不改调用者输入。总时间O(nlogn+n·log(R+1))、复制空间O(n)，R为坐标跨度；上取整mid在本例范围内不会溢出。"
+          ]
+        },
+        {
+          "type": "text",
+          "title": "4.8 最后一个true为什么用上取整mid",
+          "paragraphs": [
+            "若lo=4、hi=5，下取整mid=4，而可行分支更新lo=mid会使区间完全不变，造成死循环。上取整得到5，无论可行还是不可行，区间都会变成一个点。另一种合法做法是改用不变量不同的哨兵区间，但不能只替换mid而不检查全部边界语义。",
+            "lo+(hi-lo)/2的防溢出也有前提：hi-lo本身必须可表示。本章数组下标非负，资源区间与坐标跨度都已限制，因此满足。若二分完整有符号64位范围，差值也可能溢出，需要单独设计中点计算。"
+          ]
+        },
+        {
+          "type": "code",
+          "title": "4.9 整数平方根：用除法比较避免mid*mid溢出",
+          "file": "detail-integer-sqrt.cpp",
+          "code": "uint64_t floorSquareRoot(uint64_t x) {\n    uint64_t lo = 0, hi = min(x, uint64_t{UINT32_MAX});\n    while (lo < hi) {\n        uint64_t mid = lo + (hi - lo + 1) / 2;\n        if (mid <= x / mid) lo = mid;\n        else hi = mid - 1;\n    }\n    return lo;\n}",
+          "paragraphs": [
+            "返回最大的非负整数r，使r²<=x。uint64_t最大输入的平方根不超过2^32-1，所以hi的界正确；循环中mid>=1，不会除零。用mid<=x/mid代替乘法比较，避免中间乘积溢出。固定64位至多32轮，空间O(1)。"
+          ]
+        },
+        {
+          "type": "text",
+          "title": "4.10 实数二分与边界自检",
+          "paragraphs": [
+            "若答案是实数，不能用lo=mid+1。可固定迭代次数，或在hi-lo<=eps时停止；要考虑浮点舍入使mid等于端点，以及误差是绝对还是相对。把整数模板里的+1删除并不自动完成数值分析。",
+            "输出最小可行值ans后，可检查check(ans)为真，且ans大于域下界时check(ans-1)为假；输出最大可行值时检查check(ans)为真，且域内ans+1不可行。这种邻接验证很适合发现边界偏一。"
+          ]
+        }
+      ],
+      "answers": [
+        {
+          "question": "看到“最小化最大值”就能直接答案二分吗？",
+          "answer": [
+            "还需给出答案范围、可行性的单调性和一个正确且足够快的判定算法。单调性成立不代表容易判定，例如允许重排后的装箱问题就不能直接用原顺序贪心。"
+          ]
+        },
+        {
+          "question": "运力上界为什么用总重而不是平均重量？",
+          "answer": [
+            "总重一定可以在一天装完，是可靠的可行上界；平均重量只是可能的下界信息，不能保证装下最大单件，也可能受连续分组约束影响。二分需要一个已知可行的端点。"
+          ]
+        },
+        {
+          "question": "运力题每天尽量装满为什么不会损害后面？",
+          "answer": [
+            "在容量固定且重量为正的顺序模型里，装得更多只会把剩余任务变成更短的后缀。通过已完成前缀的归纳，贪心每一天都不会比其他方案完成得少，所以其天数最少。"
+          ]
+        },
+        {
+          "question": "为什么香蕉时间不能用总量除以速度向上取整？",
+          "answer": [
+            "每小时不能跨堆，余下时间不能拿去吃另一堆。例如[1,1]、速度2仍需2小时，而ceil(2/2)=1会错误合并时间。必须逐堆取整后求和。"
+          ]
+        },
+        {
+          "question": "最大化最小距离为什么可行时更新lo而不是hi？",
+          "answer": [
+            "要找最大的true。mid可行说明所有更小距离也可行，可以把lo推进到mid，但仍需探索更大值；不可行则排除mid及更大值，hi=mid-1。配合上取整mid保证进展。"
+          ]
+        },
+        {
+          "question": "平方根二分为什么不用mid*mid<=x？",
+          "answer": [
+            "乘法可能先溢出，再与x比较就失去意义。mid>0时不等式等价于mid<=x/mid，采用整数除法仍能准确判定；本例用上取整且只在lo<hi时循环，确保mid不为0。"
+          ]
+        }
+      ]
+    }
+  },
+  "outro": [
+    {
+      "type": "table",
+      "title": "经典考点与递进训练",
+      "columns": [
+        "阶段",
+        "练习",
+        "必须解释的点",
+        "最小反例/边界"
+      ],
+      "rows": [
+        [
+          "归并与稳定性",
+          "912 排序；LCR170 逆序对",
+          "相等取左；m-i；long long",
+          "[2,2]；逆序数组；同键不同id"
+        ],
+        [
+          "分区与选择",
+          "75 颜色分类；215 第K大",
+          "未知区；大值交换后i不动；目标秩",
+          "全相等；K=1；K=n"
+        ],
+        [
+          "标准边界",
+          "34 首尾位置；35 插入位置",
+          "false→true；返回n；迭代器成本",
+          "空数组；全小于；全等于"
+        ],
+        [
+          "结构性二分",
+          "33/81 旋转搜索；153/154 最小值；162 峰值",
+          "哪半有序；重复退化；保留峰",
+          "[1,0,1,1]；单元素；多峰"
+        ],
+        [
+          "多数组分割",
+          "4 两有序数组中位数",
+          "左侧数量；交叉大小关系",
+          "一侧空；奇偶；INT极值"
+        ],
+        [
+          "答案二分",
+          "1011 运力；875 香蕉；410 分割；1552 磁力",
+          "判定完备；单调性；上下界",
+          "D=1；D>=n；不可行输入"
+        ],
+        [
+          "进阶边界",
+          "69 平方根；最大最小间隔",
+          "上取整；安全算术；邻接验证",
+          "0；完全平方数；最大64位值"
+        ]
+      ]
+    },
+    {
+      "type": "text",
+      "title": "综合测试：结果对照之外，还要检查性质",
+      "paragraphs": [
+        "排序与标准sort对照，稳定性用(key,id)记录与stable_sort对照；逆序对用双循环枚举；快速选择逐个核对合法K；上下界用线性扫描；旋转搜索用find；峰值检查两侧严格更小；中位数与合并排序结果对照；香蕉速度与最小间隔用小范围穷举。",
+        "测试程序独立包含15份补充示例中的函数及main，固定随机种子生成1000组小数组，对前100轮中符合规模条件的输入穷举位置子集，并检查0..10000的整数平方根及整数极限。它验证实现，不替代上面的证明，也不声称穷尽所有输入。",
+        "下载后可执行 g++ -std=c++17 -O2 -Wall -Wextra detail-search-tests.cpp -o chapter06-tests，再运行程序。编译与实际执行状态见全站验证记录；提供测试源码并不意味着已经运行通过。原有运力基础示例未纳入此独立程序。"
+      ]
+    },
+    {
+      "type": "code",
+      "title": "完整对照测试：排序、边界、旋转与答案搜索",
+      "file": "detail-search-tests.cpp",
+      "code": "struct Record {\n    int key;\n    int id; // original identity, not part of the sorting key\n};\nvoid stableMergeRange(vector<Record>& a, vector<Record>& tmp, int l, int r) {\n    if (r - l <= 1) return;\n    int m = l + (r - l) / 2;\n    stableMergeRange(a, tmp, l, m);\n    stableMergeRange(a, tmp, m, r);\n    int i = l, j = m, out = l;\n    while (i < m && j < r)\n        tmp[out++] = a[i].key <= a[j].key ? a[i++] : a[j++];\n    while (i < m) tmp[out++] = a[i++];\n    while (j < r) tmp[out++] = a[j++];\n    for (int k = l; k < r; ++k) a[k] = tmp[k];\n}\nvoid stableMergeSort(vector<Record>& a) {\n    vector<Record> tmp(a.size());\n    stableMergeRange(a, tmp, 0, (int)a.size());\n}\n\nlong long inversionRange(vector<int>& a, vector<int>& tmp, int l, int r) {\n    if (r - l <= 1) return 0;\n    int m = l + (r - l) / 2;\n    long long answer = inversionRange(a, tmp, l, m);\n    answer += inversionRange(a, tmp, m, r);\n    int i = l, j = m, out = l;\n    while (i < m && j < r) {\n        if (a[i] <= a[j]) tmp[out++] = a[i++];\n        else { answer += m - i; tmp[out++] = a[j++]; }\n    }\n    while (i < m) tmp[out++] = a[i++];\n    while (j < r) tmp[out++] = a[j++];\n    for (int k = l; k < r; ++k) a[k] = tmp[k];\n    return answer;\n}\nlong long countInversions(vector<int>& a) {\n    vector<int> tmp(a.size());\n    return inversionRange(a, tmp, 0, (int)a.size());\n}\n\nvoid siftDown(vector<int>& a, int root, int size) {\n    while (root < size / 2) {\n        int child = root * 2 + 1;\n        if (child + 1 < size && a[child] < a[child + 1]) ++child;\n        if (a[root] >= a[child]) break;\n        swap(a[root], a[child]);\n        root = child;\n    }\n}\nvoid heapSort(vector<int>& a) {\n    int n = (int)a.size();\n    for (int root = n / 2 - 1; root >= 0; --root) siftDown(a, root, n);\n    for (int end = n - 1; end > 0; --end) {\n        swap(a[0], a[end]);\n        siftDown(a, 0, end);\n    }\n}\n\nstruct CountItem { int key; int id; };\nvector<CountItem> stableCountingSort(const vector<CountItem>& a, int keyCount) {\n    if (keyCount <= 0 || keyCount > 1000000)\n        throw invalid_argument(\"require 1 <= keyCount <= 1000000\");\n    vector<size_t> end(keyCount, 0);\n    for (const auto& item : a) {\n        if (item.key < 0 || item.key >= keyCount)\n            throw invalid_argument(\"key outside [0, keyCount)\");\n        ++end[item.key];\n    }\n    for (int key = 1; key < keyCount; ++key) end[key] += end[key - 1];\n    vector<CountItem> answer(a.size());\n    for (size_t i = a.size(); i > 0; --i) {\n        const auto& item = a[i - 1];\n        answer[--end[item.key]] = item;\n    }\n    return answer;\n}\n\nvoid randomQuickRange(vector<int>& a, int l, int r, mt19937& rng) {\n    while (l < r) {\n        uniform_int_distribution<int> pick(l, r);\n        int pivot = a[pick(rng)];\n        int lt = l, i = l, gt = r;\n        while (i <= gt) {\n            if (a[i] < pivot) swap(a[lt++], a[i++]);\n            else if (a[i] > pivot) swap(a[i], a[gt--]);\n            else ++i;\n        }\n        if (lt - l < r - gt) {\n            randomQuickRange(a, l, lt - 1, rng);\n            l = gt + 1;\n        } else {\n            randomQuickRange(a, gt + 1, r, rng);\n            r = lt - 1;\n        }\n    }\n}\nvoid randomizedQuickSort(vector<int>& a, uint32_t seed) {\n    mt19937 rng(seed);\n    if (!a.empty()) randomQuickRange(a, 0, (int)a.size() - 1, rng);\n}\n\nint kthSmallest(vector<int>& a, int k, uint32_t seed) {\n    int n = (int)a.size();\n    if (k < 1 || k > n) throw out_of_range(\"k outside [1,n]\");\n    int target = k - 1, l = 0, r = n - 1;\n    mt19937 rng(seed);\n    while (l <= r) {\n        uniform_int_distribution<int> pick(l, r);\n        int pivot = a[pick(rng)];\n        int lt = l, i = l, gt = r;\n        while (i <= gt) {\n            if (a[i] < pivot) swap(a[lt++], a[i++]);\n            else if (a[i] > pivot) swap(a[i], a[gt--]);\n            else ++i;\n        }\n        if (target < lt) r = lt - 1;\n        else if (target > gt) l = gt + 1;\n        else return pivot;\n    }\n    throw logic_error(\"unreachable for valid input\");\n}\n\nvoid sortColors(vector<int>& a) {\n    for (int value : a)\n        if (value < 0 || value > 2) throw invalid_argument(\"only 0,1,2 allowed\");\n    int zero = 0, i = 0, two = (int)a.size() - 1;\n    while (i <= two) {\n        if (a[i] == 0) swap(a[zero++], a[i++]);\n        else if (a[i] == 2) swap(a[i], a[two--]);\n        else ++i;\n    }\n}\n\nint lowerBoundIndex(const vector<int>& a, int x) {\n    int l = 0, r = (int)a.size();\n    while (l < r) {\n        int mid = l + (r - l) / 2;\n        if (a[mid] >= x) r = mid;\n        else l = mid + 1;\n    }\n    return l;\n}\nint upperBoundIndex(const vector<int>& a, int x) {\n    int l = 0, r = (int)a.size();\n    while (l < r) {\n        int mid = l + (r - l) / 2;\n        if (a[mid] > x) r = mid;\n        else l = mid + 1;\n    }\n    return l;\n}\nint lastAtMost(const vector<int>& a, int x) {\n    return upperBoundIndex(a, x) - 1;\n}\n\nint searchRotatedDistinct(const vector<int>& a, int target) {\n    int l = 0, r = (int)a.size() - 1;\n    while (l <= r) {\n        int mid = l + (r - l) / 2;\n        if (a[mid] == target) return mid;\n        if (a[l] <= a[mid]) {\n            if (a[l] <= target && target < a[mid]) r = mid - 1;\n            else l = mid + 1;\n        } else {\n            if (a[mid] < target && target <= a[r]) l = mid + 1;\n            else r = mid - 1;\n        }\n    }\n    return -1;\n}\nbool searchRotatedWithDuplicates(const vector<int>& a, int target) {\n    int l = 0, r = (int)a.size() - 1;\n    while (l <= r) {\n        int mid = l + (r - l) / 2;\n        if (a[mid] == target) return true;\n        if (a[l] == a[mid] && a[mid] == a[r]) { ++l; --r; continue; }\n        if (a[l] <= a[mid]) {\n            if (a[l] <= target && target < a[mid]) r = mid - 1;\n            else l = mid + 1;\n        } else {\n            if (a[mid] < target && target <= a[r]) l = mid + 1;\n            else r = mid - 1;\n        }\n    }\n    return false;\n}\n\nint minimumInRotated(const vector<int>& a) {\n    if (a.empty()) throw invalid_argument(\"empty array\");\n    int l = 0, r = (int)a.size() - 1;\n    while (l < r) {\n        int mid = l + (r - l) / 2;\n        if (a[mid] < a[r]) r = mid;\n        else if (a[mid] > a[r]) l = mid + 1;\n        else --r;\n    }\n    return a[l];\n}\n\nint findPeak(const vector<int>& a) {\n    if (a.empty()) return -1;\n    int l = 0, r = (int)a.size() - 1;\n    while (l < r) {\n        int mid = l + (r - l) / 2;\n        if (a[mid] < a[mid + 1]) l = mid + 1;\n        else r = mid;\n    }\n    return l;\n}\n\ndouble medianOfSorted(const vector<int>& a, const vector<int>& b) {\n    if (a.size() > b.size()) return medianOfSorted(b, a);\n    int m = (int)a.size(), n = (int)b.size();\n    if (m == 0 && n == 0) throw invalid_argument(\"both arrays empty\");\n    int half = (int)(((long long)m + n + 1) / 2);\n    int l = 0, r = m;\n    while (l <= r) {\n        int i = l + (r - l) / 2, j = half - i;\n        long long al = i == 0 ? LLONG_MIN : a[i - 1];\n        long long ar = i == m ? LLONG_MAX : a[i];\n        long long bl = j == 0 ? LLONG_MIN : b[j - 1];\n        long long br = j == n ? LLONG_MAX : b[j];\n        if (al <= br && bl <= ar) {\n            if (((long long)m + n) % 2 != 0) return (double)max(al, bl);\n            return (max(al, bl) + min(ar, br)) / 2.0;\n        }\n        if (al > br) r = i - 1;\n        else l = i + 1;\n    }\n    throw invalid_argument(\"sorted input required\");\n}\n\nint minimumEatingSpeed(const vector<int>& piles, long long hours) {\n    if (piles.empty()) return 0;\n    if (hours <= 0) throw invalid_argument(\"hours must be positive\");\n    int hi = 0;\n    for (int value : piles) {\n        if (value <= 0) throw invalid_argument(\"piles must be positive\");\n        hi = max(hi, value);\n    }\n    if (hours < (long long)piles.size()) return -1;\n    auto feasible = [&](int speed) {\n        long long used = 0;\n        for (int value : piles) {\n            used += value / speed + (value % speed != 0);\n            if (used > hours) return false;\n        }\n        return true;\n    };\n    int lo = 1;\n    while (lo < hi) {\n        int mid = lo + (hi - lo) / 2;\n        if (feasible(mid)) hi = mid;\n        else lo = mid + 1;\n    }\n    return lo;\n}\n\nlong long maximumMinimumDistance(vector<int> positions, int count) {\n    int n = (int)positions.size();\n    if (count < 2 || count > n) throw invalid_argument(\"require 2 <= count <= n\");\n    sort(positions.begin(), positions.end());\n    auto feasible = [&](long long distance) {\n        int placed = 1;\n        long long last = positions[0];\n        for (int i = 1; i < n; ++i) {\n            if ((long long)positions[i] - last >= distance) {\n                last = positions[i];\n                if (++placed == count) return true;\n            }\n        }\n        return false;\n    };\n    long long lo = 0, hi = (long long)positions.back() - positions.front();\n    while (lo < hi) {\n        long long mid = lo + (hi - lo + 1) / 2;\n        if (feasible(mid)) lo = mid;\n        else hi = mid - 1;\n    }\n    return lo;\n}\n\nuint64_t floorSquareRoot(uint64_t x) {\n    uint64_t lo = 0, hi = min(x, uint64_t{UINT32_MAX});\n    while (lo < hi) {\n        uint64_t mid = lo + (hi - lo + 1) / 2;\n        if (mid <= x / mid) lo = mid;\n        else hi = mid - 1;\n    }\n    return lo;\n}\n\nvoid require(bool ok, const string& message) {\n    if (!ok) throw runtime_error(message);\n}\nlong long bruteInversions(const vector<int>& a) {\n    long long answer = 0;\n    for (int i = 0; i < (int)a.size(); ++i)\n        for (int j = i + 1; j < (int)a.size(); ++j)\n            answer += a[i] > a[j];\n    return answer;\n}\nint bruteSpeed(const vector<int>& piles, long long hours) {\n    if (piles.empty()) return 0;\n    if (hours < (long long)piles.size()) return -1;\n    int maximum = *max_element(piles.begin(), piles.end());\n    for (int speed = 1; speed <= maximum; ++speed) {\n        long long used = 0;\n        for (int value : piles) used += (value + speed - 1) / speed;\n        if (used <= hours) return speed;\n    }\n    return -1;\n}\nlong long bruteDistance(vector<int> positions, int count) {\n    sort(positions.begin(), positions.end());\n    int n = (int)positions.size();\n    long long best = 0;\n    for (unsigned mask = 0; mask < (1U << n); ++mask) {\n        int selected = 0;\n        for (unsigned bits = mask; bits != 0; bits &= bits - 1) ++selected;\n        if (selected != count) continue;\n        long long distance = LLONG_MAX;\n        int previous = -1;\n        for (int i = 0; i < n; ++i) {\n            if ((mask & (1U << i)) == 0) continue;\n            if (previous != -1)\n                distance = min(distance, (long long)positions[i] - positions[previous]);\n            previous = i;\n        }\n        best = max(best, distance);\n    }\n    return best;\n}\nint main() {\n    require(lowerBoundIndex({}, 1) == 0, \"empty lower bound\");\n    require(lastAtMost({2,3}, 1) == -1, \"no last element\");\n    require(minimumInRotated({1,1,0,1}) == 0, \"duplicate rotation\");\n    require(searchRotatedWithDuplicates({1,0,1,1,1}, 0), \"hidden pivot\");\n    require(medianOfSorted({INT_MAX}, {INT_MAX}) == (double)INT_MAX, \"median overflow\");\n    require(medianOfSorted({INT_MIN}, {INT_MAX}) == -0.5, \"median extremes\");\n    require(minimumEatingSpeed({3,6,7,11}, 8) == 4, \"banana example\");\n    require(minimumEatingSpeed({1,1}, 1) == -1, \"banana infeasible\");\n    require(maximumMinimumDistance({INT_MIN,INT_MAX}, 2) == 4294967295LL,\n            \"distance overflow\");\n    require(floorSquareRoot(UINT64_MAX) == UINT32_MAX, \"sqrt maximum\");\n    uint64_t expectedRoot = 0;\n    for (uint64_t x = 0; x <= 10000; ++x) {\n        while ((expectedRoot + 1) * (expectedRoot + 1) <= x) ++expectedRoot;\n        require(floorSquareRoot(x) == expectedRoot, \"sqrt small range\");\n    }\n    mt19937 rng(20260920);\n    uniform_int_distribution<int> length(0, 12), value(-5, 5);\n    for (int run = 0; run < 1000; ++run) {\n        vector<int> a(length(rng));\n        for (int& x : a) x = value(rng);\n        vector<int> sorted = a;\n        sort(sorted.begin(), sorted.end());\n        vector<int> working = a;\n        require(countInversions(working) == bruteInversions(a), \"inverse count\");\n        require(working == sorted, \"inverse merge ordering\");\n        working = a; heapSort(working);\n        require(working == sorted, \"heap sort\");\n        working = a; randomizedQuickSort(working, (uint32_t)rng());\n        require(working == sorted, \"quick sort\");\n        for (int k = 1; k <= (int)a.size(); ++k) {\n            working = a;\n            require(kthSmallest(working, k, (uint32_t)rng()) == sorted[k - 1],\n                    \"quickselect\");\n        }\n        vector<Record> records;\n        vector<CountItem> counted;\n        for (int i = 0; i < (int)a.size(); ++i) {\n            records.push_back({a[i], i});\n            counted.push_back({a[i] + 5, i});\n        }\n        auto reference = records;\n        stable_sort(reference.begin(), reference.end(),\n                    [](const Record& x, const Record& y) { return x.key < y.key; });\n        stableMergeSort(records);\n        auto byCount = stableCountingSort(counted, 11);\n        for (int i = 0; i < (int)a.size(); ++i) {\n            require(records[i].key == reference[i].key &&\n                    records[i].id == reference[i].id, \"merge stability\");\n            require(byCount[i].key == reference[i].key + 5 &&\n                    byCount[i].id == reference[i].id, \"count stability\");\n        }\n        working = a;\n        for (int& x : working) x = (x + 6) % 3;\n        auto colors = working;\n        sort(colors.begin(), colors.end());\n        sortColors(working);\n        require(working == colors, \"colors\");\n        for (int x = -6; x <= 6; ++x) {\n            int lo = 0, hi = 0;\n            while (lo < (int)sorted.size() && sorted[lo] < x) ++lo;\n            while (hi < (int)sorted.size() && sorted[hi] <= x) ++hi;\n            require(lowerBoundIndex(sorted, x) == lo, \"lower bound\");\n            require(upperBoundIndex(sorted, x) == hi, \"upper bound\");\n            require(lastAtMost(sorted, x) == hi - 1, \"last at most\");\n        }\n        if (!a.empty()) {\n            auto rotated = sorted;\n            rotate(rotated.begin(), rotated.begin() + rng() % rotated.size(), rotated.end());\n            require(minimumInRotated(rotated) == sorted.front(), \"rotated minimum\");\n            for (int x = -6; x <= 6; ++x)\n                require(searchRotatedWithDuplicates(rotated, x) ==\n                        (find(a.begin(), a.end(), x) != a.end()), \"rotated duplicate search\");\n            auto distinct = sorted;\n            distinct.erase(unique(distinct.begin(), distinct.end()), distinct.end());\n            rotate(distinct.begin(), distinct.begin() + rng() % distinct.size(), distinct.end());\n            for (int x = -6; x <= 6; ++x) {\n                int found = searchRotatedDistinct(distinct, x);\n                bool exists = find(distinct.begin(), distinct.end(), x) != distinct.end();\n                require((found >= 0) == exists, \"rotated distinct presence\");\n                if (found >= 0) require(distinct[found] == x, \"rotated distinct index\");\n            }\n            auto peaks = a;\n            peaks.erase(unique(peaks.begin(), peaks.end()), peaks.end());\n            int p = findPeak(peaks);\n            require(p >= 0 && p < (int)peaks.size(), \"peak range\");\n            require((p == 0 || peaks[p] > peaks[p - 1]) &&\n                    (p + 1 == (int)peaks.size() || peaks[p] > peaks[p + 1]), \"peak property\");\n            size_t split = rng() % (a.size() + 1);\n            vector<int> left(a.begin(), a.begin() + split), right(a.begin() + split, a.end());\n            sort(left.begin(), left.end()); sort(right.begin(), right.end());\n            double middle = sorted.size() % 2 ? sorted[sorted.size() / 2] :\n                ((long long)sorted[sorted.size() / 2 - 1] + sorted[sorted.size() / 2]) / 2.0;\n            require(medianOfSorted(left, right) == middle, \"median split\");\n        } else {\n            require(findPeak(a) == -1, \"empty peak\");\n        }\n        vector<int> piles;\n        for (int x : a) piles.push_back(abs(x) + 1);\n        long long hours = (long long)piles.size() + rng() % 20;\n        require(minimumEatingSpeed(piles, hours) == bruteSpeed(piles, hours), \"banana brute\");\n        if (run < 100 && a.size() >= 2) {\n            int count = 2 + (int)(rng() % (a.size() - 1));\n            require(maximumMinimumDistance(a, count) == bruteDistance(a, count),\n                    \"distance brute\");\n        }\n    }\n    bool rejected = false;\n    vector<int> empty;\n    try { (void)kthSmallest(empty, 1, 0); }\n    catch (const out_of_range&) { rejected = true; }\n    require(rejected, \"invalid rank\");\n    cout << \"All chapter 6 checks passed\" << endl;\n}",
+      "paragraphs": [
+        "固定反例覆盖相等值、无解、INT_MIN/INT_MAX、UINT64_MAX、空数组和非法K。采用显式require，避免NDEBUG使assert失效。"
+      ]
+    },
+    {
+      "type": "qa",
+      "title": "章末自测：八个关键问题及答案",
+      "items": [
+        {
+          "question": "1. [2A,1B,2C,1D]稳定排序后是什么？",
+          "answer": [
+            "按数字键排序应为[1B,1D,2A,2C]。相等键的原顺序不变；若归并相等时优先右侧，就可能颠倒B/D或A/C。"
+          ]
+        },
+        {
+          "question": "2. 左半[2,4]、右半[1,3]合并时有几个跨区逆序对？",
+          "answer": [
+            "取右值1时与2、4产生两对；取右值3时与剩余4产生一对，共三对。左右内部若还有逆序对，则由递归部分另外统计。"
+          ]
+        },
+        {
+          "question": "3. 快排遇到大于pivot的值，换到右端后i为什么不变？",
+          "answer": [
+            "换回来的值属于未知区，可能小于、等于或大于pivot，必须重新分类。只减少gt就已保证未知区变短，不需要为了“推进循环”而错误跳过它。"
+          ]
+        },
+        {
+          "question": "4. [1,2,2,2,4]中2的左右闭区间是多少？",
+          "answer": [
+            "lower_bound为1，upper_bound为4，出现范围[1,3]，数量3。upper_bound本身是最后一个匹配位置的后一位，不是最后匹配位置。"
+          ]
+        },
+        {
+          "question": "5. lo=4、hi=5，求最大可行值时下取整有什么问题？",
+          "answer": [
+            "若mid=4可行而更新lo=mid，区间原地不动。上取整mid=5会使lo升到5或hi降到4，保证终止。"
+          ]
+        },
+        {
+          "question": "6. 旋转数组搜索、峰值搜索都需要全局单调谓词吗？",
+          "answer": [
+            "不需要。旋转搜索利用一半有序的结构，峰值搜索利用上坡方向存在峰的证明。它们每轮仍可安全排除一半，但不能用不存在的全局false→true性质解释。"
+          ]
+        },
+        {
+          "question": "7. 运力允许重排时，原贪心为什么可能错误？",
+          "answer": [
+            "[2,2,3,3]容量5，按原顺序贪心为[2,2]、[3]、[3]需要3天，但重排后[2,3]、[2,3]只需2天。原判定会把实际可行容量误判为不可行。"
+          ]
+        },
+        {
+          "question": "8. 如何检验一个答案二分结果是否偏一？",
+          "answer": [
+            "最小可行答案ans应满足check(ans)=true，且域内ans-1为false；最大可行则检查ans+1为false。另测上下界重合、答案等于某个端点、只有两个候选值和全部可行/不可行的接口处理。"
+          ]
+        }
+      ]
+    }
+  ]
+}

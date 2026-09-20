@@ -3,7 +3,7 @@
 <meta name="description" content="秋招算法手撕学习讲义：知识推导、经典考点、C++17 示例与面试训练。">
 <title>排序与二分查找 · 算法手撕讲义</title><link rel="stylesheet" href="../assets/style.css"><script src="../assets/app.js" defer></script></head>
 <body><a class="skip" href="#main">跳到正文</a><header class="topbar"><a class="brand" href="../index.html"><span class="brand-mark">a[i]</span><span>算法手撕讲义<small>秋招学习工作区 / C++17</small></span></a><button type="button" class="nav-toggle" aria-expanded="false" aria-controls="chapter-nav">章节目录</button><a class="home-link" href="../index.html">全部章节 ↗</a></header>
-<div class="layout"><aside class="sidebar" id="chapter-nav" aria-label="章节导航"><p class="rail-label">LEARNING PATH · 学习路径</p><nav><a class="chapter-link"  href="../01-复杂度与解题方法/index.html"><span>01</span>复杂度与解题方法</a><a class="chapter-link"  href="../02-数组字符串与矩阵/index.html"><span>02</span>数组、字符串与矩阵</a><a class="chapter-link"  href="../03-链表/index.html"><span>03</span>链表</a><a class="chapter-link"  href="../04-栈队列与单调结构/index.html"><span>04</span>栈、队列与单调结构</a><a class="chapter-link"  href="../05-哈希集合与位运算/index.html"><span>05</span>哈希、集合与位运算</a><a class="chapter-link active" aria-current=page href="../06-排序与二分查找/index.html"><span>06</span>排序与二分查找</a><a class="chapter-link"  href="../07-树与二叉搜索树/index.html"><span>07</span>树与二叉搜索树</a><a class="chapter-link"  href="../08-堆与优先队列/index.html"><span>08</span>堆与优先队列</a><a class="chapter-link"  href="../09-递归回溯与分治/index.html"><span>09</span>递归、回溯与分治</a><a class="chapter-link"  href="../10-图论/index.html"><span>10</span>图论</a><a class="chapter-link"  href="../11-贪心/index.html"><span>11</span>贪心</a><a class="chapter-link"  href="../12-动态规划/index.html"><span>12</span>动态规划</a><a class="chapter-link"  href="../13-并查集与高级数据结构/index.html"><span>13</span>并查集与高级数据结构</a><a class="chapter-link"  href="../14-高频技巧与综合题型/index.html"><span>14</span>高频技巧与综合题型</a><a class="chapter-link"  href="../15-面试表达与训练计划/index.html"><span>15</span>面试表达与训练计划</a></nav><div class="sidebar-note">读懂不变量，独立写代码。<br>共 15 章 · 63 个小节<br>无需联网，浏览器直接打开。</div></aside><main id="main"><header class="chapter-header"><p class="eyebrow">CHAPTER 06 / 15</p><h1>排序与二分查找</h1><p class="lead">排序创建有序结构，二分利用单调性压缩答案范围。面试中既要熟悉标准库，也要能解释分区、归并和边界寻找。</p><div class="chapter-meta"><span>4 个小节</span><span>C++17 示例</span><a href="README.md">原始知识摘要 ↗</a></div></header><div class="reading-guide"><strong>本章怎么学</strong><p>先读原理与不变量，遮住代码手推例子，再独立实现。最后用面试追问检查理解，按练习条目做变式。</p></div><details class="environment"><summary>代码使用说明与通用头文件</summary><p>示例统一采用 C++17。页面展示核心函数或类，下载的 .cpp 已包含以下头文件，可独立编译。不同小节可能重用类型名，应分别编译；含 main 的示例可直接运行，其余需自行补充调用与测试。复制按钮复制当前代码块。</p><div class="codebox"><div class="codebar"><span>C++17</span><div><button type="button" class="copy">复制代码</button></div></div><pre tabindex="0" aria-label="C++17 代码"><code>#include &lt;algorithm&gt;
+<div class="layout"><aside class="sidebar" id="chapter-nav" aria-label="章节导航"><p class="rail-label">LEARNING PATH · 学习路径</p><nav><a class="chapter-link"  href="../01-复杂度与解题方法/index.html"><span>01</span>复杂度与解题方法</a><a class="chapter-link"  href="../02-数组字符串与矩阵/index.html"><span>02</span>数组、字符串与矩阵</a><a class="chapter-link"  href="../03-链表/index.html"><span>03</span>链表</a><a class="chapter-link"  href="../04-栈队列与单调结构/index.html"><span>04</span>栈、队列与单调结构</a><a class="chapter-link"  href="../05-哈希集合与位运算/index.html"><span>05</span>哈希、集合与位运算</a><a class="chapter-link active" aria-current=page href="../06-排序与二分查找/index.html"><span>06</span>排序与二分查找</a><a class="chapter-link"  href="../07-树与二叉搜索树/index.html"><span>07</span>树与二叉搜索树</a><a class="chapter-link"  href="../08-堆与优先队列/index.html"><span>08</span>堆与优先队列</a><a class="chapter-link"  href="../09-递归回溯与分治/index.html"><span>09</span>递归、回溯与分治</a><a class="chapter-link"  href="../10-图论/index.html"><span>10</span>图论</a><a class="chapter-link"  href="../11-贪心/index.html"><span>11</span>贪心</a><a class="chapter-link"  href="../12-动态规划/index.html"><span>12</span>动态规划</a><a class="chapter-link"  href="../13-并查集与高级数据结构/index.html"><span>13</span>并查集与高级数据结构</a><a class="chapter-link"  href="../14-高频技巧与综合题型/index.html"><span>14</span>高频技巧与综合题型</a><a class="chapter-link"  href="../15-面试表达与训练计划/index.html"><span>15</span>面试表达与训练计划</a></nav><div class="sidebar-note">读懂不变量，独立写代码。<br>共 15 章 · 63 个小节<br>无需联网，浏览器直接打开。</div></aside><main id="main"><header class="chapter-header"><p class="eyebrow">CHAPTER 06 / 15</p><h1>排序与二分查找</h1><p class="lead">排序创建有序结构，二分利用单调性压缩答案范围。面试中既要熟悉标准库，也要能解释分区、归并和边界寻找。</p><div class="chapter-meta"><span>4 个小节</span><span>C++17 示例</span><a href="README.md">原始知识摘要 ↗</a></div></header><div class="reading-guide"><strong>本章怎么学</strong><p>先读原理与不变量，遮住代码手推例子，再独立实现。最后用面试追问检查理解，按练习条目做变式。</p></div><div class="deep-intro"><div class="deep-block" id="guide-1"><h3>本章学习目标：从背模板到能证明边界</h3><p>排序把无序信息组织成可利用的结构；二分则不断排除不可能包含答案的区域。两者都不能只记代码：排序要说明每个区域的含义，二分要说明哪部分已经被排除、答案为什么仍在剩余范围内。</p><p>本章保留四个主小节，增加经典题变式、推演表格、完整问答与可下载C++17源码。示例默认数组长度能用int表示；各算法另列更严格的数值或规模前提。递归区间、K的编号、函数是否修改输入，都属于接口的一部分。</p></div><div class="deep-block" id="guide-2"><h3>题型识别：先问需要什么结果</h3><p class="table-hint">窄屏下可左右滑动表格，查看完整内容。</p><div class="study-table" tabindex="0" role="region" aria-label="题型识别：先问需要什么结果"><table><thead><tr><th scope="col">需求</th><th scope="col">首选思路</th><th scope="col">关键前提</th><th scope="col">重点考点</th></tr></thead><tbody><tr><td>全部元素有序</td><td>标准排序 / 归并 / 快排 / 堆排</td><td>比较器严格弱序</td><td>稳定性、时间与空间</td></tr><tr><td>只要第K小或第K大</td><td>快速选择 / nth_element</td><td>K编号明确</td><td>只处理一边、重复区域</td></tr><tr><td>有序数组的目标范围</td><td>lower_bound / upper_bound</td><td>数组按一致规则有序</td><td>返回n、重复值</td></tr><tr><td>旋转数组或峰值</td><td>结构性二分</td><td>分清旋转、重复、相邻不等条件</td><td>保留有解的一侧</td></tr><tr><td>最小可行资源</td><td>第一个true的答案二分</td><td>可行性false→true</td><td>边界、贪心判定证明</td></tr><tr><td>最大可行间隔</td><td>最后一个true的答案二分</td><td>可行性true→false</td><td>上取整mid、防止停滞</td></tr></tbody></table></div></div><div class="deep-block" id="guide-3"><h3>推荐路线</h3><p>先手写稳定归并和左右边界；再画出三路分区四个区域并写快速选择；接着完成运力二分与最大最小间隔；最后学习旋转数组、峰值和中位数分割。不要把每道题都强行塞入同一组l、r更新语句。</p><p>面试口述顺序：定义问题和区间；说明不变量；解释每次排除的依据；说明终止与返回值；补空输入、重复值、数值极限及复杂度。二分优化的是调用check的次数，并不会让一个昂贵的check消失。</p></div></div><nav class="chapter-outline" aria-label="本章阅读路线"><strong>直接跳到</strong><a href="#s1">01 归并排序、稳定性与逆序对</a><a href="#s2">02 快速排序与三路分区</a><a href="#s3">03 左右边界与标准库二分</a><a href="#s4">04 答案二分：最小运输能力</a><a href="#chapter-review">综合例题与自测答案</a></nav><details class="environment"><summary>代码使用说明与通用头文件</summary><p>示例统一采用 C++17。页面展示核心函数或类，下载的 .cpp 已包含以下头文件，可独立编译。不同小节可能重用类型名，应分别编译；含 main 的示例可直接运行，其余需自行补充调用与测试。复制按钮复制当前代码块。</p><div class="codebox"><div class="codebar"><span>C++17</span><div><button type="button" class="copy">复制代码</button></div></div><pre tabindex="0" aria-label="C++17 代码"><code>#include &lt;algorithm&gt;
 #include &lt;array&gt;
 #include &lt;cassert&gt;
 #include &lt;climits&gt;
@@ -27,7 +27,26 @@
 #include &lt;vector&gt;
 <span class="keyword">using</span> <span class="keyword">namespace</span> std;
 </code></pre></div><p>检查单个示例：<code>g++ -std=c++17 -Wall -Wextra -c sample.cpp</code>。这只检查编译；验证结果还需要调用函数并覆盖边界输入。代码按题目约束编写，各节明确其适用前提。</p></details><section class="lesson" id="s1"><div class="lesson-heading"><span class="lesson-number">06.01</span><h2>归并排序、稳定性与逆序对</h2></div>
-<h3>知识与适用场景</h3><p>归并先递归排序两半，再用双指针合并。相等时优先取左半元素可以保持稳定性，即原本相等元素的相对顺序不变。稳定性对多字段排序有意义。</p><div class="invariant"><span>推导 / 不变量</span><p>每层合并总共处理 n 个元素，递归约 log n 层。逆序对统计时，如果右值小于左值，则该右值与左半剩余所有元素都构成逆序对。</p></div>
+<h3>知识与适用场景</h3><p>归并先递归排序两半，再用双指针合并。相等时优先取左半元素可以保持稳定性，即原本相等元素的相对顺序不变。稳定性对多字段排序有意义。</p><div class="deep-block" id="s1-before-1"><h3>1.1 排序比较表中的前提不能省略</h3><p>比较排序在一般输入上需要区分n!种排列，决策树高度至少log₂(n!)=Ω(nlogn)。这不是说所有排序都必须nlogn：计数排序利用有限整数值域，突破的是比较模型前提，而不是信息论结论。</p><p>稳定是指键相等的记录保持原始相对顺序，不是说算法每次运行结果一样。只排int时肉眼不易看出区别；把元素表示为(分数,姓名)或(键,原始编号)就能观察。</p></div><div class="deep-block" id="s1-before-2"><h3>1.2 排序方法的准确比较</h3><p class="table-hint">窄屏下可左右滑动表格，查看完整内容。</p><div class="study-table" tabindex="0" role="region" aria-label="1.2 排序方法的准确比较"><table><thead><tr><th scope="col">方法</th><th scope="col">时间</th><th scope="col">额外空间（含递归）</th><th scope="col">稳定性与适用条件</th></tr></thead><tbody><tr><td>归并排序</td><td>最坏O(nlogn)</td><td>数组缓存O(n)，栈O(logn)</td><td>相等时先取左侧可稳定</td></tr><tr><td>普通递归快排</td><td>期望O(nlogn)，最坏O(n²)</td><td>期望O(logn)，最坏O(n)</td><td>通常不稳定；期望需随机模型</td></tr><tr><td>本章随机三路快排</td><td>期望O(nlogn)，最坏O(n²)</td><td>只递归较短侧，栈最坏O(logn)</td><td>大量重复时可跳过相等区</td></tr><tr><td>堆排序</td><td>最坏O(nlogn)</td><td>迭代下沉O(1)</td><td>不稳定；建堆O(n)</td></tr><tr><td>插入排序</td><td>最坏O(n²)，有序时O(n)</td><td>O(1)</td><td>只搬动严格较大值时稳定</td></tr><tr><td>稳定计数排序</td><td>O(n+K)</td><td>输出缓存O(n)+计数O(K)</td><td>整数值域有限；本节输出记录</td></tr><tr><td>std::sort</td><td>C++17保证O(nlogn)比较</td><td>具体空间取决于实现</td><td>不保证稳定；常用内省排序实现</td></tr></tbody></table></div></div><div class="deep-block" id="s1-before-3"><h3>1.3 归并正确性：递归保证两半有序，合并只选最小未消费项</h3><p>使用半开区间[l,r)，长度不超过1时天然有序。递归得到[l,m)、[m,r)有序后，比较两侧首个未使用元素；更小者就是所有未使用元素的最小者。循环不断扩展一个有序输出前缀，直到两边耗尽。</p><p>相等时先拿左边可保持稳定：左区间的记录原本就先于右区间，同一区间内部顺序又由递归保持。每层合并总长度O(n)，树高O(logn)；只分配一次tmp并复用，避免每层反复创建大量临时数组。</p></div><div class="deep-block" id="s1-before-4"><h3>1.4 用带编号记录观察归并稳定性</h3><p>输入(2,A),(1,B),(2,C),(1,D)按key排序后应为(1,B),(1,D),(2,A),(2,C)。代码id可用原下标表示A/B/C/D。改成&lt;仍能按key有序，但跨半区相等时会先选右项，稳定性丢失。时间O(nlogn)、空间O(n)。</p><div class="codebox"><div class="codebar"><span>C++17</span><div><a href="examples/detail-stable-records.cpp" download>下载 .cpp</a><button type="button" class="copy">复制代码</button></div></div><pre tabindex="0" aria-label="C++17 代码"><code><span class="keyword">struct</span> Record {
+    <span class="keyword">int</span> key;
+    <span class="keyword">int</span> id; <span class="comment">// original identity, not part of the sorting key</span>
+};
+<span class="keyword">void</span> stableMergeRange(vector&lt;Record&gt;&amp; a, vector&lt;Record&gt;&amp; tmp, <span class="keyword">int</span> l, <span class="keyword">int</span> r) {
+    <span class="keyword">if</span> (r - l &lt;= <span class="number">1</span>) <span class="keyword">return</span>;
+    <span class="keyword">int</span> m = l + (r - l) / <span class="number">2</span>;
+    stableMergeRange(a, tmp, l, m);
+    stableMergeRange(a, tmp, m, r);
+    <span class="keyword">int</span> i = l, j = m, out = l;
+    <span class="keyword">while</span> (i &lt; m &amp;&amp; j &lt; r)
+        tmp[out++] = a[i].key &lt;= a[j].key ? a[i++] : a[j++];
+    <span class="keyword">while</span> (i &lt; m) tmp[out++] = a[i++];
+    <span class="keyword">while</span> (j &lt; r) tmp[out++] = a[j++];
+    <span class="keyword">for</span> (<span class="keyword">int</span> k = l; k &lt; r; ++k) a[k] = tmp[k];
+}
+<span class="keyword">void</span> stableMergeSort(vector&lt;Record&gt;&amp; a) {
+    vector&lt;Record&gt; tmp(a.size());
+    stableMergeRange(a, tmp, <span class="number">0</span>, (<span class="keyword">int</span>)a.size());
+}</code></pre></div></div><div class="invariant"><span>推导 / 不变量</span><p>每层合并总共处理 n 个元素，递归约 log n 层。逆序对统计时，如果右值小于左值，则该右值与左半剩余所有元素都构成逆序对。</p></div>
 <h3>手推一个例子</h3><p>[3,1,2] 分为 [3] 与 [1,2]。合并时先取 1，产生一对 (3,1)；再取 2，产生 (3,2)。</p><div class="codebox"><div class="codebar"><span>C++17</span><div><a href="examples/01.cpp" download>下载 .cpp</a><button type="button" class="copy">复制代码</button></div></div><pre tabindex="0" aria-label="C++17 代码"><code><span class="keyword">void</span> mergeSortRange(vector&lt;<span class="keyword">int</span>&gt;&amp; a, vector&lt;<span class="keyword">int</span>&gt;&amp; tmp, <span class="keyword">int</span> l, <span class="keyword">int</span> r) {
     <span class="keyword">if</span> (r - l &lt;= <span class="number">1</span>) <span class="keyword">return</span>;
     <span class="keyword">int</span> m = l + (r-l)/<span class="number">2</span>;
@@ -45,9 +64,82 @@
     mergeSortRange(a, tmp, <span class="number">0</span>, (<span class="keyword">int</span>)a.size());
 }</code></pre></div>
 <dl class="analysis-grid"><div><dt>复杂度</dt><dd>时间 O(n log n)，辅助数组 O(n)，调用栈 O(log n)，总额外空间 O(n)。</dd></div><div><dt>易错点与边界</dt><dd>sort 不保证稳定，stable_sort 保证稳定。比较器不能写 &lt;=，必须满足严格弱序。</dd></div></dl>
-<div class="practice"><h3>经典考点与练习</h3><p>练习：LeetCode 912 排序数组、LCR 170 交易逆序对的总数。</p><details><summary>面试官可能继续问什么？</summary><p>把 &lt;= 改成 &lt; 是否影响数值排序结果？会影响稳定性吗？</p><p class="muted">先用自己的话回答，再回到本节的前提、不变量和边界检查论证。</p></details></div>
+<div class="deep-block" id="s1-after-1"><h3>1.5 逆序对：为什么一次加左半剩余长度</h3><p>逆序对要求原下标i&lt;j且a[i]&gt;a[j]。递归分别统计左右内部的逆序对；合并时，若右值a[j]小于左边当前a[i]，由于左半有序，a[i..m)的每个值都大于它，增加m-i。每个跨区间逆序对在选取其右端点时恰好计一次。</p><p>相等不构成逆序对，所以合并条件仍用&lt;=优先取左侧。[2,2]应计0；长度n严格逆序最多n(n-1)/2，计数用long long。该实现会顺带将输入排序，若要保留原数组请先复制。</p></div><div class="deep-block" id="s1-after-2"><h3>1.6 归并统计逆序对</h3><p>时间O(nlogn)、空间O(n)。默认n能用int表示，此范围下最多约2.31×10^18对，仍在long long内；实践中内存约束会更早限制n。</p><div class="codebox"><div class="codebar"><span>C++17</span><div><a href="examples/detail-inversions.cpp" download>下载 .cpp</a><button type="button" class="copy">复制代码</button></div></div><pre tabindex="0" aria-label="C++17 代码"><code><span class="keyword">long</span> <span class="keyword">long</span> inversionRange(vector&lt;<span class="keyword">int</span>&gt;&amp; a, vector&lt;<span class="keyword">int</span>&gt;&amp; tmp, <span class="keyword">int</span> l, <span class="keyword">int</span> r) {
+    <span class="keyword">if</span> (r - l &lt;= <span class="number">1</span>) <span class="keyword">return</span> <span class="number">0</span>;
+    <span class="keyword">int</span> m = l + (r - l) / <span class="number">2</span>;
+    <span class="keyword">long</span> <span class="keyword">long</span> answer = inversionRange(a, tmp, l, m);
+    answer += inversionRange(a, tmp, m, r);
+    <span class="keyword">int</span> i = l, j = m, out = l;
+    <span class="keyword">while</span> (i &lt; m &amp;&amp; j &lt; r) {
+        <span class="keyword">if</span> (a[i] &lt;= a[j]) tmp[out++] = a[i++];
+        <span class="keyword">else</span> { answer += m - i; tmp[out++] = a[j++]; }
+    }
+    <span class="keyword">while</span> (i &lt; m) tmp[out++] = a[i++];
+    <span class="keyword">while</span> (j &lt; r) tmp[out++] = a[j++];
+    <span class="keyword">for</span> (<span class="keyword">int</span> k = l; k &lt; r; ++k) a[k] = tmp[k];
+    <span class="keyword">return</span> answer;
+}
+<span class="keyword">long</span> <span class="keyword">long</span> countInversions(vector&lt;<span class="keyword">int</span>&gt;&amp; a) {
+    vector&lt;<span class="keyword">int</span>&gt; tmp(a.size());
+    <span class="keyword">return</span> inversionRange(a, tmp, <span class="number">0</span>, (<span class="keyword">int</span>)a.size());
+}</code></pre></div></div><div class="deep-block" id="s1-after-3"><h3>1.7 合并[2,4]与[1,3]：只统计跨半区贡献</h3><p class="table-hint">窄屏下可左右滑动表格，查看完整内容。</p><div class="study-table" tabindex="0" role="region" aria-label="1.7 合并[2,4]与[1,3]：只统计跨半区贡献"><table><thead><tr><th scope="col">当前左值 / 右值</th><th scope="col">取走谁</th><th scope="col">新增逆序对</th><th scope="col">合并结果前缀</th></tr></thead><tbody><tr><td>2 / 1</td><td>1</td><td>2：左侧2、4都大于1</td><td>1</td></tr><tr><td>2 / 3</td><td>2</td><td>0</td><td>1,2</td></tr><tr><td>4 / 3</td><td>3</td><td>1：4大于3</td><td>1,2,3</td></tr><tr><td>4 / 右侧耗尽</td><td>4</td><td>0</td><td>1,2,3,4</td></tr></tbody></table></div></div><div class="deep-block" id="s1-after-4"><h3>1.8 比较器必须是严格弱序，不能写&lt;=</h3><p>comp(x,x)必须为false；比较关系还需要传递，且由“互不小于”定义的等价关系也要传递。使用&lt;=会让元素小于自身，违反标准算法要求，可能触发未定义行为，而不只是得到某种不稳定结果。</p><p>多字段排序可写：先比较score，score相同再比较id；或用tie(a.score,a.id)&lt;tie(b.score,b.id)。不要用a.score-b.score&lt;0，减法可能溢出。普通浮点&lt;遇到NaN时也不满足所有输入上的严格弱序，应拒绝NaN或设计明确的全序规则。</p><p>std::stable_sort保证稳定，但C++17中的复杂度与可用额外内存相关：内存足够时O(nlogn)比较，否则可到O(nlog²n)。不要把std::sort实现细节和自己写的普通快排混为一谈。</p></div><div class="deep-block" id="s1-after-5"><h3>1.9 堆排序：迭代下沉与自底向上建堆</h3><p>维护最大堆，堆顶与未排序区末尾交换后，末尾就是本轮最大值，不再参与下沉。建堆从最后一个非叶节点开始；总成本是Σ(高度h的节点数·h)=O(n)，不是每个节点都下沉logn层。随后n次取顶总O(nlogn)，辅助空间O(1)，不稳定。</p><div class="codebox"><div class="codebar"><span>C++17</span><div><a href="examples/detail-heap-sort.cpp" download>下载 .cpp</a><button type="button" class="copy">复制代码</button></div></div><pre tabindex="0" aria-label="C++17 代码"><code><span class="keyword">void</span> siftDown(vector&lt;<span class="keyword">int</span>&gt;&amp; a, <span class="keyword">int</span> root, <span class="keyword">int</span> size) {
+    <span class="keyword">while</span> (root &lt; size / <span class="number">2</span>) {
+        <span class="keyword">int</span> child = root * <span class="number">2</span> + <span class="number">1</span>;
+        <span class="keyword">if</span> (child + <span class="number">1</span> &lt; size &amp;&amp; a[child] &lt; a[child + <span class="number">1</span>]) ++child;
+        <span class="keyword">if</span> (a[root] &gt;= a[child]) break;
+        swap(a[root], a[child]);
+        root = child;
+    }
+}
+<span class="keyword">void</span> heapSort(vector&lt;<span class="keyword">int</span>&gt;&amp; a) {
+    <span class="keyword">int</span> n = (<span class="keyword">int</span>)a.size();
+    <span class="keyword">for</span> (<span class="keyword">int</span> root = n / <span class="number">2</span> - <span class="number">1</span>; root &gt;= <span class="number">0</span>; --root) siftDown(a, root, n);
+    <span class="keyword">for</span> (<span class="keyword">int</span> end = n - <span class="number">1</span>; end &gt; <span class="number">0</span>; --end) {
+        swap(a[<span class="number">0</span>], a[end]);
+        siftDown(a, <span class="number">0</span>, end);
+    }
+}</code></pre></div></div><div class="deep-block" id="s1-after-6"><h3>1.10 稳定计数排序：累计末位置，逆向填入</h3><p>end[v]起初是键&lt;=v的元素总数，也就是该键最后一个位置的后一位；逆向扫描并递减填入，使较晚的相等记录落在较后的位置，保持稳定。时间O(n+K)，含输出的空间O(n+K)。若只按频次重建整数数列，可只用O(K)额外计数，但那无法表达记录的稳定顺序。</p><div class="codebox"><div class="codebar"><span>C++17</span><div><a href="examples/detail-counting-sort.cpp" download>下载 .cpp</a><button type="button" class="copy">复制代码</button></div></div><pre tabindex="0" aria-label="C++17 代码"><code><span class="keyword">struct</span> CountItem { <span class="keyword">int</span> key; <span class="keyword">int</span> id; };
+vector&lt;CountItem&gt; stableCountingSort(<span class="keyword">const</span> vector&lt;CountItem&gt;&amp; a, <span class="keyword">int</span> keyCount) {
+    <span class="keyword">if</span> (keyCount &lt;= <span class="number">0</span> || keyCount &gt; <span class="number">1000000</span>)
+        <span class="keyword">throw</span> invalid_argument(<span class="string">&quot;require 1 &lt;= keyCount &lt;= 1000000&quot;</span>);
+    vector&lt;size_t&gt; end(keyCount, <span class="number">0</span>);
+    <span class="keyword">for</span> (<span class="keyword">const</span> <span class="keyword">auto</span>&amp; item : a) {
+        <span class="keyword">if</span> (item.key &lt; <span class="number">0</span> || item.key &gt;= keyCount)
+            <span class="keyword">throw</span> invalid_argument(<span class="string">&quot;key outside [0, keyCount)&quot;</span>);
+        ++end[item.key];
+    }
+    <span class="keyword">for</span> (<span class="keyword">int</span> key = <span class="number">1</span>; key &lt; keyCount; ++key) end[key] += end[key - <span class="number">1</span>];
+    vector&lt;CountItem&gt; answer(a.size());
+    <span class="keyword">for</span> (size_t i = a.size(); i &gt; <span class="number">0</span>; --i) {
+        <span class="keyword">const</span> <span class="keyword">auto</span>&amp; item = a[i - <span class="number">1</span>];
+        answer[--end[item.key]] = item;
+    }
+    <span class="keyword">return</span> answer;
+}</code></pre></div></div><div class="practice"><h3>经典考点与练习</h3><p>练习：LeetCode 912 排序数组、LCR 170 交易逆序对的总数。</p><h3>面试追问：关键点完整解答</h3><dl class="answer-list"><div><dt>把归并中的&lt;=改成&lt;会改变什么？</dt><dd><p>数值排序仍然正确，但相等时会优先选右半元素。左半同键记录原本位于右半之前，这样会颠倒它们的相对顺序，失去稳定性。</p></dd></div><div><dt>逆序对为什么加m-i而不是1？</dt><dd><p>右值小于左半当前最小未消费值，所以也小于左半所有后续值。对应原下标都在左半，满足下标较小，故这m-i个元素各贡献一对。</p></dd></div><div><dt>比较器&lt;=为什么不是一种合法的稳定排序办法？</dt><dd><p>稳定性由算法如何处理相等项决定，而&lt;=违反严格弱序的自反排除要求comp(x,x)=false。标准排序依赖该要求，违规不能保证算法正确甚至不能保证正常结束。</p></dd></div><div><dt>为什么建堆O(n)，但反复插入建堆通常O(nlogn)？</dt><dd><p>自底向上下沉时，大部分节点靠近叶子，下沉高度很小；按高度汇总是线性。逐个插入会执行向上调整，每次最多logn，得到O(nlogn)上界，两种建堆过程不同。</p></dd></div><div><dt>计数排序O(n+K)能无条件替代比较排序吗？</dt><dd><p>不能。它要求可映射到较小离散值域，K太大会耗费大量初始化时间和内存；任意字符串或复杂比较关系不能直接当数组下标。稳定记录版本还需要O(n)输出缓存。</p></dd></div><div><dt>稳定排序与多字段排序有什么关系？</dt><dd><p>可先按次关键字排序，再用稳定排序按主关键字排序，保持同主键记录的次关键字顺序。也可一次用严格弱序的多字段比较器；这时稳定性只影响所有比较字段都相等的记录。</p></dd></div></dl></div>
 <label class="learned"><input type="checkbox" data-progress="06-01">我能独立实现，并解释正确性与边界</label></section><section class="lesson" id="s2"><div class="lesson-heading"><span class="lesson-number">06.02</span><h2>快速排序与三路分区</h2></div>
-<h3>知识与适用场景</h3><p>快排通过分区把较小值放左边、较大值放右边，再递归处理。平均 O(n log n)，选择极差基准时最坏 O(n²)。大量重复值时，三路分区能一次跳过整个相等区域。</p><div class="invariant"><span>推导 / 不变量</span><p>保持 [l,lt) &lt; pivot，[lt,i) = pivot，[i,gt] 未处理，(gt,r] &gt; pivot。遇到大值时与 gt 交换，但新换来的值尚未处理，因此 i 不前进。</p></div>
+<h3>知识与适用场景</h3><p>快排通过分区把较小值放左边、较大值放右边，再递归处理。平均 O(n log n)，选择极差基准时最坏 O(n²)。大量重复值时，三路分区能一次跳过整个相等区域。</p><div class="deep-block" id="s2-before-1"><h3>2.1 三路分区：一边分类，一边缩短未知区</h3><p>闭区间[l,r]中维护四段：[l,lt)小于pivot，[lt,i)等于pivot，[i,gt]未知，(gt,r]大于pivot。初始lt=i=l、gt=r，三个已知区为空。每次处理a[i]，未知区长度必须减少1。</p><p>小于pivot：与lt交换，然后lt和i同时增加；大于pivot：与gt交换，仅gt减少，因为换到i的值尚未分类；等于pivot：只增加i。结束时i=gt+1，未知区空，只需排序两侧，整个相等区无需再递归。pivot必须保存值的副本，不要用会被交换的数组元素引用。</p></div><div class="deep-block" id="s2-before-2"><h3>2.2 [2,3,1,2]，pivot=2的分区轨迹</h3><p class="table-hint">窄屏下可左右滑动表格，查看完整内容。</p><div class="study-table" tabindex="0" role="region" aria-label="2.2 [2,3,1,2]，pivot=2的分区轨迹"><table><thead><tr><th scope="col">动作后数组</th><th scope="col">lt / i / gt</th><th scope="col">下一步理由</th></tr></thead><tbody><tr><td>[2,3,1,2]</td><td>0 / 0 / 3</td><td>初始全部未知</td></tr><tr><td>[2,3,1,2]</td><td>0 / 1 / 3</td><td>2相等，i前进</td></tr><tr><td>[2,2,1,3]</td><td>0 / 1 / 2</td><td>3换到右侧，i不动</td></tr><tr><td>[2,2,1,3]</td><td>0 / 2 / 2</td><td>换来的2相等，i前进</td></tr><tr><td>[1,2,2,3]</td><td>1 / 3 / 2</td><td>1换到左侧，未知区为空</td></tr></tbody></table></div></div><div class="deep-block" id="s2-before-3"><h3>2.3 随机基准与递归栈是两个不同问题</h3><p>基础代码取中间位置的值，不等于取数值中位数，特殊输入仍可导致极不均衡分区。随机取基准能对固定输入给出期望O(nlogn)，但最坏时间仍是O(n²)。全相等输入用三路分区一轮即可结束，时间O(n)。</p><p>防栈溢出的另一个技巧：只递归较短的一侧，把较长的一侧放在while循环继续处理。每次真正深入递归的子问题至多原来一半，所以栈深最坏O(logn)，即使分区很差，时间仍可能二次。空间优化不等于消除了时间最坏情况。</p></div><div class="deep-block" id="s2-before-4"><h3>2.4 随机三路快排：短边递归、长边迭代</h3><p>显式传seed便于复现测试；期望时间的结论是对随机基准选择而言，固定seed并不能构成对恶意输入的最坏保证。原地修改、不稳定；辅助递归栈最坏O(logn)，不含固定大小随机数引擎状态。</p><div class="codebox"><div class="codebar"><span>C++17</span><div><a href="examples/detail-random-quick-sort.cpp" download>下载 .cpp</a><button type="button" class="copy">复制代码</button></div></div><pre tabindex="0" aria-label="C++17 代码"><code><span class="keyword">void</span> randomQuickRange(vector&lt;<span class="keyword">int</span>&gt;&amp; a, <span class="keyword">int</span> l, <span class="keyword">int</span> r, mt19937&amp; rng) {
+    <span class="keyword">while</span> (l &lt; r) {
+        uniform_int_distribution&lt;<span class="keyword">int</span>&gt; pick(l, r);
+        <span class="keyword">int</span> pivot = a[pick(rng)];
+        <span class="keyword">int</span> lt = l, i = l, gt = r;
+        <span class="keyword">while</span> (i &lt;= gt) {
+            <span class="keyword">if</span> (a[i] &lt; pivot) swap(a[lt++], a[i++]);
+            <span class="keyword">else</span> <span class="keyword">if</span> (a[i] &gt; pivot) swap(a[i], a[gt--]);
+            <span class="keyword">else</span> ++i;
+        }
+        <span class="keyword">if</span> (lt - l &lt; r - gt) {
+            randomQuickRange(a, l, lt - <span class="number">1</span>, rng);
+            l = gt + <span class="number">1</span>;
+        } <span class="keyword">else</span> {
+            randomQuickRange(a, gt + <span class="number">1</span>, r, rng);
+            r = lt - <span class="number">1</span>;
+        }
+    }
+}
+<span class="keyword">void</span> randomizedQuickSort(vector&lt;<span class="keyword">int</span>&gt;&amp; a, uint32_t seed) {
+    mt19937 rng(seed);
+    <span class="keyword">if</span> (!a.empty()) randomQuickRange(a, <span class="number">0</span>, (<span class="keyword">int</span>)a.size() - <span class="number">1</span>, rng);
+}</code></pre></div></div><div class="invariant"><span>推导 / 不变量</span><p>保持 [l,lt) &lt; pivot，[lt,i) = pivot，[i,gt] 未处理，(gt,r] &gt; pivot。遇到大值时与 gt 交换，但新换来的值尚未处理，因此 i 不前进。</p></div>
 <h3>手推一个例子</h3><p>[2,1,2,3,2] 以 2 为基准，最终得到 [1]、[2,2,2]、[3]，只需要继续处理两侧。</p><div class="codebox"><div class="codebar"><span>C++17</span><div><a href="examples/02.cpp" download>下载 .cpp</a><button type="button" class="copy">复制代码</button></div></div><pre tabindex="0" aria-label="C++17 代码"><code><span class="keyword">void</span> quickSort(vector&lt;<span class="keyword">int</span>&gt;&amp; a, <span class="keyword">int</span> l, <span class="keyword">int</span> r) {
     <span class="keyword">if</span> (l &gt;= r) <span class="keyword">return</span>;
     <span class="keyword">int</span> pivot = a[l + (r-l)/<span class="number">2</span>];
@@ -64,9 +156,57 @@
     <span class="keyword">if</span> (!a.empty()) quickSort(a, <span class="number">0</span>, (<span class="keyword">int</span>)a.size()-<span class="number">1</span>);
 }</code></pre></div>
 <dl class="analysis-grid"><div><dt>复杂度</dt><dd>常见输入平均 O(n log n)，本实现中点基准没有随机化，最坏 O(n²)；栈平均 O(log n)、最坏 O(n)。</dd></div><div><dt>易错点与边界</dt><dd>快排不是稳定排序。需要可靠最坏性能时通常使用标准库 sort，或自己实现内省排序；随机化只能降低遇到极端分区的概率。</dd></div></dl>
-<div class="practice"><h3>经典考点与练习</h3><p>练习：LeetCode 75 颜色分类、215 数组中的第 K 个最大元素。</p><details><summary>面试官可能继续问什么？</summary><p>如何用分区实现第 K 小？为什么只递归一边时平均可达 O(n)？</p><p class="muted">先用自己的话回答，再回到本节的前提、不变量和边界检查论证。</p></details></div>
+<div class="deep-block" id="s2-after-1"><h3>2.5 第K小：排序两侧是多余工作</h3><p>将K定义为1开始编号，目标下标target=K-1。分区后，[l,lt)的秩都更小，[lt,gt]都是pivot，[gt+1,r]都更大；若target落在相等区直接返回，否则只缩小到包含target的一边。</p><p>随机基准下，常数概率产生足够均衡的分区，期望剩余规模按常数比例下降，总扫描量为O(n)，不是每轮都花n再做logn轮。最坏持续只减少一个元素时仍为O(n²)。第K大可转成第n-K+1小，但先检查K合法。</p></div><div class="deep-block" id="s2-after-2"><h3>2.6 迭代快速选择：仅求第K小</h3><p>会打乱输入，但不保证整体有序。期望O(n)、最坏O(n²)，额外空间O(1)，不计固定大小随机引擎。需要保持原数组时先复制。std::nth_element提供相同的选择用途，选择后两侧内部不保证有序；标准非并行版本为平均线性比较成本。</p><div class="codebox"><div class="codebar"><span>C++17</span><div><a href="examples/detail-quickselect.cpp" download>下载 .cpp</a><button type="button" class="copy">复制代码</button></div></div><pre tabindex="0" aria-label="C++17 代码"><code><span class="keyword">int</span> kthSmallest(vector&lt;<span class="keyword">int</span>&gt;&amp; a, <span class="keyword">int</span> k, uint32_t seed) {
+    <span class="keyword">int</span> n = (<span class="keyword">int</span>)a.size();
+    <span class="keyword">if</span> (k &lt; <span class="number">1</span> || k &gt; n) <span class="keyword">throw</span> out_of_range(<span class="string">&quot;k outside [1,n]&quot;</span>);
+    <span class="keyword">int</span> target = k - <span class="number">1</span>, l = <span class="number">0</span>, r = n - <span class="number">1</span>;
+    mt19937 rng(seed);
+    <span class="keyword">while</span> (l &lt;= r) {
+        uniform_int_distribution&lt;<span class="keyword">int</span>&gt; pick(l, r);
+        <span class="keyword">int</span> pivot = a[pick(rng)];
+        <span class="keyword">int</span> lt = l, i = l, gt = r;
+        <span class="keyword">while</span> (i &lt;= gt) {
+            <span class="keyword">if</span> (a[i] &lt; pivot) swap(a[lt++], a[i++]);
+            <span class="keyword">else</span> <span class="keyword">if</span> (a[i] &gt; pivot) swap(a[i], a[gt--]);
+            <span class="keyword">else</span> ++i;
+        }
+        <span class="keyword">if</span> (target &lt; lt) r = lt - <span class="number">1</span>;
+        <span class="keyword">else</span> <span class="keyword">if</span> (target &gt; gt) l = gt + <span class="number">1</span>;
+        <span class="keyword">else</span> <span class="keyword">return</span> pivot;
+    }
+    <span class="keyword">throw</span> logic_error(<span class="string">&quot;unreachable for valid input&quot;</span>);
+}</code></pre></div></div><div class="deep-block" id="s2-after-3"><h3>2.7 排序、快速选择、堆如何选择</h3><p class="table-hint">窄屏下可左右滑动表格，查看完整内容。</p><div class="study-table" tabindex="0" role="region" aria-label="2.7 排序、快速选择、堆如何选择"><table><thead><tr><th scope="col">需求</th><th scope="col">方法</th><th scope="col">时间</th><th scope="col">不要误解</th></tr></thead><tbody><tr><td>输出所有元素有序</td><td>sort</td><td>O(nlogn)比较</td><td>一次排序可支持后续多次查询</td></tr><tr><td>只查询一个K</td><td>快速选择 / nth_element</td><td>平均O(n)</td><td>左右两边不一定有序</td></tr><tr><td>流式维护前K大</td><td>大小K的最小堆</td><td>O(nlogK)</td><td>无需一次保存所有输入</td></tr><tr><td>输出有序前K个</td><td>选择后排序前K个</td><td>平均O(n)+O(KlogK)</td><td>只选择不能提供内部顺序</td></tr></tbody></table></div></div><div class="deep-block" id="s2-after-4"><h3>2.8 颜色分类：三路分区不一定需要递归</h3><p>只有0、1、2三类时，一轮分类已经完全有序，无需递归。预先验证数据合法，避免修改到一半才发现非法值；总时间仍O(n)、空间O(1)。与右端交换后i不前进的理由，与快排完全相同。</p><div class="codebox"><div class="codebar"><span>C++17</span><div><a href="examples/detail-sort-colors.cpp" download>下载 .cpp</a><button type="button" class="copy">复制代码</button></div></div><pre tabindex="0" aria-label="C++17 代码"><code><span class="keyword">void</span> sortColors(vector&lt;<span class="keyword">int</span>&gt;&amp; a) {
+    <span class="keyword">for</span> (<span class="keyword">int</span> value : a)
+        <span class="keyword">if</span> (value &lt; <span class="number">0</span> || value &gt; <span class="number">2</span>) <span class="keyword">throw</span> invalid_argument(<span class="string">&quot;only 0,1,2 allowed&quot;</span>);
+    <span class="keyword">int</span> zero = <span class="number">0</span>, i = <span class="number">0</span>, two = (<span class="keyword">int</span>)a.size() - <span class="number">1</span>;
+    <span class="keyword">while</span> (i &lt;= two) {
+        <span class="keyword">if</span> (a[i] == <span class="number">0</span>) swap(a[zero++], a[i++]);
+        <span class="keyword">else</span> <span class="keyword">if</span> (a[i] == <span class="number">2</span>) swap(a[i], a[two--]);
+        <span class="keyword">else</span> ++i;
+    }
+}</code></pre></div></div><div class="practice"><h3>经典考点与练习</h3><p>练习：LeetCode 75 颜色分类、215 数组中的第 K 个最大元素。</p><h3>面试追问：关键点完整解答</h3><dl class="answer-list"><div><dt>为什么大于pivot时交换完不能++i？</dt><dd><p>右侧gt指向未知区，换回来的值还没有被检查。若直接跳过，可能把一个应去左侧的小值遗留在相等区。每轮只保证右边界缩小，而不是i也可以推进。</p></dd></div><div><dt>为什么pivot要保存成int值而非引用？</dt><dd><p>数组分区会交换元素。若pivot引用某个位置，该位置的值可能被换走，比较基准在中途改变，已经建立的四段不变量就失效。</p></dd></div><div><dt>中间位置作基准为什么不保证平衡？</dt><dd><p>位置的中间不代表值的中位数。该位置可能恰好是最小或最大值，构造输入也可让后续每轮继续如此。随机基准改善期望行为，不能给出最坏nlogn保证。</p></dd></div><div><dt>短边递归如何把最坏栈深降到logn？</dt><dd><p>相等区之外的两侧总长度小于当前长度，较短侧长度至多一半。只有这侧会新增调用栈层；较长侧在当前栈帧中循环处理，因此每深入一层规模至少减半。</p></dd></div><div><dt>快速选择遇到大量重复值是否还要逐个定位？</dt><dd><p>三路分区会给出整个等于pivot的秩区间。目标下标落在里面时答案就是pivot，无须区分某个相等元素的身份；若题目要按附加字段区分，则比较键必须包含该字段。</p></dd></div><div><dt>第K大为什么是下标n-K，而不是K-1？</dt><dd><p>升序排序后最大元素位于n-1，第二大位于n-2，所以第K大位于n-K。对应1开始的第n-K+1小。K不合法时必须先拒绝，不能让越界算术进入选择过程。</p></dd></div></dl></div>
 <label class="learned"><input type="checkbox" data-progress="06-02">我能独立实现，并解释正确性与边界</label></section><section class="lesson" id="s3"><div class="lesson-heading"><span class="lesson-number">06.03</span><h2>左右边界与标准库二分</h2></div>
-<h3>知识与适用场景</h3><p>lower_bound 返回第一个 &gt;=x 的位置，upper_bound 返回第一个 &gt;x 的位置。两者之差就是 x 的出现次数；找不到时可能返回 end。</p><div class="invariant"><span>推导 / 不变量</span><p>下界搜索把 &gt;=x 作为右半区条件，上界搜索把 &gt;x 作为右半区条件。重复元素不是特例，而是边界定义的一部分。</p></div>
+<h3>知识与适用场景</h3><p>lower_bound 返回第一个 &gt;=x 的位置，upper_bound 返回第一个 &gt;x 的位置。两者之差就是 x 的出现次数；找不到时可能返回 end。</p><div class="deep-block" id="s3-before-1"><h3>3.1 找边界前，先把命题写成false→true</h3><p>在升序数组中，P(i):a[i]&gt;=x 从false变成true；lower_bound寻找第一个true。维护[0,l)全部false，[r,n)全部true，[l,r)尚未确定。r=n时右侧已知true区域为空，n作为“没有true”的返回哨兵，不需要读取a[n]。</p><p>若a[mid]&gt;=x，mid和之后都可归入true区域，令r=mid，不能mid-1，因为mid自身可能就是第一个true。否则mid及之前都false，令l=mid+1。终止l=r时未知区为空，该位置恰好是分界。</p><p>注意：待检查元素区间是[l,r)，但最终边界位置可能等于r。不要将“元素候选范围”与“边界答案的位置范围”混为一谈；例如全false时返回n。</p></div><div class="deep-block" id="s3-before-2"><h3>3.2 [1,2,2,2,4]寻找lower_bound(2)</h3><p class="table-hint">窄屏下可左右滑动表格，查看完整内容。</p><div class="study-table" tabindex="0" role="region" aria-label="3.2 [1,2,2,2,4]寻找lower_bound(2)"><table><thead><tr><th scope="col">l / r（右开）</th><th scope="col">mid / 值</th><th scope="col">判断</th><th scope="col">更新</th></tr></thead><tbody><tr><td>0 / 5</td><td>2 / 2</td><td>&gt;=2，mid可能是首个true</td><td>r=2</td></tr><tr><td>0 / 2</td><td>1 / 2</td><td>&gt;=2，继续向左找</td><td>r=1</td></tr><tr><td>0 / 1</td><td>0 / 1</td><td>&lt;2，排除mid</td><td>l=1</td></tr><tr><td>1 / 1</td><td>不再读取</td><td>未知区为空</td><td>返回1</td></tr></tbody></table></div></div><div class="deep-block" id="s3-before-3"><h3>3.3 手写上下界：只改变谓词，不混改边界</h3><p>前提a升序，时间O(logn)、空间O(1)。上下界返回范围[0,n]，最后一个&lt;=x返回范围[-1,n-1]。成员判断还要检查p&lt;n且a[p]==x。若upper_bound等于begin，不能对迭代器直接减1；本例转换成有符号下标后返回-1哨兵。</p><div class="codebox"><div class="codebar"><span>C++17</span><div><a href="examples/detail-bounds.cpp" download>下载 .cpp</a><button type="button" class="copy">复制代码</button></div></div><pre tabindex="0" aria-label="C++17 代码"><code><span class="keyword">int</span> lowerBoundIndex(<span class="keyword">const</span> vector&lt;<span class="keyword">int</span>&gt;&amp; a, <span class="keyword">int</span> x) {
+    <span class="keyword">int</span> l = <span class="number">0</span>, r = (<span class="keyword">int</span>)a.size();
+    <span class="keyword">while</span> (l &lt; r) {
+        <span class="keyword">int</span> mid = l + (r - l) / <span class="number">2</span>;
+        <span class="keyword">if</span> (a[mid] &gt;= x) r = mid;
+        <span class="keyword">else</span> l = mid + <span class="number">1</span>;
+    }
+    <span class="keyword">return</span> l;
+}
+<span class="keyword">int</span> upperBoundIndex(<span class="keyword">const</span> vector&lt;<span class="keyword">int</span>&gt;&amp; a, <span class="keyword">int</span> x) {
+    <span class="keyword">int</span> l = <span class="number">0</span>, r = (<span class="keyword">int</span>)a.size();
+    <span class="keyword">while</span> (l &lt; r) {
+        <span class="keyword">int</span> mid = l + (r - l) / <span class="number">2</span>;
+        <span class="keyword">if</span> (a[mid] &gt; x) r = mid;
+        <span class="keyword">else</span> l = mid + <span class="number">1</span>;
+    }
+    <span class="keyword">return</span> l;
+}
+<span class="keyword">int</span> lastAtMost(<span class="keyword">const</span> vector&lt;<span class="keyword">int</span>&gt;&amp; a, <span class="keyword">int</span> x) {
+    <span class="keyword">return</span> upperBoundIndex(a, x) - <span class="number">1</span>;
+}</code></pre></div></div><div class="deep-block" id="s3-before-4"><h3>3.4 四种常用边界与缺失情况</h3><p class="table-hint">窄屏下可左右滑动表格，查看完整内容。</p><div class="study-table" tabindex="0" role="region" aria-label="3.4 四种常用边界与缺失情况"><table><thead><tr><th scope="col">想找的边界</th><th scope="col">表达式</th><th scope="col">可能不存在时</th><th scope="col">例 [1,2,2,4]、x=2</th></tr></thead><tbody><tr><td>第一个&gt;=x</td><td>lower_bound(x)</td><td>n</td><td>1</td></tr><tr><td>第一个&gt;x</td><td>upper_bound(x)</td><td>n</td><td>3</td></tr><tr><td>最后一个&lt;x</td><td>lower_bound(x)-1</td><td>-1</td><td>0</td></tr><tr><td>最后一个&lt;=x</td><td>upper_bound(x)-1</td><td>-1</td><td>2</td></tr><tr><td>等于x的数量</td><td>upper_bound-lower_bound</td><td>0</td><td>2</td></tr></tbody></table></div></div><div class="deep-block" id="s3-before-5"><h3>3.5 标准库的比较器和迭代器要求</h3><p>lower_bound要求范围对给定比较谓词分区；升序有序是对所有查询都能满足该要求的常用前提。若数组按降序排序，二分也必须采用一致的比较规则。不要在未排序数组上调用后碰巧得到一个下标，就以为算法有效。</p><p>vector是随机访问迭代器，二分比较和移动都为O(logn)。list或set的通用lower_bound虽然比较次数O(logn)，迭代器前进总量可能O(n)；set/map应优先用成员lower_bound，利用树结构做到O(logn)。</p></div><div class="invariant"><span>推导 / 不变量</span><p>下界搜索把 &gt;=x 作为右半区条件，上界搜索把 &gt;x 作为右半区条件。重复元素不是特例，而是边界定义的一部分。</p></div>
 <h3>手推一个例子</h3><p>[1,2,2,2,4] 中 x=2，下界 1，上界 4，因此范围 [1,3]，次数 3。</p><div class="codebox"><div class="codebar"><span>C++17</span><div><a href="examples/03.cpp" download>下载 .cpp</a><button type="button" class="copy">复制代码</button></div></div><pre tabindex="0" aria-label="C++17 代码"><code>pair&lt;<span class="keyword">int</span>,<span class="keyword">int</span>&gt; searchRange(<span class="keyword">const</span> vector&lt;<span class="keyword">int</span>&gt;&amp; a, <span class="keyword">int</span> x) {
     <span class="keyword">auto</span> first = lower_bound(a.begin(), a.end(), x);
     <span class="keyword">if</span> (first == a.end() || *first != x) <span class="keyword">return</span> {-<span class="number">1</span>,-<span class="number">1</span>};
@@ -74,9 +214,78 @@
     <span class="keyword">return</span> {(<span class="keyword">int</span>)(first-a.begin()), (<span class="keyword">int</span>)(after-a.begin())-<span class="number">1</span>};
 }</code></pre></div>
 <dl class="analysis-grid"><div><dt>复杂度</dt><dd>随机访问数组上时间 O(log n)，空间 O(1)。在链表迭代器上，比较次数虽为对数，移动迭代器却可能为线性。</dd></div><div><dt>易错点与边界</dt><dd>有序容器 set/map 优先使用成员 lower_bound，不能把通用算法在其迭代器上的成本误认为 O(log n)。旋转数组要先判断哪半有序。</dd></div></dl>
-<div class="practice"><h3>经典考点与练习</h3><p>练习：LeetCode 34 查找首尾位置、33 搜索旋转排序数组、153 寻找旋转排序数组中的最小值。</p><details><summary>面试官可能继续问什么？</summary><p>找最后一个 &lt;=x 如何用 upper_bound 表达？空数组会返回什么？</p><p class="muted">先用自己的话回答，再回到本节的前提、不变量和边界检查论证。</p></details></div>
+<div class="deep-block" id="s3-after-1"><h3>3.6 旋转数组：不是整体有序，但至少一半有序</h3><p>无重复的升序数组旋转后，比较a[l]与a[mid]：若a[l]&lt;=a[mid]，左半[l,mid]有序；判断目标是否在[a[l],a[mid])即可决定去向。否则右半[mid,r]有序，判断目标是否在(a[mid],a[r]]。先单独检查a[mid]==target，再排除mid。</p><p>存在重复时，a[l]==a[mid]==a[r]无法判断断点在哪边。已知mid不是目标后，只能安全缩去两端相等值，可能退化成逐个排除；例如大量1中夹一个0。不能同时声称支持任意重复又保证最坏O(logn)。</p></div><div class="deep-block" id="s3-after-2"><h3>3.7 旋转数组搜索：无重复与允许重复的两个接口</h3><p>输入必须分别来自严格递增/非递减数组的一次旋转；这两个函数不在内部花O(n)验证结构。无重复版O(logn)，允许重复版最坏O(n)，空间均O(1)。空输入返回-1或false。</p><div class="codebox"><div class="codebar"><span>C++17</span><div><a href="examples/detail-rotated-search.cpp" download>下载 .cpp</a><button type="button" class="copy">复制代码</button></div></div><pre tabindex="0" aria-label="C++17 代码"><code><span class="keyword">int</span> searchRotatedDistinct(<span class="keyword">const</span> vector&lt;<span class="keyword">int</span>&gt;&amp; a, <span class="keyword">int</span> target) {
+    <span class="keyword">int</span> l = <span class="number">0</span>, r = (<span class="keyword">int</span>)a.size() - <span class="number">1</span>;
+    <span class="keyword">while</span> (l &lt;= r) {
+        <span class="keyword">int</span> mid = l + (r - l) / <span class="number">2</span>;
+        <span class="keyword">if</span> (a[mid] == target) <span class="keyword">return</span> mid;
+        <span class="keyword">if</span> (a[l] &lt;= a[mid]) {
+            <span class="keyword">if</span> (a[l] &lt;= target &amp;&amp; target &lt; a[mid]) r = mid - <span class="number">1</span>;
+            <span class="keyword">else</span> l = mid + <span class="number">1</span>;
+        } <span class="keyword">else</span> {
+            <span class="keyword">if</span> (a[mid] &lt; target &amp;&amp; target &lt;= a[r]) l = mid + <span class="number">1</span>;
+            <span class="keyword">else</span> r = mid - <span class="number">1</span>;
+        }
+    }
+    <span class="keyword">return</span> -<span class="number">1</span>;
+}
+<span class="keyword">bool</span> searchRotatedWithDuplicates(<span class="keyword">const</span> vector&lt;<span class="keyword">int</span>&gt;&amp; a, <span class="keyword">int</span> target) {
+    <span class="keyword">int</span> l = <span class="number">0</span>, r = (<span class="keyword">int</span>)a.size() - <span class="number">1</span>;
+    <span class="keyword">while</span> (l &lt;= r) {
+        <span class="keyword">int</span> mid = l + (r - l) / <span class="number">2</span>;
+        <span class="keyword">if</span> (a[mid] == target) <span class="keyword">return</span> <span class="keyword">true</span>;
+        <span class="keyword">if</span> (a[l] == a[mid] &amp;&amp; a[mid] == a[r]) { ++l; --r; continue; }
+        <span class="keyword">if</span> (a[l] &lt;= a[mid]) {
+            <span class="keyword">if</span> (a[l] &lt;= target &amp;&amp; target &lt; a[mid]) r = mid - <span class="number">1</span>;
+            <span class="keyword">else</span> l = mid + <span class="number">1</span>;
+        } <span class="keyword">else</span> {
+            <span class="keyword">if</span> (a[mid] &lt; target &amp;&amp; target &lt;= a[r]) l = mid + <span class="number">1</span>;
+            <span class="keyword">else</span> r = mid - <span class="number">1</span>;
+        }
+    }
+    <span class="keyword">return</span> <span class="keyword">false</span>;
+}</code></pre></div></div><div class="deep-block" id="s3-after-3"><h3>3.8 旋转数组最小值：mid与右端比较</h3><p>前提为非递减数组旋转，允许重复。a[mid]&lt;a[r]时，右侧不跨断点，最小值在[l,mid]且可能就是mid；a[mid]&gt;a[r]时断点在右侧，排除mid。相等时不能判断断点，但可删去一个重复的右端值，不会删掉所有最小值。无重复时O(logn)，有重复最坏O(n)，空间O(1)。</p><div class="codebox"><div class="codebar"><span>C++17</span><div><a href="examples/detail-rotated-minimum.cpp" download>下载 .cpp</a><button type="button" class="copy">复制代码</button></div></div><pre tabindex="0" aria-label="C++17 代码"><code><span class="keyword">int</span> minimumInRotated(<span class="keyword">const</span> vector&lt;<span class="keyword">int</span>&gt;&amp; a) {
+    <span class="keyword">if</span> (a.empty()) <span class="keyword">throw</span> invalid_argument(<span class="string">&quot;empty array&quot;</span>);
+    <span class="keyword">int</span> l = <span class="number">0</span>, r = (<span class="keyword">int</span>)a.size() - <span class="number">1</span>;
+    <span class="keyword">while</span> (l &lt; r) {
+        <span class="keyword">int</span> mid = l + (r - l) / <span class="number">2</span>;
+        <span class="keyword">if</span> (a[mid] &lt; a[r]) r = mid;
+        <span class="keyword">else</span> <span class="keyword">if</span> (a[mid] &gt; a[r]) l = mid + <span class="number">1</span>;
+        <span class="keyword">else</span> --r;
+    }
+    <span class="keyword">return</span> a[l];
+}</code></pre></div></div><div class="deep-block" id="s3-after-4"><h3>3.9 峰值二分：保留的是“某个峰”，不是某个固定答案</h3><p>前提a相邻元素不相等，数组两端之外视为负无穷。若a[mid]&lt;a[mid+1]，沿上坡向右走：要么某处转为下降形成峰，要么一直上升到右端，右端本身就是峰；因此右侧必存在峰。反方向同理。</p><p>数组可以有多个峰，不要求全局先增后减。这里的“上坡”布尔值并不在整个数组上单调，因此不能照搬“第一个true”的证明；正确依据是每次保留的区间仍包含一个峰以及边界斜率条件。</p></div><div class="deep-block" id="s3-after-5"><h3>3.10 寻找任意严格峰值</h3><p>当l&lt;r时，下取整mid&lt;=r-1，读取mid+1安全。单元素返回0；严格递增返回末尾，严格递减返回0。依赖相邻不相等的契约，若允许平台，可能不存在严格峰，本函数不能直接保证满足原定义。时间O(logn)、空间O(1)。</p><div class="codebox"><div class="codebar"><span>C++17</span><div><a href="examples/detail-peak.cpp" download>下载 .cpp</a><button type="button" class="copy">复制代码</button></div></div><pre tabindex="0" aria-label="C++17 代码"><code><span class="keyword">int</span> findPeak(<span class="keyword">const</span> vector&lt;<span class="keyword">int</span>&gt;&amp; a) {
+    <span class="keyword">if</span> (a.empty()) <span class="keyword">return</span> -<span class="number">1</span>;
+    <span class="keyword">int</span> l = <span class="number">0</span>, r = (<span class="keyword">int</span>)a.size() - <span class="number">1</span>;
+    <span class="keyword">while</span> (l &lt; r) {
+        <span class="keyword">int</span> mid = l + (r - l) / <span class="number">2</span>;
+        <span class="keyword">if</span> (a[mid] &lt; a[mid + <span class="number">1</span>]) l = mid + <span class="number">1</span>;
+        <span class="keyword">else</span> r = mid;
+    }
+    <span class="keyword">return</span> l;
+}</code></pre></div></div><div class="deep-block" id="s3-after-6"><h3>3.11 两个有序数组中位数：二分分割线，而不是枚举数值</h3><p>在较短数组A上选择左边拿i个，另一个数组B拿j=(m+n+1)/2-i个，让总左侧比右侧最多多一个。只要A左最大&lt;=B右最小且B左最大&lt;=A右最小，所有左侧元素就不大于右侧；奇数总长度取左最大，偶数取左右边界均值。</p><p>若A左最大&gt;B右最小，说明A左侧取多了，i减小；若B左最大&gt;A右最小，说明A左侧取少了，i增大。在较短数组上二分可使j始终落在合法范围，边界为空时用长整型极值作哨兵。</p></div><div class="deep-block" id="s3-after-7"><h3>3.12 中位数分割：空侧、奇偶与均值溢出</h3><p>输入各自非递减有序，单个数组长度可由int表示。算法并不完整验证有序性，非法输入可能产生错误结果而不抛异常。总长度非零时，有效分割的两侧实际边界会排除无穷哨兵；两个int边界先提升为long long求和，避免INT_MAX+INT_MAX溢出。时间O(log(min(m,n)+1))，空间O(1)。</p><div class="codebox"><div class="codebar"><span>C++17</span><div><a href="examples/detail-median-two-sorted.cpp" download>下载 .cpp</a><button type="button" class="copy">复制代码</button></div></div><pre tabindex="0" aria-label="C++17 代码"><code><span class="keyword">double</span> medianOfSorted(<span class="keyword">const</span> vector&lt;<span class="keyword">int</span>&gt;&amp; a, <span class="keyword">const</span> vector&lt;<span class="keyword">int</span>&gt;&amp; b) {
+    <span class="keyword">if</span> (a.size() &gt; b.size()) <span class="keyword">return</span> medianOfSorted(b, a);
+    <span class="keyword">int</span> m = (<span class="keyword">int</span>)a.size(), n = (<span class="keyword">int</span>)b.size();
+    <span class="keyword">if</span> (m == <span class="number">0</span> &amp;&amp; n == <span class="number">0</span>) <span class="keyword">throw</span> invalid_argument(<span class="string">&quot;both arrays empty&quot;</span>);
+    <span class="keyword">int</span> half = (<span class="keyword">int</span>)(((<span class="keyword">long</span> <span class="keyword">long</span>)m + n + <span class="number">1</span>) / <span class="number">2</span>);
+    <span class="keyword">int</span> l = <span class="number">0</span>, r = m;
+    <span class="keyword">while</span> (l &lt;= r) {
+        <span class="keyword">int</span> i = l + (r - l) / <span class="number">2</span>, j = half - i;
+        <span class="keyword">long</span> <span class="keyword">long</span> al = i == <span class="number">0</span> ? LLONG_MIN : a[i - <span class="number">1</span>];
+        <span class="keyword">long</span> <span class="keyword">long</span> ar = i == m ? LLONG_MAX : a[i];
+        <span class="keyword">long</span> <span class="keyword">long</span> bl = j == <span class="number">0</span> ? LLONG_MIN : b[j - <span class="number">1</span>];
+        <span class="keyword">long</span> <span class="keyword">long</span> br = j == n ? LLONG_MAX : b[j];
+        <span class="keyword">if</span> (al &lt;= br &amp;&amp; bl &lt;= ar) {
+            <span class="keyword">if</span> (((<span class="keyword">long</span> <span class="keyword">long</span>)m + n) % <span class="number">2</span> != <span class="number">0</span>) <span class="keyword">return</span> (<span class="keyword">double</span>)max(al, bl);
+            <span class="keyword">return</span> (max(al, bl) + min(ar, br)) / <span class="number">2</span>.<span class="number">0</span>;
+        }
+        <span class="keyword">if</span> (al &gt; br) r = i - <span class="number">1</span>;
+        <span class="keyword">else</span> l = i + <span class="number">1</span>;
+    }
+    <span class="keyword">throw</span> invalid_argument(<span class="string">&quot;sorted input required&quot;</span>);
+}</code></pre></div></div><div class="practice"><h3>经典考点与练习</h3><p>练习：LeetCode 34 查找首尾位置、33 搜索旋转排序数组、153 寻找旋转排序数组中的最小值。</p><h3>面试追问：关键点完整解答</h3><dl class="answer-list"><div><dt>二分模板用r=mid，为什么不会死循环？</dt><dd><p>当l&lt;r时下取整mid&lt;r，所以r=mid严格减小右边界；另一支l=mid+1严格增大左边界。关键是每个分支都减少r-l，而不是看到mid就随意加减1。</p></dd></div><div><dt>找不到目标时lower_bound返回n还是-1？</dt><dd><p>它返回插入边界，范围为[0,n]，可能在数组内部指向更大值，也可能等于n。判断存在必须同时检查p&lt;n和a[p]==target；-1只是某些封装接口约定，不是lower_bound的语义。</p></dd></div><div><dt>最后一个&lt;=x为什么用upper_bound减1？</dt><dd><p>upper_bound恰是第一个&gt;x的位置，之前的最后一个元素就是最后一个&lt;=x。若upper_bound位置为0，说明不存在符合项，返回有符号下标-1，不能对begin迭代器直接做非法前移。</p></dd></div><div><dt>旋转数组有重复时，为什么最坏只能线性？</dt><dd><p>大量相等值会隐藏断点位置，例如只有一个0而其他全为1。端点与中点相等时无法据此排除半边，只能逐步缩小。O(logn)保证依赖能确定哪半有序的额外信息。</p></dd></div><div><dt>峰值二分需要数组整体单峰吗？</dt><dd><p>不需要，但要求相邻不等且边界外为负无穷。比较中点斜率能证明某一侧必有一个峰，从而安全保留它；并不是在整个数组上寻找一个单调布尔谓词的边界。</p></dd></div><div><dt>中位数为什么在较短数组上二分分割？</dt><dd><p>这样i从0到m时，按左侧总数计算出的j自然在0..n范围内，搜索空间也更小。若在长数组上随意取i，j可能为负或超过短数组长度，还需额外限制i的上下界。</p></dd></div></dl></div>
 <label class="learned"><input type="checkbox" data-progress="06-03">我能独立实现，并解释正确性与边界</label></section><section class="lesson" id="s4"><div class="lesson-heading"><span class="lesson-number">06.04</span><h2>答案二分：最小运输能力</h2></div>
-<h3>知识与适用场景</h3><p>答案二分要求可行性单调。运输容量越大，需要的天数越少，因此存在“不可行→可行”的分界。对每个候选容量，按顺序尽量装满当前天即可检查可行性。</p><div class="invariant"><span>推导 / 不变量</span><p>下界为最大单件重量，上界为总重量。容量固定后，贪心每天尽量多装不会让未来变差；check 返回能否在 D 天内完成。</p></div>
+<h3>知识与适用场景</h3><p>答案二分要求可行性单调。运输容量越大，需要的天数越少，因此存在“不可行→可行”的分界。对每个候选容量，按顺序尽量装满当前天即可检查可行性。</p><div class="deep-block" id="s4-before-1"><h3>4.1 答案二分的四个证明义务</h3><p>第一，真实答案处于初始范围；第二，check(cap)确实等价于该容量可行，而不是一种不完整的尝试；第三，可行性具有单调性；第四，每轮保留答案并严格缩小范围。只看见“最小化最大值”不足以推出二分代码正确。</p><p>基础运力题规定货物顺序不变，每天装运一个连续前缀，重量为正。约定n&lt;=100000、每件重量&lt;=10^9、非空输入days&gt;=1；这样总重和load+x都可用long long表示。空数组直接返回0，即使days&lt;=0也不进入非空参数校验，这是基础接口的约定。</p></div><div class="deep-block" id="s4-before-2"><h3>4.2 为什么运力判定可以每天尽量装满</h3><p>固定容量cap，每天贪心装到再加一件就超容量。用归纳比较任何合法方案：第一天贪心能完成的前缀不短于它；若前t天贪心已经完成至少同样多货物，第t+1天也可从更靠后位置出发，正重量保证它不会比另一方案覆盖更少的前缀。因此贪心所需天数最少。</p><p>容量增大时，原来可行的装法仍可行，所以check从false变true。下界max(w)排除装不下单件的容量，上界sum(w)可在一天装完，必可行。每次check O(n)，二分次数O(log(S-M+1))；计入至少一次读入的统一写法为O(n·(1+log(S-M+1)))。</p></div><div class="deep-block" id="s4-before-3"><h3>4.3 [7,2,5,10,8]，D=2的容量判定</h3><p class="table-hint">窄屏下可左右滑动表格，查看完整内容。</p><div class="study-table" tabindex="0" role="region" aria-label="4.3 [7,2,5,10,8]，D=2的容量判定"><table><thead><tr><th scope="col">容量</th><th scope="col">贪心分组</th><th scope="col">所需天数</th><th scope="col">可行吗</th></tr></thead><tbody><tr><td>10</td><td>[7,2] / [5] / [10] / [8]</td><td>4</td><td>否</td></tr><tr><td>15</td><td>[7,2,5] / [10] / [8]</td><td>3</td><td>否</td></tr><tr><td>17</td><td>[7,2,5] / [10] / [8]</td><td>3</td><td>否</td></tr><tr><td>18</td><td>[7,2,5] / [10,8]</td><td>2</td><td>是</td></tr><tr><td>21</td><td>[7,2,5] / [10,8]</td><td>2</td><td>是</td></tr></tbody></table></div></div><div class="deep-block" id="s4-before-4"><h3>4.4 两种答案边界：别混用mid的取整方向</h3><p class="table-hint">窄屏下可左右滑动表格，查看完整内容。</p><div class="study-table" tabindex="0" role="region" aria-label="4.4 两种答案边界：别混用mid的取整方向"><table><thead><tr><th scope="col">目标与单调性</th><th scope="col">维护的闭区间</th><th scope="col">mid</th><th scope="col">可行时 / 不可行时</th></tr></thead><tbody><tr><td>最小可行：false→true</td><td>[lo,hi]含答案，hi可行</td><td>lo+(hi-lo)/2</td><td>hi=mid / lo=mid+1</td></tr><tr><td>最大可行：true→false</td><td>[lo,hi]含答案，lo可行</td><td>lo+(hi-lo+1)/2</td><td>lo=mid / hi=mid-1</td></tr></tbody></table></div></div><div class="deep-block" id="s4-before-5"><h3>4.5 把运力题变成分割数组：前提差一点，证明就变了</h3><p>非负数组分成至多D个连续非空段、最小化最大段和，与运力模型相同。若要求恰好D段且1&lt;=D&lt;=n，非负数下可把不足D段的方案继续拆开而不增加最大段和，因此可复用判定。</p><p>若允许负数，继续加入元素可能降低段和，原来的贪心和max(w)下界都可能失效。允许重排货物时，固定顺序尽量装满也不再是完备判定，例如[2,2,3,3]、容量5，顺序贪心用3天，但重排为[2,3]、[2,3]只用2天。可行性可能仍然单调，难点却变成如何正确实现check。</p></div><div class="invariant"><span>推导 / 不变量</span><p>下界为最大单件重量，上界为总重量。容量固定后，贪心每天尽量多装不会让未来变差；check 返回能否在 D 天内完成。</p></div>
 <h3>手推一个例子</h3><p>重量 [1,2,3,1,1]，D=4，容量 2 装不下重量 3；容量 3 可分为 [1,2]、[3]、[1,1]，最小答案是 3。</p><div class="codebox"><div class="codebar"><span>C++17</span><div><a href="examples/04.cpp" download>下载 .cpp</a><button type="button" class="copy">复制代码</button></div></div><pre tabindex="0" aria-label="C++17 代码"><code><span class="keyword">long</span> <span class="keyword">long</span> shipCapacity(<span class="keyword">const</span> vector&lt;<span class="keyword">int</span>&gt;&amp; w, <span class="keyword">int</span> days) {
     <span class="keyword">if</span> (w.empty()) <span class="keyword">return</span> <span class="number">0</span>;
     <span class="keyword">if</span> (days &lt;= <span class="number">0</span>) <span class="keyword">throw</span> invalid_argument(<span class="string">&quot;days must be positive&quot;</span>);
@@ -99,5 +308,507 @@
     <span class="keyword">return</span> lo;
 }</code></pre></div>
 <dl class="analysis-grid"><div><dt>复杂度</dt><dd>时间 O(n log(S-M+1))，S 为总重、M 为最大重量；空间 O(1)。重量需为正。</dd></div><div><dt>易错点与边界</dt><dd>不要看到最小化最大值就直接二分；先证明 check 单调，并保证初始上界可行。</dd></div></dl>
-<div class="practice"><h3>经典考点与练习</h3><p>练习：LeetCode 1011 在 D 天内送达包裹的能力、875 爱吃香蕉的珂珂、410 分割数组的最大值。</p><details><summary>面试官可能继续问什么？</summary><p>如果允许打乱货物顺序，check 是否仍然这样写？</p><p class="muted">先用自己的话回答，再回到本节的前提、不变量和边界检查论证。</p></details></div>
-<label class="learned"><input type="checkbox" data-progress="06-04">我能独立实现，并解释正确性与边界</label></section><nav class="chapter-pager" aria-label="相邻章节"><a href="../05-哈希集合与位运算/index.html"><small>上一章</small>← 哈希、集合与位运算</a><a href="../07-树与二叉搜索树/index.html"><small>下一章</small>树与二叉搜索树 →</a></nav><footer>秋招算法学习讲义 · C++17<br>例题编号供检索；难度与覆盖范围按学习顺序组织。</footer></main><aside class="toc" aria-label="本页目录"><p class="rail-label">本章小节</p><a href="#s1"><span>01</span>归并排序、稳定性与逆序对</a><a href="#s2"><span>02</span>快速排序与三路分区</a><a href="#s3"><span>03</span>左右边界与标准库二分</a><a href="#s4"><span>04</span>答案二分：最小运输能力</a></aside></div><div class="toast" role="status" aria-live="polite"></div></body></html>
+<div class="deep-block" id="s4-after-1"><h3>4.6 最小吃香蕉速度：向上取整与不可行输入</h3><p>每小时只能吃一堆中的至多speed根，不能在同一小时切换堆，所以时间是各堆ceil(p/speed)之和，而不是ceil(总香蕉/speed)。[3,6,7,11]、hours=8答案为4。</p><p>输入n可用int表示，各堆为正int，最坏时间和不超过n*INT_MAX，在long long内。使用p/speed+(p%speed!=0)避免p+speed-1在int中溢出。时间O(n·(1+log M))、空间O(1)。hours&lt;n时无解返回-1；空输入返回0。</p><div class="codebox"><div class="codebar"><span>C++17</span><div><a href="examples/detail-banana-speed.cpp" download>下载 .cpp</a><button type="button" class="copy">复制代码</button></div></div><pre tabindex="0" aria-label="C++17 代码"><code><span class="keyword">int</span> minimumEatingSpeed(<span class="keyword">const</span> vector&lt;<span class="keyword">int</span>&gt;&amp; piles, <span class="keyword">long</span> <span class="keyword">long</span> hours) {
+    <span class="keyword">if</span> (piles.empty()) <span class="keyword">return</span> <span class="number">0</span>;
+    <span class="keyword">if</span> (hours &lt;= <span class="number">0</span>) <span class="keyword">throw</span> invalid_argument(<span class="string">&quot;hours must be positive&quot;</span>);
+    <span class="keyword">int</span> hi = <span class="number">0</span>;
+    <span class="keyword">for</span> (<span class="keyword">int</span> value : piles) {
+        <span class="keyword">if</span> (value &lt;= <span class="number">0</span>) <span class="keyword">throw</span> invalid_argument(<span class="string">&quot;piles must be positive&quot;</span>);
+        hi = max(hi, value);
+    }
+    <span class="keyword">if</span> (hours &lt; (<span class="keyword">long</span> <span class="keyword">long</span>)piles.size()) <span class="keyword">return</span> -<span class="number">1</span>;
+    <span class="keyword">auto</span> feasible = [&amp;](<span class="keyword">int</span> speed) {
+        <span class="keyword">long</span> <span class="keyword">long</span> used = <span class="number">0</span>;
+        <span class="keyword">for</span> (<span class="keyword">int</span> value : piles) {
+            used += value / speed + (value % speed != <span class="number">0</span>);
+            <span class="keyword">if</span> (used &gt; hours) <span class="keyword">return</span> <span class="keyword">false</span>;
+        }
+        <span class="keyword">return</span> <span class="keyword">true</span>;
+    };
+    <span class="keyword">int</span> lo = <span class="number">1</span>;
+    <span class="keyword">while</span> (lo &lt; hi) {
+        <span class="keyword">int</span> mid = lo + (hi - lo) / <span class="number">2</span>;
+        <span class="keyword">if</span> (feasible(mid)) hi = mid;
+        <span class="keyword">else</span> lo = mid + <span class="number">1</span>;
+    }
+    <span class="keyword">return</span> lo;
+}</code></pre></div></div><div class="deep-block" id="s4-after-2"><h3>4.7 最大化最小距离：最后一个可行答案</h3><p>从最左位置开始，每次选择距离满足要求的最早位置。它为后续放置保留最多空间，可用交换论证把任意可行方案的当前点左移到贪心点而不损害未来，因此判定完备。距离变大只会更难，可行性true→false。</p><p>位置是int，差值先转long long，覆盖INT_MIN到INT_MAX。重复坐标按不同可选位置处理，因此距离0也可能是答案；若题目要求物理位置唯一，应先明确输入约定。接口复制并排序，不改调用者输入。总时间O(nlogn+n·log(R+1))、复制空间O(n)，R为坐标跨度；上取整mid在本例范围内不会溢出。</p><div class="codebox"><div class="codebar"><span>C++17</span><div><a href="examples/detail-max-min-distance.cpp" download>下载 .cpp</a><button type="button" class="copy">复制代码</button></div></div><pre tabindex="0" aria-label="C++17 代码"><code><span class="keyword">long</span> <span class="keyword">long</span> maximumMinimumDistance(vector&lt;<span class="keyword">int</span>&gt; positions, <span class="keyword">int</span> count) {
+    <span class="keyword">int</span> n = (<span class="keyword">int</span>)positions.size();
+    <span class="keyword">if</span> (count &lt; <span class="number">2</span> || count &gt; n) <span class="keyword">throw</span> invalid_argument(<span class="string">&quot;require 2 &lt;= count &lt;= n&quot;</span>);
+    sort(positions.begin(), positions.end());
+    <span class="keyword">auto</span> feasible = [&amp;](<span class="keyword">long</span> <span class="keyword">long</span> distance) {
+        <span class="keyword">int</span> placed = <span class="number">1</span>;
+        <span class="keyword">long</span> <span class="keyword">long</span> last = positions[<span class="number">0</span>];
+        <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">1</span>; i &lt; n; ++i) {
+            <span class="keyword">if</span> ((<span class="keyword">long</span> <span class="keyword">long</span>)positions[i] - last &gt;= distance) {
+                last = positions[i];
+                <span class="keyword">if</span> (++placed == count) <span class="keyword">return</span> <span class="keyword">true</span>;
+            }
+        }
+        <span class="keyword">return</span> <span class="keyword">false</span>;
+    };
+    <span class="keyword">long</span> <span class="keyword">long</span> lo = <span class="number">0</span>, hi = (<span class="keyword">long</span> <span class="keyword">long</span>)positions.back() - positions.front();
+    <span class="keyword">while</span> (lo &lt; hi) {
+        <span class="keyword">long</span> <span class="keyword">long</span> mid = lo + (hi - lo + <span class="number">1</span>) / <span class="number">2</span>;
+        <span class="keyword">if</span> (feasible(mid)) lo = mid;
+        <span class="keyword">else</span> hi = mid - <span class="number">1</span>;
+    }
+    <span class="keyword">return</span> lo;
+}</code></pre></div></div><div class="deep-block" id="s4-after-3"><h3>4.8 最后一个true为什么用上取整mid</h3><p>若lo=4、hi=5，下取整mid=4，而可行分支更新lo=mid会使区间完全不变，造成死循环。上取整得到5，无论可行还是不可行，区间都会变成一个点。另一种合法做法是改用不变量不同的哨兵区间，但不能只替换mid而不检查全部边界语义。</p><p>lo+(hi-lo)/2的防溢出也有前提：hi-lo本身必须可表示。本章数组下标非负，资源区间与坐标跨度都已限制，因此满足。若二分完整有符号64位范围，差值也可能溢出，需要单独设计中点计算。</p></div><div class="deep-block" id="s4-after-4"><h3>4.9 整数平方根：用除法比较避免mid*mid溢出</h3><p>返回最大的非负整数r，使r²&lt;=x。uint64_t最大输入的平方根不超过2^32-1，所以hi的界正确；循环中mid&gt;=1，不会除零。用mid&lt;=x/mid代替乘法比较，避免中间乘积溢出。固定64位至多32轮，空间O(1)。</p><div class="codebox"><div class="codebar"><span>C++17</span><div><a href="examples/detail-integer-sqrt.cpp" download>下载 .cpp</a><button type="button" class="copy">复制代码</button></div></div><pre tabindex="0" aria-label="C++17 代码"><code>uint64_t floorSquareRoot(uint64_t x) {
+    uint64_t lo = <span class="number">0</span>, hi = min(x, uint64_t{UINT32_MAX});
+    <span class="keyword">while</span> (lo &lt; hi) {
+        uint64_t mid = lo + (hi - lo + <span class="number">1</span>) / <span class="number">2</span>;
+        <span class="keyword">if</span> (mid &lt;= x / mid) lo = mid;
+        <span class="keyword">else</span> hi = mid - <span class="number">1</span>;
+    }
+    <span class="keyword">return</span> lo;
+}</code></pre></div></div><div class="deep-block" id="s4-after-5"><h3>4.10 实数二分与边界自检</h3><p>若答案是实数，不能用lo=mid+1。可固定迭代次数，或在hi-lo&lt;=eps时停止；要考虑浮点舍入使mid等于端点，以及误差是绝对还是相对。把整数模板里的+1删除并不自动完成数值分析。</p><p>输出最小可行值ans后，可检查check(ans)为真，且ans大于域下界时check(ans-1)为假；输出最大可行值时检查check(ans)为真，且域内ans+1不可行。这种邻接验证很适合发现边界偏一。</p></div><div class="practice"><h3>经典考点与练习</h3><p>练习：LeetCode 1011 在 D 天内送达包裹的能力、875 爱吃香蕉的珂珂、410 分割数组的最大值。</p><h3>面试追问：关键点完整解答</h3><dl class="answer-list"><div><dt>看到“最小化最大值”就能直接答案二分吗？</dt><dd><p>还需给出答案范围、可行性的单调性和一个正确且足够快的判定算法。单调性成立不代表容易判定，例如允许重排后的装箱问题就不能直接用原顺序贪心。</p></dd></div><div><dt>运力上界为什么用总重而不是平均重量？</dt><dd><p>总重一定可以在一天装完，是可靠的可行上界；平均重量只是可能的下界信息，不能保证装下最大单件，也可能受连续分组约束影响。二分需要一个已知可行的端点。</p></dd></div><div><dt>运力题每天尽量装满为什么不会损害后面？</dt><dd><p>在容量固定且重量为正的顺序模型里，装得更多只会把剩余任务变成更短的后缀。通过已完成前缀的归纳，贪心每一天都不会比其他方案完成得少，所以其天数最少。</p></dd></div><div><dt>为什么香蕉时间不能用总量除以速度向上取整？</dt><dd><p>每小时不能跨堆，余下时间不能拿去吃另一堆。例如[1,1]、速度2仍需2小时，而ceil(2/2)=1会错误合并时间。必须逐堆取整后求和。</p></dd></div><div><dt>最大化最小距离为什么可行时更新lo而不是hi？</dt><dd><p>要找最大的true。mid可行说明所有更小距离也可行，可以把lo推进到mid，但仍需探索更大值；不可行则排除mid及更大值，hi=mid-1。配合上取整mid保证进展。</p></dd></div><div><dt>平方根二分为什么不用mid*mid&lt;=x？</dt><dd><p>乘法可能先溢出，再与x比较就失去意义。mid&gt;0时不等式等价于mid&lt;=x/mid，采用整数除法仍能准确判定；本例用上取整且只在lo&lt;hi时循环，确保mid不为0。</p></dd></div></dl></div>
+<label class="learned"><input type="checkbox" data-progress="06-04">我能独立实现，并解释正确性与边界</label></section><section class="chapter-review" id="chapter-review"><p class="eyebrow">PRACTICE / 把本章方法用起来</p><h2>综合例题与章末自测</h2><div class="deep-block" id="review-1"><h3>经典考点与递进训练</h3><p class="table-hint">窄屏下可左右滑动表格，查看完整内容。</p><div class="study-table" tabindex="0" role="region" aria-label="经典考点与递进训练"><table><thead><tr><th scope="col">阶段</th><th scope="col">练习</th><th scope="col">必须解释的点</th><th scope="col">最小反例/边界</th></tr></thead><tbody><tr><td>归并与稳定性</td><td>912 排序；LCR170 逆序对</td><td>相等取左；m-i；long long</td><td>[2,2]；逆序数组；同键不同id</td></tr><tr><td>分区与选择</td><td>75 颜色分类；215 第K大</td><td>未知区；大值交换后i不动；目标秩</td><td>全相等；K=1；K=n</td></tr><tr><td>标准边界</td><td>34 首尾位置；35 插入位置</td><td>false→true；返回n；迭代器成本</td><td>空数组；全小于；全等于</td></tr><tr><td>结构性二分</td><td>33/81 旋转搜索；153/154 最小值；162 峰值</td><td>哪半有序；重复退化；保留峰</td><td>[1,0,1,1]；单元素；多峰</td></tr><tr><td>多数组分割</td><td>4 两有序数组中位数</td><td>左侧数量；交叉大小关系</td><td>一侧空；奇偶；INT极值</td></tr><tr><td>答案二分</td><td>1011 运力；875 香蕉；410 分割；1552 磁力</td><td>判定完备；单调性；上下界</td><td>D=1；D&gt;=n；不可行输入</td></tr><tr><td>进阶边界</td><td>69 平方根；最大最小间隔</td><td>上取整；安全算术；邻接验证</td><td>0；完全平方数；最大64位值</td></tr></tbody></table></div></div><div class="deep-block" id="review-2"><h3>综合测试：结果对照之外，还要检查性质</h3><p>排序与标准sort对照，稳定性用(key,id)记录与stable_sort对照；逆序对用双循环枚举；快速选择逐个核对合法K；上下界用线性扫描；旋转搜索用find；峰值检查两侧严格更小；中位数与合并排序结果对照；香蕉速度与最小间隔用小范围穷举。</p><p>测试程序独立包含15份补充示例中的函数及main，固定随机种子生成1000组小数组，对前100轮中符合规模条件的输入穷举位置子集，并检查0..10000的整数平方根及整数极限。它验证实现，不替代上面的证明，也不声称穷尽所有输入。</p><p>下载后可执行 g++ -std=c++17 -O2 -Wall -Wextra detail-search-tests.cpp -o chapter06-tests，再运行程序。编译与实际执行状态见全站验证记录；提供测试源码并不意味着已经运行通过。原有运力基础示例未纳入此独立程序。</p></div><div class="deep-block" id="review-3"><h3>完整对照测试：排序、边界、旋转与答案搜索</h3><p>固定反例覆盖相等值、无解、INT_MIN/INT_MAX、UINT64_MAX、空数组和非法K。采用显式require，避免NDEBUG使assert失效。</p><div class="codebox"><div class="codebar"><span>C++17</span><div><a href="examples/detail-search-tests.cpp" download>下载 .cpp</a><button type="button" class="copy">复制代码</button></div></div><pre tabindex="0" aria-label="C++17 代码"><code><span class="keyword">struct</span> Record {
+    <span class="keyword">int</span> key;
+    <span class="keyword">int</span> id; <span class="comment">// original identity, not part of the sorting key</span>
+};
+<span class="keyword">void</span> stableMergeRange(vector&lt;Record&gt;&amp; a, vector&lt;Record&gt;&amp; tmp, <span class="keyword">int</span> l, <span class="keyword">int</span> r) {
+    <span class="keyword">if</span> (r - l &lt;= <span class="number">1</span>) <span class="keyword">return</span>;
+    <span class="keyword">int</span> m = l + (r - l) / <span class="number">2</span>;
+    stableMergeRange(a, tmp, l, m);
+    stableMergeRange(a, tmp, m, r);
+    <span class="keyword">int</span> i = l, j = m, out = l;
+    <span class="keyword">while</span> (i &lt; m &amp;&amp; j &lt; r)
+        tmp[out++] = a[i].key &lt;= a[j].key ? a[i++] : a[j++];
+    <span class="keyword">while</span> (i &lt; m) tmp[out++] = a[i++];
+    <span class="keyword">while</span> (j &lt; r) tmp[out++] = a[j++];
+    <span class="keyword">for</span> (<span class="keyword">int</span> k = l; k &lt; r; ++k) a[k] = tmp[k];
+}
+<span class="keyword">void</span> stableMergeSort(vector&lt;Record&gt;&amp; a) {
+    vector&lt;Record&gt; tmp(a.size());
+    stableMergeRange(a, tmp, <span class="number">0</span>, (<span class="keyword">int</span>)a.size());
+}
+
+<span class="keyword">long</span> <span class="keyword">long</span> inversionRange(vector&lt;<span class="keyword">int</span>&gt;&amp; a, vector&lt;<span class="keyword">int</span>&gt;&amp; tmp, <span class="keyword">int</span> l, <span class="keyword">int</span> r) {
+    <span class="keyword">if</span> (r - l &lt;= <span class="number">1</span>) <span class="keyword">return</span> <span class="number">0</span>;
+    <span class="keyword">int</span> m = l + (r - l) / <span class="number">2</span>;
+    <span class="keyword">long</span> <span class="keyword">long</span> answer = inversionRange(a, tmp, l, m);
+    answer += inversionRange(a, tmp, m, r);
+    <span class="keyword">int</span> i = l, j = m, out = l;
+    <span class="keyword">while</span> (i &lt; m &amp;&amp; j &lt; r) {
+        <span class="keyword">if</span> (a[i] &lt;= a[j]) tmp[out++] = a[i++];
+        <span class="keyword">else</span> { answer += m - i; tmp[out++] = a[j++]; }
+    }
+    <span class="keyword">while</span> (i &lt; m) tmp[out++] = a[i++];
+    <span class="keyword">while</span> (j &lt; r) tmp[out++] = a[j++];
+    <span class="keyword">for</span> (<span class="keyword">int</span> k = l; k &lt; r; ++k) a[k] = tmp[k];
+    <span class="keyword">return</span> answer;
+}
+<span class="keyword">long</span> <span class="keyword">long</span> countInversions(vector&lt;<span class="keyword">int</span>&gt;&amp; a) {
+    vector&lt;<span class="keyword">int</span>&gt; tmp(a.size());
+    <span class="keyword">return</span> inversionRange(a, tmp, <span class="number">0</span>, (<span class="keyword">int</span>)a.size());
+}
+
+<span class="keyword">void</span> siftDown(vector&lt;<span class="keyword">int</span>&gt;&amp; a, <span class="keyword">int</span> root, <span class="keyword">int</span> size) {
+    <span class="keyword">while</span> (root &lt; size / <span class="number">2</span>) {
+        <span class="keyword">int</span> child = root * <span class="number">2</span> + <span class="number">1</span>;
+        <span class="keyword">if</span> (child + <span class="number">1</span> &lt; size &amp;&amp; a[child] &lt; a[child + <span class="number">1</span>]) ++child;
+        <span class="keyword">if</span> (a[root] &gt;= a[child]) break;
+        swap(a[root], a[child]);
+        root = child;
+    }
+}
+<span class="keyword">void</span> heapSort(vector&lt;<span class="keyword">int</span>&gt;&amp; a) {
+    <span class="keyword">int</span> n = (<span class="keyword">int</span>)a.size();
+    <span class="keyword">for</span> (<span class="keyword">int</span> root = n / <span class="number">2</span> - <span class="number">1</span>; root &gt;= <span class="number">0</span>; --root) siftDown(a, root, n);
+    <span class="keyword">for</span> (<span class="keyword">int</span> end = n - <span class="number">1</span>; end &gt; <span class="number">0</span>; --end) {
+        swap(a[<span class="number">0</span>], a[end]);
+        siftDown(a, <span class="number">0</span>, end);
+    }
+}
+
+<span class="keyword">struct</span> CountItem { <span class="keyword">int</span> key; <span class="keyword">int</span> id; };
+vector&lt;CountItem&gt; stableCountingSort(<span class="keyword">const</span> vector&lt;CountItem&gt;&amp; a, <span class="keyword">int</span> keyCount) {
+    <span class="keyword">if</span> (keyCount &lt;= <span class="number">0</span> || keyCount &gt; <span class="number">1000000</span>)
+        <span class="keyword">throw</span> invalid_argument(<span class="string">&quot;require 1 &lt;= keyCount &lt;= 1000000&quot;</span>);
+    vector&lt;size_t&gt; end(keyCount, <span class="number">0</span>);
+    <span class="keyword">for</span> (<span class="keyword">const</span> <span class="keyword">auto</span>&amp; item : a) {
+        <span class="keyword">if</span> (item.key &lt; <span class="number">0</span> || item.key &gt;= keyCount)
+            <span class="keyword">throw</span> invalid_argument(<span class="string">&quot;key outside [0, keyCount)&quot;</span>);
+        ++end[item.key];
+    }
+    <span class="keyword">for</span> (<span class="keyword">int</span> key = <span class="number">1</span>; key &lt; keyCount; ++key) end[key] += end[key - <span class="number">1</span>];
+    vector&lt;CountItem&gt; answer(a.size());
+    <span class="keyword">for</span> (size_t i = a.size(); i &gt; <span class="number">0</span>; --i) {
+        <span class="keyword">const</span> <span class="keyword">auto</span>&amp; item = a[i - <span class="number">1</span>];
+        answer[--end[item.key]] = item;
+    }
+    <span class="keyword">return</span> answer;
+}
+
+<span class="keyword">void</span> randomQuickRange(vector&lt;<span class="keyword">int</span>&gt;&amp; a, <span class="keyword">int</span> l, <span class="keyword">int</span> r, mt19937&amp; rng) {
+    <span class="keyword">while</span> (l &lt; r) {
+        uniform_int_distribution&lt;<span class="keyword">int</span>&gt; pick(l, r);
+        <span class="keyword">int</span> pivot = a[pick(rng)];
+        <span class="keyword">int</span> lt = l, i = l, gt = r;
+        <span class="keyword">while</span> (i &lt;= gt) {
+            <span class="keyword">if</span> (a[i] &lt; pivot) swap(a[lt++], a[i++]);
+            <span class="keyword">else</span> <span class="keyword">if</span> (a[i] &gt; pivot) swap(a[i], a[gt--]);
+            <span class="keyword">else</span> ++i;
+        }
+        <span class="keyword">if</span> (lt - l &lt; r - gt) {
+            randomQuickRange(a, l, lt - <span class="number">1</span>, rng);
+            l = gt + <span class="number">1</span>;
+        } <span class="keyword">else</span> {
+            randomQuickRange(a, gt + <span class="number">1</span>, r, rng);
+            r = lt - <span class="number">1</span>;
+        }
+    }
+}
+<span class="keyword">void</span> randomizedQuickSort(vector&lt;<span class="keyword">int</span>&gt;&amp; a, uint32_t seed) {
+    mt19937 rng(seed);
+    <span class="keyword">if</span> (!a.empty()) randomQuickRange(a, <span class="number">0</span>, (<span class="keyword">int</span>)a.size() - <span class="number">1</span>, rng);
+}
+
+<span class="keyword">int</span> kthSmallest(vector&lt;<span class="keyword">int</span>&gt;&amp; a, <span class="keyword">int</span> k, uint32_t seed) {
+    <span class="keyword">int</span> n = (<span class="keyword">int</span>)a.size();
+    <span class="keyword">if</span> (k &lt; <span class="number">1</span> || k &gt; n) <span class="keyword">throw</span> out_of_range(<span class="string">&quot;k outside [1,n]&quot;</span>);
+    <span class="keyword">int</span> target = k - <span class="number">1</span>, l = <span class="number">0</span>, r = n - <span class="number">1</span>;
+    mt19937 rng(seed);
+    <span class="keyword">while</span> (l &lt;= r) {
+        uniform_int_distribution&lt;<span class="keyword">int</span>&gt; pick(l, r);
+        <span class="keyword">int</span> pivot = a[pick(rng)];
+        <span class="keyword">int</span> lt = l, i = l, gt = r;
+        <span class="keyword">while</span> (i &lt;= gt) {
+            <span class="keyword">if</span> (a[i] &lt; pivot) swap(a[lt++], a[i++]);
+            <span class="keyword">else</span> <span class="keyword">if</span> (a[i] &gt; pivot) swap(a[i], a[gt--]);
+            <span class="keyword">else</span> ++i;
+        }
+        <span class="keyword">if</span> (target &lt; lt) r = lt - <span class="number">1</span>;
+        <span class="keyword">else</span> <span class="keyword">if</span> (target &gt; gt) l = gt + <span class="number">1</span>;
+        <span class="keyword">else</span> <span class="keyword">return</span> pivot;
+    }
+    <span class="keyword">throw</span> logic_error(<span class="string">&quot;unreachable for valid input&quot;</span>);
+}
+
+<span class="keyword">void</span> sortColors(vector&lt;<span class="keyword">int</span>&gt;&amp; a) {
+    <span class="keyword">for</span> (<span class="keyword">int</span> value : a)
+        <span class="keyword">if</span> (value &lt; <span class="number">0</span> || value &gt; <span class="number">2</span>) <span class="keyword">throw</span> invalid_argument(<span class="string">&quot;only 0,1,2 allowed&quot;</span>);
+    <span class="keyword">int</span> zero = <span class="number">0</span>, i = <span class="number">0</span>, two = (<span class="keyword">int</span>)a.size() - <span class="number">1</span>;
+    <span class="keyword">while</span> (i &lt;= two) {
+        <span class="keyword">if</span> (a[i] == <span class="number">0</span>) swap(a[zero++], a[i++]);
+        <span class="keyword">else</span> <span class="keyword">if</span> (a[i] == <span class="number">2</span>) swap(a[i], a[two--]);
+        <span class="keyword">else</span> ++i;
+    }
+}
+
+<span class="keyword">int</span> lowerBoundIndex(<span class="keyword">const</span> vector&lt;<span class="keyword">int</span>&gt;&amp; a, <span class="keyword">int</span> x) {
+    <span class="keyword">int</span> l = <span class="number">0</span>, r = (<span class="keyword">int</span>)a.size();
+    <span class="keyword">while</span> (l &lt; r) {
+        <span class="keyword">int</span> mid = l + (r - l) / <span class="number">2</span>;
+        <span class="keyword">if</span> (a[mid] &gt;= x) r = mid;
+        <span class="keyword">else</span> l = mid + <span class="number">1</span>;
+    }
+    <span class="keyword">return</span> l;
+}
+<span class="keyword">int</span> upperBoundIndex(<span class="keyword">const</span> vector&lt;<span class="keyword">int</span>&gt;&amp; a, <span class="keyword">int</span> x) {
+    <span class="keyword">int</span> l = <span class="number">0</span>, r = (<span class="keyword">int</span>)a.size();
+    <span class="keyword">while</span> (l &lt; r) {
+        <span class="keyword">int</span> mid = l + (r - l) / <span class="number">2</span>;
+        <span class="keyword">if</span> (a[mid] &gt; x) r = mid;
+        <span class="keyword">else</span> l = mid + <span class="number">1</span>;
+    }
+    <span class="keyword">return</span> l;
+}
+<span class="keyword">int</span> lastAtMost(<span class="keyword">const</span> vector&lt;<span class="keyword">int</span>&gt;&amp; a, <span class="keyword">int</span> x) {
+    <span class="keyword">return</span> upperBoundIndex(a, x) - <span class="number">1</span>;
+}
+
+<span class="keyword">int</span> searchRotatedDistinct(<span class="keyword">const</span> vector&lt;<span class="keyword">int</span>&gt;&amp; a, <span class="keyword">int</span> target) {
+    <span class="keyword">int</span> l = <span class="number">0</span>, r = (<span class="keyword">int</span>)a.size() - <span class="number">1</span>;
+    <span class="keyword">while</span> (l &lt;= r) {
+        <span class="keyword">int</span> mid = l + (r - l) / <span class="number">2</span>;
+        <span class="keyword">if</span> (a[mid] == target) <span class="keyword">return</span> mid;
+        <span class="keyword">if</span> (a[l] &lt;= a[mid]) {
+            <span class="keyword">if</span> (a[l] &lt;= target &amp;&amp; target &lt; a[mid]) r = mid - <span class="number">1</span>;
+            <span class="keyword">else</span> l = mid + <span class="number">1</span>;
+        } <span class="keyword">else</span> {
+            <span class="keyword">if</span> (a[mid] &lt; target &amp;&amp; target &lt;= a[r]) l = mid + <span class="number">1</span>;
+            <span class="keyword">else</span> r = mid - <span class="number">1</span>;
+        }
+    }
+    <span class="keyword">return</span> -<span class="number">1</span>;
+}
+<span class="keyword">bool</span> searchRotatedWithDuplicates(<span class="keyword">const</span> vector&lt;<span class="keyword">int</span>&gt;&amp; a, <span class="keyword">int</span> target) {
+    <span class="keyword">int</span> l = <span class="number">0</span>, r = (<span class="keyword">int</span>)a.size() - <span class="number">1</span>;
+    <span class="keyword">while</span> (l &lt;= r) {
+        <span class="keyword">int</span> mid = l + (r - l) / <span class="number">2</span>;
+        <span class="keyword">if</span> (a[mid] == target) <span class="keyword">return</span> <span class="keyword">true</span>;
+        <span class="keyword">if</span> (a[l] == a[mid] &amp;&amp; a[mid] == a[r]) { ++l; --r; continue; }
+        <span class="keyword">if</span> (a[l] &lt;= a[mid]) {
+            <span class="keyword">if</span> (a[l] &lt;= target &amp;&amp; target &lt; a[mid]) r = mid - <span class="number">1</span>;
+            <span class="keyword">else</span> l = mid + <span class="number">1</span>;
+        } <span class="keyword">else</span> {
+            <span class="keyword">if</span> (a[mid] &lt; target &amp;&amp; target &lt;= a[r]) l = mid + <span class="number">1</span>;
+            <span class="keyword">else</span> r = mid - <span class="number">1</span>;
+        }
+    }
+    <span class="keyword">return</span> <span class="keyword">false</span>;
+}
+
+<span class="keyword">int</span> minimumInRotated(<span class="keyword">const</span> vector&lt;<span class="keyword">int</span>&gt;&amp; a) {
+    <span class="keyword">if</span> (a.empty()) <span class="keyword">throw</span> invalid_argument(<span class="string">&quot;empty array&quot;</span>);
+    <span class="keyword">int</span> l = <span class="number">0</span>, r = (<span class="keyword">int</span>)a.size() - <span class="number">1</span>;
+    <span class="keyword">while</span> (l &lt; r) {
+        <span class="keyword">int</span> mid = l + (r - l) / <span class="number">2</span>;
+        <span class="keyword">if</span> (a[mid] &lt; a[r]) r = mid;
+        <span class="keyword">else</span> <span class="keyword">if</span> (a[mid] &gt; a[r]) l = mid + <span class="number">1</span>;
+        <span class="keyword">else</span> --r;
+    }
+    <span class="keyword">return</span> a[l];
+}
+
+<span class="keyword">int</span> findPeak(<span class="keyword">const</span> vector&lt;<span class="keyword">int</span>&gt;&amp; a) {
+    <span class="keyword">if</span> (a.empty()) <span class="keyword">return</span> -<span class="number">1</span>;
+    <span class="keyword">int</span> l = <span class="number">0</span>, r = (<span class="keyword">int</span>)a.size() - <span class="number">1</span>;
+    <span class="keyword">while</span> (l &lt; r) {
+        <span class="keyword">int</span> mid = l + (r - l) / <span class="number">2</span>;
+        <span class="keyword">if</span> (a[mid] &lt; a[mid + <span class="number">1</span>]) l = mid + <span class="number">1</span>;
+        <span class="keyword">else</span> r = mid;
+    }
+    <span class="keyword">return</span> l;
+}
+
+<span class="keyword">double</span> medianOfSorted(<span class="keyword">const</span> vector&lt;<span class="keyword">int</span>&gt;&amp; a, <span class="keyword">const</span> vector&lt;<span class="keyword">int</span>&gt;&amp; b) {
+    <span class="keyword">if</span> (a.size() &gt; b.size()) <span class="keyword">return</span> medianOfSorted(b, a);
+    <span class="keyword">int</span> m = (<span class="keyword">int</span>)a.size(), n = (<span class="keyword">int</span>)b.size();
+    <span class="keyword">if</span> (m == <span class="number">0</span> &amp;&amp; n == <span class="number">0</span>) <span class="keyword">throw</span> invalid_argument(<span class="string">&quot;both arrays empty&quot;</span>);
+    <span class="keyword">int</span> half = (<span class="keyword">int</span>)(((<span class="keyword">long</span> <span class="keyword">long</span>)m + n + <span class="number">1</span>) / <span class="number">2</span>);
+    <span class="keyword">int</span> l = <span class="number">0</span>, r = m;
+    <span class="keyword">while</span> (l &lt;= r) {
+        <span class="keyword">int</span> i = l + (r - l) / <span class="number">2</span>, j = half - i;
+        <span class="keyword">long</span> <span class="keyword">long</span> al = i == <span class="number">0</span> ? LLONG_MIN : a[i - <span class="number">1</span>];
+        <span class="keyword">long</span> <span class="keyword">long</span> ar = i == m ? LLONG_MAX : a[i];
+        <span class="keyword">long</span> <span class="keyword">long</span> bl = j == <span class="number">0</span> ? LLONG_MIN : b[j - <span class="number">1</span>];
+        <span class="keyword">long</span> <span class="keyword">long</span> br = j == n ? LLONG_MAX : b[j];
+        <span class="keyword">if</span> (al &lt;= br &amp;&amp; bl &lt;= ar) {
+            <span class="keyword">if</span> (((<span class="keyword">long</span> <span class="keyword">long</span>)m + n) % <span class="number">2</span> != <span class="number">0</span>) <span class="keyword">return</span> (<span class="keyword">double</span>)max(al, bl);
+            <span class="keyword">return</span> (max(al, bl) + min(ar, br)) / <span class="number">2</span>.<span class="number">0</span>;
+        }
+        <span class="keyword">if</span> (al &gt; br) r = i - <span class="number">1</span>;
+        <span class="keyword">else</span> l = i + <span class="number">1</span>;
+    }
+    <span class="keyword">throw</span> invalid_argument(<span class="string">&quot;sorted input required&quot;</span>);
+}
+
+<span class="keyword">int</span> minimumEatingSpeed(<span class="keyword">const</span> vector&lt;<span class="keyword">int</span>&gt;&amp; piles, <span class="keyword">long</span> <span class="keyword">long</span> hours) {
+    <span class="keyword">if</span> (piles.empty()) <span class="keyword">return</span> <span class="number">0</span>;
+    <span class="keyword">if</span> (hours &lt;= <span class="number">0</span>) <span class="keyword">throw</span> invalid_argument(<span class="string">&quot;hours must be positive&quot;</span>);
+    <span class="keyword">int</span> hi = <span class="number">0</span>;
+    <span class="keyword">for</span> (<span class="keyword">int</span> value : piles) {
+        <span class="keyword">if</span> (value &lt;= <span class="number">0</span>) <span class="keyword">throw</span> invalid_argument(<span class="string">&quot;piles must be positive&quot;</span>);
+        hi = max(hi, value);
+    }
+    <span class="keyword">if</span> (hours &lt; (<span class="keyword">long</span> <span class="keyword">long</span>)piles.size()) <span class="keyword">return</span> -<span class="number">1</span>;
+    <span class="keyword">auto</span> feasible = [&amp;](<span class="keyword">int</span> speed) {
+        <span class="keyword">long</span> <span class="keyword">long</span> used = <span class="number">0</span>;
+        <span class="keyword">for</span> (<span class="keyword">int</span> value : piles) {
+            used += value / speed + (value % speed != <span class="number">0</span>);
+            <span class="keyword">if</span> (used &gt; hours) <span class="keyword">return</span> <span class="keyword">false</span>;
+        }
+        <span class="keyword">return</span> <span class="keyword">true</span>;
+    };
+    <span class="keyword">int</span> lo = <span class="number">1</span>;
+    <span class="keyword">while</span> (lo &lt; hi) {
+        <span class="keyword">int</span> mid = lo + (hi - lo) / <span class="number">2</span>;
+        <span class="keyword">if</span> (feasible(mid)) hi = mid;
+        <span class="keyword">else</span> lo = mid + <span class="number">1</span>;
+    }
+    <span class="keyword">return</span> lo;
+}
+
+<span class="keyword">long</span> <span class="keyword">long</span> maximumMinimumDistance(vector&lt;<span class="keyword">int</span>&gt; positions, <span class="keyword">int</span> count) {
+    <span class="keyword">int</span> n = (<span class="keyword">int</span>)positions.size();
+    <span class="keyword">if</span> (count &lt; <span class="number">2</span> || count &gt; n) <span class="keyword">throw</span> invalid_argument(<span class="string">&quot;require 2 &lt;= count &lt;= n&quot;</span>);
+    sort(positions.begin(), positions.end());
+    <span class="keyword">auto</span> feasible = [&amp;](<span class="keyword">long</span> <span class="keyword">long</span> distance) {
+        <span class="keyword">int</span> placed = <span class="number">1</span>;
+        <span class="keyword">long</span> <span class="keyword">long</span> last = positions[<span class="number">0</span>];
+        <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">1</span>; i &lt; n; ++i) {
+            <span class="keyword">if</span> ((<span class="keyword">long</span> <span class="keyword">long</span>)positions[i] - last &gt;= distance) {
+                last = positions[i];
+                <span class="keyword">if</span> (++placed == count) <span class="keyword">return</span> <span class="keyword">true</span>;
+            }
+        }
+        <span class="keyword">return</span> <span class="keyword">false</span>;
+    };
+    <span class="keyword">long</span> <span class="keyword">long</span> lo = <span class="number">0</span>, hi = (<span class="keyword">long</span> <span class="keyword">long</span>)positions.back() - positions.front();
+    <span class="keyword">while</span> (lo &lt; hi) {
+        <span class="keyword">long</span> <span class="keyword">long</span> mid = lo + (hi - lo + <span class="number">1</span>) / <span class="number">2</span>;
+        <span class="keyword">if</span> (feasible(mid)) lo = mid;
+        <span class="keyword">else</span> hi = mid - <span class="number">1</span>;
+    }
+    <span class="keyword">return</span> lo;
+}
+
+uint64_t floorSquareRoot(uint64_t x) {
+    uint64_t lo = <span class="number">0</span>, hi = min(x, uint64_t{UINT32_MAX});
+    <span class="keyword">while</span> (lo &lt; hi) {
+        uint64_t mid = lo + (hi - lo + <span class="number">1</span>) / <span class="number">2</span>;
+        <span class="keyword">if</span> (mid &lt;= x / mid) lo = mid;
+        <span class="keyword">else</span> hi = mid - <span class="number">1</span>;
+    }
+    <span class="keyword">return</span> lo;
+}
+
+<span class="keyword">void</span> require(<span class="keyword">bool</span> ok, <span class="keyword">const</span> string&amp; message) {
+    <span class="keyword">if</span> (!ok) <span class="keyword">throw</span> runtime_error(message);
+}
+<span class="keyword">long</span> <span class="keyword">long</span> bruteInversions(<span class="keyword">const</span> vector&lt;<span class="keyword">int</span>&gt;&amp; a) {
+    <span class="keyword">long</span> <span class="keyword">long</span> answer = <span class="number">0</span>;
+    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; (<span class="keyword">int</span>)a.size(); ++i)
+        <span class="keyword">for</span> (<span class="keyword">int</span> j = i + <span class="number">1</span>; j &lt; (<span class="keyword">int</span>)a.size(); ++j)
+            answer += a[i] &gt; a[j];
+    <span class="keyword">return</span> answer;
+}
+<span class="keyword">int</span> bruteSpeed(<span class="keyword">const</span> vector&lt;<span class="keyword">int</span>&gt;&amp; piles, <span class="keyword">long</span> <span class="keyword">long</span> hours) {
+    <span class="keyword">if</span> (piles.empty()) <span class="keyword">return</span> <span class="number">0</span>;
+    <span class="keyword">if</span> (hours &lt; (<span class="keyword">long</span> <span class="keyword">long</span>)piles.size()) <span class="keyword">return</span> -<span class="number">1</span>;
+    <span class="keyword">int</span> maximum = *max_element(piles.begin(), piles.end());
+    <span class="keyword">for</span> (<span class="keyword">int</span> speed = <span class="number">1</span>; speed &lt;= maximum; ++speed) {
+        <span class="keyword">long</span> <span class="keyword">long</span> used = <span class="number">0</span>;
+        <span class="keyword">for</span> (<span class="keyword">int</span> value : piles) used += (value + speed - <span class="number">1</span>) / speed;
+        <span class="keyword">if</span> (used &lt;= hours) <span class="keyword">return</span> speed;
+    }
+    <span class="keyword">return</span> -<span class="number">1</span>;
+}
+<span class="keyword">long</span> <span class="keyword">long</span> bruteDistance(vector&lt;<span class="keyword">int</span>&gt; positions, <span class="keyword">int</span> count) {
+    sort(positions.begin(), positions.end());
+    <span class="keyword">int</span> n = (<span class="keyword">int</span>)positions.size();
+    <span class="keyword">long</span> <span class="keyword">long</span> best = <span class="number">0</span>;
+    <span class="keyword">for</span> (unsigned mask = <span class="number">0</span>; mask &lt; (1U &lt;&lt; n); ++mask) {
+        <span class="keyword">int</span> selected = <span class="number">0</span>;
+        <span class="keyword">for</span> (unsigned bits = mask; bits != <span class="number">0</span>; bits &amp;= bits - <span class="number">1</span>) ++selected;
+        <span class="keyword">if</span> (selected != count) continue;
+        <span class="keyword">long</span> <span class="keyword">long</span> distance = LLONG_MAX;
+        <span class="keyword">int</span> previous = -<span class="number">1</span>;
+        <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; n; ++i) {
+            <span class="keyword">if</span> ((mask &amp; (1U &lt;&lt; i)) == <span class="number">0</span>) continue;
+            <span class="keyword">if</span> (previous != -<span class="number">1</span>)
+                distance = min(distance, (<span class="keyword">long</span> <span class="keyword">long</span>)positions[i] - positions[previous]);
+            previous = i;
+        }
+        best = max(best, distance);
+    }
+    <span class="keyword">return</span> best;
+}
+<span class="keyword">int</span> main() {
+    require(lowerBoundIndex({}, <span class="number">1</span>) == <span class="number">0</span>, <span class="string">&quot;empty lower bound&quot;</span>);
+    require(lastAtMost({<span class="number">2</span>,<span class="number">3</span>}, <span class="number">1</span>) == -<span class="number">1</span>, <span class="string">&quot;no last element&quot;</span>);
+    require(minimumInRotated({<span class="number">1</span>,<span class="number">1</span>,<span class="number">0</span>,<span class="number">1</span>}) == <span class="number">0</span>, <span class="string">&quot;duplicate rotation&quot;</span>);
+    require(searchRotatedWithDuplicates({<span class="number">1</span>,<span class="number">0</span>,<span class="number">1</span>,<span class="number">1</span>,<span class="number">1</span>}, <span class="number">0</span>), <span class="string">&quot;hidden pivot&quot;</span>);
+    require(medianOfSorted({INT_MAX}, {INT_MAX}) == (<span class="keyword">double</span>)INT_MAX, <span class="string">&quot;median overflow&quot;</span>);
+    require(medianOfSorted({INT_MIN}, {INT_MAX}) == -<span class="number">0</span>.<span class="number">5</span>, <span class="string">&quot;median extremes&quot;</span>);
+    require(minimumEatingSpeed({<span class="number">3</span>,<span class="number">6</span>,<span class="number">7</span>,<span class="number">11</span>}, <span class="number">8</span>) == <span class="number">4</span>, <span class="string">&quot;banana example&quot;</span>);
+    require(minimumEatingSpeed({<span class="number">1</span>,<span class="number">1</span>}, <span class="number">1</span>) == -<span class="number">1</span>, <span class="string">&quot;banana infeasible&quot;</span>);
+    require(maximumMinimumDistance({INT_MIN,INT_MAX}, <span class="number">2</span>) == <span class="number">4294967295LL</span>,
+            <span class="string">&quot;distance overflow&quot;</span>);
+    require(floorSquareRoot(UINT64_MAX) == UINT32_MAX, <span class="string">&quot;sqrt maximum&quot;</span>);
+    uint64_t expectedRoot = <span class="number">0</span>;
+    <span class="keyword">for</span> (uint64_t x = <span class="number">0</span>; x &lt;= <span class="number">10000</span>; ++x) {
+        <span class="keyword">while</span> ((expectedRoot + <span class="number">1</span>) * (expectedRoot + <span class="number">1</span>) &lt;= x) ++expectedRoot;
+        require(floorSquareRoot(x) == expectedRoot, <span class="string">&quot;sqrt small range&quot;</span>);
+    }
+    mt19937 rng(<span class="number">20260920</span>);
+    uniform_int_distribution&lt;<span class="keyword">int</span>&gt; length(<span class="number">0</span>, <span class="number">12</span>), value(-<span class="number">5</span>, <span class="number">5</span>);
+    <span class="keyword">for</span> (<span class="keyword">int</span> run = <span class="number">0</span>; run &lt; <span class="number">1000</span>; ++run) {
+        vector&lt;<span class="keyword">int</span>&gt; a(length(rng));
+        <span class="keyword">for</span> (<span class="keyword">int</span>&amp; x : a) x = value(rng);
+        vector&lt;<span class="keyword">int</span>&gt; sorted = a;
+        sort(sorted.begin(), sorted.end());
+        vector&lt;<span class="keyword">int</span>&gt; working = a;
+        require(countInversions(working) == bruteInversions(a), <span class="string">&quot;inverse count&quot;</span>);
+        require(working == sorted, <span class="string">&quot;inverse merge ordering&quot;</span>);
+        working = a; heapSort(working);
+        require(working == sorted, <span class="string">&quot;heap sort&quot;</span>);
+        working = a; randomizedQuickSort(working, (uint32_t)rng());
+        require(working == sorted, <span class="string">&quot;quick sort&quot;</span>);
+        <span class="keyword">for</span> (<span class="keyword">int</span> k = <span class="number">1</span>; k &lt;= (<span class="keyword">int</span>)a.size(); ++k) {
+            working = a;
+            require(kthSmallest(working, k, (uint32_t)rng()) == sorted[k - <span class="number">1</span>],
+                    <span class="string">&quot;quickselect&quot;</span>);
+        }
+        vector&lt;Record&gt; records;
+        vector&lt;CountItem&gt; counted;
+        <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; (<span class="keyword">int</span>)a.size(); ++i) {
+            records.push_back({a[i], i});
+            counted.push_back({a[i] + <span class="number">5</span>, i});
+        }
+        <span class="keyword">auto</span> reference = records;
+        stable_sort(reference.begin(), reference.end(),
+                    [](<span class="keyword">const</span> Record&amp; x, <span class="keyword">const</span> Record&amp; y) { <span class="keyword">return</span> x.key &lt; y.key; });
+        stableMergeSort(records);
+        <span class="keyword">auto</span> byCount = stableCountingSort(counted, <span class="number">11</span>);
+        <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; (<span class="keyword">int</span>)a.size(); ++i) {
+            require(records[i].key == reference[i].key &amp;&amp;
+                    records[i].id == reference[i].id, <span class="string">&quot;merge stability&quot;</span>);
+            require(byCount[i].key == reference[i].key + <span class="number">5</span> &amp;&amp;
+                    byCount[i].id == reference[i].id, <span class="string">&quot;count stability&quot;</span>);
+        }
+        working = a;
+        <span class="keyword">for</span> (<span class="keyword">int</span>&amp; x : working) x = (x + <span class="number">6</span>) % <span class="number">3</span>;
+        <span class="keyword">auto</span> colors = working;
+        sort(colors.begin(), colors.end());
+        sortColors(working);
+        require(working == colors, <span class="string">&quot;colors&quot;</span>);
+        <span class="keyword">for</span> (<span class="keyword">int</span> x = -<span class="number">6</span>; x &lt;= <span class="number">6</span>; ++x) {
+            <span class="keyword">int</span> lo = <span class="number">0</span>, hi = <span class="number">0</span>;
+            <span class="keyword">while</span> (lo &lt; (<span class="keyword">int</span>)sorted.size() &amp;&amp; sorted[lo] &lt; x) ++lo;
+            <span class="keyword">while</span> (hi &lt; (<span class="keyword">int</span>)sorted.size() &amp;&amp; sorted[hi] &lt;= x) ++hi;
+            require(lowerBoundIndex(sorted, x) == lo, <span class="string">&quot;lower bound&quot;</span>);
+            require(upperBoundIndex(sorted, x) == hi, <span class="string">&quot;upper bound&quot;</span>);
+            require(lastAtMost(sorted, x) == hi - <span class="number">1</span>, <span class="string">&quot;last at most&quot;</span>);
+        }
+        <span class="keyword">if</span> (!a.empty()) {
+            <span class="keyword">auto</span> rotated = sorted;
+            rotate(rotated.begin(), rotated.begin() + rng() % rotated.size(), rotated.end());
+            require(minimumInRotated(rotated) == sorted.front(), <span class="string">&quot;rotated minimum&quot;</span>);
+            <span class="keyword">for</span> (<span class="keyword">int</span> x = -<span class="number">6</span>; x &lt;= <span class="number">6</span>; ++x)
+                require(searchRotatedWithDuplicates(rotated, x) ==
+                        (find(a.begin(), a.end(), x) != a.end()), <span class="string">&quot;rotated duplicate search&quot;</span>);
+            <span class="keyword">auto</span> distinct = sorted;
+            distinct.erase(unique(distinct.begin(), distinct.end()), distinct.end());
+            rotate(distinct.begin(), distinct.begin() + rng() % distinct.size(), distinct.end());
+            <span class="keyword">for</span> (<span class="keyword">int</span> x = -<span class="number">6</span>; x &lt;= <span class="number">6</span>; ++x) {
+                <span class="keyword">int</span> found = searchRotatedDistinct(distinct, x);
+                <span class="keyword">bool</span> exists = find(distinct.begin(), distinct.end(), x) != distinct.end();
+                require((found &gt;= <span class="number">0</span>) == exists, <span class="string">&quot;rotated distinct presence&quot;</span>);
+                <span class="keyword">if</span> (found &gt;= <span class="number">0</span>) require(distinct[found] == x, <span class="string">&quot;rotated distinct index&quot;</span>);
+            }
+            <span class="keyword">auto</span> peaks = a;
+            peaks.erase(unique(peaks.begin(), peaks.end()), peaks.end());
+            <span class="keyword">int</span> p = findPeak(peaks);
+            require(p &gt;= <span class="number">0</span> &amp;&amp; p &lt; (<span class="keyword">int</span>)peaks.size(), <span class="string">&quot;peak range&quot;</span>);
+            require((p == <span class="number">0</span> || peaks[p] &gt; peaks[p - <span class="number">1</span>]) &amp;&amp;
+                    (p + <span class="number">1</span> == (<span class="keyword">int</span>)peaks.size() || peaks[p] &gt; peaks[p + <span class="number">1</span>]), <span class="string">&quot;peak property&quot;</span>);
+            size_t split = rng() % (a.size() + <span class="number">1</span>);
+            vector&lt;<span class="keyword">int</span>&gt; left(a.begin(), a.begin() + split), right(a.begin() + split, a.end());
+            sort(left.begin(), left.end()); sort(right.begin(), right.end());
+            <span class="keyword">double</span> middle = sorted.size() % <span class="number">2</span> ? sorted[sorted.size() / <span class="number">2</span>] :
+                ((<span class="keyword">long</span> <span class="keyword">long</span>)sorted[sorted.size() / <span class="number">2</span> - <span class="number">1</span>] + sorted[sorted.size() / <span class="number">2</span>]) / <span class="number">2</span>.<span class="number">0</span>;
+            require(medianOfSorted(left, right) == middle, <span class="string">&quot;median split&quot;</span>);
+        } <span class="keyword">else</span> {
+            require(findPeak(a) == -<span class="number">1</span>, <span class="string">&quot;empty peak&quot;</span>);
+        }
+        vector&lt;<span class="keyword">int</span>&gt; piles;
+        <span class="keyword">for</span> (<span class="keyword">int</span> x : a) piles.push_back(abs(x) + <span class="number">1</span>);
+        <span class="keyword">long</span> <span class="keyword">long</span> hours = (<span class="keyword">long</span> <span class="keyword">long</span>)piles.size() + rng() % <span class="number">20</span>;
+        require(minimumEatingSpeed(piles, hours) == bruteSpeed(piles, hours), <span class="string">&quot;banana brute&quot;</span>);
+        <span class="keyword">if</span> (run &lt; <span class="number">100</span> &amp;&amp; a.size() &gt;= <span class="number">2</span>) {
+            <span class="keyword">int</span> count = <span class="number">2</span> + (<span class="keyword">int</span>)(rng() % (a.size() - <span class="number">1</span>));
+            require(maximumMinimumDistance(a, count) == bruteDistance(a, count),
+                    <span class="string">&quot;distance brute&quot;</span>);
+        }
+    }
+    <span class="keyword">bool</span> rejected = <span class="keyword">false</span>;
+    vector&lt;<span class="keyword">int</span>&gt; empty;
+    try { (<span class="keyword">void</span>)kthSmallest(empty, <span class="number">1</span>, <span class="number">0</span>); }
+    catch (<span class="keyword">const</span> out_of_range&amp;) { rejected = <span class="keyword">true</span>; }
+    require(rejected, <span class="string">&quot;invalid rank&quot;</span>);
+    cout &lt;&lt; <span class="string">&quot;All chapter 6 checks passed&quot;</span> &lt;&lt; endl;
+}</code></pre></div></div><div class="deep-block" id="review-4"><h3>章末自测：八个关键问题及答案</h3><dl class="answer-list"><div><dt>1. [2A,1B,2C,1D]稳定排序后是什么？</dt><dd><p>按数字键排序应为[1B,1D,2A,2C]。相等键的原顺序不变；若归并相等时优先右侧，就可能颠倒B/D或A/C。</p></dd></div><div><dt>2. 左半[2,4]、右半[1,3]合并时有几个跨区逆序对？</dt><dd><p>取右值1时与2、4产生两对；取右值3时与剩余4产生一对，共三对。左右内部若还有逆序对，则由递归部分另外统计。</p></dd></div><div><dt>3. 快排遇到大于pivot的值，换到右端后i为什么不变？</dt><dd><p>换回来的值属于未知区，可能小于、等于或大于pivot，必须重新分类。只减少gt就已保证未知区变短，不需要为了“推进循环”而错误跳过它。</p></dd></div><div><dt>4. [1,2,2,2,4]中2的左右闭区间是多少？</dt><dd><p>lower_bound为1，upper_bound为4，出现范围[1,3]，数量3。upper_bound本身是最后一个匹配位置的后一位，不是最后匹配位置。</p></dd></div><div><dt>5. lo=4、hi=5，求最大可行值时下取整有什么问题？</dt><dd><p>若mid=4可行而更新lo=mid，区间原地不动。上取整mid=5会使lo升到5或hi降到4，保证终止。</p></dd></div><div><dt>6. 旋转数组搜索、峰值搜索都需要全局单调谓词吗？</dt><dd><p>不需要。旋转搜索利用一半有序的结构，峰值搜索利用上坡方向存在峰的证明。它们每轮仍可安全排除一半，但不能用不存在的全局false→true性质解释。</p></dd></div><div><dt>7. 运力允许重排时，原贪心为什么可能错误？</dt><dd><p>[2,2,3,3]容量5，按原顺序贪心为[2,2]、[3]、[3]需要3天，但重排后[2,3]、[2,3]只需2天。原判定会把实际可行容量误判为不可行。</p></dd></div><div><dt>8. 如何检验一个答案二分结果是否偏一？</dt><dd><p>最小可行答案ans应满足check(ans)=true，且域内ans-1为false；最大可行则检查ans+1为false。另测上下界重合、答案等于某个端点、只有两个候选值和全部可行/不可行的接口处理。</p></dd></div></dl></div></section><nav class="chapter-pager" aria-label="相邻章节"><a href="../05-哈希集合与位运算/index.html"><small>上一章</small>← 哈希、集合与位运算</a><a href="../07-树与二叉搜索树/index.html"><small>下一章</small>树与二叉搜索树 →</a></nav><footer>秋招算法学习讲义 · C++17<br>例题编号供检索；难度与覆盖范围按学习顺序组织。</footer></main><aside class="toc" aria-label="本页目录"><p class="rail-label">本章小节</p><a href="#s1"><span>01</span>归并排序、稳定性与逆序对</a><a href="#s2"><span>02</span>快速排序与三路分区</a><a href="#s3"><span>03</span>左右边界与标准库二分</a><a href="#s4"><span>04</span>答案二分：最小运输能力</a><a href="#chapter-review"><span>练</span>综合例题与自测答案</a></aside></div><div class="toast" role="status" aria-live="polite"></div></body></html>
