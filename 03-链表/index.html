@@ -3,7 +3,7 @@
 <meta name="description" content="秋招算法手撕学习讲义：知识推导、经典考点、C++17 示例与面试训练。">
 <title>链表 · 算法手撕讲义</title><link rel="stylesheet" href="../assets/style.css"><script src="../assets/app.js" defer></script></head>
 <body><a class="skip" href="#main">跳到正文</a><header class="topbar"><a class="brand" href="../index.html"><span class="brand-mark">a[i]</span><span>算法手撕讲义<small>秋招学习工作区 / C++17</small></span></a><button type="button" class="nav-toggle" aria-expanded="false" aria-controls="chapter-nav">章节目录</button><a class="home-link" href="../index.html">全部章节 ↗</a></header>
-<div class="layout"><aside class="sidebar" id="chapter-nav" aria-label="章节导航"><p class="rail-label">LEARNING PATH · 学习路径</p><nav><a class="chapter-link"  href="../01-复杂度与解题方法/index.html"><span>01</span>复杂度与解题方法</a><a class="chapter-link"  href="../02-数组字符串与矩阵/index.html"><span>02</span>数组、字符串与矩阵</a><a class="chapter-link active" aria-current=page href="../03-链表/index.html"><span>03</span>链表</a><a class="chapter-link"  href="../04-栈队列与单调结构/index.html"><span>04</span>栈、队列与单调结构</a><a class="chapter-link"  href="../05-哈希集合与位运算/index.html"><span>05</span>哈希、集合与位运算</a><a class="chapter-link"  href="../06-排序与二分查找/index.html"><span>06</span>排序与二分查找</a><a class="chapter-link"  href="../07-树与二叉搜索树/index.html"><span>07</span>树与二叉搜索树</a><a class="chapter-link"  href="../08-堆与优先队列/index.html"><span>08</span>堆与优先队列</a><a class="chapter-link"  href="../09-递归回溯与分治/index.html"><span>09</span>递归、回溯与分治</a><a class="chapter-link"  href="../10-图论/index.html"><span>10</span>图论</a><a class="chapter-link"  href="../11-贪心/index.html"><span>11</span>贪心</a><a class="chapter-link"  href="../12-动态规划/index.html"><span>12</span>动态规划</a><a class="chapter-link"  href="../13-并查集与高级数据结构/index.html"><span>13</span>并查集与高级数据结构</a><a class="chapter-link"  href="../14-高频技巧与综合题型/index.html"><span>14</span>高频技巧与综合题型</a><a class="chapter-link"  href="../15-面试表达与训练计划/index.html"><span>15</span>面试表达与训练计划</a></nav><div class="sidebar-note">读懂不变量，独立写代码。<br>共 15 章 · 63 个小节<br>无需联网，浏览器直接打开。</div></aside><main id="main"><header class="chapter-header"><p class="eyebrow">CHAPTER 03 / 15</p><h1>链表</h1><p class="lead">链表题检验的是对连接关系的控制。先画出要保留的指针，再修改指向；让已处理部分与未处理部分始终有明确入口。</p><div class="chapter-meta"><span>4 个小节</span><span>C++17 示例</span><a href="README.md">原始知识摘要 ↗</a></div></header><div class="reading-guide"><strong>本章怎么学</strong><p>先读原理与不变量，遮住代码手推例子，再独立实现。最后用面试追问检查理解，按练习条目做变式。</p></div><details class="environment"><summary>代码使用说明与通用头文件</summary><p>示例统一采用 C++17。页面展示核心函数或类，下载的 .cpp 已包含以下头文件，可独立编译。不同小节可能重用类型名，应分别编译；含 main 的示例可直接运行，其余需自行补充调用与测试。复制按钮复制当前代码块。</p><div class="codebox"><div class="codebar"><span>C++17</span><div><button type="button" class="copy">复制代码</button></div></div><pre tabindex="0" aria-label="C++17 代码"><code>#include &lt;algorithm&gt;
+<div class="layout"><aside class="sidebar" id="chapter-nav" aria-label="章节导航"><p class="rail-label">LEARNING PATH · 学习路径</p><nav><a class="chapter-link"  href="../01-复杂度与解题方法/index.html"><span>01</span>复杂度与解题方法</a><a class="chapter-link"  href="../02-数组字符串与矩阵/index.html"><span>02</span>数组、字符串与矩阵</a><a class="chapter-link active" aria-current=page href="../03-链表/index.html"><span>03</span>链表</a><a class="chapter-link"  href="../04-栈队列与单调结构/index.html"><span>04</span>栈、队列与单调结构</a><a class="chapter-link"  href="../05-哈希集合与位运算/index.html"><span>05</span>哈希、集合与位运算</a><a class="chapter-link"  href="../06-排序与二分查找/index.html"><span>06</span>排序与二分查找</a><a class="chapter-link"  href="../07-树与二叉搜索树/index.html"><span>07</span>树与二叉搜索树</a><a class="chapter-link"  href="../08-堆与优先队列/index.html"><span>08</span>堆与优先队列</a><a class="chapter-link"  href="../09-递归回溯与分治/index.html"><span>09</span>递归、回溯与分治</a><a class="chapter-link"  href="../10-图论/index.html"><span>10</span>图论</a><a class="chapter-link"  href="../11-贪心/index.html"><span>11</span>贪心</a><a class="chapter-link"  href="../12-动态规划/index.html"><span>12</span>动态规划</a><a class="chapter-link"  href="../13-并查集与高级数据结构/index.html"><span>13</span>并查集与高级数据结构</a><a class="chapter-link"  href="../14-高频技巧与综合题型/index.html"><span>14</span>高频技巧与综合题型</a><a class="chapter-link"  href="../15-面试表达与训练计划/index.html"><span>15</span>面试表达与训练计划</a></nav><div class="sidebar-note">读懂不变量，独立写代码。<br>共 15 章 · 63 个小节<br>无需联网，浏览器直接打开。</div></aside><main id="main"><header class="chapter-header"><p class="eyebrow">CHAPTER 03 / 15</p><h1>链表</h1><p class="lead">链表题检验的是对连接关系的控制。先画出要保留的指针，再修改指向；让已处理部分与未处理部分始终有明确入口。</p><div class="chapter-meta"><span>4 个小节</span><span>C++17 示例</span><a href="README.md">原始知识摘要 ↗</a></div></header><div class="reading-guide"><strong>本章怎么学</strong><p>先读原理与不变量，遮住代码手推例子，再独立实现。最后用面试追问检查理解，按练习条目做变式。</p></div><div class="deep-intro"><div class="deep-block" id="guide-1"><h3>本章主线：把节点身份、变量指向与连接关系分开</h3><p>节点是一个存储值和 next 的对象；ListNode* 是保存节点地址的变量。p=q 只改变变量 p 指向哪里，不会移动节点；p-&gt;next=q 则真的改变链表中的一条边。同一个节点可以同时被多个指针变量引用，改变其中一个变量不会自动改变其他变量。</p><p>本章普通链表算法默认 next 链有限且无环，节点地址在操作过程中保持有效；合并两条链还默认它们不共享节点。判断环、相交和图克隆会单独说明不同前提。先确认前提，再使用模板，避免把无环遍历写到有环输入上。</p><p>复杂度中的 n 通常指节点数。原地连接操作不创建新节点，但递归仍占调用栈。深拷贝会创建输出节点，即便辅助空间是 O(1)，把输出计入后总新增内存仍是 O(n)。</p></div><div class="deep-block" id="guide-2"><h3>先从题目需求定位指针工具</h3><p class="table-hint">窄屏下可左右滑动表格，查看完整内容。</p><div class="study-table" tabindex="0" role="region" aria-label="先从题目需求定位指针工具"><table><thead><tr><th scope="col">需求</th><th scope="col">关键工具</th><th scope="col">必须明确的状态</th></tr></thead><tbody><tr><td>删除头结点、合并或局部拼接</td><td>虚拟头结点 dummy</td><td>结果头是 dummy.next，前驱指向待处理位置之前</td></tr><tr><td>整链或局部反转</td><td>prev / cur / next，区间前驱和后继</td><td>已反转部分、未处理部分都保留入口</td></tr><tr><td>中点、倒数第 k 个</td><td>快慢指针 / 固定间隔</td><td>偶数长度选哪个中点，间隔怎样计数</td></tr><tr><td>有环检测、环入口</td><td>Floyd 快慢指针</td><td>比较节点身份，不能只比较 val</td></tr><tr><td>相交链表</td><td>双指针换头或长度对齐</td><td>相交是共享同一节点，不是值相等</td></tr><tr><td>随机指针深拷贝</td><td>旧节点→新节点映射 / 穿插节点</td><td>新图不指回旧节点，原链表是否允许暂时修改</td></tr></tbody></table></div></div><div class="deep-block" id="guide-3"><h3>本章的内存约定与学习顺序</h3><p>删除类示例只把节点从链中摘除，不擅自 delete，由拥有节点的调用方统一管理生命周期。这样可用于平台管理节点、栈上节点或独立测试节点。实际工程若约定链表独占通过 new 创建的节点，可以在摘除后释放，但必须确保没有其他使用者。</p><p>先会画 3 个节点的连线，再写反转、删除和合并；之后学习区间反转与 K 分组；最后学习环入口与深拷贝。补充示例各自包含节点结构，应独立编译，不要把所有示例直接拼成一个文件。章末会同时检查值顺序、节点身份、终止性和输入恢复。</p></div></div><nav class="chapter-outline" aria-label="本章阅读路线"><strong>直接跳到</strong><a href="#s1">01 虚拟头结点与有序合并</a><a href="#s2">02 迭代反转与局部拼接</a><a href="#s3">03 快慢指针、环入口与中点</a><a href="#s4">04 随机指针复制与深拷贝</a><a href="#chapter-review">综合例题与自测答案</a></nav><details class="environment"><summary>代码使用说明与通用头文件</summary><p>示例统一采用 C++17。页面展示核心函数或类，下载的 .cpp 已包含以下头文件，可独立编译。不同小节可能重用类型名，应分别编译；含 main 的示例可直接运行，其余需自行补充调用与测试。复制按钮复制当前代码块。</p><div class="codebox"><div class="codebar"><span>C++17</span><div><button type="button" class="copy">复制代码</button></div></div><pre tabindex="0" aria-label="C++17 代码"><code>#include &lt;algorithm&gt;
 #include &lt;array&gt;
 #include &lt;cassert&gt;
 #include &lt;climits&gt;
@@ -27,7 +27,100 @@
 #include &lt;vector&gt;
 <span class="keyword">using</span> <span class="keyword">namespace</span> std;
 </code></pre></div><p>检查单个示例：<code>g++ -std=c++17 -Wall -Wextra -c sample.cpp</code>。这只检查编译；验证结果还需要调用函数并覆盖边界输入。代码按题目约束编写，各节明确其适用前提。</p></details><section class="lesson" id="s1"><div class="lesson-heading"><span class="lesson-number">03.01</span><h2>虚拟头结点与有序合并</h2></div>
-<h3>知识与适用场景</h3><p>头结点可能改变时，增加 dummy 可以统一处理头部和中间节点。tail 永远指向已构建结果的最后一个节点，每次把较小节点接到尾部。</p><div class="invariant"><span>推导 / 不变量</span><p>两个输入链表均有序，因此它们当前头部的较小者也是所有剩余节点中的最小者。接入后只推进被选中的那条链表。</p></div>
+<h3>知识与适用场景</h3><p>头结点可能改变时，增加 dummy 可以统一处理头部和中间节点。tail 永远指向已构建结果的最后一个节点，每次把较小节点接到尾部。</p><div class="deep-block" id="s1-before-1"><h3>1.1 节点与地址：为什么值一样不代表是同一个节点？</h3><p>假设 a、b 是两个不同节点，即使 a-&gt;val==b-&gt;val，也不能推出 a==b。判断相交、环和深拷贝时，关键都是地址身份。若把值当作节点身份，含重复值的链表会被误判为相交或有环。</p><p>ListNode* p=head 只复制地址，开销 O(1)；它不复制后续链。通过 p 改写 p-&gt;val 或 p-&gt;next，会影响同样指向该节点的其他变量。局部函数参数 head 按值传递时，执行 head=head-&gt;next 不会改变调用方的头变量，所以需要返回新头或使用引用参数。</p></div><div class="deep-block" id="s1-before-2"><h3>C++ 语句分别改变了什么</h3><p class="table-hint">窄屏下可左右滑动表格，查看完整内容。</p><div class="study-table" tabindex="0" role="region" aria-label="C++ 语句分别改变了什么"><table><thead><tr><th scope="col">语句</th><th scope="col">实际影响</th><th scope="col">使用前提</th></tr></thead><tbody><tr><td>p=q</td><td>只改变变量 p 的地址值</td><td>q 可为空，赋值本身不解引用</td></tr><tr><td>p=p-&gt;next</td><td>变量 p 移到后继</td><td>旧 p 必须非空且仍有效</td></tr><tr><td>p-&gt;next=q</td><td>改变 p 节点的后继边</td><td>p 必须非空，可能断开原来的剩余链</td></tr><tr><td>p-&gt;val=q-&gt;val</td><td>复制节点中的值</td><td>p、q 都有效；没有复制拓扑</td></tr><tr><td>delete p</td><td>释放 p 指向的对象</td><td>对象由兼容的 new 创建且当前有权释放</td></tr><tr><td>p=nullptr</td><td>清空一个指针变量</td><td>不会自动释放此前对象，也不会清空其他别名</td></tr></tbody></table></div></div><div class="deep-block" id="s1-before-3"><h3>1.2 复杂度取决于是否已经拿到操作位置</h3><p>已知前驱 pred 时，插入或摘除它的后继只改常数条边，时间 O(1)。但如果题目只给头指针，让你找到第 k 个节点或目标节点前驱，寻找过程仍需 O(k) 或 O(n)。不能只报告最后一次改指针的时间。</p><p>单链表无法从当前节点直接取得前驱。特殊题可能通过复制后继值再删除后继来“删除当前值”，但那会改变节点身份与值的对应，且不能用于尾节点；它不是一般意义上删除指定节点对象的通用方法。</p></div><div class="deep-block" id="s1-before-4"><h3>安全的插入与摘除：先保存会被覆盖的边</h3><p>插入时先让新节点连接旧后继，再让前驱连接新节点。若顺序写反，随后 node-&gt;next=predecessor-&gt;next 就可能变成 node-&gt;next=node，制造自环。摘除时保存 removed，先跨过它，再清空 removed-&gt;next；两者均为 O(1) 时间和额外空间。</p><div class="codebox"><div class="codebar"><span>C++17</span><div><a href="examples/detail-link-operations.cpp" download>下载 .cpp</a><button type="button" class="copy">复制代码</button></div></div><pre tabindex="0" aria-label="C++17 代码"><code><span class="keyword">struct</span> ListNode {
+    <span class="keyword">int</span> val;
+    ListNode* next;
+    <span class="keyword">explicit</span> ListNode(<span class="keyword">int</span> value = <span class="number">0</span>, ListNode* link = <span class="keyword">nullptr</span>)
+        : val(value), next(link) {}
+};
+<span class="keyword">void</span> insertAfter(ListNode* predecessor, ListNode* node) {
+    <span class="keyword">if</span> (!predecessor || !node)
+        <span class="keyword">throw</span> invalid_argument(<span class="string">&quot;non-null nodes required&quot;</span>);
+    <span class="comment">// 前提：node 是不在当前链中的独立节点。</span>
+    node-&gt;next = predecessor-&gt;next;
+    predecessor-&gt;next = node;
+}
+ListNode* detachAfter(ListNode* predecessor) {
+    <span class="keyword">if</span> (!predecessor || !predecessor-&gt;next) <span class="keyword">return</span> <span class="keyword">nullptr</span>;
+    ListNode* removed = predecessor-&gt;next;
+    predecessor-&gt;next = removed-&gt;next;
+    removed-&gt;next = <span class="keyword">nullptr</span>;
+    <span class="keyword">return</span> removed; <span class="comment">// 交给拥有者决定是否销毁</span>
+}</code></pre></div></div><div class="deep-block" id="s1-before-5"><h3>1.3 dummy 把“头结点变化”改写成普通前驱操作</h3><p>dummy 是位于真实头结点之前的辅助节点，dummy.next=head。删除真实头时，只需改 dummy.next；删除中间节点时，改普通前驱的 next。结果入口始终可从 dummy.next 找到。</p><p>ListNode dummy(0,head) 是栈上局部对象，函数结束后它会销毁。返回 dummy.next 没问题，因为那是原节点的地址；返回 &amp;dummy 就会产生悬空指针。dummy 的 val 不参与题意，不应靠它的数值判断结束。</p></div><div class="deep-block" id="s1-before-6"><h3>删除所有指定值：删除后前驱为何不前进？</h3><p>不变量：predecessor 之前已经处理完，predecessor-&gt;next 是下一个待判断节点。删除后原后继的后继成为新候选，因此前驱不能跳过去；不删除时才将前驱移到候选节点。</p><p>例如 [6,6,1,6] 删除 6：dummy 连续摘掉前两个节点，遇到 1 后前驱移到 1，再摘掉尾部 6。时间 O(n)，额外空间 O(1)。若调用方没有独立保存被摘节点的拥有关系，实际工程应采用明确的销毁策略，避免泄漏。</p><div class="codebox"><div class="codebar"><span>C++17</span><div><a href="examples/detail-remove-elements.cpp" download>下载 .cpp</a><button type="button" class="copy">复制代码</button></div></div><pre tabindex="0" aria-label="C++17 代码"><code><span class="keyword">struct</span> ListNode {
+    <span class="keyword">int</span> val;
+    ListNode* next;
+    <span class="keyword">explicit</span> ListNode(<span class="keyword">int</span> value = <span class="number">0</span>, ListNode* link = <span class="keyword">nullptr</span>)
+        : val(value), next(link) {}
+};
+ListNode* removeElements(ListNode* head, <span class="keyword">int</span> target) {
+    ListNode dummy(<span class="number">0</span>, head);
+    ListNode* predecessor = &amp;dummy;
+    <span class="keyword">while</span> (predecessor-&gt;next) {
+        ListNode* candidate = predecessor-&gt;next;
+        <span class="keyword">if</span> (candidate-&gt;val == target) {
+            predecessor-&gt;next = candidate-&gt;next;
+            candidate-&gt;next = <span class="keyword">nullptr</span>; <span class="comment">// 仅摘除，由节点拥有者管理生命周期</span>
+        } <span class="keyword">else</span> {
+            predecessor = candidate;
+        }
+    }
+    <span class="keyword">return</span> dummy.next;
+}</code></pre></div></div><div class="deep-block" id="s1-before-7"><h3>1.4 合并有序链表：tail 的角色与稳定性</h3><p>下面原模板中的 tail 表示结果的最后一个已选节点；a、b 分别指向两条未处理链的首节点。两条链各自有序，所以两个首节点中较小者也是所有未处理节点中的最小者，可以安全放到结果尾部。</p><p>相等时使用 &lt;= 优先选择 a，保持左输入在相等值上的优先级；这使基于此合并的稳定归并排序得以成立。每次只推进被取走的一条链；一侧为空后，另一侧本来有序，直接接上即可。</p></div><div class="deep-block" id="s1-before-8"><h3>1.5 链表排序：切断、递归、稳定合并</h3><p>归并排序不需要随机访问，适合链表。找中点 O(n)，每层合并总 O(n)，递归约 log n 层，总时间 O(n log n)，额外栈 O(log n)，没有新建数据节点。若遗漏 slow-&gt;next=nullptr，左递归可能仍收到原链，无法终止。自底向上的分段归并可把辅助空间进一步降为 O(1)，但实现更长。</p><div class="codebox"><div class="codebar"><span>C++17</span><div><a href="examples/detail-merge-sort.cpp" download>下载 .cpp</a><button type="button" class="copy">复制代码</button></div></div><pre tabindex="0" aria-label="C++17 代码"><code><span class="keyword">struct</span> ListNode {
+    <span class="keyword">int</span> val;
+    ListNode* next;
+    <span class="keyword">explicit</span> ListNode(<span class="keyword">int</span> value = <span class="number">0</span>, ListNode* link = <span class="keyword">nullptr</span>)
+        : val(value), next(link) {}
+};
+ListNode* mergeSorted(ListNode* a, ListNode* b) {
+    ListNode dummy;
+    ListNode* tail = &amp;dummy;
+    <span class="keyword">while</span> (a &amp;&amp; b) {
+        <span class="keyword">if</span> (a-&gt;val &lt;= b-&gt;val) {
+            tail-&gt;next = a;
+            a = a-&gt;next;
+        } <span class="keyword">else</span> {
+            tail-&gt;next = b;
+            b = b-&gt;next;
+        }
+        tail = tail-&gt;next;
+    }
+    tail-&gt;next = a ? a : b;
+    <span class="keyword">return</span> dummy.next;
+}
+ListNode* sortList(ListNode* head) {
+    <span class="keyword">if</span> (!head || !head-&gt;next) <span class="keyword">return</span> head;
+    ListNode* slow = head;
+    ListNode* fast = head-&gt;next;
+    <span class="keyword">while</span> (fast &amp;&amp; fast-&gt;next) {
+        slow = slow-&gt;next;
+        fast = fast-&gt;next-&gt;next;
+    }
+    ListNode* right = slow-&gt;next;
+    slow-&gt;next = <span class="keyword">nullptr</span>; <span class="comment">// 真正切断，两个递归子问题才会缩小</span>
+    ListNode* leftSorted = sortList(head);
+    ListNode* rightSorted = sortList(right);
+    <span class="keyword">return</span> mergeSorted(leftSorted, rightSorted);
+}</code></pre></div></div><div class="deep-block" id="s1-before-9"><h3>1.6 两数相加：尾部追加与进位状态</h3><p>例如 [2,4,3] 与 [5,6,4] 表示 342+465=807，输出 [7,0,8]。循环条件必须包含 carry，否则 [9]+[1] 会漏掉最终进位。时间 O(max(m,n))，输出空间 O(max(m,n))，除输出外辅助空间 O(1)。本例按常见题目约定用 [0] 表示零；两个空输入返回空链。</p><div class="codebox"><div class="codebar"><span>C++17</span><div><a href="examples/detail-add-numbers.cpp" download>下载 .cpp</a><button type="button" class="copy">复制代码</button></div></div><pre tabindex="0" aria-label="C++17 代码"><code><span class="keyword">struct</span> ListNode {
+    <span class="keyword">int</span> val;
+    ListNode* next;
+    <span class="keyword">explicit</span> ListNode(<span class="keyword">int</span> value = <span class="number">0</span>, ListNode* link = <span class="keyword">nullptr</span>)
+        : val(value), next(link) {}
+};
+ListNode* addTwoNumbers(<span class="keyword">const</span> ListNode* a, <span class="keyword">const</span> ListNode* b) {
+    <span class="comment">// 前提：每个值在 0..9，低位在头部；内存分配成功。</span>
+    ListNode dummy;
+    ListNode* tail = &amp;dummy;
+    <span class="keyword">int</span> carry = <span class="number">0</span>;
+    <span class="keyword">while</span> (a || b || carry) {
+        <span class="keyword">int</span> sum = carry;
+        <span class="keyword">if</span> (a) { sum += a-&gt;val; a = a-&gt;next; }
+        <span class="keyword">if</span> (b) { sum += b-&gt;val; b = b-&gt;next; }
+        carry = sum / <span class="number">10</span>;
+        tail-&gt;next = new ListNode(sum % <span class="number">10</span>);
+        tail = tail-&gt;next;
+    }
+    <span class="keyword">return</span> dummy.next; <span class="comment">// 新输出链由调用方拥有并负责释放</span>
+}</code></pre></div></div><div class="invariant"><span>推导 / 不变量</span><p>两个输入链表均有序，因此它们当前头部的较小者也是所有剩余节点中的最小者。接入后只推进被选中的那条链表。</p></div>
 <h3>手推一个例子</h3><p>[1,3] 与 [1,2] 合并：依次接入第一条的 1、第二条的 1、第二条的 2，最后直接接上剩余的 3。</p><div class="codebox"><div class="codebar"><span>C++17</span><div><a href="examples/01.cpp" download>下载 .cpp</a><button type="button" class="copy">复制代码</button></div></div><pre tabindex="0" aria-label="C++17 代码"><code><span class="keyword">struct</span> ListNode {
     <span class="keyword">int</span> val;
     ListNode* next;
@@ -45,9 +138,147 @@ ListNode* mergeTwo(ListNode* a, ListNode* b) {
     <span class="keyword">return</span> dummy.next;
 }</code></pre></div>
 <dl class="analysis-grid"><div><dt>复杂度</dt><dd>时间 O(m+n)，额外空间 O(1)，复用原节点并改变连接关系。前提是输入链表无环且不共享节点。</dd></div><div><dt>易错点与边界</dt><dd>dummy 是局部对象，但返回的是 dummy.next 所指的原节点，不能返回 &amp;dummy。面试节点通常由平台管理，不要随意 delete。</dd></div></dl>
-<div class="practice"><h3>经典考点与练习</h3><p>练习：LeetCode 21 合并两个有序链表、203 移除链表元素、19 删除链表的倒数第 N 个结点。</p><details><summary>面试官可能继续问什么？</summary><p>合并稳定性由哪个比较符号决定？如果两链表共享尾部会有什么风险？</p><p class="muted">先用自己的话回答，再回到本节的前提、不变量和边界检查论证。</p></details></div>
+<div class="deep-block" id="s1-after-1"><h3>有序合并手推：用身份区分两个值为 1 的节点</h3><p class="table-hint">窄屏下可左右滑动表格，查看完整内容。</p><div class="study-table" tabindex="0" role="region" aria-label="有序合并手推：用身份区分两个值为 1 的节点"><table><thead><tr><th scope="col">a 首部 / b 首部</th><th scope="col">接入节点</th><th scope="col">之后的位置</th></tr></thead><tbody><tr><td>1A→3A / 1B→2B</td><td>1A，&lt;= 让左侧同值先进入</td><td>a 移到 3A，tail 指向 1A</td></tr><tr><td>3A / 1B→2B</td><td>1B</td><td>b 移到 2B</td></tr><tr><td>3A / 2B</td><td>2B</td><td>b 为空</td></tr><tr><td>3A / 空</td><td>直接接上剩余 3A</td><td>结果为 1A→1B→2B→3A</td></tr></tbody></table></div></div><div class="deep-block" id="s1-after-2"><h3>同一个节点不能被重复接入</h3><p>原合并模板要求两条输入链不共享节点。若 a==b 指向同一条链头，算法可能先把该节点作为 a 接入，再作为 b 接入，产生自环或其他错误连接。不要把“值相同没关系”误解为“节点地址相同也没关系”。</p><p>若题目允许共享尾部，需要在合并逻辑中专门处理 a==b，或先明确输出是否允许共享、是否要求复制；不能直接照搬“两个独立有序链表”的前提。</p></div><div class="practice"><h3>经典考点与练习</h3><p>练习：LeetCode 21 合并两个有序链表、203 移除链表元素、19 删除链表的倒数第 N 个结点。</p><h3>面试追问：关键点完整解答</h3><dl class="answer-list"><div><dt>合并稳定性由哪个比较符号决定？</dt><dd><p>选择 a-&gt;val&lt;=b-&gt;val 时先取左链的相等节点。若输入是原序列的左右两半，这会保留相等元素的原相对次序。改成 &lt; 后数值仍有序，但左右半中的相等节点可能换序。</p></dd></div><div><dt>如果两链表共享尾部，有什么风险？</dt><dd><p>同一节点可能被当成两个候选重复接入，形成自环或破坏结构。先确认题目是否保证不相交；若允许共享，需要额外处理首次 a==b 的位置，或采用题目要求的复制策略。</p></dd></div><div><dt>为什么删除连续目标值时前驱不前进？</dt><dd><p>删除后 predecessor 本身没有变，predecessor-&gt;next 已经变成新的待检查节点。若再前进，会跳过这个新候选，漏掉连续的重复目标。</p></dd></div><div><dt>dummy 是局部变量，返回 dummy.next 为什么仍有效？</dt><dd><p>dummy.next 存的是仍然存活的原节点或新建节点的地址，返回它与返回 dummy 自身地址是两回事。示例的普通节点结构没有会递归销毁 next 的析构函数。</p></dd></div><div><dt>已知待删节点，但没有前驱，能 O(1) 删除吗？</dt><dd><p>一般不能。非尾节点可以在特定题意下复制后继的值再摘除后继，但真正销毁的是后继对象，外部引用能观察到身份与值变化；尾节点没有后继，更无法这样处理。</p></dd></div><div><dt>为什么合并排序比对链表反复找中点的快排更自然？</dt><dd><p>归并只需顺序访问、切链和线性合并，不依赖随机下标。它的最坏时间 O(n log n) 可直接保证；递归版的 O(log n) 栈也应如实计入空间。</p></dd></div></dl></div>
 <label class="learned"><input type="checkbox" data-progress="03-01">我能独立实现，并解释正确性与边界</label></section><section class="lesson" id="s2"><div class="lesson-heading"><span class="lesson-number">03.02</span><h2>迭代反转与局部拼接</h2></div>
-<h3>知识与适用场景</h3><p>反转时必须保存当前节点的旧后继。prev 表示已反转部分的头，cur 表示未处理部分的头。每轮把 cur 从未处理部分移到已反转部分前端。</p><div class="invariant"><span>推导 / 不变量</span><p>修改 cur-&gt;next 之前，用 next 保存剩余链表。局部反转还需要保留区间前驱和原区间头：原头在翻转后变成尾，要连接后续部分。</p></div>
+<h3>知识与适用场景</h3><p>反转时必须保存当前节点的旧后继。prev 表示已反转部分的头，cur 表示未处理部分的头。每轮把 cur 从未处理部分移到已反转部分前端。</p><div class="deep-block" id="s2-before-1"><h3>2.1 反转的三个入口：prev、cur、next</h3><p>在整链反转中，prev 指向已反转前缀的头，不是尾；cur 指向尚未处理后缀的头；临时 next 保存 cur 的原后继。每轮把 cur 从未处理部分摘下，放到已反转部分前面。</p><p>这三个名字只在当前模板中具有这些含义。合并中的 tail 是尾，局部头插法中的 predecessor 是区间之前的节点，不要把所有模板的 prev 都机械解释成“上一个节点”或“已处理尾部”。</p></div><div class="deep-block" id="s2-before-2"><h3>2.2 反转 A→B→C：先保留入口，再改边</h3><p class="table-hint">窄屏下可左右滑动表格，查看完整内容。</p><div class="study-table" tabindex="0" role="region" aria-label="2.2 反转 A→B→C：先保留入口，再改边"><table><thead><tr><th scope="col">轮次</th><th scope="col">保存 next</th><th scope="col">改 cur-&gt;next 后</th><th scope="col">轮末 prev / cur</th></tr></thead><tbody><tr><td>初始化</td><td>—</td><td>未处理 A→B→C；已处理为空</td><td>null / A</td></tr><tr><td>1</td><td>B</td><td>A→null</td><td>A / B</td></tr><tr><td>2</td><td>C</td><td>B→A→null</td><td>B / C</td></tr><tr><td>3</td><td>null</td><td>C→B→A→null</td><td>C / null</td></tr><tr><td>结束</td><td>—</td><td>原头 A 已成为尾，next 为 null</td><td>返回 C</td></tr></tbody></table></div></div><div class="deep-block" id="s2-before-3"><h3>两种写错顺序的具体后果</h3><p>若先执行 cur-&gt;next=prev 再执行 cur=cur-&gt;next，cur 会沿刚改好的反向边前进，原后缀入口丢失。若先 cur=cur-&gt;next 再改旧节点的 next，就已经丢失当前待反转节点的操作入口，除非另有变量保存它。</p><p>安全顺序固定为：next=cur-&gt;next；cur-&gt;next=prev；prev=cur；cur=next。证明时同时说明每个原节点恰处理一次、未处理入口不丢失，最终 next 链终止于 nullptr。</p></div><div class="deep-block" id="s2-before-4"><h3>2.3 递归反转：返回新头，旧头变成尾</h3><p>假设 head 后面的子链已经正确反转，原 head-&gt;next 现在是反转子链的尾。让它指向 head，再清空 head-&gt;next，就把 head 接到新尾部。时间 O(n)，调用栈 O(n)；长链更推荐迭代版。若省略清空，原先 A→B 与新设 B→A 会形成环。</p><div class="codebox"><div class="codebar"><span>C++17</span><div><a href="examples/detail-reverse-recursive.cpp" download>下载 .cpp</a><button type="button" class="copy">复制代码</button></div></div><pre tabindex="0" aria-label="C++17 代码"><code><span class="keyword">struct</span> ListNode {
+    <span class="keyword">int</span> val;
+    ListNode* next;
+    <span class="keyword">explicit</span> ListNode(<span class="keyword">int</span> value = <span class="number">0</span>, ListNode* link = <span class="keyword">nullptr</span>)
+        : val(value), next(link) {}
+};
+ListNode* reverseRecursive(ListNode* head) {
+    <span class="keyword">if</span> (!head || !head-&gt;next) <span class="keyword">return</span> head;
+    ListNode* newHead = reverseRecursive(head-&gt;next);
+    head-&gt;next-&gt;next = head;
+    head-&gt;next = <span class="keyword">nullptr</span>; <span class="comment">// 不断开旧正向边会形成二节点环</span>
+    <span class="keyword">return</span> newHead;
+}</code></pre></div></div><div class="deep-block" id="s2-before-5"><h3>2.4 局部反转：四个边界要先记住</h3><p>反转 [left,right]（本节使用从 1 开始的位置）需要保留区间前驱、原区间头、原区间尾和区间后继。反转后前驱连新头，原区间头变成尾并连接区间后继。处理从位置 1 开始的区间时，dummy 充当前驱。</p><p>下面使用“区间内部头插法”：原区间头 start 固定作为逐渐后移到尾部的节点，每次把 start 后面的一个节点搬到区间最前。这样外侧链始终有入口，不需要先把整个区间完全摘下来。</p></div><div class="deep-block" id="s2-before-6"><h3>局部反转：先验证区间，再执行头插</h3><p>示例 1→2→3→4→5，反转 [2,4]：before=1、start=2。先把 3 搬到 1 后面，得到 1→3→2→4→5；再把 4 搬到 1 后，得到 1→4→3→2→5。start 一直是节点 2，最后自然连接节点 5。</p><p>时间 O(right)，上界 O(n)，额外空间 O(1)。预先探测到 right 是为了在输入越界时不留下已经被部分修改的链；面试若保证范围合法，可以省掉这次验证扫描。</p><div class="codebox"><div class="codebar"><span>C++17</span><div><a href="examples/detail-reverse-between.cpp" download>下载 .cpp</a><button type="button" class="copy">复制代码</button></div></div><pre tabindex="0" aria-label="C++17 代码"><code><span class="keyword">struct</span> ListNode {
+    <span class="keyword">int</span> val;
+    ListNode* next;
+    <span class="keyword">explicit</span> ListNode(<span class="keyword">int</span> value = <span class="number">0</span>, ListNode* link = <span class="keyword">nullptr</span>)
+        : val(value), next(link) {}
+};
+ListNode* reverseBetween(ListNode* head, <span class="keyword">int</span> left, <span class="keyword">int</span> right) {
+    <span class="keyword">if</span> (left &lt; <span class="number">1</span> || right &lt; left)
+        <span class="keyword">throw</span> invalid_argument(<span class="string">&quot;invalid positions&quot;</span>);
+    ListNode* probe = head;
+    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; right; ++i) {
+        <span class="keyword">if</span> (!probe) <span class="keyword">throw</span> out_of_range(<span class="string">&quot;position exceeds list length&quot;</span>);
+        probe = probe-&gt;next;
+    }
+    ListNode dummy(<span class="number">0</span>, head);
+    ListNode* before = &amp;dummy;
+    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">1</span>; i &lt; left; ++i) before = before-&gt;next;
+    ListNode* start = before-&gt;next;
+    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; right - left; ++i) {
+        ListNode* moved = start-&gt;next;
+        start-&gt;next = moved-&gt;next;
+        moved-&gt;next = before-&gt;next;
+        before-&gt;next = moved;
+    }
+    <span class="keyword">return</span> dummy.next;
+}</code></pre></div></div><div class="deep-block" id="s2-before-7"><h3>2.5 K 个一组反转：确认整组存在才动手</h3><p>groupBefore 指向组前驱，kth 是组末尾，groupAfter 是下组入口。previous 从 groupAfter 开始，保证当前组原头成为新尾时已经接上后续；反转结束后让组前驱连接 kth，再把组前驱推进到 oldHead。</p><p>n=5、k=2 得到 2→1→4→3→5，最后一个节点保持原状。每个完整分组先探测 k 步、再反转 k 步，总计 O(n)，不是 O(nk)；额外空间 O(1)。最后不足 k 个时探测到 null 即停止，不先反转再试图补救。</p><div class="codebox"><div class="codebar"><span>C++17</span><div><a href="examples/detail-reverse-k-group.cpp" download>下载 .cpp</a><button type="button" class="copy">复制代码</button></div></div><pre tabindex="0" aria-label="C++17 代码"><code><span class="keyword">struct</span> ListNode {
+    <span class="keyword">int</span> val;
+    ListNode* next;
+    <span class="keyword">explicit</span> ListNode(<span class="keyword">int</span> value = <span class="number">0</span>, ListNode* link = <span class="keyword">nullptr</span>)
+        : val(value), next(link) {}
+};
+ListNode* reverseKGroup(ListNode* head, <span class="keyword">int</span> k) {
+    <span class="keyword">if</span> (k &lt;= <span class="number">0</span>) <span class="keyword">throw</span> invalid_argument(<span class="string">&quot;k must be positive&quot;</span>);
+    <span class="keyword">if</span> (k == <span class="number">1</span> || !head) <span class="keyword">return</span> head;
+    ListNode dummy(<span class="number">0</span>, head);
+    ListNode* groupBefore = &amp;dummy;
+    <span class="keyword">while</span> (<span class="keyword">true</span>) {
+        ListNode* kth = groupBefore;
+        <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; k &amp;&amp; kth; ++i) kth = kth-&gt;next;
+        <span class="keyword">if</span> (!kth) break;
+        ListNode* groupAfter = kth-&gt;next;
+        ListNode* oldHead = groupBefore-&gt;next;
+        ListNode* previous = groupAfter;
+        ListNode* current = oldHead;
+        <span class="keyword">while</span> (current != groupAfter) {
+            ListNode* next = current-&gt;next;
+            current-&gt;next = previous;
+            previous = current;
+            current = next;
+        }
+        groupBefore-&gt;next = kth;
+        groupBefore = oldHead;
+    }
+    <span class="keyword">return</span> dummy.next;
+}</code></pre></div></div><div class="deep-block" id="s2-before-8"><h3>2.6 回文链表：反转后半段，并在比较后恢复</h3><p>中点取前半段末尾，奇数长度时中间元素不参与后半段比较。只遍历后半段即可；即使发现不相等，也不能直接 return false 而跳过恢复。时间 O(n)，额外空间 O(1)，正常返回时所有 next 连接恢复。</p><p>例如 1A→2A→2B→1B，反转后半段让比较顺序为 1A 对 1B、2A 对 2B，之后恢复 2B→1B。这里比较的是值，但验证恢复时应检查节点身份与 next，而不只检查输出数字。</p><div class="codebox"><div class="codebar"><span>C++17</span><div><a href="examples/detail-palindrome-restore.cpp" download>下载 .cpp</a><button type="button" class="copy">复制代码</button></div></div><pre tabindex="0" aria-label="C++17 代码"><code><span class="keyword">struct</span> ListNode {
+    <span class="keyword">int</span> val;
+    ListNode* next;
+    <span class="keyword">explicit</span> ListNode(<span class="keyword">int</span> value = <span class="number">0</span>, ListNode* link = <span class="keyword">nullptr</span>)
+        : val(value), next(link) {}
+};
+ListNode* reverseHalf(ListNode* head) {
+    ListNode* previous = <span class="keyword">nullptr</span>;
+    <span class="keyword">while</span> (head) {
+        ListNode* next = head-&gt;next;
+        head-&gt;next = previous;
+        previous = head;
+        head = next;
+    }
+    <span class="keyword">return</span> previous;
+}
+<span class="keyword">bool</span> isPalindromeRestoring(ListNode* head) {
+    <span class="keyword">if</span> (!head || !head-&gt;next) <span class="keyword">return</span> <span class="keyword">true</span>;
+    ListNode* middle = head;
+    ListNode* fast = head;
+    <span class="keyword">while</span> (fast-&gt;next &amp;&amp; fast-&gt;next-&gt;next) {
+        middle = middle-&gt;next;
+        fast = fast-&gt;next-&gt;next;
+    }
+    ListNode* second = reverseHalf(middle-&gt;next);
+    middle-&gt;next = second;
+    ListNode* first = head;
+    ListNode* current = second;
+    <span class="keyword">bool</span> equal = <span class="keyword">true</span>;
+    <span class="keyword">while</span> (current) {
+        <span class="keyword">if</span> (first-&gt;val != current-&gt;val) equal = <span class="keyword">false</span>;
+        first = first-&gt;next;
+        current = current-&gt;next;
+    }
+    middle-&gt;next = reverseHalf(second);
+    <span class="keyword">return</span> equal;
+}</code></pre></div></div><div class="deep-block" id="s2-before-9"><h3>2.7 重排链表：切两半、反转后半、交替拼接</h3><p>将 L0→L1→…→Ln 重排为 L0→Ln→L1→Ln-1→…，只改连接，不交换 val。前半段长度至少等于后半段，所以 while(second) 内 first 总有效。先切断中间边，再反转与拼接，避免旧边残留形成环。时间 O(n)，额外空间 O(1)。</p><div class="codebox"><div class="codebar"><span>C++17</span><div><a href="examples/detail-reorder.cpp" download>下载 .cpp</a><button type="button" class="copy">复制代码</button></div></div><pre tabindex="0" aria-label="C++17 代码"><code><span class="keyword">struct</span> ListNode {
+    <span class="keyword">int</span> val;
+    ListNode* next;
+    <span class="keyword">explicit</span> ListNode(<span class="keyword">int</span> value = <span class="number">0</span>, ListNode* link = <span class="keyword">nullptr</span>)
+        : val(value), next(link) {}
+};
+ListNode* reverseForReorder(ListNode* head) {
+    ListNode* previous = <span class="keyword">nullptr</span>;
+    <span class="keyword">while</span> (head) {
+        ListNode* next = head-&gt;next;
+        head-&gt;next = previous;
+        previous = head;
+        head = next;
+    }
+    <span class="keyword">return</span> previous;
+}
+<span class="keyword">void</span> reorderList(ListNode* head) {
+    <span class="keyword">if</span> (!head || !head-&gt;next) <span class="keyword">return</span>;
+    ListNode* middle = head;
+    ListNode* fast = head;
+    <span class="keyword">while</span> (fast-&gt;next &amp;&amp; fast-&gt;next-&gt;next) {
+        middle = middle-&gt;next;
+        fast = fast-&gt;next-&gt;next;
+    }
+    ListNode* second = middle-&gt;next;
+    middle-&gt;next = <span class="keyword">nullptr</span>;
+    second = reverseForReorder(second);
+    ListNode* first = head;
+    <span class="keyword">while</span> (second) {
+        ListNode* nextFirst = first-&gt;next;
+        ListNode* nextSecond = second-&gt;next;
+        first-&gt;next = second;
+        second-&gt;next = nextFirst;
+        first = nextFirst;
+        second = nextSecond;
+    }
+}</code></pre></div></div><div class="invariant"><span>推导 / 不变量</span><p>修改 cur-&gt;next 之前，用 next 保存剩余链表。局部反转还需要保留区间前驱和原区间头：原头在翻转后变成尾，要连接后续部分。</p></div>
 <h3>手推一个例子</h3><p>1→2→3：第一轮变成 1→null 与 2→3；第二轮 2→1 与 3；第三轮 3→2→1，cur 为空时返回 prev。</p><div class="codebox"><div class="codebar"><span>C++17</span><div><a href="examples/02.cpp" download>下载 .cpp</a><button type="button" class="copy">复制代码</button></div></div><pre tabindex="0" aria-label="C++17 代码"><code><span class="keyword">struct</span> ListNode {
     <span class="keyword">int</span> val; ListNode* next;
     ListNode(<span class="keyword">int</span> v = <span class="number">0</span>, ListNode* p = <span class="keyword">nullptr</span>) : val(v), next(p) {}
@@ -64,9 +295,71 @@ ListNode* reverseList(ListNode* head) {
     <span class="keyword">return</span> prev;
 }</code></pre></div>
 <dl class="analysis-grid"><div><dt>复杂度</dt><dd>时间 O(n)，额外空间 O(1)。递归反转同样 O(n) 时间，但调用栈 O(n)。</dd></div><div><dt>易错点与边界</dt><dd>K 个一组反转必须先检查剩余是否有 K 个节点。回文链表题反转后半段后，如果要求输入保持原状，要再次反转恢复。</dd></div></dl>
-<div class="practice"><h3>经典考点与练习</h3><p>练习：LeetCode 206 反转链表、92 反转链表 II、25 K 个一组翻转链表。</p><details><summary>面试官可能继续问什么？</summary><p>为什么不能先执行 cur=cur-&gt;next？局部翻转后需要重新接上哪两条边？</p><p class="muted">先用自己的话回答，再回到本节的前提、不变量和边界检查论证。</p></details></div>
+<div class="deep-block" id="s2-after-1"><h3>局部修改后的四项结构检查</h3><p>结果头是否指向正确新头；区间或组前驱是否连接新头；原头变成的尾是否连接后继；最终尾节点是否仍以 null 结束。除此之外还要确认没有丢节点、没有重复使用节点，也没有意外分配替代节点。</p><p>K 分组与普通反转都可能输出看似正确的前几个值，但尾部仍有环。不要只打印固定数量的节点就宣布正确，章末的地址去重检查会帮助发现这一类问题。</p></div><div class="practice"><h3>经典考点与练习</h3><p>练习：LeetCode 206 反转链表、92 反转链表 II、25 K 个一组翻转链表。</p><h3>面试追问：关键点完整解答</h3><dl class="answer-list"><div><dt>为什么反转不能先执行 cur=cur-&gt;next？</dt><dd><p>必须在改变入口前保留当前节点和原后继。原模板只有 cur 持有待处理节点，提前推进会失去对该节点的直接控制；先改 next 再沿它走又会走回已反转部分。临时 next 保存旧边，才能把改边和推进解耦。</p></dd></div><div><dt>局部反转之后需要接回哪两条边？</dt><dd><p>区间前驱连接反转后的新头；原区间头成为尾，连接原区间后继。若采用头插或 previous=groupAfter 的实现，这两条边可能在过程中逐步建立，但仍需按这两个关系检查。</p></dd></div><div><dt>K 个一组反转为什么先探测 k 个节点？</dt><dd><p>通常题意要求尾部不足 k 个保持原状。先探测确认整组存在，就能在不足时直接退出，避免修改半组后再恢复。</p></dd></div><div><dt>探测一次、反转一次为什么仍是 O(n)？</dt><dd><p>各完整组彼此不重叠，每组规模 k，被扫描两次总计 2k；所有组加上最后不足一组的探测，总访问量是 O(n)。k 不会独立乘到每个节点外层。</p></dd></div><div><dt>回文链表发现不相等，为什么不立刻返回？</dt><dd><p>如果函数承诺保留输入结构，必须先完成后半段恢复。可以保存 false 再统一收尾；若提前退出，也要在返回前显式恢复。</p></dd></div><div><dt>递归反转中的 head-&gt;next=nullptr 为什么必要？</dt><dd><p>在反转子链后，原后继被连接回 head；head 仍保留原本指向后继的边，若不清空会形成相互指向。清空使旧头成为真正的尾。</p></dd></div><div><dt>重排能不能靠交换节点的 val 完成？</dt><dd><p>若题目要求修改节点连接，交换值不符合约定；外部持有节点地址时，也会观察到不同结果。要先确认题目关注值序列还是节点身份和结构。</p></dd></div></dl></div>
 <label class="learned"><input type="checkbox" data-progress="03-02">我能独立实现，并解释正确性与边界</label></section><section class="lesson" id="s3"><div class="lesson-heading"><span class="lesson-number">03.03</span><h2>快慢指针、环入口与中点</h2></div>
-<h3>知识与适用场景</h3><p>快慢指针用于在一次扫描中构造位置差。找中点依赖速度差，找倒数第 k 个依赖固定距离差。检测环时，环内相对速度为一步，必定相遇。</p><div class="invariant"><span>推导 / 不变量</span><p>相遇后让一个指针回到头部，两者每次各走一步。设入口前长度 a，相遇位置距入口 b，环长 L，则 a+b 是 L 的整数倍，故从相遇处再走 a 步回到入口。</p></div>
+<h3>知识与适用场景</h3><p>快慢指针用于在一次扫描中构造位置差。找中点依赖速度差，找倒数第 k 个依赖固定距离差。检测环时，环内相对速度为一步，必定相遇。</p><div class="deep-block" id="s3-before-1"><h3>3.1 找中点：快指针终点决定慢指针位置</h3><p>快指针每轮两步，慢指针每轮一步；两者通常都从 head 出发。对于奇数长度，慢指针能落在唯一中点；对于偶数长度，有左右两个候选，中点模板必须与后续切分需求一致。</p><p>while(fast &amp;&amp; fast-&gt;next) 会在偶数长度返回右中点；先判断空头，再用 while(fast-&gt;next &amp;&amp; fast-&gt;next-&gt;next) 会返回左中点。第二种条件在循环开始时保持 fast 非空，但不能省掉初始空头判断。</p></div><div class="deep-block" id="s3-before-2"><h3>左右中点模板并排比较</h3><p>两种实现时间 O(n)、额外空间 O(1)，默认输入无环。返回值是节点指针，不是下标。用于“先切两半，再反转后半段”时，左中点常便于从 middle-&gt;next 取后半段。</p><div class="codebox"><div class="codebar"><span>C++17</span><div><a href="examples/detail-middle.cpp" download>下载 .cpp</a><button type="button" class="copy">复制代码</button></div></div><pre tabindex="0" aria-label="C++17 代码"><code><span class="keyword">struct</span> ListNode {
+    <span class="keyword">int</span> val;
+    ListNode* next;
+    <span class="keyword">explicit</span> ListNode(<span class="keyword">int</span> value = <span class="number">0</span>, ListNode* link = <span class="keyword">nullptr</span>)
+        : val(value), next(link) {}
+};
+ListNode* rightMiddle(ListNode* head) {
+    ListNode* slow = head;
+    ListNode* fast = head;
+    <span class="keyword">while</span> (fast &amp;&amp; fast-&gt;next) {
+        slow = slow-&gt;next;
+        fast = fast-&gt;next-&gt;next;
+    }
+    <span class="keyword">return</span> slow;
+}
+ListNode* leftMiddle(ListNode* head) {
+    <span class="keyword">if</span> (!head) <span class="keyword">return</span> <span class="keyword">nullptr</span>;
+    ListNode* slow = head;
+    ListNode* fast = head;
+    <span class="keyword">while</span> (fast-&gt;next &amp;&amp; fast-&gt;next-&gt;next) {
+        slow = slow-&gt;next;
+        fast = fast-&gt;next-&gt;next;
+    }
+    <span class="keyword">return</span> slow;
+}</code></pre></div></div><div class="deep-block" id="s3-before-3"><h3>长度边界：位置从 1 开始</h3><p class="table-hint">窄屏下可左右滑动表格，查看完整内容。</p><div class="study-table" tabindex="0" role="region" aria-label="长度边界：位置从 1 开始"><table><thead><tr><th scope="col">长度</th><th scope="col">rightMiddle 返回</th><th scope="col">leftMiddle 返回</th></tr></thead><tbody><tr><td>0</td><td>null</td><td>null</td></tr><tr><td>1</td><td>第 1 个</td><td>第 1 个</td></tr><tr><td>2</td><td>第 2 个</td><td>第 1 个</td></tr><tr><td>3</td><td>第 2 个</td><td>第 2 个</td></tr><tr><td>4</td><td>第 3 个</td><td>第 2 个</td></tr></tbody></table></div></div><div class="deep-block" id="s3-before-4"><h3>3.2 倒数第 k 个：速度相同，但先拉开距离</h3><p>若 fast 从 head 先走 k 步，再让 slow 从 head 与 fast 同步移动，直到 fast==nullptr，则 slow 正好是倒数第 k 个。两指针之间始终隔 k 条 next 边，终点前还有 k 个节点的位置就是答案。</p><p>删除时通常需要的是待删节点的前驱。可以让两个指针都从 dummy 出发，fast 先走 k 步，然后同步走到 fast-&gt;next==nullptr。此时 slow-&gt;next 就是待删节点。起点和停止条件一起决定偏移，不能混用两套写法。</p></div><div class="deep-block" id="s3-before-5"><h3>删除倒数第 k 个：保留前驱以统一头部删除</h3><p>以 1→2→3→4→5、k=2 为例，fast 先到 2；同步移动至 fast=5 时 slow=3，删除 slow-&gt;next 的 4。若 k=5，slow 仍为 dummy，统一处理删除头。验证 k 的扫描不改连接，所以非法 k 会在任何结构修改前失败。时间 O(n)，额外空间 O(1)。</p><div class="codebox"><div class="codebar"><span>C++17</span><div><a href="examples/detail-remove-nth.cpp" download>下载 .cpp</a><button type="button" class="copy">复制代码</button></div></div><pre tabindex="0" aria-label="C++17 代码"><code><span class="keyword">struct</span> ListNode {
+    <span class="keyword">int</span> val;
+    ListNode* next;
+    <span class="keyword">explicit</span> ListNode(<span class="keyword">int</span> value = <span class="number">0</span>, ListNode* link = <span class="keyword">nullptr</span>)
+        : val(value), next(link) {}
+};
+ListNode* removeNthFromEnd(ListNode* head, <span class="keyword">int</span> k) {
+    <span class="keyword">if</span> (k &lt;= <span class="number">0</span>) <span class="keyword">throw</span> invalid_argument(<span class="string">&quot;k must be positive&quot;</span>);
+    ListNode dummy(<span class="number">0</span>, head);
+    ListNode* fast = &amp;dummy;
+    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; k; ++i) {
+        <span class="keyword">if</span> (!fast-&gt;next) <span class="keyword">throw</span> out_of_range(<span class="string">&quot;k exceeds list length&quot;</span>);
+        fast = fast-&gt;next;
+    }
+    ListNode* slow = &amp;dummy;
+    <span class="keyword">while</span> (fast-&gt;next) {
+        fast = fast-&gt;next;
+        slow = slow-&gt;next;
+    }
+    ListNode* removed = slow-&gt;next;
+    slow-&gt;next = removed-&gt;next;
+    removed-&gt;next = <span class="keyword">nullptr</span>; <span class="comment">// 不擅自释放由调用方拥有的节点</span>
+    <span class="keyword">return</span> dummy.next;
+}</code></pre></div></div><div class="deep-block" id="s3-before-6"><h3>3.3 Floyd 判环：为什么相遇是必然的？</h3><p>无环时 fast 先遇到 null 或无法再走两步，循环终止。存在环时，两者最终都进入长度 L 的环；把环内位置看成模 L 的整数，fast 相对 slow 每轮前进 1，所以相对位置最多经过 L 轮就会覆盖到 0，即相遇。</p><p>判断的是指针相等 slow==fast。初始时两者都在 head，这不代表有环，必须先推进再比较。空链、单节点无环、单节点自环都要分别想一遍。时间 O(a+L)，其中 a 是入环前长度；额外空间 O(1)。</p></div><div class="deep-block" id="s3-before-7"><h3>3.4 找入口：从路程方程推到同步相遇</h3><p>设头到入口距离为 a，相遇点在环内距入口向前 b 步，环长为 L。相遇时 slow 一共走了 t=a+b+uL 步，u≥0 表示可能绕过的整圈；fast 走了 2t 步。因为同处一个环内位置，路程差 t=mL，其中 m 是正整数。</p><p>消去 t，得到 a+b=(m-u)L，也就是 a≡−b（mod L）。这说明从相遇点再走 a 步，恰好落在环入口；与此同时，从 head 走 a 步也恰好到入口。把一个指针放回 head，两者每轮各走一步，首次相遇就是入口。</p><p>不需要假设慢指针只走了一段环、不需要计算环长，也不需要把 a 写成恰好一圈减 b。头指针进入环之前，两条路径位于不同区域，不会更早相遇；若 a=0，相遇点本来就在入口，重置后可立即返回。</p></div><div class="deep-block" id="s3-before-8"><h3>1→2→3→4→2：slow 一步、fast 两步的轨迹</h3><p class="table-hint">窄屏下可左右滑动表格，查看完整内容。</p><div class="study-table" tabindex="0" role="region" aria-label="1→2→3→4→2：slow 一步、fast 两步的轨迹"><table><thead><tr><th scope="col">轮次</th><th scope="col">slow</th><th scope="col">fast</th></tr></thead><tbody><tr><td>初始（不检查相遇）</td><td>1</td><td>1</td></tr><tr><td>1</td><td>2</td><td>3</td></tr><tr><td>2</td><td>3</td><td>2</td></tr><tr><td>3</td><td>4</td><td>4，相遇</td></tr><tr><td>重置一个指针</td><td>1</td><td>4</td></tr><tr><td>各前进一步</td><td>2</td><td>2，环入口</td></tr></tbody></table></div></div><div class="deep-block" id="s3-before-9"><h3>把本例代入公式</h3><p class="table-hint">窄屏下可左右滑动表格，查看完整内容。</p><div class="study-table" tabindex="0" role="region" aria-label="把本例代入公式"><table><thead><tr><th scope="col">量</th><th scope="col">数值</th><th scope="col">含义</th></tr></thead><tbody><tr><td>a</td><td>1</td><td>1 到入口 2 需要 1 步</td></tr><tr><td>L</td><td>3</td><td>环为 2→3→4→2</td></tr><tr><td>b</td><td>2</td><td>从入口 2 到相遇点 4 需要 2 步</td></tr><tr><td>a+b</td><td>3</td><td>是环长的整数倍</td></tr><tr><td>相遇点再走 a 步</td><td>4→2</td><td>与 head 的 1→2 同时到入口</td></tr></tbody></table></div></div><div class="deep-block" id="s3-before-10"><h3>3.5 快指针改为三步：判环与找入口不是同一结论</h3><p>若 fast 每轮走 3 步、slow 每轮走 1 步，相遇方程变成 2t 是 L 的倍数。这只能推出 L 整除 2t，不一定推出 L 整除 t，因此不能直接推出 a+b 是 L 的倍数，原找入口过程就失去保证。</p><p>具体反例：一个长度 4 的纯环，head 就在入口。两轮后 slow 位于位置 2，fast 走了 6 步也在位置 2，已经相遇。把一个指针重置到位置 0 后，两者同速移动，始终相差 2 个位置，永远不会再相遇。</p><p>三倍速从同一头出发仍能在有环时相遇，但找入口需换一种证明支持的方法，例如先测环长 L，再从 head 出发让一指针领先 L 步后同步移动。面试常用一倍/二倍速，是因为判环与入口推导都简洁。</p></div><div class="deep-block" id="s3-before-11"><h3>3.6 无环链表相交：走过对方的前缀来消除长度差</h3><p>把两条链分为独有前缀 A、B 和共同后缀 C。两个指针分别走过 A+C+B 与 B+C+A 后，已经抵消独有前缀的长度差，会在共同后缀入口对齐；经 null 换头的过渡轮对两者是对称的。若不相交，最终会同时到 null。</p><p>时间 O(m+n)，额外空间 O(1)。此法比较地址而非数值，不修改 next。若两条链可能有环，不能直接套用；需先分别检测环，再区分无环、有环以及环入口是否相同等情况。</p><div class="codebox"><div class="codebar"><span>C++17</span><div><a href="examples/detail-intersection.cpp" download>下载 .cpp</a><button type="button" class="copy">复制代码</button></div></div><pre tabindex="0" aria-label="C++17 代码"><code><span class="keyword">struct</span> ListNode {
+    <span class="keyword">int</span> val;
+    ListNode* next;
+    <span class="keyword">explicit</span> ListNode(<span class="keyword">int</span> value = <span class="number">0</span>, ListNode* link = <span class="keyword">nullptr</span>)
+        : val(value), next(link) {}
+};
+ListNode* getIntersectionNode(ListNode* headA, ListNode* headB) {
+    <span class="comment">// 前提：两条 next 链都有限、无环；不修改连接。</span>
+    ListNode* a = headA;
+    ListNode* b = headB;
+    <span class="keyword">while</span> (a != b) {
+        a = a ? a-&gt;next : headB;
+        b = b ? b-&gt;next : headA;
+    }
+    <span class="keyword">return</span> a; <span class="comment">// 相交节点，或二者同时成为 nullptr</span>
+}</code></pre></div></div><div class="invariant"><span>推导 / 不变量</span><p>相遇后让一个指针回到头部，两者每次各走一步。设入口前长度 a，相遇位置距入口 b，环长 L，则 a+b 是 L 的整数倍，故从相遇处再走 a 步回到入口。</p></div>
 <h3>手推一个例子</h3><p>链表 1→2→3→4→2，环长 3。相遇后头部指针与相遇指针同步走，第一次相遇在 2。</p><div class="codebox"><div class="codebar"><span>C++17</span><div><a href="examples/03.cpp" download>下载 .cpp</a><button type="button" class="copy">复制代码</button></div></div><pre tabindex="0" aria-label="C++17 代码"><code><span class="keyword">struct</span> ListNode {
     <span class="keyword">int</span> val; ListNode* next;
     ListNode(<span class="keyword">int</span> v = <span class="number">0</span>, ListNode* p = <span class="keyword">nullptr</span>) : val(v), next(p) {}
@@ -85,9 +378,91 @@ ListNode* detectCycle(ListNode* head) {
     <span class="keyword">return</span> <span class="keyword">nullptr</span>;
 }</code></pre></div>
 <dl class="analysis-grid"><div><dt>复杂度</dt><dd>时间 O(n)，额外空间 O(1)。n 指不同节点总数。</dd></div><div><dt>易错点与边界</dt><dd>中点模板的初始位置决定偶数长度返回左中点还是右中点。判断相交比较节点地址，不能比较 val。</dd></div></dl>
-<div class="practice"><h3>经典考点与练习</h3><p>练习：LeetCode 141 环形链表、142 环形链表 II、876 链表的中间结点、160 相交链表。</p><details><summary>面试官可能继续问什么？</summary><p>若快指针每次走 3 步，相遇后回头同步走的结论还能直接照搬吗？</p><p class="muted">先用自己的话回答，再回到本节的前提、不变量和边界检查论证。</p></details></div>
+<div class="deep-block" id="s3-after-1"><h3>把快慢指针题变成可检查的接口约定</h3><p>找中点：说明偶数长度返回左还是右。找倒数：说明 k 从 1 开始、k 越界如何处理。找相交：说明比较地址，输入无环。找环入口：说明先推进再判断相遇，空指针检查必须早于解引用。</p><p>所谓“一次遍历”通常指线性总工作，并不意味着每个节点只能被读一次。快慢指针、先测长再对齐都可能在常数次线性扫描内完成，应重点比较是否符合题目限制以及空间成本。</p></div><div class="practice"><h3>经典考点与练习</h3><p>练习：LeetCode 141 环形链表、142 环形链表 II、876 链表的中间结点、160 相交链表。</p><h3>面试追问：关键点完整解答</h3><dl class="answer-list"><div><dt>fast 每轮走两步，为什么先检查 fast 和 fast-&gt;next？</dt><dd><p>为了读取 fast-&gt;next-&gt;next，必须确保前两级解引用对象有效。fast-&gt;next-&gt;next 本身可以是 null，赋给 fast 是合法的；下一轮再由条件阻止解引用。</p></dd></div><div><dt>偶数链表返回哪个中点由什么决定？</dt><dd><p>由初始位置与停止条件共同决定。本节两个指针同从 head 出发，while(fast&amp;&amp;fast-&gt;next) 返回右中点；先排空，再用 while(fast-&gt;next&amp;&amp;fast-&gt;next-&gt;next) 返回左中点。</p></dd></div><div><dt>倒数第 k 个的模板，为什么不能随便换 while 条件？</dt><dd><p>固定间隔、起点和终点是成套推导的。从 head 起并停在 fast==null，可得到目标；从 dummy 起并停在 fast-&gt;next==null，可得到前驱。只改条件可能使结果偏一个节点。</p></dd></div><div><dt>Floyd 相遇后，为什么把一个指针放回头就能找入口？</dt><dd><p>相遇时 slow 路程 t 是 L 的倍数，同时 t=a+b+uL，因此 a+b 是 L 的倍数。相遇点再走 a 步与 head 走 a 步都到入口，这就是同速移动的依据。</p></dd></div><div><dt>若快指针走三步，找入口步骤还能直接照搬吗？</dt><dd><p>不能。相遇只保证 2t 是 L 的倍数，不保证 t 是。长度 4 的纯环会在位置 2 相遇，重置一个指针到位置 0 后，两者同速始终间隔 2，无法会合。</p></dd></div><div><dt>两条链表数值序列相同，就相交吗？</dt><dd><p>不一定。只有共享同一个节点对象才是相交；两份独立分配的 [1,2,3] 不相交。无环单链表一旦共享一个节点，之后 next 路径也相同，因此共享的是整个后缀。</p></dd></div><div><dt>为什么不建议通过修改某条链尾 next 来判断相交？</dt><dd><p>虽然可以构造环再检测，但会暂时修改输入，需要可靠恢复，也会给共享结构和异常路径带来额外负担。无环输入可直接使用不改连接的双指针或长度对齐，更容易满足常见接口约定。</p></dd></div></dl></div>
 <label class="learned"><input type="checkbox" data-progress="03-03">我能独立实现，并解释正确性与边界</label></section><section class="lesson" id="s4"><div class="lesson-heading"><span class="lesson-number">03.04</span><h2>随机指针复制与深拷贝</h2></div>
-<h3>知识与适用场景</h3><p>深拷贝要求新旧节点完全分离，但连接拓扑相同。难点在于 random 可能指向尚未复制的节点，因此将建点和连边分成两个阶段。</p><div class="invariant"><span>推导 / 不变量</span><p>第一遍为每个旧节点创建新节点并记录映射；第二遍根据映射设置 next 与 random。这样不论 random 指向前方、后方、自己还是空，都能统一处理。</p></div>
+<h3>知识与适用场景</h3><p>深拷贝要求新旧节点完全分离，但连接拓扑相同。难点在于 random 可能指向尚未复制的节点，因此将建点和连边分成两个阶段。</p><div class="deep-block" id="s4-before-1"><h3>4.1 深拷贝规格：值相等，身份不同，边关系对应</h3><p>深拷贝不是把 head 地址复制一份，也不是仅为每个值新建节点。对于每个原节点 u，必须恰好对应一个新节点 copy(u)，值相同、地址不同；原边 u.next=v 应映射为 copy(u).next=copy(v)，random 也同理，空边仍为空。</p><p>若两个原节点的 random 指向同一个目标，两个新 random 也必须指向同一个新目标，不能各自再复制一份。这就是共享结构必须被保留的原因。原链中重复 val 很常见，因此映射的键必须是旧节点地址而非 val。</p></div><div class="deep-block" id="s4-before-2"><h3>旧节点→新节点映射应保留哪些关系</h3><p class="table-hint">窄屏下可左右滑动表格，查看完整内容。</p><div class="study-table" tabindex="0" role="region" aria-label="旧节点→新节点映射应保留哪些关系"><table><thead><tr><th scope="col">原结构</th><th scope="col">复制后结构</th><th scope="col">错误做法</th></tr></thead><tbody><tr><td>A.val=B.val=7，但 A!=B</td><td>A&#x27;、B&#x27; 都为 7，且 A&#x27;!=B&#x27;</td><td>用数值 7 当键，将两个节点合并</td></tr><tr><td>A.random=C，B.random=C</td><td>A&#x27;.random=C&#x27;，B&#x27;.random=C&#x27;</td><td>为两个 random 分别创建两个 C&#x27;</td></tr><tr><td>A.random=A</td><td>A&#x27;.random=A&#x27;</td><td>让新节点的 random 指回旧 A</td></tr><tr><td>C.random=null</td><td>C&#x27;.random=null</td><td>把空指针当作普通待复制节点</td></tr></tbody></table></div></div><div class="deep-block" id="s4-before-3"><h3>4.2 两遍哈希复制为什么不依赖 random 的方向？</h3><p>第一遍只顺着无环 next 链，为所有原节点建立对应的新节点，此时不急于连接 random。第二遍再连接 next 和 random，因为映射已经完整，向前、向后、指向自身或空都能统一处理。</p><p>原模板在非空目标处使用 copied.at(...)，表示预期该目标一定已建点。若题目可能让 random 指向 next 链之外，这个预期不成立，需重新定义复制范围，通常改为对 next/random 可达图进行搜索。</p><p>哈希方式平均时间 O(n)，辅助映射 O(n)，输出节点 O(n)。它不修改原连接，通常是先写出的可靠解法。示例按分配成功的面试模型讲算法；工程代码若可能分配失败，应使用明确的所有权与清理机制避免半成品泄漏。</p></div><div class="deep-block" id="s4-before-4"><h3>4.3 穿插复制：让原节点的 next 临时充当映射</h3><p>第一步在每个原节点后插入副本，A→A&#x27;→B→B&#x27;。此时任一旧节点 u 的副本就是 u-&gt;next，所以旧目标 u-&gt;random 的副本就是 u-&gt;random-&gt;next。第二步利用这个映射连接所有副本 random。</p><p>第三步把原节点与副本节点拆成两条链：恢复 A.next=B，建立 A&#x27;.next=B&#x27;。拆分只能在 random 全部设置之后进行，否则某些目标的 next 已恢复，不再指向副本，临时映射会被破坏。</p></div><div class="deep-block" id="s4-before-5"><h3>三遍穿插复制：连接 random 后再统一拆链</h3><p>三遍均为 O(n)，除新输出节点外辅助空间 O(1)，正常返回时原链 next 已恢复，原 random 从未修改。第一遍遍历必须跳到保存的 nextOriginal，不能把刚插入的副本当作下一个原节点继续复制。</p><p>该实现会暂时改变输入，不能在“不允许修改输入的任何时刻”的约束下使用；也不提供内存分配失败时的回滚保证。若这些条件重要，优先选有独立所有权管理的哈希解法，或额外实现失败恢复。</p><div class="codebox"><div class="codebar"><span>C++17</span><div><a href="examples/detail-copy-interleaved.cpp" download>下载 .cpp</a><button type="button" class="copy">复制代码</button></div></div><pre tabindex="0" aria-label="C++17 代码"><code><span class="keyword">struct</span> Node {
+    <span class="keyword">int</span> val;
+    Node* next = <span class="keyword">nullptr</span>;
+    Node* random = <span class="keyword">nullptr</span>;
+    <span class="keyword">explicit</span> Node(<span class="keyword">int</span> value) : val(value) {}
+};
+Node* copyInterleaved(Node* head) {
+    <span class="keyword">if</span> (!head) <span class="keyword">return</span> <span class="keyword">nullptr</span>;
+    <span class="comment">// 前提：next 无环，random 为空或指向链内；所有 new 均成功。</span>
+    <span class="keyword">for</span> (Node* current = head; current;) {
+        Node* nextOriginal = current-&gt;next;
+        Node* copy = new Node(current-&gt;val);
+        current-&gt;next = copy;
+        copy-&gt;next = nextOriginal;
+        current = nextOriginal;
+    }
+    <span class="keyword">for</span> (Node* current = head; current; current = current-&gt;next-&gt;next) {
+        Node* copy = current-&gt;next;
+        copy-&gt;random = current-&gt;random ? current-&gt;random-&gt;next : <span class="keyword">nullptr</span>;
+    }
+    Node* copyHead = head-&gt;next;
+    <span class="keyword">for</span> (Node* current = head; current;) {
+        Node* copy = current-&gt;next;
+        Node* nextOriginal = copy-&gt;next;
+        current-&gt;next = nextOriginal;
+        copy-&gt;next = nextOriginal ? nextOriginal-&gt;next : <span class="keyword">nullptr</span>;
+        current = nextOriginal;
+    }
+    <span class="keyword">return</span> copyHead;
+}</code></pre></div></div><div class="deep-block" id="s4-before-6"><h3>三遍穿插的阶段快照</h3><p class="table-hint">窄屏下可左右滑动表格，查看完整内容。</p><div class="study-table" tabindex="0" role="region" aria-label="三遍穿插的阶段快照"><table><thead><tr><th scope="col">阶段</th><th scope="col">next 链形态</th><th scope="col">可依赖的性质</th></tr></thead><tbody><tr><td>原始</td><td>A→B→C→null</td><td>原连接未动</td></tr><tr><td>建点后</td><td>A→A&#x27;→B→B&#x27;→C→C&#x27;→null</td><td>每个旧节点 next 都是自己的副本</td></tr><tr><td>连 random</td><td>next 链仍保持穿插</td><td>若 A.random=C，则 A&#x27;.random=C.next=C&#x27;</td></tr><tr><td>拆分后</td><td>A→B→C 与 A&#x27;→B&#x27;→C&#x27;</td><td>原链恢复；新 next/random 只连接新节点</td></tr></tbody></table></div></div><div class="deep-block" id="s4-before-7"><h3>4.4 next 也有环时：把复制升级为图克隆</h3><p>发现节点时立刻建立映射并入队，以后遇到它直接复用副本，不重复展开。这同时处理环、自环和多个节点共享同一目标。时间平均 O(V+E)，每个节点至多两条边，因此此结构中 E≤2V，辅助映射与队列 O(V)，输出 O(V)。</p><p>这里复制范围扩大为沿两类边可达的整张图，与“random 只指向给定 next 链内部”的原题不同。销毁输出时也要按访问集合释放每个节点一次，不能用简单 next 循环销毁有环图。</p><div class="codebox"><div class="codebar"><span>C++17</span><div><a href="examples/detail-clone-graph.cpp" download>下载 .cpp</a><button type="button" class="copy">复制代码</button></div></div><pre tabindex="0" aria-label="C++17 代码"><code><span class="keyword">struct</span> Node {
+    <span class="keyword">int</span> val;
+    Node* next = <span class="keyword">nullptr</span>;
+    Node* random = <span class="keyword">nullptr</span>;
+    <span class="keyword">explicit</span> Node(<span class="keyword">int</span> value) : val(value) {}
+};
+Node* cloneReachable(Node* root) {
+    <span class="comment">// 复制从 root 沿 next/random 可达的全部节点；允许环与共享。</span>
+    <span class="comment">// 每条非空边均需指向有效 Node；按内存分配成功模型处理。</span>
+    <span class="keyword">if</span> (!root) <span class="keyword">return</span> <span class="keyword">nullptr</span>;
+    unordered_map&lt;Node*, Node*&gt; copies;
+    queue&lt;Node*&gt; pending;
+    copies[root] = new Node(root-&gt;val);
+    pending.push(root);
+    <span class="keyword">auto</span> ensureCopy = [&amp;](Node* original) -&gt; Node* {
+        <span class="keyword">if</span> (!original) <span class="keyword">return</span> <span class="keyword">nullptr</span>;
+        <span class="keyword">auto</span> it = copies.find(original);
+        <span class="keyword">if</span> (it != copies.end()) <span class="keyword">return</span> it-&gt;second;
+        Node* fresh = new Node(original-&gt;val);
+        copies.emplace(original, fresh);
+        pending.push(original);
+        <span class="keyword">return</span> fresh;
+    };
+    <span class="keyword">while</span> (!pending.empty()) {
+        Node* current = pending.front();
+        pending.pop();
+        Node* copy = copies.at(current);
+        copy-&gt;next = ensureCopy(current-&gt;next);
+        copy-&gt;random = ensureCopy(current-&gt;random);
+    }
+    <span class="keyword">return</span> copies.at(root);
+}</code></pre></div></div><div class="deep-block" id="s4-before-8"><h3>4.5 双向链表与 LRU：已知节点时常数时间移动</h3><p>单链表删除一般需要前驱，双向链表的 prev 能直接提供前驱。把节点从当前位置摘下时，要同时修改前驱的 next 和后继的 prev；插入时也必须维护两个方向。头尾哨兵可统一边界，但哨兵本身不能作为普通数据节点删除。</p><p>LRU 用哈希表按 key 找到双向链表节点，命中后将它移到最近使用端，容量满时删最久使用端。哈希提供定位，双向链表提供移动；只用链表则查找是 O(n)。完整缓存设计在第 14 章展开，这里先掌握改边原语。</p></div><div class="deep-block" id="s4-before-9"><h3>双向节点摘除与插入：四条边要配对维护</h3><p>两种操作均为 O(1)，不进行内存释放。若做“移动到头”，先 unlinkNode 再 insertAfter(headSentinel,node)，不要重复插入已经挂接的节点。验证时不仅沿 next 遍历，还要确认 node-&gt;next-&gt;prev==node 等双向一致性。</p><div class="codebox"><div class="codebar"><span>C++17</span><div><a href="examples/detail-doubly-links.cpp" download>下载 .cpp</a><button type="button" class="copy">复制代码</button></div></div><pre tabindex="0" aria-label="C++17 代码"><code><span class="keyword">struct</span> DoubleNode {
+    <span class="keyword">int</span> key;
+    DoubleNode* prev = <span class="keyword">nullptr</span>;
+    DoubleNode* next = <span class="keyword">nullptr</span>;
+    <span class="keyword">explicit</span> DoubleNode(<span class="keyword">int</span> value) : key(value) {}
+};
+<span class="keyword">void</span> unlinkNode(DoubleNode* node) {
+    <span class="comment">// 前提：node 为已挂接的非哨兵节点，prev/next 均有效。</span>
+    DoubleNode* before = node-&gt;prev;
+    DoubleNode* after = node-&gt;next;
+    before-&gt;next = after;
+    after-&gt;prev = before;
+    node-&gt;prev = <span class="keyword">nullptr</span>;
+    node-&gt;next = <span class="keyword">nullptr</span>;
+}
+<span class="keyword">void</span> insertAfter(DoubleNode* before, DoubleNode* node) {
+    <span class="comment">// 前提：before-&gt;next 有效；node 是不在链中的独立节点。</span>
+    DoubleNode* after = before-&gt;next;
+    node-&gt;prev = before;
+    node-&gt;next = after;
+    before-&gt;next = node;
+    after-&gt;prev = node;
+}</code></pre></div></div><div class="invariant"><span>推导 / 不变量</span><p>第一遍为每个旧节点创建新节点并记录映射；第二遍根据映射设置 next 与 random。这样不论 random 指向前方、后方、自己还是空，都能统一处理。</p></div>
 <h3>手推一个例子</h3><p>A.random=C，B.random=A。复制时先得到 A&#x27;、B&#x27;、C&#x27;；随后连 A&#x27;.random=C&#x27;，B&#x27;.random=A&#x27;，绝不能把新节点连回旧节点。</p><div class="codebox"><div class="codebar"><span>C++17</span><div><a href="examples/04.cpp" download>下载 .cpp</a><button type="button" class="copy">复制代码</button></div></div><pre tabindex="0" aria-label="C++17 代码"><code><span class="keyword">struct</span> Node {
     <span class="keyword">int</span> val; Node *next = <span class="keyword">nullptr</span>, *random = <span class="keyword">nullptr</span>;
     <span class="keyword">explicit</span> Node(<span class="keyword">int</span> v) : val(v) {}
@@ -102,5 +477,164 @@ Node* copyRandomList(Node* head) {
     <span class="keyword">return</span> head ? copied.at(head) : <span class="keyword">nullptr</span>;
 }</code></pre></div>
 <dl class="analysis-grid"><div><dt>复杂度</dt><dd>平均时间 O(n)，额外映射 O(n)，新输出节点 O(n)。前提：next 无环，random 指向链表内节点或空。</dd></div><div><dt>易错点与边界</dt><dd>穿插复制节点可以把辅助空间降为 O(1)，但会暂时修改原链表，最后必须拆分恢复。真实项目要约定释放新节点的责任。</dd></div></dl>
-<div class="practice"><h3>经典考点与练习</h3><p>练习：LeetCode 138 随机链表的复制；进阶：将映射复制推广到图的克隆。</p><details><summary>面试官可能继续问什么？</summary><p>如果 next 也可能有环，为什么两次普通 for 遍历不再成立？</p><p class="muted">先用自己的话回答，再回到本节的前提、不变量和边界检查论证。</p></details></div>
-<label class="learned"><input type="checkbox" data-progress="03-04">我能独立实现，并解释正确性与边界</label></section><nav class="chapter-pager" aria-label="相邻章节"><a href="../02-数组字符串与矩阵/index.html"><small>上一章</small>← 数组、字符串与矩阵</a><a href="../04-栈队列与单调结构/index.html"><small>下一章</small>栈、队列与单调结构 →</a></nav><footer>秋招算法学习讲义 · C++17<br>例题编号供检索；难度与覆盖范围按学习顺序组织。</footer></main><aside class="toc" aria-label="本页目录"><p class="rail-label">本章小节</p><a href="#s1"><span>01</span>虚拟头结点与有序合并</a><a href="#s2"><span>02</span>迭代反转与局部拼接</a><a href="#s3"><span>03</span>快慢指针、环入口与中点</a><a href="#s4"><span>04</span>随机指针复制与深拷贝</a></aside></div><div class="toast" role="status" aria-live="polite"></div></body></html>
+<div class="deep-block" id="s4-after-1"><h3>深拷贝不能只检查值相同</h3><p>检查一：新旧节点地址集合没有交集。检查二：每个原节点恰对应一个副本，数量一致。检查三：通过这个映射逐一验证 val、next、random 关系。检查四：修改副本的值不改变原值。若用穿插法，还要确认原 next 已经逐项恢复。</p><p>不要通过 random 递归直接 new 而不记忆化，否则共享目标会被复制多份，有环时甚至无限递归。记录“已经为哪个原对象建了副本”是深拷贝正确性的核心。</p></div><div class="practice"><h3>经典考点与练习</h3><p>练习：LeetCode 138 随机链表的复制；进阶：将映射复制推广到图的克隆。</p><h3>面试追问：关键点完整解答</h3><dl class="answer-list"><div><dt>浅拷贝和深拷贝在这道题里的区别是什么？</dt><dd><p>浅拷贝只复制指针或保留指向旧节点的边，新旧结构仍共享对象；深拷贝创建独立节点，并将每条边改为对应新节点之间的边。值相同不是充分条件。</p></dd></div><div><dt>哈希表为什么必须用旧节点指针作键？</dt><dd><p>节点身份由对象地址区分，重复值不代表同一对象。若用 val 作键，两个值相同的节点会被错误合并，连边与数量都会出错。</p></dd></div><div><dt>穿插法为什么一定要先完成所有 random 再拆分？</dt><dd><p>random 的副本映射依赖 oldTarget-&gt;next 仍指向其副本。提前拆分某一段会恢复这个 next，使后续 random 连接拿到原节点或错误目标。</p></dd></div><div><dt>如果 next 也可能有环，为什么两次普通 for 遍历不成立？</dt><dd><p>普通 for(p=head;p;p=p-&gt;next) 依靠 null 终止，有环就不会结束。需要通过哈希记录已发现节点，并按 next/random 可达边做 BFS 或 DFS，同时复用已有副本。</p></dd></div><div><dt>辅助空间 O(1) 是否代表复制只多用常数内存？</dt><dd><p>不是。穿插法额外的工作指针为 O(1)，但 n 个新输出节点仍需要 O(n)。报告时应明确“除输出外辅助空间 O(1)”。</p></dd></div><div><dt>LRU 为什么使用哈希表加双向链表？</dt><dd><p>哈希表平均 O(1) 定位键，双向链表在已知节点时 O(1) 摘除并移到最近使用端。单链表若没有前驱，还要扫描定位前驱；只有哈希则难以维护最久使用顺序。</p></dd></div></dl></div>
+<label class="learned"><input type="checkbox" data-progress="03-04">我能独立实现，并解释正确性与边界</label></section><section class="chapter-review" id="chapter-review"><p class="eyebrow">PRACTICE / 把本章方法用起来</p><h2>综合例题与章末自测</h2><div class="deep-block" id="review-1"><h3>综合训练：链表测试必须超出“打印值看起来对”</h3><p>数组题通常先比较数值输出；链表还必须验证节点身份、连接的终止性和原地操作约定。一个错误算法可能生成新节点、丢掉重复值节点，或让前几个数字正确但尾部成环。因此只看几个打印值不足以验证结构。</p><p>下面把 K 分组反转与回文恢复放到同一个可运行验证程序中：用数组下标作为参考，把预期的节点地址顺序按组反转；实际结果也转为地址序列，并在遍历中检查重复访问。随后同样分组反转一次，验证恢复原地址顺序，再调用回文函数，确认判定正确且结构不变。</p><p>测试节点存放在定长 vector&lt;ListNode&gt; 中，所有节点构造完成后才连边，之后不扩容；因此节点地址稳定，生命周期由容器统一管理。环测试也不会通过 next 删除节点，离开作用域时容器逐个析构即可。</p></div><div class="deep-block" id="review-2"><h3>最小结构用例要覆盖哪些情况</h3><p class="table-hint">窄屏下可左右滑动表格，查看完整内容。</p><div class="study-table" tabindex="0" role="region" aria-label="最小结构用例要覆盖哪些情况"><table><thead><tr><th scope="col">用例</th><th scope="col">预期行为</th><th scope="col">可发现的问题</th></tr></thead><tbody><tr><td>空链 / 单节点</td><td>反转和分组不崩溃；单节点回文为 true</td><td>空解引用、基例遗漏</td></tr><tr><td>1→2→3→4→5，k=2</td><td>2→1→4→3→5</td><td>尾部不足一组处理错误</td></tr><tr><td>k=1 / k&gt;n</td><td>顺序不变</td><td>分组边界、空循环或误改短尾</td></tr><tr><td>1→2→2→1 / 1→2→3</td><td>回文分别为 true / false，结构均恢复</td><td>只在成功时恢复、奇偶中点错误</td></tr><tr><td>很多 val 相同，但地址不同</td><td>节点数和身份全部保留</td><td>按值去重、误判环或相交</td></tr><tr><td>四节点链尾指向第二节点</td><td>入口返回第二节点地址</td><td>只返回相遇点</td></tr><tr><td>单节点 next 指向自身</td><td>入口为自身</td><td>相遇和重置边界</td></tr><tr><td>非法 k≤0</td><td>修改结构前抛出异常</td><td>无进度的循环或错误修改</td></tr></tbody></table></div></div><div class="deep-block" id="review-3"><h3>可运行程序：按地址验证 K 分组、回文恢复和环入口</h3><p>下载后可用 g++ -std=c++17 -Wall -Wextra detail-structure-tests.cpp -o structure-tests 编译，再运行生成的程序。检查采用显式 require，不受 NDEBUG 禁用 assert 的影响；节点值故意包含重复值，避免错误地把值当成身份。</p><p>这份程序只验证其中的分组反转、回文恢复和环入口，不代表所有链表代码已经被测试。当前若没有 C++ 编译器，提供测试程序与预期行为不等于已经完成编译运行。真实地址越界等错误可配合可用工具链的 AddressSanitizer 检查。</p><div class="codebox"><div class="codebar"><span>C++17</span><div><a href="examples/detail-structure-tests.cpp" download>下载 .cpp</a><button type="button" class="copy">复制代码</button></div></div><pre tabindex="0" aria-label="C++17 代码"><code><span class="keyword">struct</span> ListNode {
+    <span class="keyword">int</span> val;
+    ListNode* next;
+    <span class="keyword">explicit</span> ListNode(<span class="keyword">int</span> value = <span class="number">0</span>, ListNode* link = <span class="keyword">nullptr</span>)
+        : val(value), next(link) {}
+};
+
+ListNode* reverseKGroup(ListNode* head, <span class="keyword">int</span> k) {
+    <span class="keyword">if</span> (k &lt;= <span class="number">0</span>) <span class="keyword">throw</span> invalid_argument(<span class="string">&quot;k must be positive&quot;</span>);
+    <span class="keyword">if</span> (k == <span class="number">1</span> || !head) <span class="keyword">return</span> head;
+    ListNode dummy(<span class="number">0</span>, head);
+    ListNode* groupBefore = &amp;dummy;
+    <span class="keyword">while</span> (<span class="keyword">true</span>) {
+        ListNode* kth = groupBefore;
+        <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; k &amp;&amp; kth; ++i) kth = kth-&gt;next;
+        <span class="keyword">if</span> (!kth) break;
+        ListNode* groupAfter = kth-&gt;next;
+        ListNode* oldHead = groupBefore-&gt;next;
+        ListNode* previous = groupAfter;
+        ListNode* current = oldHead;
+        <span class="keyword">while</span> (current != groupAfter) {
+            ListNode* next = current-&gt;next;
+            current-&gt;next = previous;
+            previous = current;
+            current = next;
+        }
+        groupBefore-&gt;next = kth;
+        groupBefore = oldHead;
+    }
+    <span class="keyword">return</span> dummy.next;
+}
+ListNode* reverseHalf(ListNode* head) {
+    ListNode* previous = <span class="keyword">nullptr</span>;
+    <span class="keyword">while</span> (head) {
+        ListNode* next = head-&gt;next;
+        head-&gt;next = previous;
+        previous = head;
+        head = next;
+    }
+    <span class="keyword">return</span> previous;
+}
+<span class="keyword">bool</span> isPalindromeRestoring(ListNode* head) {
+    <span class="keyword">if</span> (!head || !head-&gt;next) <span class="keyword">return</span> <span class="keyword">true</span>;
+    ListNode* middle = head;
+    ListNode* fast = head;
+    <span class="keyword">while</span> (fast-&gt;next &amp;&amp; fast-&gt;next-&gt;next) {
+        middle = middle-&gt;next;
+        fast = fast-&gt;next-&gt;next;
+    }
+    ListNode* second = reverseHalf(middle-&gt;next);
+    middle-&gt;next = second;
+    ListNode* first = head;
+    ListNode* current = second;
+    <span class="keyword">bool</span> equal = <span class="keyword">true</span>;
+    <span class="keyword">while</span> (current) {
+        <span class="keyword">if</span> (first-&gt;val != current-&gt;val) equal = <span class="keyword">false</span>;
+        first = first-&gt;next;
+        current = current-&gt;next;
+    }
+    middle-&gt;next = reverseHalf(second);
+    <span class="keyword">return</span> equal;
+}
+ListNode* detectCycleForTest(ListNode* head) {
+    ListNode* slow = head;
+    ListNode* fast = head;
+    <span class="keyword">while</span> (fast &amp;&amp; fast-&gt;next) {
+        slow = slow-&gt;next;
+        fast = fast-&gt;next-&gt;next;
+        <span class="keyword">if</span> (slow == fast) {
+            ListNode* current = head;
+            <span class="keyword">while</span> (current != slow) {
+                current = current-&gt;next;
+                slow = slow-&gt;next;
+            }
+            <span class="keyword">return</span> current;
+        }
+    }
+    <span class="keyword">return</span> <span class="keyword">nullptr</span>;
+}
+<span class="keyword">struct</span> Fixture {
+    vector&lt;ListNode&gt; nodes;
+    ListNode* head;
+    <span class="keyword">explicit</span> Fixture(<span class="keyword">const</span> vector&lt;<span class="keyword">int</span>&gt;&amp; values) : nodes(values.size()), head(<span class="keyword">nullptr</span>) {
+        <span class="keyword">for</span> (size_t i = <span class="number">0</span>; i &lt; nodes.size(); ++i) {
+            nodes[i].val = values[i];
+            nodes[i].next = i + <span class="number">1</span> &lt; nodes.size() ? &amp;nodes[i + <span class="number">1</span>] : <span class="keyword">nullptr</span>;
+        }
+        <span class="keyword">if</span> (!nodes.empty()) head = &amp;nodes[<span class="number">0</span>];
+    }
+    Fixture(<span class="keyword">const</span> Fixture&amp;) = delete;
+    Fixture&amp; operator=(<span class="keyword">const</span> Fixture&amp;) = delete;
+};
+vector&lt;ListNode*&gt; snapshot(ListNode* head) {
+    vector&lt;ListNode*&gt; order;
+    unordered_set&lt;ListNode*&gt; seen;
+    <span class="keyword">for</span> (ListNode* p = head; p; p = p-&gt;next) {
+        <span class="keyword">if</span> (!seen.insert(p).second) <span class="keyword">throw</span> runtime_error(<span class="string">&quot;unexpected cycle&quot;</span>);
+        order.push_back(p);
+    }
+    <span class="keyword">return</span> order;
+}
+<span class="keyword">void</span> require(<span class="keyword">bool</span> ok, <span class="keyword">const</span> <span class="keyword">char</span>* message) {
+    <span class="keyword">if</span> (!ok) <span class="keyword">throw</span> runtime_error(message);
+}
+<span class="keyword">void</span> checkCase(<span class="keyword">const</span> vector&lt;<span class="keyword">int</span>&gt;&amp; values, <span class="keyword">int</span> k) {
+    Fixture fixture(values);
+    <span class="keyword">auto</span> original = snapshot(fixture.head);
+    <span class="keyword">auto</span> expected = original;
+    <span class="keyword">int</span> n = (<span class="keyword">int</span>)expected.size();
+    <span class="keyword">for</span> (<span class="keyword">int</span> start = <span class="number">0</span>; start + k &lt;= n; start += k)
+        reverse(expected.begin() + start, expected.begin() + start + k);
+
+    ListNode* grouped = reverseKGroup(fixture.head, k);
+    require(snapshot(grouped) == expected, <span class="string">&quot;K-group identity/order mismatch&quot;</span>);
+    ListNode* restored = reverseKGroup(grouped, k);
+    require(snapshot(restored) == original, <span class="string">&quot;double reversal failed&quot;</span>);
+
+    <span class="keyword">bool</span> expectedPalindrome = equal(values.begin(), values.begin() + n / <span class="number">2</span>,
+                                    values.rbegin());
+    require(isPalindromeRestoring(restored) == expectedPalindrome,
+            <span class="string">&quot;palindrome result mismatch&quot;</span>);
+    require(snapshot(restored) == original, <span class="string">&quot;palindrome did not restore links&quot;</span>);
+    require(detectCycleForTest(restored) == <span class="keyword">nullptr</span>, <span class="string">&quot;false cycle detected&quot;</span>);
+}
+<span class="keyword">int</span> main() {
+    try {
+        checkCase({}, <span class="number">2</span>);
+        checkCase({<span class="number">7</span>}, <span class="number">1</span>);
+        checkCase({<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>, <span class="number">4</span>, <span class="number">5</span>}, <span class="number">2</span>);
+        checkCase({<span class="number">1</span>, <span class="number">2</span>, <span class="number">2</span>, <span class="number">1</span>}, <span class="number">3</span>);
+        checkCase({<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>}, <span class="number">5</span>);
+
+        mt19937 generator(<span class="number">20260920</span>);
+        uniform_int_distribution&lt;<span class="keyword">int</span>&gt; length(<span class="number">0</span>, <span class="number">14</span>), value(-<span class="number">2</span>, <span class="number">2</span>), group(<span class="number">1</span>, <span class="number">7</span>);
+        <span class="keyword">for</span> (<span class="keyword">int</span> trial = <span class="number">0</span>; trial &lt; <span class="number">1000</span>; ++trial) {
+            vector&lt;<span class="keyword">int</span>&gt; values(length(generator));
+            <span class="keyword">for</span> (<span class="keyword">int</span>&amp; x : values) x = value(generator);
+            checkCase(values, group(generator));
+        }
+
+        Fixture cyclic({<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>, <span class="number">4</span>});
+        cyclic.nodes.back().next = &amp;cyclic.nodes[<span class="number">1</span>];
+        require(detectCycleForTest(cyclic.head) == &amp;cyclic.nodes[<span class="number">1</span>], <span class="string">&quot;wrong entry&quot;</span>);
+
+        Fixture selfLoop({<span class="number">9</span>});
+        selfLoop.head-&gt;next = selfLoop.head;
+        require(detectCycleForTest(selfLoop.head) == selfLoop.head, <span class="string">&quot;self-loop failed&quot;</span>);
+
+        Fixture invalid({<span class="number">1</span>, <span class="number">2</span>});
+        <span class="keyword">auto</span> unchanged = snapshot(invalid.head);
+        <span class="keyword">bool</span> rejected = <span class="keyword">false</span>;
+        try { reverseKGroup(invalid.head, <span class="number">0</span>); }
+        catch (<span class="keyword">const</span> invalid_argument&amp;) { rejected = <span class="keyword">true</span>; }
+        require(rejected &amp;&amp; snapshot(invalid.head) == unchanged, <span class="string">&quot;invalid k changed list&quot;</span>);
+        cout &lt;&lt; <span class="string">&quot;structural checks passed\n&quot;</span>;
+    } catch (<span class="keyword">const</span> exception&amp; error) {
+        cerr &lt;&lt; error.what() &lt;&lt; &#x27;\n&#x27;;
+        <span class="keyword">return</span> <span class="number">1</span>;
+    }
+}</code></pre></div></div><div class="deep-block" id="review-4"><h3>练习路线与口述示范</h3><p>第一轮：206 反转链表、21 合并有序链表、203 移除元素、19 删除倒数第 N 个、876 中间结点。第二轮：92 区间反转、25 K 个一组反转、234 回文链表、143 重排链表。第三轮：142 环入口、160 相交、138 随机指针复制、148 链表排序，并理解 146 LRU 使用双向链表的原因。</p><p>口述 K 分组可这样组织：我用 dummy 统一头部变化；先从组前驱探测 k 个节点，不足就结束；保存组后继，以组后继初始化反转的 previous，保证新尾连回剩余链；组前驱连接新的组头，然后推进到旧组头。每个节点只参与常数次扫描，时间 O(n)、辅助空间 O(1)。</p></div><div class="deep-block" id="review-5"><h3>章末自测：检查你能否独立解释连接关系</h3><dl class="answer-list"><div><dt>执行 p=q 后，原来 p 指向的节点会自动销毁吗？</dt><dd><p>不会。普通裸指针赋值只改变地址值，不管理对象生命周期。若那个对象由你动态分配且已经没有其他拥有入口，可能产生泄漏；若它由容器或平台管理，则由对应拥有者负责。</p></dd></div><div><dt>整链反转时 prev 是已处理部分的头还是尾？</dt><dd><p>在本章迭代反转模板中，它是已反转前缀的头。原来的 head 在第一次改边后就成为最终尾，next 为 null。变量名要服从当前算法的语义。</p></dd></div><div><dt>两次 K 分组反转为何能作为一个测试性质？</dt><dd><p>固定相同 k 且长度不变时，每个完整分组内部反转两次恢复原顺序，不足一组两次都不变。不过只有这个性质还不够，因为一个完全不做事的错误函数也满足它；因此程序先与数组按组反转的地址参考结果比较，再检查恢复。</p></dd></div><div><dt>回文函数返回 false 时，为什么也要比较恢复后的地址序列？</dt><dd><p>不相等分支最容易提前返回、跳过恢复。值比较结果正确并不保证输入结构保持原样；应对成功与失败两条路径都验证原 next 链。</p></dd></div><div><dt>两条输入已经是同一条有序链，直接调用普通 mergeTwo 会怎样？</dt><dd><p>不满足独立输入前提，同一个节点可能反复作为左右候选接入，产生自环。应先澄清共享节点约定，不能因为数值有序就认为模板适用。</p></dd></div><div><dt>Floyd 中 slow、fast 一开始相等，为什么不能立刻判环？</dt><dd><p>它们是刻意初始化到同一头节点的，不包含任何关于环的信息。必须先按各自速度前进，再比较节点身份；否则任何非空链都会被错误判为有环。</p></dd></div><div><dt>random 自环和 next 自环，对两遍复制的影响一样吗？</dt><dd><p>不一样。原题遍历只沿 next，random 自环可由已建映射正确连接；next 自环会使普通 next 遍历无法到 null，因此需要带访问记录的图搜索。</p></dd></div><div><dt>完成第三章之后，最低掌握标准是什么？</dt><dd><p>能独立写出迭代反转、带 dummy 的删除合并、左右中点、倒数删除、Floyd 入口、无环相交和哈希深拷贝；能解释 K 分组边界、回文恢复以及辅助空间与输出空间区别，并主动检查环、节点丢失与所有权。</p></dd></div></dl></div></section><nav class="chapter-pager" aria-label="相邻章节"><a href="../02-数组字符串与矩阵/index.html"><small>上一章</small>← 数组、字符串与矩阵</a><a href="../04-栈队列与单调结构/index.html"><small>下一章</small>栈、队列与单调结构 →</a></nav><footer>秋招算法学习讲义 · C++17<br>例题编号供检索；难度与覆盖范围按学习顺序组织。</footer></main><aside class="toc" aria-label="本页目录"><p class="rail-label">本章小节</p><a href="#s1"><span>01</span>虚拟头结点与有序合并</a><a href="#s2"><span>02</span>迭代反转与局部拼接</a><a href="#s3"><span>03</span>快慢指针、环入口与中点</a><a href="#s4"><span>04</span>随机指针复制与深拷贝</a><a href="#chapter-review"><span>练</span>综合例题与自测答案</a></aside></div><div class="toast" role="status" aria-live="polite"></div></body></html>
