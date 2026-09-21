@@ -3,7 +3,7 @@
 <meta name="description" content="秋招算法手撕学习讲义：知识推导、经典考点、C++17 示例与面试训练。">
 <title>图论 · 算法手撕讲义</title><link rel="stylesheet" href="../assets/style.css"><script src="../assets/app.js" defer></script></head>
 <body><a class="skip" href="#main">跳到正文</a><header class="topbar"><a class="brand" href="../index.html"><span class="brand-mark">a[i]</span><span>算法手撕讲义<small>秋招学习工作区 / C++17</small></span></a><button type="button" class="nav-toggle" aria-expanded="false" aria-controls="chapter-nav">章节目录</button><a class="home-link" href="../index.html">全部章节 ↗</a></header>
-<div class="layout"><aside class="sidebar" id="chapter-nav" aria-label="章节导航"><p class="rail-label">LEARNING PATH · 学习路径</p><nav><a class="chapter-link"  href="../01-复杂度与解题方法/index.html"><span>01</span>复杂度与解题方法</a><a class="chapter-link"  href="../02-数组字符串与矩阵/index.html"><span>02</span>数组、字符串与矩阵</a><a class="chapter-link"  href="../03-链表/index.html"><span>03</span>链表</a><a class="chapter-link"  href="../04-栈队列与单调结构/index.html"><span>04</span>栈、队列与单调结构</a><a class="chapter-link"  href="../05-哈希集合与位运算/index.html"><span>05</span>哈希、集合与位运算</a><a class="chapter-link"  href="../06-排序与二分查找/index.html"><span>06</span>排序与二分查找</a><a class="chapter-link"  href="../07-树与二叉搜索树/index.html"><span>07</span>树与二叉搜索树</a><a class="chapter-link"  href="../08-堆与优先队列/index.html"><span>08</span>堆与优先队列</a><a class="chapter-link"  href="../09-递归回溯与分治/index.html"><span>09</span>递归、回溯与分治</a><a class="chapter-link active" aria-current=page href="../10-图论/index.html"><span>10</span>图论</a><a class="chapter-link"  href="../11-贪心/index.html"><span>11</span>贪心</a><a class="chapter-link"  href="../12-动态规划/index.html"><span>12</span>动态规划</a><a class="chapter-link"  href="../13-并查集与高级数据结构/index.html"><span>13</span>并查集与高级数据结构</a><a class="chapter-link"  href="../14-高频技巧与综合题型/index.html"><span>14</span>高频技巧与综合题型</a><a class="chapter-link"  href="../15-面试表达与训练计划/index.html"><span>15</span>面试表达与训练计划</a></nav><div class="sidebar-note">读懂不变量，独立写代码。<br>共 15 章 · 63 个小节<br>无需联网，浏览器直接打开。</div></aside><main id="main"><header class="chapter-header"><p class="eyebrow">CHAPTER 10 / 15</p><h1>图论</h1><p class="lead">先辨认方向、边权与连通性，再选择算法。网格只是图的一种表示；最短路、依赖关系、连通块和最小生成树解决的是不同问题。</p><div class="chapter-meta"><span>5 个小节</span><span>C++17 示例</span><a href="README.md">原始知识摘要 ↗</a></div></header><div class="reading-guide"><strong>本章怎么学</strong><p>先读原理与不变量，遮住代码手推例子，再独立实现。最后用面试追问检查理解，按练习条目做变式。</p></div><details class="environment"><summary>代码使用说明与通用头文件</summary><p>示例统一采用 C++17。页面展示核心函数或类，下载的 .cpp 已包含以下头文件，可独立编译。不同小节可能重用类型名，应分别编译；含 main 的示例可直接运行，其余需自行补充调用与测试。复制按钮复制当前代码块。</p><div class="codebox"><div class="codebar"><span>C++17</span><div><button type="button" class="copy">复制代码</button></div></div><pre tabindex="0" aria-label="C++17 代码"><code>#include &lt;algorithm&gt;
+<div class="layout"><aside class="sidebar" id="chapter-nav" aria-label="章节导航"><p class="rail-label">LEARNING PATH · 学习路径</p><nav><a class="chapter-link"  href="../01-复杂度与解题方法/index.html"><span>01</span>复杂度与解题方法</a><a class="chapter-link"  href="../02-数组字符串与矩阵/index.html"><span>02</span>数组、字符串与矩阵</a><a class="chapter-link"  href="../03-链表/index.html"><span>03</span>链表</a><a class="chapter-link"  href="../04-栈队列与单调结构/index.html"><span>04</span>栈、队列与单调结构</a><a class="chapter-link"  href="../05-哈希集合与位运算/index.html"><span>05</span>哈希、集合与位运算</a><a class="chapter-link"  href="../06-排序与二分查找/index.html"><span>06</span>排序与二分查找</a><a class="chapter-link"  href="../07-树与二叉搜索树/index.html"><span>07</span>树与二叉搜索树</a><a class="chapter-link"  href="../08-堆与优先队列/index.html"><span>08</span>堆与优先队列</a><a class="chapter-link"  href="../09-递归回溯与分治/index.html"><span>09</span>递归、回溯与分治</a><a class="chapter-link active" aria-current=page href="../10-图论/index.html"><span>10</span>图论</a><a class="chapter-link"  href="../11-贪心/index.html"><span>11</span>贪心</a><a class="chapter-link"  href="../12-动态规划/index.html"><span>12</span>动态规划</a><a class="chapter-link"  href="../13-并查集与高级数据结构/index.html"><span>13</span>并查集与高级数据结构</a><a class="chapter-link"  href="../14-高频技巧与综合题型/index.html"><span>14</span>高频技巧与综合题型</a><a class="chapter-link"  href="../15-面试表达与训练计划/index.html"><span>15</span>面试表达与训练计划</a></nav><div class="sidebar-note">读懂不变量，独立写代码。<br>共 15 章 · 63 个小节<br>无需联网，浏览器直接打开。</div></aside><main id="main"><header class="chapter-header"><p class="eyebrow">CHAPTER 10 / 15</p><h1>图论</h1><p class="lead">先辨认方向、边权与连通性，再选择算法。网格只是图的一种表示；最短路、依赖关系、连通块和最小生成树解决的是不同问题。</p><div class="chapter-meta"><span>5 个小节</span><span>C++17 示例</span><a href="README.md">原始知识摘要 ↗</a></div></header><div class="reading-guide"><strong>本章怎么学</strong><p>先读原理与不变量，遮住代码手推例子，再独立实现。最后用面试追问检查理解，按练习条目做变式。</p></div><div class="deep-intro"><div class="deep-block" id="guide-1"><h3>学习目标：先把题意翻译成图，再选择算法</h3><p>图不是只有题目画出圆点和箭头时才出现。课程是点、先修要求是有向边；网格格子是点、合法移动是边；单词或密码状态也可以是点、一次操作是边。建模时先说清：一个点代表什么、哪些点之间可转移、方向是否对称、一次转移的代价是什么。</p><p>本章保留 5 个主节，按建模与遍历 → 依赖关系 → 非负权最短路 → 负权与全源最短路 → 最小生成树展开。先掌握 BFS、拓扑排序和 Dijkstra，再学 0-1 BFS、Bellman-Ford、Floyd 和 Prim。并查集的内部原理将在第十三章继续展开。</p></div><div class="deep-block" id="guide-2"><h3>算法选择速查：问题目标比模板名称更重要</h3><p class="table-hint">窄屏下可左右滑动表格，查看完整内容。</p><div class="study-table" tabindex="0" role="region" aria-label="算法选择速查：问题目标比模板名称更重要"><table><thead><tr><th scope="col">需要求什么</th><th scope="col">关键前提</th><th scope="col">优先方法</th><th scope="col">典型成本</th></tr></thead><tbody><tr><td>最少操作数 / 最少边数</td><td>每步等价</td><td>BFS；多个起点用多源 BFS</td><td>O(V+E)</td></tr><tr><td>单源最小路径和</td><td>边权只有 0 或 1</td><td>0-1 BFS</td><td>O(V+E)</td></tr><tr><td>单源最小路径和</td><td>所有边权非负</td><td>Dijkstra</td><td>懒删除堆 O((V+E)log(E+2))</td></tr><tr><td>单源最小路径和</td><td>可能有负边</td><td>Bellman-Ford；若是 DAG 可用拓扑松弛</td><td>O(VE) / O(V+E)</td></tr><tr><td>多对点最短路</td><td>V 较小，可承受矩阵</td><td>Floyd；负环受影响的点对另标记</td><td>O(V³) 时间、O(V²) 空间</td></tr><tr><td>执行所有依赖任务</td><td>有向图</td><td>拓扑排序；失败说明有环</td><td>队列 O(V+E)</td></tr><tr><td>最小总成本连通所有点</td><td>无向带权图</td><td>Kruskal / Prim</td><td>排序边 / 堆扩展 / 稠密 O(V²)</td></tr><tr><td>连通块 / 二分图 / 环</td><td>先分清有向、无向</td><td>DFS、BFS、三色或边编号</td><td>通常 O(V+E)</td></tr></tbody></table></div></div><div class="deep-block" id="guide-3"><h3>代码约定与数值安全</h3><p>除特别说明外，点编号为 0..n-1，邻接项的终点必须有效，n 非负且可用 int 表示。面试模板按这些前提书写，不在每次访问时重复做全部输入校验。无向图的邻接表需双向插入；复杂度中的 E 指边数，双向存储只多常数因子。</p><p>带权补充代码使用 int 边权、long long 距离，INF=LLONG_MAX/4 表示不可达。Bellman-Ford 与带负环标记的 Floyd 为保证包括负环检测在内的中间计算不溢出，显式限制 n≤1000000、|w|≤1000000000；这只是数值上限，不代表 O(V³) 或矩阵算法能处理这么多点。先按题目规模评估时间和内存。</p><p>基础 Floyd 模板适用于中间路径和不溢出的输入；任意负环可能让原地距离反复变小，不要仅凭 long long 就认为安全。后面的补充版本使用上轮快照、数值夹紧和负环影响标记，明确区分不可达、有限最短路和无有限最短路。</p></div></div><nav class="chapter-outline" aria-label="本章阅读路线"><strong>直接跳到</strong><a href="#s1">01 建图与 BFS：无权最短路</a><a href="#s2">02 拓扑排序与有向环</a><a href="#s3">03 Dijkstra：非负权最短路</a><a href="#s4">04 Floyd 与负权算法的选择</a><a href="#s5">05 最小生成树与最短路的区别</a><a href="#chapter-review">综合例题与自测答案</a></nav><details class="environment"><summary>代码使用说明与通用头文件</summary><p>示例统一采用 C++17。页面展示核心函数或类，下载的 .cpp 已包含以下头文件，可独立编译。不同小节可能重用类型名，应分别编译；含 main 的示例可直接运行，其余需自行补充调用与测试。复制按钮复制当前代码块。</p><div class="codebox"><div class="codebar"><span>C++17</span><div><button type="button" class="copy">复制代码</button></div></div><pre tabindex="0" aria-label="C++17 代码"><code>#include &lt;algorithm&gt;
 #include &lt;array&gt;
 #include &lt;cassert&gt;
 #include &lt;climits&gt;
@@ -27,7 +27,7 @@
 #include &lt;vector&gt;
 <span class="keyword">using</span> <span class="keyword">namespace</span> std;
 </code></pre></div><p>检查单个示例：<code>g++ -std=c++17 -Wall -Wextra -c sample.cpp</code>。这只检查编译；验证结果还需要调用函数并覆盖边界输入。代码按题目约束编写，各节明确其适用前提。</p></details><section class="lesson" id="s1"><div class="lesson-heading"><span class="lesson-number">10.01</span><h2>建图与 BFS：无权最短路</h2></div>
-<h3>知识与适用场景</h3><p>邻接表用 vector&lt;vector&lt;int&gt;&gt; 表示出边，空间 O(V+E)。无向边要添加两个方向。BFS 按距离层扩展，第一次发现一个节点时已经得到最少边数。</p><div class="invariant"><span>推导 / 不变量</span><p>距离数组 -1 表示未访问；源点距离置 0 并入队。发现邻居时立即赋距离并入队，防止它被同层多个父节点重复加入。</p></div>
+<h3>知识与适用场景</h3><p>邻接表用 vector&lt;vector&lt;int&gt;&gt; 表示出边，空间 O(V+E)。无向边要添加两个方向。BFS 按距离层扩展，第一次发现一个节点时已经得到最少边数。</p><div class="deep-block" id="s1-before-1"><h3>1.1 建图前先问：状态是否包含足够的信息？</h3><p>同一个格子如果带着不同钥匙、剩余消除障碍次数不同，未来可走的路也不同，便不是同一个搜索状态。此时 visited 应包含 (位置,钥匙集合) 或 (位置,剩余次数)，而不能只按格子去重。常见状态数上界是位置数乘附加状态数，复杂度也应在这个展开后的状态图上计算。</p><p>二维网格可以不显式建边：遍历上下左右，检查坐标、障碍和访问标记即可。邻接矩阵判一条边是否存在是 O(1)，但扫描一个点的所有邻居需要 O(V)；邻接表扫描是 O(出度)，判边则不天然是 O(1)。有孤立点时仍要保留它对应的空邻接表。</p></div><div class="deep-block" id="s1-before-2"><h3>1.2 四种图表示与边界</h3><p class="table-hint">窄屏下可左右滑动表格，查看完整内容。</p><div class="study-table" tabindex="0" role="region" aria-label="1.2 四种图表示与边界"><table><thead><tr><th scope="col">表示</th><th scope="col">空间</th><th scope="col">适合做什么</th><th scope="col">容易忽略什么</th></tr></thead><tbody><tr><td>邻接表</td><td>O(V+E)</td><td>遍历、堆最短路</td><td>无向边存两次；不能丢孤立点</td></tr><tr><td>邻接矩阵</td><td>O(V²)</td><td>Floyd、稠密图</td><td>平行边取最小值；不能用 0 代表无边</td></tr><tr><td>边表 (u,v,w)</td><td>O(E)</td><td>Bellman-Ford、Kruskal</td><td>遍历某点出边不方便</td></tr><tr><td>隐式图</td><td>只存状态与访问数组</td><td>网格、密码锁、操作序列</td><td>状态去重必须包含所有影响后续的信息</td></tr></tbody></table></div></div><div class="deep-block" id="s1-before-3"><h3>1.3 BFS 的层序为什么等于最少边数？</h3><p>初始队列只有距离 0 的源点。FIFO 保证距离 d 的点先于距离 d+1 的点扩展；因此第一次发现 v 时，如果存在更短路径，它的倒数第二个点应更早出队并发现 v，与首次发现矛盾。这个证明只使用边数，不比较任意权重之和。</p><p>发现 v 时就设置 dist[v] 并入队，同时设置 parent[v]=u。若等到出队才标记，菱形图中的两个父节点都可能把同一个 v 加入队列。只求一条最短路径时，首次发现目标即可停；要完整距离数组或统计同层信息时，按相应目标继续处理。</p></div><div class="deep-block" id="s1-before-4"><h3>1.4 手推菱形图：标记发生在入队前</h3><p class="table-hint">窄屏下可左右滑动表格，查看完整内容。</p><div class="study-table" tabindex="0" role="region" aria-label="1.4 手推菱形图：标记发生在入队前"><table><thead><tr><th scope="col">操作</th><th scope="col">操作后队列</th><th scope="col">dist[0..3]</th><th scope="col">parent 的变化</th></tr></thead><tbody><tr><td>源点 0 入队</td><td>[0]</td><td>[0,-1,-1,-1]</td><td>均为 -1</td></tr><tr><td>弹出 0，发现 1、2</td><td>[1,2]</td><td>[0,1,1,-1]</td><td>parent[1]=parent[2]=0</td></tr><tr><td>弹出 1，发现 3</td><td>[2,3]</td><td>[0,1,1,2]</td><td>parent[3]=1</td></tr><tr><td>弹出 2，再遇到 3</td><td>[3]</td><td>不变</td><td>3 已发现，不改父节点</td></tr><tr><td>沿 parent 从 3 回溯再反转</td><td>[]</td><td>最短边数 2</td><td>得到 0→1→3；不唯一</td></tr></tbody></table></div></div><div class="invariant"><span>推导 / 不变量</span><p>距离数组 -1 表示未访问；源点距离置 0 并入队。发现邻居时立即赋距离并入队，防止它被同层多个父节点重复加入。</p></div>
 <h3>手推一个例子</h3><p>边 0→1、0→2、1→3、2→3，源点 0。第一层发现 1、2，第二层只把 3 入队一次，距离为 2。</p><div class="codebox"><div class="codebar"><span>C++17</span><div><a href="examples/01.cpp" download>下载 .cpp</a><button type="button" class="copy">复制代码</button></div></div><pre tabindex="0" aria-label="C++17 代码"><code>vector&lt;<span class="keyword">int</span>&gt; bfsDistances(<span class="keyword">const</span> vector&lt;vector&lt;<span class="keyword">int</span>&gt;&gt;&amp; g, <span class="keyword">int</span> source) {
     <span class="keyword">int</span> n=(<span class="keyword">int</span>)g.size();
     <span class="keyword">if</span> (source&lt;<span class="number">0</span> || source&gt;=n) <span class="keyword">throw</span> out_of_range(<span class="string">&quot;source&quot;</span>);
@@ -45,9 +45,92 @@
     <span class="keyword">return</span> dist;
 }</code></pre></div>
 <dl class="analysis-grid"><div><dt>复杂度</dt><dd>时间 O(V+E)，距离和队列空间 O(V)，图本身 O(V+E)。</dd></div><div><dt>易错点与边界</dt><dd>求全图连通块需从每个未访问节点启动搜索。多源 BFS 把所有源点初始距离设为 0，同时入队；普通 BFS 不适用于任意不同边权。</dd></div></dl>
-<div class="practice"><h3>经典考点与练习</h3><p>练习：LeetCode 200 岛屿数量、994 腐烂的橘子、542 01 矩阵。</p><details><summary>面试官可能继续问什么？</summary><p>如何额外记录一条最短路径？把 predecessor[v]=u 放在哪一步？</p><p class="muted">先用自己的话回答，再回到本节的前提、不变量和边界检查论证。</p></details></div>
+<div class="deep-block" id="s1-after-1"><h3>1.5 BFS 还原一条最短路径</h3><p>返回 nullopt 表示目标不可达；源点等于目标时返回只含源点的路径。邻接顺序会决定多条最短路径中选到哪条，本函数不额外保证字典序。时间 O(V+E)，辅助空间 O(V)。</p><div class="codebox"><div class="codebar"><span>C++17</span><div><a href="examples/detail-bfs-path.cpp" download>下载 .cpp</a><button type="button" class="copy">复制代码</button></div></div><pre tabindex="0" aria-label="C++17 代码"><code>optional&lt;vector&lt;<span class="keyword">int</span>&gt;&gt; shortestUnweightedPath(
+    <span class="keyword">const</span> vector&lt;vector&lt;<span class="keyword">int</span>&gt;&gt;&amp; g, <span class="keyword">int</span> s, <span class="keyword">int</span> t) {
+    <span class="keyword">int</span> n = (<span class="keyword">int</span>)g.size();
+    <span class="keyword">if</span> (s &lt; <span class="number">0</span> || s &gt;= n || t &lt; <span class="number">0</span> || t &gt;= n)
+        <span class="keyword">throw</span> out_of_range(<span class="string">&quot;vertex&quot;</span>);
+    vector&lt;<span class="keyword">int</span>&gt; dist(n, -<span class="number">1</span>), parent(n, -<span class="number">1</span>);
+    queue&lt;<span class="keyword">int</span>&gt; q;
+    dist[s] = <span class="number">0</span>; q.push(s);
+    <span class="keyword">while</span> (!q.empty() &amp;&amp; dist[t] == -<span class="number">1</span>) {
+        <span class="keyword">int</span> u = q.front(); q.pop();
+        <span class="keyword">for</span> (<span class="keyword">int</span> v : g[u]) <span class="keyword">if</span> (dist[v] == -<span class="number">1</span>) {
+            dist[v] = dist[u] + <span class="number">1</span>;
+            parent[v] = u;
+            q.push(v);
+        }
+    }
+    <span class="keyword">if</span> (dist[t] == -<span class="number">1</span>) <span class="keyword">return</span> nullopt;
+    vector&lt;<span class="keyword">int</span>&gt; path;
+    <span class="keyword">for</span> (<span class="keyword">int</span> v = t; v != -<span class="number">1</span>; v = parent[v]) path.push_back(v);
+    reverse(path.begin(), path.end());
+    <span class="keyword">return</span> path;
+}</code></pre></div></div><div class="deep-block" id="s1-after-2"><h3>1.6 多源 BFS：到最近源点的网格距离</h3><p>约定 -1 是障碍、0 是源点、1 是可通行格；四方向移动代价均为 1。先把所有源点放进同一队列，不逐个源点重复搜索。返回 -1 表示障碍或不可达，可结合原网格区分。输入不被修改，无源点时所有距离保持 -1。时间、空间均 O(RC)。</p><p>可把它理解成一个虚拟源点以零代价连接全部源点，但实现直接初始化距离 0，不需要真的插入零权边后套普通 BFS。腐烂橘子题中，应把烂橘子视为源、鲜橘子视为待到达点、空格视为不可走，最后检查所有鲜橘子是否可达并取最大距离。</p><div class="codebox"><div class="codebar"><span>C++17</span><div><a href="examples/detail-multisource-grid.cpp" download>下载 .cpp</a><button type="button" class="copy">复制代码</button></div></div><pre tabindex="0" aria-label="C++17 代码"><code>vector&lt;vector&lt;<span class="keyword">int</span>&gt;&gt; nearestSources(<span class="keyword">const</span> vector&lt;vector&lt;<span class="keyword">int</span>&gt;&gt;&amp; grid) {
+    <span class="keyword">int</span> r = (<span class="keyword">int</span>)grid.size();
+    <span class="keyword">if</span> (!r) <span class="keyword">return</span> {};
+    <span class="keyword">int</span> c = (<span class="keyword">int</span>)grid[<span class="number">0</span>].size();
+    <span class="keyword">for</span> (<span class="keyword">const</span> <span class="keyword">auto</span>&amp; row : grid) {
+        <span class="keyword">if</span> ((<span class="keyword">int</span>)row.size() != c) <span class="keyword">throw</span> invalid_argument(<span class="string">&quot;ragged grid&quot;</span>);
+        <span class="keyword">for</span> (<span class="keyword">int</span> x : row) <span class="keyword">if</span> (x &lt; -<span class="number">1</span> || x &gt; <span class="number">1</span>)
+            <span class="keyword">throw</span> invalid_argument(<span class="string">&quot;cell&quot;</span>);
+    }
+    vector&lt;vector&lt;<span class="keyword">int</span>&gt;&gt; d(r, vector&lt;<span class="keyword">int</span>&gt;(c, -<span class="number">1</span>));
+    queue&lt;pair&lt;<span class="keyword">int</span>,<span class="keyword">int</span>&gt;&gt; q;
+    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; r; ++i) <span class="keyword">for</span> (<span class="keyword">int</span> j = <span class="number">0</span>; j &lt; c; ++j)
+        <span class="keyword">if</span> (grid[i][j] == <span class="number">0</span>) { d[i][j] = <span class="number">0</span>; q.push({i,j}); }
+    <span class="keyword">const</span> <span class="keyword">int</span> di[] = {-<span class="number">1</span>,<span class="number">1</span>,<span class="number">0</span>,<span class="number">0</span>}, dj[] = {<span class="number">0</span>,<span class="number">0</span>,-<span class="number">1</span>,<span class="number">1</span>};
+    <span class="keyword">while</span> (!q.empty()) {
+        <span class="keyword">auto</span> [i,j] = q.front(); q.pop();
+        <span class="keyword">for</span> (<span class="keyword">int</span> k = <span class="number">0</span>; k &lt; <span class="number">4</span>; ++k) {
+            <span class="keyword">int</span> x = i + di[k], y = j + dj[k];
+            <span class="keyword">if</span> (x &lt; <span class="number">0</span> || x &gt;= r || y &lt; <span class="number">0</span> || y &gt;= c) continue;
+            <span class="keyword">if</span> (grid[x][y] == -<span class="number">1</span> || d[x][y] != -<span class="number">1</span>) continue;
+            d[x][y] = d[i][j] + <span class="number">1</span>; q.push({x,y});
+        }
+    }
+    <span class="keyword">return</span> d;
+}</code></pre></div></div><div class="deep-block" id="s1-after-3"><h3>1.7 无向图判环：用边编号跳过来路</h3><p>简单无向图可以跳过父节点，但多重图的两条平行边本身构成长为 2 的环，只跳过父节点会漏报。给每条输入无向边一个唯一编号，两个方向共用编号，只跳过刚走来的那条边。自环在本约定下也是环。显式栈避免深链导致的递归栈溢出。时间 O(V+E)，图和辅助存储 O(V+E)。</p><div class="codebox"><div class="codebar"><span>C++17</span><div><a href="examples/detail-undirected-cycle.cpp" download>下载 .cpp</a><button type="button" class="copy">复制代码</button></div></div><pre tabindex="0" aria-label="C++17 代码"><code><span class="keyword">bool</span> hasUndirectedCycle(<span class="keyword">int</span> n, <span class="keyword">const</span> vector&lt;pair&lt;<span class="keyword">int</span>,<span class="keyword">int</span>&gt;&gt;&amp; edges) {
+    <span class="keyword">if</span> (n &lt; <span class="number">0</span>) <span class="keyword">throw</span> invalid_argument(<span class="string">&quot;n&quot;</span>);
+    vector&lt;vector&lt;pair&lt;<span class="keyword">int</span>,<span class="keyword">int</span>&gt;&gt;&gt; g(n);
+    <span class="keyword">for</span> (<span class="keyword">int</span> id = <span class="number">0</span>; id &lt; (<span class="keyword">int</span>)edges.size(); ++id) {
+        <span class="keyword">auto</span> [u,v] = edges[id];
+        <span class="keyword">if</span> (u &lt; <span class="number">0</span> || u &gt;= n || v &lt; <span class="number">0</span> || v &gt;= n) <span class="keyword">throw</span> out_of_range(<span class="string">&quot;edge&quot;</span>);
+        g[u].push_back({v,id}); g[v].push_back({u,id});
+    }
+    vector&lt;<span class="keyword">char</span>&gt; seen(n, <span class="keyword">false</span>);
+    <span class="keyword">for</span> (<span class="keyword">int</span> s = <span class="number">0</span>; s &lt; n; ++s) <span class="keyword">if</span> (!seen[s]) {
+        stack&lt;pair&lt;<span class="keyword">int</span>,<span class="keyword">int</span>&gt;&gt; st;
+        seen[s] = <span class="keyword">true</span>; st.push({s,-<span class="number">1</span>});
+        <span class="keyword">while</span> (!st.empty()) {
+            <span class="keyword">auto</span> [u, incoming] = st.top(); st.pop();
+            <span class="keyword">for</span> (<span class="keyword">auto</span> [v,id] : g[u]) {
+                <span class="keyword">if</span> (id == incoming) continue;
+                <span class="keyword">if</span> (seen[v]) <span class="keyword">return</span> <span class="keyword">true</span>;
+                seen[v] = <span class="keyword">true</span>; st.push({v,id});
+            }
+        }
+    }
+    <span class="keyword">return</span> <span class="keyword">false</span>;
+}</code></pre></div></div><div class="deep-block" id="s1-after-4"><h3>1.8 二分图：把相邻点染成相反颜色</h3><p>前提是无向图（邻接表双向存边）。每个未染色分量都启动 BFS，遇到同色相邻点立即失败。二分图等价于不存在奇环，不等价于无环：四边形有环仍是二分图。自环一定失败。时间 O(V+E)，辅助空间 O(V)。</p><div class="codebox"><div class="codebar"><span>C++17</span><div><a href="examples/detail-bipartite.cpp" download>下载 .cpp</a><button type="button" class="copy">复制代码</button></div></div><pre tabindex="0" aria-label="C++17 代码"><code><span class="keyword">bool</span> isBipartiteGraph(<span class="keyword">const</span> vector&lt;vector&lt;<span class="keyword">int</span>&gt;&gt;&amp; g) {
+    <span class="keyword">int</span> n = (<span class="keyword">int</span>)g.size();
+    vector&lt;<span class="keyword">int</span>&gt; color(n, -<span class="number">1</span>);
+    queue&lt;<span class="keyword">int</span>&gt; q;
+    <span class="keyword">for</span> (<span class="keyword">int</span> s = <span class="number">0</span>; s &lt; n; ++s) <span class="keyword">if</span> (color[s] == -<span class="number">1</span>) {
+        color[s] = <span class="number">0</span>; q.push(s);
+        <span class="keyword">while</span> (!q.empty()) {
+            <span class="keyword">int</span> u = q.front(); q.pop();
+            <span class="keyword">for</span> (<span class="keyword">int</span> v : g[u]) {
+                <span class="keyword">if</span> (color[v] == -<span class="number">1</span>) {
+                    color[v] = color[u] ^ <span class="number">1</span>; q.push(v);
+                } <span class="keyword">else</span> <span class="keyword">if</span> (color[v] == color[u]) <span class="keyword">return</span> <span class="keyword">false</span>;
+            }
+        }
+    }
+    <span class="keyword">return</span> <span class="keyword">true</span>;
+}</code></pre></div></div><div class="practice"><h3>经典考点与练习</h3><p>练习：LeetCode 200 岛屿数量、994 腐烂的橘子、542 01 矩阵。</p><h3>面试追问：关键点完整解答</h3><dl class="answer-list"><div><dt>为什么 DFS 找到的第一条路径不保证最短？</dt><dd><p>DFS 先沿一条分支走到底，可能先找到 100 条边的路径，而另一条尚未探索的分支只需 2 条边。遍历顺序没有按距离排序。DFS 可以枚举所有简单路径再取最短，但路径数可能指数级；无权最短路直接使用 BFS。</p></dd></div><div><dt>如何记录最短路径？不可达和源点等于终点怎么处理？</dt><dd><p>在首次发现 v 的同一步设置 parent[v]=u，不在以后反复覆盖。到终点后沿父指针走到源点，再反转。不可达单独返回 nullopt；s=t 返回 [s]，边数为 0。若要所有最短路径，需要保存满足 dist[v]=dist[u]+1 的全部前驱，枚举输出仍可能指数级。</p></dd></div><div><dt>多源 BFS 为什么取的是最近源，而不是所有源距离之和？</dt><dd><p>所有源都从第 0 层出发，第一次发现一个点的是最先到达它的波前，所以距离等于各源距离的最小值。若要求到所有建筑的距离和，需要分别搜索再累加，不能把全部建筑同时入队替代。</p></dd></div><div><dt>求连通分量时，有向图能直接照抄无向图外层循环吗？</dt><dd><p>无向图从任一未访问点可恰好遍历它的整个连通分量。对有向图，单向可达不是等价关系；外层遍历次数依赖起点顺序，并不等于强连通分量数。弱连通可忽略方向，强连通要求互相可达，需要 Tarjan 或 Kosaraju 等专门算法。</p></dd></div><div><dt>什么时候用全局 visited，什么时候要回溯恢复？</dt><dd><p>只求可达性或连通块时，全局 visited 防止重复访问，不恢复。枚举所有简单路径时，onPath 只表示当前路径占用，退出当前分支后应恢复；否则会丢掉经过同一节点的其他合法路径。状态带资源时先确认状态定义充分，再讨论能否合并。</p></dd></div><div><dt>为什么二分图与奇环等价？断开的图怎么检查？</dt><dd><p>相邻点颜色交替，沿奇数条边回到起点要求起点与自己颜色相反，产生矛盾。反过来，若 BFS 染色出现同色相邻点，可由搜索树路径加冲突边构成奇环。必须从每个未染色节点启动，因为某个未到达分量可能藏着奇环。</p></dd></div></dl></div>
 <label class="learned"><input type="checkbox" data-progress="10-01">我能独立实现，并解释正确性与边界</label></section><section class="lesson" id="s2"><div class="lesson-heading"><span class="lesson-number">10.02</span><h2>拓扑排序与有向环</h2></div>
-<h3>知识与适用场景</h3><p>拓扑序要求每条边 u→v 中 u 都出现在 v 前面。只有 DAG 存在完整拓扑序；入度为 0 的节点表示当前没有尚未完成的前置依赖。</p><div class="invariant"><span>推导 / 不变量</span><p>Kahn 算法每次移除入度 0 的节点及其出边。若剩余节点全部入度大于 0，就无法继续，剩余部分包含有向环。</p></div>
+<h3>知识与适用场景</h3><p>拓扑序要求每条边 u→v 中 u 都出现在 v 前面。只有 DAG 存在完整拓扑序；入度为 0 的节点表示当前没有尚未完成的前置依赖。</p><div class="deep-block" id="s2-before-1"><h3>2.1 先修关系的方向，必须先读懂</h3><p>课程表常给出 [a,b] 表示学 a 前先学 b，因此应建 b→a，并给 a 的入度加一。入度的含义是当前还有多少前置任务未完成，不是总出边数。统计入度和删除出边必须使用同一份边集合：保留平行边时两边都计数，去重时也要同步去重。</p><p>Kahn 的正确性来自：DAG 的任意非空子图都有入度为 0 的点。否则一直沿前驱回退，有限节点中必然重复而构成环。每次移除一个零入度点不会违背任何尚存依赖，重复后得到合法序列。</p></div><div class="deep-block" id="s2-before-2"><h3>2.2 手推：两门独立先修课共享一个后继</h3><p class="table-hint">窄屏下可左右滑动表格，查看完整内容。</p><div class="study-table" tabindex="0" role="region" aria-label="2.2 手推：两门独立先修课共享一个后继"><table><thead><tr><th scope="col">步骤</th><th scope="col">可选集合</th><th scope="col">剩余入度 [0,1,2,3]</th><th scope="col">解释</th></tr></thead><tbody><tr><td>初始</td><td>{0}</td><td>[0,1,1,2]</td><td>边 0→1、0→2、1→3、2→3</td></tr><tr><td>完成 0</td><td>{1,2}</td><td>[0,0,0,2]</td><td>有两个选择，完整拓扑序不唯一</td></tr><tr><td>完成 1</td><td>{2}</td><td>[0,0,0,1]</td><td>3 仍有前置 2，不能提前做</td></tr><tr><td>完成 2</td><td>{3}</td><td>[0,0,0,0]</td><td>3 的最后一个依赖解除</td></tr><tr><td>完成 3</td><td>{}</td><td>全部处理</td><td>[0,1,2,3] 是字典序最小拓扑序</td></tr></tbody></table></div></div><div class="deep-block" id="s2-before-3"><h3>2.3 判环规则不能混用</h3><p class="table-hint">窄屏下可左右滑动表格，查看完整内容。</p><div class="study-table" tabindex="0" role="region" aria-label="2.3 判环规则不能混用"><table><thead><tr><th scope="col">场景</th><th scope="col">维护什么</th><th scope="col">判环条件</th><th scope="col">反例 / 注意</th></tr></thead><tbody><tr><td>无向简单图</td><td>visited 与父节点</td><td>遇到非父已访问邻居</td><td>走回父节点的反向边不算环</td></tr><tr><td>无向多重图</td><td>visited 与来路边 id</td><td>遇到非来路已访问邻居</td><td>平行边需要区分 id</td></tr><tr><td>有向 DFS</td><td>白 / 灰 / 黑三色</td><td>指向灰色节点</td><td>指向黑色节点可能只是分支汇合</td></tr><tr><td>有向 Kahn</td><td>剩余入度</td><td>最终处理数小于 V</td><td>剩余点不全在环上，还可能是环下游</td></tr></tbody></table></div></div><div class="invariant"><span>推导 / 不变量</span><p>Kahn 算法每次移除入度 0 的节点及其出边。若剩余节点全部入度大于 0，就无法继续，剩余部分包含有向环。</p></div>
 <h3>手推一个例子</h3><p>课程依赖 0→1、0→2、1→3、2→3：先处理 0，再处理 1、2，最后 3。1 与 2 可交换，所以拓扑序不一定唯一。</p><div class="codebox"><div class="codebar"><span>C++17</span><div><a href="examples/02.cpp" download>下载 .cpp</a><button type="button" class="copy">复制代码</button></div></div><pre tabindex="0" aria-label="C++17 代码"><code>vector&lt;<span class="keyword">int</span>&gt; topoSort(<span class="keyword">const</span> vector&lt;vector&lt;<span class="keyword">int</span>&gt;&gt;&amp; g) {
     <span class="keyword">int</span> n=(<span class="keyword">int</span>)g.size();
     vector&lt;<span class="keyword">int</span>&gt; degree(n,<span class="number">0</span>), order;
@@ -62,9 +145,69 @@
     <span class="keyword">return</span> order;
 }</code></pre></div>
 <dl class="analysis-grid"><div><dt>复杂度</dt><dd>时间 O(V+E)，辅助空间 O(V)。</dd></div><div><dt>易错点与边界</dt><dd>不要把无向图的父节点判环规则搬到有向图。DFS 判有向环需要三色标记，指向“正在访问”的节点才是回边。</dd></div></dl>
-<div class="practice"><h3>经典考点与练习</h3><p>练习：LeetCode 207 课程表、210 课程表 II、802 找到最终的安全状态。</p><details><summary>面试官可能继续问什么？</summary><p>如何得到字典序最小的拓扑序？为什么把 queue 换成小顶堆即可？</p><p class="muted">先用自己的话回答，再回到本节的前提、不变量和边界检查论证。</p></details></div>
+<div class="deep-block" id="s2-after-1"><h3>2.4 字典序最小拓扑序与唯一性</h3><p>小顶堆总选当前可选点的最小编号。设两个合法序列首次不同处，本算法选择的点不大于另一序列选择的点，故字典序最小。DAG 的拓扑序唯一，当且仅当每一步可选点都恰好一个；有环时 unique 无意义，本实现明确设为 false。空图视为 DAG，有一个空序列。时间 O(E+V log(V+1))，辅助空间 O(V)。</p><div class="codebox"><div class="codebar"><span>C++17</span><div><a href="examples/detail-topo-lex.cpp" download>下载 .cpp</a><button type="button" class="copy">复制代码</button></div></div><pre tabindex="0" aria-label="C++17 代码"><code><span class="keyword">struct</span> TopologyResult {
+    <span class="keyword">bool</span> dag;
+    <span class="keyword">bool</span> unique;
+    vector&lt;<span class="keyword">int</span>&gt; order;
+};
+TopologyResult lexicographicTopology(<span class="keyword">const</span> vector&lt;vector&lt;<span class="keyword">int</span>&gt;&gt;&amp; g) {
+    <span class="keyword">int</span> n = (<span class="keyword">int</span>)g.size();
+    vector&lt;<span class="keyword">int</span>&gt; indegree(n);
+    <span class="keyword">for</span> (<span class="keyword">const</span> <span class="keyword">auto</span>&amp; row : g) <span class="keyword">for</span> (<span class="keyword">int</span> v : row) ++indegree[v];
+    priority_queue&lt;<span class="keyword">int</span>, vector&lt;<span class="keyword">int</span>&gt;, greater&lt;<span class="keyword">int</span>&gt;&gt; ready;
+    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; n; ++i) <span class="keyword">if</span> (!indegree[i]) ready.push(i);
+    vector&lt;<span class="keyword">int</span>&gt; order;
+    <span class="keyword">bool</span> unique = <span class="keyword">true</span>;
+    <span class="keyword">while</span> (!ready.empty()) {
+        <span class="keyword">if</span> (ready.size() != <span class="number">1</span>) unique = <span class="keyword">false</span>;
+        <span class="keyword">int</span> u = ready.top(); ready.pop(); order.push_back(u);
+        <span class="keyword">for</span> (<span class="keyword">int</span> v : g[u]) <span class="keyword">if</span> (--indegree[v] == <span class="number">0</span>) ready.push(v);
+    }
+    <span class="keyword">bool</span> dag = (<span class="keyword">int</span>)order.size() == n;
+    <span class="keyword">return</span> {dag, dag &amp;&amp; unique, order}; <span class="comment">// 有环时 order 只是可处理前缀</span>
+}</code></pre></div></div><div class="deep-block" id="s2-after-2"><h3>2.5 三色 DFS：返回一个实际有向环</h3><p>用显式栈帧保存每个节点下一条待处理出边，模拟递归的进入和退出，灰色点才恰好对应当前调用链。仅用普通栈把所有邻居一起标灰并不满足这个含义。遇到 u→v 且 v 为灰色时，parent 链 v→…→u 加这条边组成一个环。返回首尾相同的节点序列，无环返回空数组。O(V+E) 时间、O(V) 辅助空间。</p><div class="codebox"><div class="codebar"><span>C++17</span><div><a href="examples/detail-directed-cycle.cpp" download>下载 .cpp</a><button type="button" class="copy">复制代码</button></div></div><pre tabindex="0" aria-label="C++17 代码"><code>vector&lt;<span class="keyword">int</span>&gt; findDirectedCycle(<span class="keyword">const</span> vector&lt;vector&lt;<span class="keyword">int</span>&gt;&gt;&amp; g) {
+    <span class="keyword">int</span> n = (<span class="keyword">int</span>)g.size();
+    vector&lt;<span class="keyword">int</span>&gt; color(n), parent(n, -<span class="number">1</span>);
+    <span class="keyword">for</span> (<span class="keyword">int</span> s = <span class="number">0</span>; s &lt; n; ++s) <span class="keyword">if</span> (!color[s]) {
+        vector&lt;pair&lt;<span class="keyword">int</span>,size_t&gt;&gt; frames;
+        color[s] = <span class="number">1</span>; frames.push_back({s,<span class="number">0</span>});
+        <span class="keyword">while</span> (!frames.empty()) {
+            <span class="keyword">int</span> u = frames.back().first;
+            <span class="keyword">if</span> (frames.back().second == g[u].size()) {
+                color[u] = <span class="number">2</span>; frames.pop_back(); continue;
+            }
+            <span class="keyword">int</span> v = g[u][frames.back().second++];
+            <span class="keyword">if</span> (!color[v]) {
+                parent[v] = u; color[v] = <span class="number">1</span>; frames.push_back({v,<span class="number">0</span>});
+            } <span class="keyword">else</span> <span class="keyword">if</span> (color[v] == <span class="number">1</span>) {
+                vector&lt;<span class="keyword">int</span>&gt; cycle{u};
+                <span class="keyword">while</span> (cycle.back() != v) cycle.push_back(parent[cycle.back()]);
+                reverse(cycle.begin(), cycle.end());
+                cycle.push_back(v); <span class="keyword">return</span> cycle;
+            }
+        }
+    }
+    <span class="keyword">return</span> {};
+}</code></pre></div></div><div class="deep-block" id="s2-after-3"><h3>2.6 最终安全节点：反图上删除出度为零的点</h3><p>安全要求从该点出发的所有路径最终终止，不是存在一条路能到终点。原图出度为零的点先安全；一个点的所有后继都被确认安全后，它才安全。把边反过来，用剩余出度做 Kahn，最后留下的是能到达环的点，包括环上游。与普通 Kahn 留下环下游不要混淆。时间、总额外空间 O(V+E)，按编号扫描输出，无需额外排序。</p><div class="codebox"><div class="codebar"><span>C++17</span><div><a href="examples/detail-safe-nodes.cpp" download>下载 .cpp</a><button type="button" class="copy">复制代码</button></div></div><pre tabindex="0" aria-label="C++17 代码"><code>vector&lt;<span class="keyword">int</span>&gt; eventualSafeVertices(<span class="keyword">const</span> vector&lt;vector&lt;<span class="keyword">int</span>&gt;&gt;&amp; g) {
+    <span class="keyword">int</span> n = (<span class="keyword">int</span>)g.size();
+    vector&lt;vector&lt;<span class="keyword">int</span>&gt;&gt; reverseGraph(n);
+    vector&lt;<span class="keyword">int</span>&gt; remaining(n);
+    queue&lt;<span class="keyword">int</span>&gt; q;
+    <span class="keyword">for</span> (<span class="keyword">int</span> u = <span class="number">0</span>; u &lt; n; ++u) {
+        remaining[u] = (<span class="keyword">int</span>)g[u].size();
+        <span class="keyword">if</span> (!remaining[u]) q.push(u);
+        <span class="keyword">for</span> (<span class="keyword">int</span> v : g[u]) reverseGraph[v].push_back(u);
+    }
+    <span class="keyword">while</span> (!q.empty()) {
+        <span class="keyword">int</span> v = q.front(); q.pop();
+        <span class="keyword">for</span> (<span class="keyword">int</span> u : reverseGraph[v]) <span class="keyword">if</span> (--remaining[u] == <span class="number">0</span>) q.push(u);
+    }
+    vector&lt;<span class="keyword">int</span>&gt; answer;
+    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; n; ++i) <span class="keyword">if</span> (!remaining[i]) answer.push_back(i);
+    <span class="keyword">return</span> answer;
+}</code></pre></div></div><div class="practice"><h3>经典考点与练习</h3><p>练习：LeetCode 207 课程表、210 课程表 II、802 找到最终的安全状态。</p><h3>面试追问：关键点完整解答</h3><dl class="answer-list"><div><dt>Kahn 剩下的每个点都在环上吗？</dt><dd><p>不一定。0→1、1→0、1→2 中，2 不在任何环上，却因为环中的 1 永远不能移除而留下。Kahn 用于判断存在环或获得可执行前缀；需要环的具体节点时用三色 DFS 找一个环，或用强连通分量分析。</p></dd></div><div><dt>如何得到字典序最小拓扑序，为什么仅排序邻接表不够？</dt><dd><p>用小顶堆维护所有当前零入度点，在整个可选集合中选择最小点。只排序某个点的邻居不能控制其他来源已经在队列中的点。例如初始可选 1、3，处理 1 后释放 2，普通队列可能给出 1、3、2，小顶堆会给出 1、2、3。</p></dd></div><div><dt>有多个零入度节点，就一定有多种拓扑序吗？</dt><dd><p>必须先确认整图是 DAG。对 DAG，两个当前零入度点互相不可能存在尚存依赖路径，可以交换先后并继续完成序列，因此不唯一。含环图即使前缀出现多个选择，也没有完整拓扑序，不能称为有多个拓扑序。</p></dd></div><div><dt>为什么有向图只用 visited 会误判环？</dt><dd><p>0→1、0→2、1→3、2→3 是 DAG。探索 2 时 3 可能已经访问完成，边 2→3 只是共享后继。只有指向当前调用链上的灰色点才会闭合成环；指向黑色点不表示当前路径回到了祖先。</p></dd></div><div><dt>最终安全与能到达终点有什么不同？</dt><dd><p>若 0 同时连向终点 1 和自环点 2，0 能到达终点却不安全，因为可以选择去 2 后永不终止。安全是所有后继都安全，属于全称条件；反图删出度的算法恰好检查这个条件。有限图中，存在无限路径等价于能到达某个环。</p></dd></div><div><dt>拓扑排序能直接算任务耗时吗？</dt><dd><p>拓扑序只保证依赖顺序。如果多个任务可并行且资源无限，应沿拓扑序计算 finish[v]=duration[v]+max(finish[u])，u 为 v 的前驱，最终取所有 finish 的最大值。简单累加所有任务时长表示串行执行；按 BFS 层数计时只适用于每个任务单位耗时且允许同层并行的模型。</p></dd></div></dl></div>
 <label class="learned"><input type="checkbox" data-progress="10-02">我能独立实现，并解释正确性与边界</label></section><section class="lesson" id="s3"><div class="lesson-heading"><span class="lesson-number">10.03</span><h2>Dijkstra：非负权最短路</h2></div>
-<h3>知识与适用场景</h3><p>非负边权保证当前未确定节点中距离最小者，其距离不会再通过更远节点改小。这个贪心结论依赖非负权，存在负边时不成立。</p><div class="invariant"><span>推导 / 不变量</span><p>小顶堆保存 (候选距离,节点)。松弛成功时推入新状态，不必删除旧状态；弹出时若距离不等于当前 dist，说明是旧状态，跳过即可。</p></div>
+<h3>知识与适用场景</h3><p>非负边权保证当前未确定节点中距离最小者，其距离不会再通过更远节点改小。这个贪心结论依赖非负权，存在负边时不成立。</p><div class="deep-block" id="s3-before-1"><h3>3.1 Dijkstra 定下的是最小有效出堆距离，不是首次入堆距离</h3><p>dist[v] 是目前已知路径的最小长度，是候选上界；堆保存这些候选。假设有效弹出的最小距离 d[u] 还不是最优，最优路径上应有第一个尚未确定的点 x，其前驱已确定并已尝试松弛 x。由于剩余边非负，x 的候选距离不会大于该条到 u 的更短路径，应该先于 u 弹出，矛盾。</p><p>只有弹出的 d 等于当前 dist[u] 才是有效状态。不要在 push 时永久 visited；节点可以先经较差路径发现，再被改进。松弛必须用严格小于，零权环若用小于等于反复入堆，可能永不终止。只问一个目标时，可在它的有效状态出堆后停止，不能在首次发现它时停止。</p></div><div class="deep-block" id="s3-before-2"><h3>3.2 手推过期状态与负边反例</h3><p class="table-hint">窄屏下可左右滑动表格，查看完整内容。</p><div class="study-table" tabindex="0" role="region" aria-label="3.2 手推过期状态与负边反例"><table><thead><tr><th scope="col">图 / 阶段</th><th scope="col">堆或结论</th><th scope="col">关键原因</th></tr></thead><tbody><tr><td>0→1(10)、0→2(1)、2→1(2)，弹出 0</td><td>(1,2)、(10,1)</td><td>1 首次入堆为 10，不是最终距离</td></tr><tr><td>弹出 (1,2)</td><td>(3,1)、(10,1)</td><td>通过 2 将 dist[1] 改为 3</td></tr><tr><td>弹出 (3,1)，之后弹出 (10,1)</td><td>处理 3，跳过 10</td><td>旧状态不再代表当前最优候选</td></tr><tr><td>0→1(2)、0→2(5)、2→1(-10)</td><td>1 会先以 2 出堆，但最优为 -5</td><td>负边使“经过更远点不会更短”失效</td></tr></tbody></table></div></div><div class="invariant"><span>推导 / 不变量</span><p>小顶堆保存 (候选距离,节点)。松弛成功时推入新状态，不必删除旧状态；弹出时若距离不等于当前 dist，说明是旧状态，跳过即可。</p></div>
 <h3>手推一个例子</h3><p>0→1 权 10，0→2 权 1，2→1 权 2。1 先以 10 入堆，随后改为 3；弹出 (10,1) 时应跳过。</p><div class="codebox"><div class="codebar"><span>C++17</span><div><a href="examples/03.cpp" download>下载 .cpp</a><button type="button" class="copy">复制代码</button></div></div><pre tabindex="0" aria-label="C++17 代码"><code>vector&lt;<span class="keyword">long</span> <span class="keyword">long</span>&gt; dijkstra(
     <span class="keyword">const</span> vector&lt;vector&lt;pair&lt;<span class="keyword">int</span>,<span class="keyword">int</span>&gt;&gt;&gt;&amp; g, <span class="keyword">int</span> source) {
     <span class="keyword">const</span> <span class="keyword">long</span> <span class="keyword">long</span> INF=LLONG_MAX/<span class="number">4</span>;
@@ -87,9 +230,54 @@
     <span class="keyword">return</span> dist;
 }</code></pre></div>
 <dl class="analysis-grid"><div><dt>复杂度</dt><dd>允许重复状态的堆实现：一般写 O((V+E) log(E+2))，简单图中常写 O((V+E) log V)；堆最多 O(E)，距离 O(V)。</dd></div><div><dt>易错点与边界</dt><dd>本例假设有效路径长度小于 INF。首次入堆并不代表距离最终确定，不能在入堆时永久标记。不可达节点距离仍为 INF。</dd></div></dl>
-<div class="practice"><h3>经典考点与练习</h3><p>练习：LeetCode 743 网络延迟时间、1631 最小体力消耗路径；了解 0-1 BFS。</p><details><summary>面试官可能继续问什么？</summary><p>为什么有负边时最小距离弹出不再保证最优？0/1 边权可用什么更快算法？</p><p class="muted">先用自己的话回答，再回到本节的前提、不变量和边界检查论证。</p></details></div>
+<div class="deep-block" id="s3-after-1"><h3>3.3 0-1 BFS：用双端队列维护两个相邻距离层</h3><p>边权为 0 时松弛结果和当前层相同，推到队首；为 1 时推到队尾。双端队列里的候选距离按非递减顺序处理，扮演只需两种优先级的优先队列。仍然可以多次改善 dist，不能照搬普通 BFS 的首次入队锁定。本版本携带入队时距离并跳过过期状态，严格改善才入队。时间 O(V+E)，辅助存储保守计 O(V+E)。</p><div class="codebox"><div class="codebar"><span>C++17</span><div><a href="examples/detail-zero-one-bfs.cpp" download>下载 .cpp</a><button type="button" class="copy">复制代码</button></div></div><pre tabindex="0" aria-label="C++17 代码"><code>vector&lt;<span class="keyword">long</span> <span class="keyword">long</span>&gt; zeroOneDistances(
+    <span class="keyword">const</span> vector&lt;vector&lt;pair&lt;<span class="keyword">int</span>,<span class="keyword">int</span>&gt;&gt;&gt;&amp; g, <span class="keyword">int</span> s) {
+    <span class="keyword">const</span> <span class="keyword">long</span> <span class="keyword">long</span> INF = LLONG_MAX / <span class="number">4</span>;
+    <span class="keyword">int</span> n = (<span class="keyword">int</span>)g.size();
+    <span class="keyword">if</span> (s &lt; <span class="number">0</span> || s &gt;= n) <span class="keyword">throw</span> out_of_range(<span class="string">&quot;source&quot;</span>);
+    <span class="keyword">for</span> (<span class="keyword">const</span> <span class="keyword">auto</span>&amp; row : g) <span class="keyword">for</span> (<span class="keyword">auto</span> [v,w] : row) {
+        <span class="keyword">if</span> (v &lt; <span class="number">0</span> || v &gt;= n) <span class="keyword">throw</span> out_of_range(<span class="string">&quot;edge&quot;</span>);
+        <span class="keyword">if</span> (w != <span class="number">0</span> &amp;&amp; w != <span class="number">1</span>) <span class="keyword">throw</span> invalid_argument(<span class="string">&quot;not a 0/1 edge&quot;</span>);
+    }
+    vector&lt;<span class="keyword">long</span> <span class="keyword">long</span>&gt; d(n, INF);
+    deque&lt;pair&lt;<span class="keyword">long</span> <span class="keyword">long</span>,<span class="keyword">int</span>&gt;&gt; q;
+    d[s] = <span class="number">0</span>; q.push_front({<span class="number">0</span>,s});
+    <span class="keyword">while</span> (!q.empty()) {
+        <span class="keyword">auto</span> [du,u] = q.front(); q.pop_front();
+        <span class="keyword">if</span> (du != d[u]) continue;
+        <span class="keyword">for</span> (<span class="keyword">auto</span> [v,w] : g[u]) <span class="keyword">if</span> (du + w &lt; d[v]) {
+            d[v] = du + w;
+            <span class="keyword">if</span> (w == <span class="number">0</span>) q.push_front({d[v],v});
+            <span class="keyword">else</span> q.push_back({d[v],v});
+        }
+    }
+    <span class="keyword">return</span> d;
+}</code></pre></div></div><div class="deep-block" id="s3-after-2"><h3>3.4 最小体力路径：把路径代价从求和改成取最大值</h3><p>输入已建好的非负权图；网格题可将相邻高度差作为权重（相减前转 long long 并按约束确保可放入 int）。路径代价是沿途最大边权，目标使这个最大值最小，松弛变为 max(du,w)。延长路径不会降低此代价，因此仍满足 Dijkstra 的确定性条件。返回 nullopt 表示不可达，s=t 代价为 0。时间 O((V+E)log(E+2))，辅助空间 O(V+E)。</p><p>不是所有修改代价公式的题都能照套 Dijkstra。必须重新证明路径扩展不会让已确定的最小候选变得更优；最小体力也可二分阈值后做可达性判断，无向图还可以用排序边与并查集。</p><div class="codebox"><div class="codebar"><span>C++17</span><div><a href="examples/detail-minimax-path.cpp" download>下载 .cpp</a><button type="button" class="copy">复制代码</button></div></div><pre tabindex="0" aria-label="C++17 代码"><code>optional&lt;<span class="keyword">long</span> <span class="keyword">long</span>&gt; minimumBottleneck(
+    <span class="keyword">const</span> vector&lt;vector&lt;pair&lt;<span class="keyword">int</span>,<span class="keyword">int</span>&gt;&gt;&gt;&amp; g, <span class="keyword">int</span> s, <span class="keyword">int</span> t) {
+    <span class="keyword">int</span> n = (<span class="keyword">int</span>)g.size();
+    <span class="keyword">if</span> (s &lt; <span class="number">0</span> || s &gt;= n || t &lt; <span class="number">0</span> || t &gt;= n) <span class="keyword">throw</span> out_of_range(<span class="string">&quot;vertex&quot;</span>);
+    <span class="keyword">for</span> (<span class="keyword">const</span> <span class="keyword">auto</span>&amp; row : g) <span class="keyword">for</span> (<span class="keyword">auto</span> [v,w] : row) {
+        <span class="keyword">if</span> (v &lt; <span class="number">0</span> || v &gt;= n) <span class="keyword">throw</span> out_of_range(<span class="string">&quot;edge&quot;</span>);
+        <span class="keyword">if</span> (w &lt; <span class="number">0</span>) <span class="keyword">throw</span> invalid_argument(<span class="string">&quot;negative weight&quot;</span>);
+    }
+    <span class="keyword">const</span> <span class="keyword">long</span> <span class="keyword">long</span> INF = LLONG_MAX / <span class="number">4</span>;
+    vector&lt;<span class="keyword">long</span> <span class="keyword">long</span>&gt; d(n, INF);
+    <span class="keyword">using</span> State = pair&lt;<span class="keyword">long</span> <span class="keyword">long</span>,<span class="keyword">int</span>&gt;;
+    priority_queue&lt;State,vector&lt;State&gt;,greater&lt;State&gt;&gt; pq;
+    d[s] = <span class="number">0</span>; pq.push({<span class="number">0</span>,s});
+    <span class="keyword">while</span> (!pq.empty()) {
+        <span class="keyword">auto</span> [du,u] = pq.top(); pq.pop();
+        <span class="keyword">if</span> (du != d[u]) continue;
+        <span class="keyword">if</span> (u == t) <span class="keyword">return</span> du;
+        <span class="keyword">for</span> (<span class="keyword">auto</span> [v,w] : g[u]) {
+            <span class="keyword">long</span> <span class="keyword">long</span> candidate = max(du, (<span class="keyword">long</span> <span class="keyword">long</span>)w);
+            <span class="keyword">if</span> (candidate &lt; d[v]) { d[v] = candidate; pq.push({d[v],v}); }
+        }
+    }
+    <span class="keyword">return</span> nullopt;
+}</code></pre></div></div><div class="practice"><h3>经典考点与练习</h3><p>练习：LeetCode 743 网络延迟时间、1631 最小体力消耗路径；了解 0-1 BFS。</p><h3>面试追问：关键点完整解答</h3><dl class="answer-list"><div><dt>负权边没有形成负环，能否使用 Dijkstra？</dt><dd><p>不能据此使用标准 Dijkstra。0→1(2)、0→2(5)、2→1(-10) 没有环，却能让先确定的 1 从 2 改成 -5。某些不永久确定节点的实现会反复重入堆并碰巧算对，但不再有标准 Dijkstra 的正确性过程与复杂度保证；有负环时还可能不停更新。</p></dd></div><div><dt>为什么过期状态必须跳过？跳过之后还要 visited 吗？</dt><dd><p>懒删除堆会保留旧距离，d!=dist[u] 时其出边已经没有必要按旧代价扫描。反复扫描会破坏每个点仅在有效确定时扫描出边的复杂度分析。在非负权、严格改善入堆的版本中，距离相等检查已足够，不必再使用入堆 visited。</p></dd></div><div><dt>为什么 0-1 BFS 不在首次发现时锁定节点？</dt><dd><p>0→1 权 1、0→2 权 0、2→1 权 0。1 可能先得到 1，随后应该改善为 0。如果沿用普通 BFS 的 dist!=-1 就不更新，会返回错误答案。0-1 BFS 使用距离比较和松弛，只是把堆换成了有序的双端队列。</p></dd></div><div><dt>堆版 Dijkstra 为什么有时写 log E，有时写 log V？</dt><dd><p>本章允许同一节点的多条候选共存，堆大小可达 O(E)，一般界为 O((V+E)log(E+2))。简单图有 E≤V²，log E=O(log V)，所以常简写 log V。带任意多平行边的多重图不能不说明条件就用这个替换。</p></dd></div><div><dt>网络延迟时间怎样从 dist 得到答案？</dt><dd><p>先从消息源做 Dijkstra。任一节点为 INF，说明消息无法到达所有节点，应返回 -1；否则取所有距离最大值，而非求和，因为传播可同时发生。若只求指定目标距离，可在该目标有效出堆后提前结束。</p></dd></div><div><dt>如何还原带权最短路径？零权边会导致父指针死循环吗？</dt><dd><p>仅在严格改善 dist[v] 时记录 parent[v]=u，再从终点回溯。标准非负权 Dijkstra 的改善来自有效弹出的前驱，不会将已确定点通过相等距离回写父指针。若相等时也随意重写 parent，零权环可能使父指针成环；需要字典序最小路径时应单独设计平局规则，不能简单比较父节点编号。</p></dd></div></dl></div>
 <label class="learned"><input type="checkbox" data-progress="10-03">我能独立实现，并解释正确性与边界</label></section><section class="lesson" id="s4"><div class="lesson-heading"><span class="lesson-number">10.04</span><h2>Floyd 与负权算法的选择</h2></div>
-<h3>知识与适用场景</h3><p>多个点之间都要查询距离且节点数较少时，可用 Floyd。它逐步允许路径经过编号更大的中间节点。存在负边但无负环时仍适用；若负环影响某对点，最短路不再有限。</p><div class="invariant"><span>推导 / 不变量</span><p>外层必须枚举中间点 k，转移 d[i][j]=min(d[i][j],d[i][k]+d[k][j])。初始化对角为 0，直接边取最小权重，其余为 INF。</p></div>
+<h3>知识与适用场景</h3><p>多个点之间都要查询距离且节点数较少时，可用 Floyd。它逐步允许路径经过编号更大的中间节点。存在负边但无负环时仍适用；若负环影响某对点，最短路不再有限。</p><div class="deep-block" id="s4-before-1"><h3>4.1 Bellman-Ford：从边数限制推导 V-1 轮</h3><p>不存在源点可达负环时，任何最短路都能去掉非负环，得到最多 V-1 条边的简单路径。定义第 k 轮距离为最多使用 k 条边的最短路，从上一轮快照松弛所有边便得到下一轮。允许原地松弛的常见写法也能在 V-1 轮内收敛，但单轮可能沿边的扫描顺序传播多步，不能再把它精确解释为恰好一层边数限制。</p><p>第 V 轮若某条从源可达的边还能改善，说明存在可达负环。被改善的终点和它能到达的节点均没有有限最短路。某个负环若从源点完全不可达，不影响该源的距离；若源可达负环但负环不能到达目标，该目标仍可能有正常有限答案。</p></div><div class="deep-block" id="s4-before-2"><h3>4.2 三种结果必须区分，不能用一个 -1 混在一起</h3><p class="table-hint">窄屏下可左右滑动表格，查看完整内容。</p><div class="study-table" tabindex="0" role="region" aria-label="4.2 三种结果必须区分，不能用一个 -1 混在一起"><table><thead><tr><th scope="col">状态</th><th scope="col">可达性与负环关系</th><th scope="col">输出含义</th><th scope="col">示例</th></tr></thead><tbody><tr><td>不可达</td><td>源点没有路径到目标</td><td>INF / nullopt</td><td>独立分量</td></tr><tr><td>有限</td><td>可达，且没有负环位于源到目标的某条路上</td><td>正常距离，可以是负数</td><td>0→1(-3)，结果 -3</td></tr><tr><td>负无穷语义</td><td>源能到负环，负环还能到目标</td><td>可无限降低，无有限最短路</td><td>0→1、1→1(-1)、1→2</td></tr><tr><td>其他地方有负环</td><td>负环不可从源到达，或不能通向该目标</td><td>不必影响当前查询</td><td>不能直接把所有点答案判无效</td></tr></tbody></table></div></div><div class="deep-block" id="s4-before-3"><h3>4.3 Floyd 的状态是允许的中间点集合，不是边数</h3><p>第 k 层只允许编号 0..k 的点作为内部中间点。最短路要么不经过 k，保留旧值；要么经过 k，拆成 i→k 与 k→j，所以转移是两段之和。k 必须位于最外层，才能确保一整轮都在同一个状态阶段。</p><p>把循环写成 i、j、k，仅做一轮可能漏更新。例：0→3→2→1，各边权 1。i=0、j=1 时，d[0][2] 还未更新，d[3][1] 也未更新，于是遗漏 0→1；稍后才得到 0→2，却不会再回头更新 j=1。</p><p>矩阵初始化 d[i][i]=0，直接边取 min，负自环保留负权而不被 0 覆盖。完成后 d[k][k]&lt;0 表示 k 处检测到负闭合走法；若 i 可达 k 且 k 可达 j，则 (i,j) 无有限最短路。不受负环影响的有限值才可作为普通最短距离读取。</p></div><div class="invariant"><span>推导 / 不变量</span><p>外层必须枚举中间点 k，转移 d[i][j]=min(d[i][j],d[i][k]+d[k][j])。初始化对角为 0，直接边取最小权重，其余为 INF。</p></div>
 <h3>手推一个例子</h3><p>0→1 为 3，1→2 为 -1，0→2 为 5。允许中间点 1 后，0→2 改为 2。</p><div class="codebox"><div class="codebar"><span>C++17</span><div><a href="examples/04.cpp" download>下载 .cpp</a><button type="button" class="copy">复制代码</button></div></div><pre tabindex="0" aria-label="C++17 代码"><code><span class="keyword">void</span> floyd(vector&lt;vector&lt;<span class="keyword">long</span> <span class="keyword">long</span>&gt;&gt;&amp; d) {
     <span class="keyword">const</span> <span class="keyword">long</span> <span class="keyword">long</span> INF=LLONG_MAX/<span class="number">4</span>;
     <span class="keyword">int</span> n=(<span class="keyword">int</span>)d.size();
@@ -104,9 +292,93 @@
     <span class="comment">// 如有 d[i][i] &lt; 0，则存在负环。</span>
 }</code></pre></div>
 <dl class="analysis-grid"><div><dt>复杂度</dt><dd>时间 O(V³)，距离矩阵 O(V²)，原地转移额外空间 O(1)。</dd></div><div><dt>易错点与边界</dt><dd>INF 参与加法前必须判断。边权规模需保证有限路径和不会溢出。单源含负边可选 Bellman-Ford：重复松弛 V-1 轮，再一轮检查可达负环。</dd></div></dl>
-<div class="practice"><h3>经典考点与练习</h3><p>练习：LeetCode 1334 阈值距离内邻居最少的城市；实现 Bellman-Ford 作为进阶练习。</p><details><summary>面试官可能继续问什么？</summary><p>为什么不能随意把 k 循环放到最里面？只有一对点查询时 Floyd 是否划算？</p><p class="muted">先用自己的话回答，再回到本节的前提、不变量和边界检查论证。</p></details></div>
+<div class="deep-block" id="s4-after-1"><h3>4.4 Bellman-Ford：同时标记负环影响的所有目标</h3><p>边表元素为 (起点,终点,权重)，与基础 Kruskal 的 (权重,u,v) 顺序不同。每轮使用快照，保证中间候选最多 n 条边；给定数值约束下绝对值至多 10^15，安全小于 INF。bad[v] 为真时不要读取 dist[v] 当最终答案。最后从可改善终点 BFS 扩散 bad。时间 O(VE+V²)，其中 V² 来自每轮复制距离数组；常用原地版本可省去此项。空间 O(V+E)。</p><div class="codebox"><div class="codebar"><span>C++17</span><div><a href="examples/detail-bellman-ford.cpp" download>下载 .cpp</a><button type="button" class="copy">复制代码</button></div></div><pre tabindex="0" aria-label="C++17 代码"><code><span class="keyword">struct</span> BellmanResult {
+    vector&lt;<span class="keyword">long</span> <span class="keyword">long</span>&gt; dist;
+    vector&lt;<span class="keyword">char</span>&gt; bad;
+};
+BellmanResult bellmanFordMarked(<span class="keyword">int</span> n, <span class="keyword">const</span> vector&lt;tuple&lt;<span class="keyword">int</span>,<span class="keyword">int</span>,<span class="keyword">int</span>&gt;&gt;&amp; edges, <span class="keyword">int</span> s) {
+    <span class="keyword">if</span> (n &lt; <span class="number">1</span> || n &gt; <span class="number">1000000</span> || s &lt; <span class="number">0</span> || s &gt;= n) <span class="keyword">throw</span> invalid_argument(<span class="string">&quot;size/source&quot;</span>);
+    <span class="keyword">const</span> <span class="keyword">long</span> <span class="keyword">long</span> INF = LLONG_MAX / <span class="number">4</span>;
+    vector&lt;vector&lt;<span class="keyword">int</span>&gt;&gt; g(n);
+    <span class="keyword">for</span> (<span class="keyword">auto</span> [u,v,w] : edges) {
+        <span class="keyword">if</span> (u &lt; <span class="number">0</span> || u &gt;= n || v &lt; <span class="number">0</span> || v &gt;= n) <span class="keyword">throw</span> out_of_range(<span class="string">&quot;edge&quot;</span>);
+        <span class="keyword">if</span> (w &lt; -<span class="number">1000000000</span> || w &gt; <span class="number">1000000000</span>) <span class="keyword">throw</span> invalid_argument(<span class="string">&quot;weight&quot;</span>);
+        g[u].push_back(v);
+    }
+    vector&lt;<span class="keyword">long</span> <span class="keyword">long</span>&gt; d(n, INF); d[s] = <span class="number">0</span>;
+    <span class="keyword">for</span> (<span class="keyword">int</span> step = <span class="number">1</span>; step &lt; n; ++step) {
+        <span class="keyword">auto</span> next = d;
+        <span class="keyword">bool</span> changed = <span class="keyword">false</span>;
+        <span class="keyword">for</span> (<span class="keyword">auto</span> [u,v,w] : edges) <span class="keyword">if</span> (d[u] != INF &amp;&amp; d[u] + w &lt; next[v]) {
+            next[v] = d[u] + w; changed = <span class="keyword">true</span>;
+        }
+        d.swap(next);
+        <span class="keyword">if</span> (!changed) break;
+    }
+    vector&lt;<span class="keyword">char</span>&gt; bad(n, <span class="keyword">false</span>); queue&lt;<span class="keyword">int</span>&gt; q;
+    <span class="keyword">for</span> (<span class="keyword">auto</span> [u,v,w] : edges)
+        <span class="keyword">if</span> (d[u] != INF &amp;&amp; d[u] + w &lt; d[v] &amp;&amp; !bad[v]) {
+            bad[v] = <span class="keyword">true</span>; q.push(v);
+        }
+    <span class="keyword">while</span> (!q.empty()) {
+        <span class="keyword">int</span> u = q.front(); q.pop();
+        <span class="keyword">for</span> (<span class="keyword">int</span> v : g[u]) <span class="keyword">if</span> (!bad[v]) { bad[v] = <span class="keyword">true</span>; q.push(v); }
+    }
+    <span class="keyword">return</span> {d,bad};
+}</code></pre></div></div><div class="deep-block" id="s4-after-2"><h3>4.5 Floyd：处理平行边、负自环及受影响的点对</h3><p>这里用上一轮矩阵快照清楚表达动态规划状态。对于负环，中间数值可能极小，使用 -INF 作为计算下限并夹紧；它不是正常有限距离，仍通过 bad 矩阵表达语义。约束使任意简单路径绝对值低于 10^15，而 INF 约 2.3×10^18，所以夹紧不会误伤不受负环影响的有限最短路。两个处于 [-INF,INF) 的操作数相加不会越过 long long 范围。时间 O(V³)、空间 O(V²)，矩阵只适合较小 V。</p><div class="codebox"><div class="codebar"><span>C++17</span><div><a href="examples/detail-floyd-marked.cpp" download>下载 .cpp</a><button type="button" class="copy">复制代码</button></div></div><pre tabindex="0" aria-label="C++17 代码"><code><span class="keyword">struct</span> FloydResult {
+    vector&lt;vector&lt;<span class="keyword">long</span> <span class="keyword">long</span>&gt;&gt; dist;
+    vector&lt;vector&lt;<span class="keyword">char</span>&gt;&gt; bad;
+};
+FloydResult allPairsMarked(<span class="keyword">int</span> n, <span class="keyword">const</span> vector&lt;tuple&lt;<span class="keyword">int</span>,<span class="keyword">int</span>,<span class="keyword">int</span>&gt;&gt;&amp; edges) {
+    <span class="keyword">if</span> (n &lt; <span class="number">0</span> || n &gt; <span class="number">1000000</span>) <span class="keyword">throw</span> invalid_argument(<span class="string">&quot;n&quot;</span>);
+    <span class="keyword">for</span> (<span class="keyword">auto</span> [u,v,w] : edges) {
+        <span class="keyword">if</span> (u &lt; <span class="number">0</span> || u &gt;= n || v &lt; <span class="number">0</span> || v &gt;= n) <span class="keyword">throw</span> out_of_range(<span class="string">&quot;edge&quot;</span>);
+        <span class="keyword">if</span> (w &lt; -<span class="number">1000000000</span> || w &gt; <span class="number">1000000000</span>) <span class="keyword">throw</span> invalid_argument(<span class="string">&quot;weight&quot;</span>);
+    }
+    <span class="keyword">const</span> <span class="keyword">long</span> <span class="keyword">long</span> INF = LLONG_MAX / <span class="number">4</span>;
+    vector&lt;vector&lt;<span class="keyword">long</span> <span class="keyword">long</span>&gt;&gt; d(n, vector&lt;<span class="keyword">long</span> <span class="keyword">long</span>&gt;(n, INF));
+    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; n; ++i) d[i][i] = <span class="number">0</span>;
+    <span class="keyword">for</span> (<span class="keyword">auto</span> [u,v,w] : edges) d[u][v] = min(d[u][v], (<span class="keyword">long</span> <span class="keyword">long</span>)w);
+    <span class="keyword">for</span> (<span class="keyword">int</span> k = <span class="number">0</span>; k &lt; n; ++k) {
+        <span class="keyword">auto</span> old = d;
+        <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; n; ++i) <span class="keyword">if</span> (old[i][k] != INF)
+            <span class="keyword">for</span> (<span class="keyword">int</span> j = <span class="number">0</span>; j &lt; n; ++j) <span class="keyword">if</span> (old[k][j] != INF) {
+                <span class="keyword">long</span> <span class="keyword">long</span> candidate = max(-INF, old[i][k] + old[k][j]);
+                d[i][j] = min(old[i][j], candidate);
+            }
+    }
+    vector&lt;vector&lt;<span class="keyword">char</span>&gt;&gt; bad(n, vector&lt;<span class="keyword">char</span>&gt;(n, <span class="keyword">false</span>));
+    <span class="keyword">for</span> (<span class="keyword">int</span> k = <span class="number">0</span>; k &lt; n; ++k) <span class="keyword">if</span> (d[k][k] &lt; <span class="number">0</span>)
+        <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; n; ++i) <span class="keyword">if</span> (d[i][k] != INF)
+            <span class="keyword">for</span> (<span class="keyword">int</span> j = <span class="number">0</span>; j &lt; n; ++j) <span class="keyword">if</span> (d[k][j] != INF) bad[i][j] = <span class="keyword">true</span>;
+    <span class="keyword">return</span> {d,bad};
+}</code></pre></div></div><div class="deep-block" id="s4-after-3"><h3>4.6 DAG 最短路：即使有负边，也可在线性时间松弛</h3><p>有向无环图没有任何环，因此无需非负边权保证。按拓扑序处理 u 时，所有可能通向 u 的前驱已经处理完成，其距离不会再改动。函数返回 nullopt 表示整图不是 DAG（包括源不可达部分存在环的情况）；有值时，数组内 INF 才表示某个点不可达。时间 O(V+E)，辅助空间 O(V)。数值条件同前。</p><div class="codebox"><div class="codebar"><span>C++17</span><div><a href="examples/detail-dag-shortest.cpp" download>下载 .cpp</a><button type="button" class="copy">复制代码</button></div></div><pre tabindex="0" aria-label="C++17 代码"><code>optional&lt;vector&lt;<span class="keyword">long</span> <span class="keyword">long</span>&gt;&gt; dagDistances(
+    <span class="keyword">const</span> vector&lt;vector&lt;pair&lt;<span class="keyword">int</span>,<span class="keyword">int</span>&gt;&gt;&gt;&amp; g, <span class="keyword">int</span> s) {
+    <span class="keyword">int</span> n = (<span class="keyword">int</span>)g.size();
+    <span class="keyword">if</span> (n &lt; <span class="number">1</span> || n &gt; <span class="number">1000000</span> || s &lt; <span class="number">0</span> || s &gt;= n) <span class="keyword">throw</span> invalid_argument(<span class="string">&quot;size/source&quot;</span>);
+    vector&lt;<span class="keyword">int</span>&gt; indegree(n);
+    <span class="keyword">for</span> (<span class="keyword">const</span> <span class="keyword">auto</span>&amp; row : g) <span class="keyword">for</span> (<span class="keyword">auto</span> [v,w] : row) {
+        <span class="keyword">if</span> (v &lt; <span class="number">0</span> || v &gt;= n) <span class="keyword">throw</span> out_of_range(<span class="string">&quot;edge&quot;</span>);
+        <span class="keyword">if</span> (w &lt; -<span class="number">1000000000</span> || w &gt; <span class="number">1000000000</span>) <span class="keyword">throw</span> invalid_argument(<span class="string">&quot;weight&quot;</span>);
+        ++indegree[v];
+    }
+    queue&lt;<span class="keyword">int</span>&gt; q;
+    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; n; ++i) <span class="keyword">if</span> (!indegree[i]) q.push(i);
+    <span class="keyword">const</span> <span class="keyword">long</span> <span class="keyword">long</span> INF = LLONG_MAX / <span class="number">4</span>;
+    vector&lt;<span class="keyword">long</span> <span class="keyword">long</span>&gt; d(n, INF); d[s] = <span class="number">0</span>;
+    <span class="keyword">int</span> processed = <span class="number">0</span>;
+    <span class="keyword">while</span> (!q.empty()) {
+        <span class="keyword">int</span> u = q.front(); q.pop(); ++processed;
+        <span class="keyword">for</span> (<span class="keyword">auto</span> [v,w] : g[u]) {
+            <span class="keyword">if</span> (d[u] != INF) d[v] = min(d[v], d[u] + w);
+            <span class="keyword">if</span> (--indegree[v] == <span class="number">0</span>) q.push(v);
+        }
+    }
+    <span class="keyword">if</span> (processed != n) <span class="keyword">return</span> nullopt;
+    <span class="keyword">return</span> d;
+}</code></pre></div></div><div class="practice"><h3>经典考点与练习</h3><p>练习：LeetCode 1334 阈值距离内邻居最少的城市；实现 Bellman-Ford 作为进阶练习。</p><h3>面试追问：关键点完整解答</h3><dl class="answer-list"><div><dt>Bellman-Ford 为什么再松弛一轮就能发现可达负环？</dt><dd><p>若没有可达负环，最短路可化为至多 V-1 条边的简单路径，V-1 轮后不应再改善。还能改善说明更长的走法带来了更小代价，重复节点形成的闭合部分必须包含负环。必须检查 dist[u]!=INF，否则会把与源点无关的边误算进去。</p></dd></div><div><dt>最多 K 条边的最短路为什么需要快照？</dt><dd><p>若在同一数组上更新，扫描 0→1 后立即扫描 1→2，单轮就能走两条边，违反层数含义。每轮从 old 读取、向 next 写入，才保证每轮最多增加一条边。最多 K 次中转通常对应最多 K+1 条边，先明确题意再定循环次数。</p></dd></div><div><dt>如何检测整张图是否存在负环，而非仅源点可达负环？</dt><dd><p>增加一个超级源点，以零权边连接所有点后运行 Bellman-Ford；等价地把所有点初始距离设为 0，再检查第 V 轮是否仍有更新。此时每个分量都可达。这个初始化只用于全图检测，不能再把输出当作原来某个源点的最短路。</p></dd></div><div><dt>Floyd 为什么不能把 k 放进最内层？</dt><dd><p>其状态定义是允许使用的中间点集合。i、j 是同一层里的所有状态，而 k 是阶段，必须先完整完成前一阶段，才能安全进入下一阶段。随意交换可能读取尚未计算的子路径；0→3→2→1 的链就是一轮 i、j、k 漏更新的反例。</p></dd></div><div><dt>无向负权边为什么特别危险？SPFA 能解决性能问题吗？</dt><dd><p>若无向边可反复走，一条负权边两方向往返就形成负闭合走法，可无限降低代价；这与要求简单路径的另一类问题不同。Bellman-Ford 可检测负环，但不能给出本不存在的有限最短路。SPFA 是基于队列的松弛优化，最坏仍可能 O(VE)，不能把它当成必然快速的替代方案。</p></dd></div><div><dt>什么时候选 Floyd、反图 Dijkstra 或多次 Dijkstra？</dt><dd><p>点数小且点对查询多，Floyd 预处理 O(V³) 后查询 O(1)。非负权稀疏图可从所需源点分别 Dijkstra；若只问所有点到同一终点，把有向边反向后从该终点做一次 Dijkstra。反图求的是路径方向倒置，不是把问题改成无向图。</p></dd></div></dl></div>
 <label class="learned"><input type="checkbox" data-progress="10-04">我能独立实现，并解释正确性与边界</label></section><section class="lesson" id="s5"><div class="lesson-heading"><span class="lesson-number">10.05</span><h2>最小生成树与最短路的区别</h2></div>
-<h3>知识与适用场景</h3><p>最小生成树要求用最小总边权连接所有节点，不要求从某个源到其他点的路径最短。Kruskal 按边权排序，选择连接不同连通块的最小边。</p><div class="invariant"><span>推导 / 不变量</span><p>并查集判断加边是否形成环。每选一条边，连通块数减少 1；选满 V-1 条边就得到生成树，若选不满则图不连通。</p></div>
+<h3>知识与适用场景</h3><p>最小生成树要求用最小总边权连接所有节点，不要求从某个源到其他点的路径最短。Kruskal 按边权排序，选择连接不同连通块的最小边。</p><div class="deep-block" id="s5-before-1"><h3>5.1 最小生成树优化的是购买边的总成本</h3><p>最短路树从一个固定源出发，使源到每个点的路径最短；最小生成树没有固定源，要求用最小总边权把所有点连接起来。它们通常不是同一棵树。连通无向图的生成树有 V-1 条边，负权边不妨碍这个定义；自环不能连接新的点，平行边可以作为不同候选。</p><p>不连通图没有覆盖全部点的生成树，但可求每个分量的最小生成树，合称最小生成森林。应明确函数返回的是失败还是森林：基础 Kruskal 返回 nullopt；后面的 Prim 返回 forest 的总成本与分量数，调用者自行判断是否连通。</p></div><div class="deep-block" id="s5-before-2"><h3>5.2 一个反例区分两种目标</h3><p class="table-hint">窄屏下可左右滑动表格，查看完整内容。</p><div class="study-table" tabindex="0" role="region" aria-label="5.2 一个反例区分两种目标"><table><thead><tr><th scope="col">无向图</th><th scope="col">选择的边</th><th scope="col">总边权</th><th scope="col">从 A 到 C</th></tr></thead><tbody><tr><td>AB=2、AC=2、BC=1</td><td>最短路树：AB、AC</td><td>4</td><td>2（直接走 AC）</td></tr><tr><td>同一张图</td><td>MST：AB、BC</td><td>3</td><td>3（经 B，不是最短）</td></tr><tr><td>同一张图</td><td>另一棵 MST：AC、BC</td><td>3</td><td>2；但 A 到 B 变为 3</td></tr></tbody></table></div></div><div class="deep-block" id="s5-before-3"><h3>5.3 割性质：贪心选择为何安全？</h3><p>把点集划成 S 和其补集 V−S，一条边两端分居两侧就叫跨割边。若这个割不切断此前已选择的边，取权重最小的跨割边 e，可以让已有选择扩展成某棵 MST。证明：若一棵包含已有边的 MST 没有 e，加 e 后形成环，环上必有另一条跨割边 f；w(e)≤w(f)，用 e 换掉 f 不会更差。</p><p>注意“可以属于某棵 MST”不等于“属于所有 MST”。当最小边有并列时，可能存在多种答案。Kruskal 用并查集的连通块诱导割；Prim 用已加入的点集诱导割。两者安全依据相同，但维护的候选不同。</p></div><div class="deep-block" id="s5-before-4"><h3>5.4 三个贪心模板的 key 含义不同</h3><p class="table-hint">窄屏下可左右滑动表格，查看完整内容。</p><div class="study-table" tabindex="0" role="region" aria-label="5.4 三个贪心模板的 key 含义不同"><table><thead><tr><th scope="col">算法</th><th scope="col">候选值</th><th scope="col">更新公式</th><th scope="col">需要非负权吗</th></tr></thead><tbody><tr><td>Dijkstra</td><td>源到 v 的当前路径长度</td><td>dist[u]+w(u,v)</td><td>需要</td></tr><tr><td>Prim</td><td>已选点集连接 v 的最小单边权</td><td>w(u,v)</td><td>不需要</td></tr><tr><td>Kruskal</td><td>全图下一条最小候选边</td><td>按边权排序后判断两个分量</td><td>不需要</td></tr></tbody></table></div></div><div class="invariant"><span>推导 / 不变量</span><p>并查集判断加边是否形成环。每选一条边，连通块数减少 1；选满 V-1 条边就得到生成树，若选不满则图不连通。</p></div>
 <h3>手推一个例子</h3><p>三角形边权 1、2、3，选 1 和 2 即可连接全部节点，总权 3；继续选 3 会成环，必须跳过。</p><div class="codebox"><div class="codebar"><span>C++17</span><div><a href="examples/05.cpp" download>下载 .cpp</a><button type="button" class="copy">复制代码</button></div></div><pre tabindex="0" aria-label="C++17 代码"><code><span class="keyword">struct</span> DSU {
     vector&lt;<span class="keyword">int</span>&gt; p,sz;
     <span class="keyword">explicit</span> DSU(<span class="keyword">int</span> n):p(n),sz(n,<span class="number">1</span>){ iota(p.begin(),p.end(),<span class="number">0</span>); }
@@ -132,5 +404,195 @@ optional&lt;<span class="keyword">long</span> <span class="keyword">long</span>&
     <span class="keyword">return</span> nullopt;
 }</code></pre></div>
 <dl class="analysis-grid"><div><dt>复杂度</dt><dd>时间 O(E log E + E·α(V))，并查集 O(V)；该实现按值传边表，额外复制 O(E)。</dd></div><div><dt>易错点与边界</dt><dd>有负边仍可求最小生成树。图必须无向；有向图的最小连接问题不能直接套 Kruskal。</dd></div></dl>
-<div class="practice"><h3>经典考点与练习</h3><p>练习：LeetCode 1584 连接所有点的最小费用、684 冗余连接。</p><details><summary>面试官可能继续问什么？</summary><p>为什么选择跨越某个割的最小边是安全的？最短路树一定是最小生成树吗？</p><p class="muted">先用自己的话回答，再回到本节的前提、不变量和边界检查论证。</p></details></div>
-<label class="learned"><input type="checkbox" data-progress="10-05">我能独立实现，并解释正确性与边界</label></section><nav class="chapter-pager" aria-label="相邻章节"><a href="../09-递归回溯与分治/index.html"><small>上一章</small>← 递归、回溯与分治</a><a href="../11-贪心/index.html"><small>下一章</small>贪心 →</a></nav><footer>秋招算法学习讲义 · C++17<br>例题编号供检索；难度与覆盖范围按学习顺序组织。</footer></main><aside class="toc" aria-label="本页目录"><p class="rail-label">本章小节</p><a href="#s1"><span>01</span>建图与 BFS：无权最短路</a><a href="#s2"><span>02</span>拓扑排序与有向环</a><a href="#s3"><span>03</span>Dijkstra：非负权最短路</a><a href="#s4"><span>04</span>Floyd 与负权算法的选择</a><a href="#s5"><span>05</span>最小生成树与最短路的区别</a></aside></div><div class="toast" role="status" aria-live="polite"></div></body></html>
+<div class="deep-block" id="s5-after-1"><h3>5.5 稠密 Prim：返回最小生成森林及分量数</h3><p>输入对称方阵，INF=LLONG_MAX/4 表示没有边，其余边权绝对值不超过 10^9；对角线不参与选边。扫描数组选最小 key，适合完全图或稠密图，时间 O(V²)，除输入矩阵外辅助空间 O(V)。如果所有未选点的 key 都为 INF，就启动一个新分量，其根贡献 0。空图返回成本 0、分量数 0；单点图返回成本 0、分量数 1。</p><p>1584 连接所有点的最小费用是完全图：不必显式存储 O(V²) 条边或矩阵，可以在 Prim 的更新循环里即时计算曼哈顿距离，保持 O(V²) 时间、O(V) 辅助空间。坐标相减前转为 long long，避免先在 int 中溢出。</p><div class="codebox"><div class="codebar"><span>C++17</span><div><a href="examples/detail-prim-forest.cpp" download>下载 .cpp</a><button type="button" class="copy">复制代码</button></div></div><pre tabindex="0" aria-label="C++17 代码"><code><span class="keyword">struct</span> PrimForestResult {
+    <span class="keyword">long</span> <span class="keyword">long</span> cost;
+    <span class="keyword">int</span> components;
+    vector&lt;pair&lt;<span class="keyword">int</span>,<span class="keyword">int</span>&gt;&gt; edges;
+};
+PrimForestResult densePrimForest(<span class="keyword">const</span> vector&lt;vector&lt;<span class="keyword">long</span> <span class="keyword">long</span>&gt;&gt;&amp; weight) {
+    <span class="keyword">const</span> <span class="keyword">long</span> <span class="keyword">long</span> INF = LLONG_MAX / <span class="number">4</span>;
+    <span class="keyword">int</span> n = (<span class="keyword">int</span>)weight.size();
+    <span class="keyword">if</span> (n &gt; <span class="number">1000000</span>) <span class="keyword">throw</span> invalid_argument(<span class="string">&quot;size&quot;</span>);
+    <span class="keyword">for</span> (<span class="keyword">const</span> <span class="keyword">auto</span>&amp; row : weight) <span class="keyword">if</span> ((<span class="keyword">int</span>)row.size() != n)
+        <span class="keyword">throw</span> invalid_argument(<span class="string">&quot;not square&quot;</span>);
+    <span class="keyword">for</span> (<span class="keyword">int</span> u = <span class="number">0</span>; u &lt; n; ++u) <span class="keyword">for</span> (<span class="keyword">int</span> v = <span class="number">0</span>; v &lt; n; ++v) {
+        <span class="keyword">long</span> <span class="keyword">long</span> w = weight[u][v];
+        <span class="keyword">if</span> (w != weight[v][u]) <span class="keyword">throw</span> invalid_argument(<span class="string">&quot;not undirected&quot;</span>);
+        <span class="keyword">if</span> (w != INF &amp;&amp; (w &lt; -<span class="number">1000000000LL</span> || w &gt; <span class="number">1000000000LL</span>))
+            <span class="keyword">throw</span> invalid_argument(<span class="string">&quot;weight&quot;</span>);
+    }
+    vector&lt;<span class="keyword">long</span> <span class="keyword">long</span>&gt; key(n, INF);
+    vector&lt;<span class="keyword">int</span>&gt; parent(n, -<span class="number">1</span>);
+    vector&lt;<span class="keyword">char</span>&gt; used(n, <span class="keyword">false</span>);
+    PrimForestResult result{<span class="number">0</span>,<span class="number">0</span>,{}};
+    <span class="keyword">for</span> (<span class="keyword">int</span> step = <span class="number">0</span>; step &lt; n; ++step) {
+        <span class="keyword">int</span> u = -<span class="number">1</span>;
+        <span class="keyword">for</span> (<span class="keyword">int</span> v = <span class="number">0</span>; v &lt; n; ++v)
+            <span class="keyword">if</span> (!used[v] &amp;&amp; (u == -<span class="number">1</span> || key[v] &lt; key[u])) u = v;
+        <span class="keyword">if</span> (key[u] == INF) { key[u] = <span class="number">0</span>; ++result.components; }
+        used[u] = <span class="keyword">true</span>; result.cost += key[u];
+        <span class="keyword">if</span> (parent[u] != -<span class="number">1</span>) result.edges.push_back({parent[u],u});
+        <span class="keyword">for</span> (<span class="keyword">int</span> v = <span class="number">0</span>; v &lt; n; ++v)
+            <span class="keyword">if</span> (!used[v] &amp;&amp; weight[u][v] &lt; key[v]) {
+                key[v] = weight[u][v]; parent[v] = u;
+            }
+    }
+    <span class="keyword">return</span> result;
+}</code></pre></div></div><div class="deep-block" id="s5-after-2"><h3>5.6 Kruskal 的实现细节与稀疏 Prim</h3><p>Kruskal 把边表按权重从小到大排序，对每条边查询两个端点所在集合，只有不同集合才合并并累计权重。路径压缩与按大小合并使并查集操作均摊接近常数，但排序仍是主要成本。不要在读入边时就按输入顺序合并并累加，否则只是得到某棵生成树，不保证最小。</p><p>稀疏图可用堆 Prim：从当前树的边界选最小单边权，弹出后若终点已在树内则跳过；首次接入该点才累计该边权，并把它的出边加入候选。惰性边堆实现 O(E log(E+2))，空间 O(V+E)。这个“已加入”的标记不同于 Dijkstra 在入堆时标记的错误做法。</p></div><div class="practice"><h3>经典考点与练习</h3><p>练习：LeetCode 1584 连接所有点的最小费用、684 冗余连接。</p><h3>面试追问：关键点完整解答</h3><dl class="answer-list"><div><dt>最短路树一定是最小生成树吗？</dt><dd><p>不一定。AB=AC=2、BC=1，从 A 的最短路树取 AB 与 AC，总成本 4；MST 取一条权 2 的边和 BC，总成本 3，却牺牲 A 到某个点的路径长度。先说清优化目标是所有购买边之和，还是各点到源的距离。</p></dd></div><div><dt>负边会破坏 Kruskal 或 Prim 的正确性吗？</dt><dd><p>不会。割性质只比较边权大小，不要求非负；树本身没有可重复绕行的环，不存在通过绕负环无限降低的问题。负自环不能加入树，负平行边中也要按是否连接不同分量判断。不能把 Dijkstra 的非负条件搬给 MST。</p></dd></div><div><dt>选了 V-1 条边就一定是生成树吗？</dt><dd><p>还需要无环且覆盖这 V 个点。Kruskal 每次只合并两个不同分量，因此不会成环，从 V 个分量出发选 V-1 次后恰好剩一个分量，才可确定得到生成树。任意随手选出的 V-1 条边可能含环并遗漏某些点。</p></dd></div><div><dt>跨割的最轻边是否出现在每一棵 MST 中？</dt><dd><p>若它在该割上严格最轻，则任意 MST 缺少它都会在加边形成的环上有更重跨割边，可交换得到更低总权，矛盾，所以必须包含。若有同权最小边，只保证某个最优解可以包含它，不能断言所有解都包含。</p></dd></div><div><dt>Kruskal、Prim 如何选择？</dt><dd><p>已有稀疏边表时，Kruskal 直接排序很自然；已有稀疏邻接表时可用堆 Prim；完全图或距离可即时计算时，数组 Prim 的 O(V²) 版本能避免显式建立、排序 O(V²) 条边。选择依据包括输入表示和图密度，不是某算法永远更快。</p></dd></div><div><dt>有向图也能把边拿去 Kruskal 吗？</dt><dd><p>不能直接套。并查集忽略方向，只判断无向连通，无法保证从指定根沿有向边到达所有节点。对应的有向最小树形图是另一类问题，需专门算法；面试时应先向题目确认连接是否无向。</p></dd></div></dl></div>
+<label class="learned"><input type="checkbox" data-progress="10-05">我能独立实现，并解释正确性与边界</label></section><section class="chapter-review" id="chapter-review"><p class="eyebrow">PRACTICE / 把本章方法用起来</p><h2>综合例题与章末自测</h2><div class="deep-block" id="review-1"><h3>练习路线：每题都说出建模、算法前提和边界</h3><p class="table-hint">窄屏下可左右滑动表格，查看完整内容。</p><div class="study-table" tabindex="0" role="region" aria-label="练习路线：每题都说出建模、算法前提和边界"><table><thead><tr><th scope="col">阶段</th><th scope="col">经典题</th><th scope="col">必须讲清的考点</th><th scope="col">最小反例 / 测试</th></tr></thead><tbody><tr><td>遍历与网格</td><td>200、994、542</td><td>连通块、多源距离、无法扩散</td><td>无源、孤立格、多源、单格</td></tr><tr><td>染色与依赖</td><td>785、207、210、802</td><td>全分量染色、方向、三色、反图</td><td>奇环、自环、菱形 DAG、环下游</td></tr><tr><td>非负权路径</td><td>743、1631、1368</td><td>有效出堆、瓶颈代价、0/1 松弛</td><td>先发现差路径、零权环、不可达</td></tr><tr><td>负权与全源</td><td>787、1334</td><td>边数快照、Floyd 阶段</td><td>负自环、不可达负环、平行边</td></tr><tr><td>连接所有点</td><td>1584、684</td><td>割性质、MST 与最短路区别</td><td>不连通、负边、并列边、平行边</td></tr></tbody></table></div></div><div class="deep-block" id="review-2"><h3>综合口述练习：看到输入后先做五步判断</h3><p>第一步定义节点与状态，第二步确认方向和多重边，第三步说明目标是可达、最短路、依赖还是连接成本，第四步核对边权与规模，第五步再选算法。比如“最多中转 K 次的廉价航班”，不是只用 dist[城市] 的普通最短路；剩余航段数也影响后续选择，应使用层数 DP 或显式扩展状态。</p><p>面试中应主动说明空图、孤立点、不可达、多个连通分量、自环、平行边和权重范围。给出一个使错误算法失败的最小反例，通常比背一段模板更能说明真正理解：负边破坏 Dijkstra、奇环破坏二分图、环下游说明 Kahn 剩余不全在环上。</p></div><div class="deep-block" id="review-3"><h3>章末自测：两个综合关键点</h3><dl class="answer-list"><div><dt>怎样验证输出，而不只检查与某一个标准序列相同？</dt><dd><p>拓扑序不唯一，应验证它包含每个节点一次，且每条边 u→v 满足 pos[u]&lt;pos[v]；返回的环应检查首尾相同且相邻节点确有边。最短路路径应检查端点、边合法和总代价与距离一致。MST 应检查边数、无环、连通和总权，不能仅与某一棵树的边集比较。</p></dd></div><div><dt>为什么测试需要小规模独立参照，而不只跑同一个模板两遍？</dt><dd><p>两个相同模板容易共享同一种错误。可用 BFS 对照单位权 Dijkstra、Bellman-Ford 对照非负图 Dijkstra、Floyd 对照所有源的 Bellman-Ford、暴力枚举染色对照二分图、小图枚举生成树对照 Prim。随机测试固定种子以便复现，再补不可达负环、平行边、自环、空图等定向用例；测试通过也不能替代理论证明。</p></dd></div></dl></div><div class="deep-block" id="review-4"><h3>综合测试：独立参照、性质断言与固定边界</h3><p>该文件包含 main，并引用同目录的 13 份补充实现及基础 Dijkstra、Kruskal。请把整个 examples 目录一起保存，单独编译测试文件，不要再把被 include 的 cpp 同时传给链接器。可用 g++ -std=c++17 -O2 -Wall -Wextra detail-graph-tests.cpp -o graph-tests 后运行 graph-tests（Windows 为 .\graph-tests.exe）。不要定义 NDEBUG，否则 assert 检查被禁用。</p><p>测试包含 120 轮固定种子小图：0/1 最短路三算法对照、带负权图 Bellman-Ford 与 Floyd 的负环影响对照、DAG 最短路、二分图穷举染色、Prim 与 Kruskal 及生成树枚举对照；另检查路径端点、拓扑顺序、环证据、平行边、无源网格、负自环和不可达负环。本环境未发现 C++ 编译器，提供的是待运行的测试源码，不声称已编译或执行通过。</p><div class="codebox"><div class="codebar"><span>C++17</span><div><a href="examples/detail-graph-tests.cpp" download>下载 .cpp</a><button type="button" class="copy">复制代码</button></div></div><pre tabindex="0" aria-label="C++17 代码"><code>#include <span class="string">&quot;detail-bfs-path.cpp&quot;</span>
+#include <span class="string">&quot;detail-multisource-grid.cpp&quot;</span>
+#include <span class="string">&quot;detail-undirected-cycle.cpp&quot;</span>
+#include <span class="string">&quot;detail-bipartite.cpp&quot;</span>
+#include <span class="string">&quot;detail-topo-lex.cpp&quot;</span>
+#include <span class="string">&quot;detail-directed-cycle.cpp&quot;</span>
+#include <span class="string">&quot;detail-safe-nodes.cpp&quot;</span>
+#include <span class="string">&quot;detail-zero-one-bfs.cpp&quot;</span>
+#include <span class="string">&quot;detail-minimax-path.cpp&quot;</span>
+#include <span class="string">&quot;detail-bellman-ford.cpp&quot;</span>
+#include <span class="string">&quot;detail-floyd-marked.cpp&quot;</span>
+#include <span class="string">&quot;detail-dag-shortest.cpp&quot;</span>
+#include <span class="string">&quot;detail-prim-forest.cpp&quot;</span>
+#include <span class="string">&quot;03.cpp&quot;</span>
+#include <span class="string">&quot;05.cpp&quot;</span>
+
+<span class="keyword">bool</span> bruteBipartite(<span class="keyword">const</span> vector&lt;vector&lt;<span class="keyword">int</span>&gt;&gt;&amp; g) {
+    <span class="keyword">int</span> n = (<span class="keyword">int</span>)g.size();
+    <span class="keyword">for</span> (<span class="keyword">int</span> mask = <span class="number">0</span>; mask &lt; (<span class="number">1</span> &lt;&lt; n); ++mask) {
+        <span class="keyword">bool</span> ok = <span class="keyword">true</span>;
+        <span class="keyword">for</span> (<span class="keyword">int</span> u = <span class="number">0</span>; u &lt; n; ++u) <span class="keyword">for</span> (<span class="keyword">int</span> v : g[u])
+            <span class="keyword">if</span> (((mask &gt;&gt; u) &amp; <span class="number">1</span>) == ((mask &gt;&gt; v) &amp; <span class="number">1</span>)) ok = <span class="keyword">false</span>;
+        <span class="keyword">if</span> (ok) <span class="keyword">return</span> <span class="keyword">true</span>;
+    }
+    <span class="keyword">return</span> <span class="keyword">false</span>;
+}
+optional&lt;<span class="keyword">long</span> <span class="keyword">long</span>&gt; bruteTree(<span class="keyword">int</span> n, <span class="keyword">const</span> vector&lt;tuple&lt;<span class="keyword">int</span>,<span class="keyword">int</span>,<span class="keyword">int</span>&gt;&gt;&amp; edges) {
+    <span class="keyword">if</span> (n &lt;= <span class="number">1</span>) <span class="keyword">return</span> <span class="number">0LL</span>;
+    optional&lt;<span class="keyword">long</span> <span class="keyword">long</span>&gt; best;
+    <span class="keyword">int</span> m = (<span class="keyword">int</span>)edges.size(); <span class="comment">// 测试仅 n&lt;=5 的简单无向图，m&lt;=10</span>
+    <span class="keyword">for</span> (<span class="keyword">int</span> mask = <span class="number">0</span>; mask &lt; (<span class="number">1</span> &lt;&lt; m); ++mask) {
+        <span class="keyword">int</span> count = <span class="number">0</span>;
+        <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; m; ++i) count += (mask &gt;&gt; i) &amp; <span class="number">1</span>;
+        <span class="keyword">if</span> (count != n - <span class="number">1</span>) continue;
+        vector&lt;vector&lt;<span class="keyword">int</span>&gt;&gt; g(n); <span class="keyword">long</span> <span class="keyword">long</span> sum = <span class="number">0</span>;
+        <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; m; ++i) <span class="keyword">if</span> ((mask &gt;&gt; i) &amp; <span class="number">1</span>) {
+            <span class="keyword">auto</span> [w,u,v] = edges[i]; sum += w;
+            g[u].push_back(v); g[v].push_back(u);
+        }
+        vector&lt;<span class="keyword">char</span>&gt; seen(n); queue&lt;<span class="keyword">int</span>&gt; q; q.push(<span class="number">0</span>); seen[<span class="number">0</span>] = <span class="keyword">true</span>;
+        <span class="keyword">int</span> reached = <span class="number">0</span>;
+        <span class="keyword">while</span> (!q.empty()) {
+            <span class="keyword">int</span> u = q.front(); q.pop(); ++reached;
+            <span class="keyword">for</span> (<span class="keyword">int</span> v : g[u]) <span class="keyword">if</span> (!seen[v]) { seen[v] = <span class="keyword">true</span>; q.push(v); }
+        }
+        <span class="keyword">if</span> (reached == n &amp;&amp; (!best || sum &lt; *best)) best = sum;
+    }
+    <span class="keyword">return</span> best;
+}
+<span class="keyword">void</span> checkTopology(<span class="keyword">const</span> vector&lt;vector&lt;<span class="keyword">int</span>&gt;&gt;&amp; g, <span class="keyword">const</span> TopologyResult&amp; r) {
+    assert(r.dag &amp;&amp; r.order.size() == g.size());
+    vector&lt;<span class="keyword">int</span>&gt; pos(g.size(), -<span class="number">1</span>);
+    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; (<span class="keyword">int</span>)g.size(); ++i) {
+        assert(r.order[i] &gt;= <span class="number">0</span> &amp;&amp; r.order[i] &lt; (<span class="keyword">int</span>)g.size());
+        assert(pos[r.order[i]] == -<span class="number">1</span>); pos[r.order[i]] = i;
+    }
+    <span class="keyword">for</span> (<span class="keyword">int</span> u = <span class="number">0</span>; u &lt; (<span class="keyword">int</span>)g.size(); ++u) <span class="keyword">for</span> (<span class="keyword">int</span> v : g[u]) assert(pos[u] &lt; pos[v]);
+}
+<span class="keyword">int</span> main() {
+    <span class="keyword">const</span> <span class="keyword">long</span> <span class="keyword">long</span> INF = LLONG_MAX / <span class="number">4</span>;
+    vector&lt;vector&lt;<span class="keyword">int</span>&gt;&gt; diamond{{<span class="number">1</span>,<span class="number">2</span>},{<span class="number">3</span>},{<span class="number">3</span>},{}};
+    <span class="keyword">auto</span> path = shortestUnweightedPath(diamond,<span class="number">0</span>,<span class="number">3</span>);
+    assert(path &amp;&amp; path-&gt;size() == <span class="number">3</span> &amp;&amp; path-&gt;front() == <span class="number">0</span> &amp;&amp; path-&gt;back() == <span class="number">3</span>);
+    <span class="keyword">for</span> (size_t i = <span class="number">1</span>; i &lt; path-&gt;size(); ++i) {
+        <span class="keyword">const</span> <span class="keyword">auto</span>&amp; row = diamond[(*path)[i-<span class="number">1</span>]];
+        assert(find(row.begin(),row.end(),(*path)[i]) != row.end());
+    }
+    assert(!shortestUnweightedPath(diamond,<span class="number">3</span>,<span class="number">0</span>));
+    assert(shortestUnweightedPath(diamond,<span class="number">2</span>,<span class="number">2</span>) == optional&lt;vector&lt;<span class="keyword">int</span>&gt;&gt;(vector&lt;<span class="keyword">int</span>&gt;{<span class="number">2</span>}));
+    <span class="keyword">auto</span> top = lexicographicTopology(diamond); checkTopology(diamond,top);
+    assert(!top.unique &amp;&amp; top.order == vector&lt;<span class="keyword">int</span>&gt;({<span class="number">0</span>,<span class="number">1</span>,<span class="number">2</span>,<span class="number">3</span>}));
+    assert(lexicographicTopology(vector&lt;vector&lt;<span class="keyword">int</span>&gt;&gt;{{<span class="number">1</span>},{<span class="number">2</span>},{}}).unique);
+    assert(lexicographicTopology({}).dag &amp;&amp; lexicographicTopology({}).unique);
+    assert(findDirectedCycle(diamond).empty());
+    vector&lt;vector&lt;<span class="keyword">int</span>&gt;&gt; cyclic{{<span class="number">1</span>},{<span class="number">0</span>,<span class="number">2</span>},{}};
+    assert(!lexicographicTopology(cyclic).dag);
+    <span class="keyword">auto</span> cycle = findDirectedCycle(cyclic);
+    assert(cycle.size() &gt;= <span class="number">2</span> &amp;&amp; cycle.front() == cycle.back());
+    <span class="keyword">for</span> (size_t i = <span class="number">1</span>; i &lt; cycle.size(); ++i) {
+        <span class="keyword">const</span> <span class="keyword">auto</span>&amp; row = cyclic[cycle[i-<span class="number">1</span>]];
+        assert(find(row.begin(),row.end(),cycle[i]) != row.end());
+    }
+    assert(eventualSafeVertices(cyclic) == vector&lt;<span class="keyword">int</span>&gt;({<span class="number">2</span>}));
+    assert(eventualSafeVertices(vector&lt;vector&lt;<span class="keyword">int</span>&gt;&gt;{{<span class="number">1</span>,<span class="number">2</span>},{},{<span class="number">2</span>}}) == vector&lt;<span class="keyword">int</span>&gt;({<span class="number">1</span>}));
+    assert(!hasUndirectedCycle(<span class="number">3</span>,{{<span class="number">0</span>,<span class="number">1</span>},{<span class="number">1</span>,<span class="number">2</span>}}));
+    assert(hasUndirectedCycle(<span class="number">2</span>,{{<span class="number">0</span>,<span class="number">1</span>},{<span class="number">0</span>,<span class="number">1</span>}}));
+    assert(hasUndirectedCycle(<span class="number">1</span>,{{<span class="number">0</span>,<span class="number">0</span>}}));
+    assert(!hasUndirectedCycle(<span class="number">0</span>,{}));
+    vector&lt;vector&lt;<span class="keyword">int</span>&gt;&gt; grid{{<span class="number">0</span>,<span class="number">1</span>,<span class="number">1</span>},{<span class="number">1</span>,-<span class="number">1</span>,<span class="number">1</span>},{<span class="number">1</span>,<span class="number">1</span>,<span class="number">0</span>}};
+    <span class="keyword">auto</span> saved = grid;
+    assert(nearestSources(grid) == vector&lt;vector&lt;<span class="keyword">int</span>&gt;&gt;({{<span class="number">0</span>,<span class="number">1</span>,<span class="number">2</span>},{<span class="number">1</span>,-<span class="number">1</span>,<span class="number">1</span>},{<span class="number">2</span>,<span class="number">1</span>,<span class="number">0</span>}}));
+    assert(grid == saved &amp;&amp; nearestSources({}).empty());
+    assert(nearestSources({{<span class="number">1</span>,-<span class="number">1</span>}}) == vector&lt;vector&lt;<span class="keyword">int</span>&gt;&gt;({{-<span class="number">1</span>,-<span class="number">1</span>}}));
+    assert(nearestSources({{<span class="number">0</span>,-<span class="number">1</span>,<span class="number">1</span>}}) == vector&lt;vector&lt;<span class="keyword">int</span>&gt;&gt;({{<span class="number">0</span>,-<span class="number">1</span>,-<span class="number">1</span>}}));
+    vector&lt;vector&lt;pair&lt;<span class="keyword">int</span>,<span class="keyword">int</span>&gt;&gt;&gt; bottleneck{{{<span class="number">1</span>,<span class="number">5</span>},{<span class="number">2</span>,<span class="number">4</span>}},{{<span class="number">2</span>,<span class="number">1</span>}},{{<span class="number">1</span>,<span class="number">4</span>}}};
+    assert(minimumBottleneck(bottleneck,<span class="number">0</span>,<span class="number">1</span>) == optional&lt;<span class="keyword">long</span> <span class="keyword">long</span>&gt;(<span class="number">4</span>));
+    assert(!minimumBottleneck(bottleneck,<span class="number">2</span>,<span class="number">0</span>));
+    assert(minimumBottleneck(bottleneck,<span class="number">0</span>,<span class="number">0</span>) == optional&lt;<span class="keyword">long</span> <span class="keyword">long</span>&gt;(<span class="number">0</span>));
+    vector&lt;tuple&lt;<span class="keyword">int</span>,<span class="keyword">int</span>,<span class="keyword">int</span>&gt;&gt; negative{{<span class="number">0</span>,<span class="number">1</span>,<span class="number">1</span>},{<span class="number">1</span>,<span class="number">1</span>,-<span class="number">1</span>},{<span class="number">1</span>,<span class="number">2</span>,<span class="number">2</span>},{<span class="number">3</span>,<span class="number">3</span>,-<span class="number">1</span>}};
+    <span class="keyword">auto</span> bf = bellmanFordMarked(<span class="number">4</span>,negative,<span class="number">0</span>);
+    assert(!bf.bad[<span class="number">0</span>] &amp;&amp; bf.bad[<span class="number">1</span>] &amp;&amp; bf.bad[<span class="number">2</span>] &amp;&amp; !bf.bad[<span class="number">3</span>] &amp;&amp; bf.dist[<span class="number">3</span>] == INF);
+    <span class="keyword">auto</span> fl = allPairsMarked(<span class="number">4</span>,negative);
+    assert(fl.bad[<span class="number">0</span>][<span class="number">2</span>] &amp;&amp; !fl.bad[<span class="number">0</span>][<span class="number">0</span>] &amp;&amp; !fl.bad[<span class="number">0</span>][<span class="number">3</span>] &amp;&amp; fl.bad[<span class="number">3</span>][<span class="number">3</span>]);
+    assert(allPairsMarked(<span class="number">2</span>,{{<span class="number">0</span>,<span class="number">1</span>,<span class="number">7</span>},{<span class="number">0</span>,<span class="number">1</span>,<span class="number">2</span>}}).dist[<span class="number">0</span>][<span class="number">1</span>] == <span class="number">2</span>);
+    assert(allPairsMarked(<span class="number">4</span>,{{<span class="number">0</span>,<span class="number">3</span>,<span class="number">1</span>},{<span class="number">3</span>,<span class="number">2</span>,<span class="number">1</span>},{<span class="number">2</span>,<span class="number">1</span>,<span class="number">1</span>}}).dist[<span class="number">0</span>][<span class="number">1</span>] == <span class="number">3</span>);
+    assert(!dagDistances(vector&lt;vector&lt;pair&lt;<span class="keyword">int</span>,<span class="keyword">int</span>&gt;&gt;&gt;{{{<span class="number">0</span>,<span class="number">0</span>}}},<span class="number">0</span>));
+    assert(densePrimForest({}).components == <span class="number">0</span>);
+    assert(densePrimForest({{<span class="number">0</span>}}).cost == <span class="number">0</span>);
+    mt19937 rng(<span class="number">20260921</span>);
+    <span class="keyword">for</span> (<span class="keyword">int</span> trial = <span class="number">0</span>; trial &lt; <span class="number">120</span>; ++trial) {
+        <span class="keyword">int</span> n = <span class="number">1</span> + rng() % <span class="number">5</span>;
+        vector&lt;vector&lt;pair&lt;<span class="keyword">int</span>,<span class="keyword">int</span>&gt;&gt;&gt; g(n), dag(n);
+        vector&lt;vector&lt;<span class="keyword">int</span>&gt;&gt; plain(n), dagPlain(n);
+        vector&lt;tuple&lt;<span class="keyword">int</span>,<span class="keyword">int</span>,<span class="keyword">int</span>&gt;&gt; zeroEdges, signedEdges, dagEdges, mstEdges;
+        vector&lt;vector&lt;<span class="keyword">long</span> <span class="keyword">long</span>&gt;&gt; matrix(n,vector&lt;<span class="keyword">long</span> <span class="keyword">long</span>&gt;(n,INF));
+        <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; n; ++i) matrix[i][i] = <span class="number">0</span>;
+        <span class="keyword">for</span> (<span class="keyword">int</span> u = <span class="number">0</span>; u &lt; n; ++u) <span class="keyword">for</span> (<span class="keyword">int</span> v = <span class="number">0</span>; v &lt; n; ++v) {
+            <span class="keyword">if</span> (rng() % <span class="number">3</span> == <span class="number">0</span>) {
+                <span class="keyword">int</span> w = rng() % <span class="number">2</span>; g[u].push_back({v,w});
+                zeroEdges.push_back({u,v,w});
+                signedEdges.push_back({u,v,(<span class="keyword">int</span>)(rng()%<span class="number">7</span>)-<span class="number">3</span>});
+            }
+            <span class="keyword">if</span> (u &lt; v &amp;&amp; rng() % <span class="number">2</span>) {
+                <span class="keyword">int</span> w = (<span class="keyword">int</span>)(rng()%<span class="number">11</span>)-<span class="number">5</span>;
+                dag[u].push_back({v,w}); dagPlain[u].push_back(v); dagEdges.push_back({u,v,w});
+                plain[u].push_back(v); plain[v].push_back(u);
+                matrix[u][v] = matrix[v][u] = w; mstEdges.push_back({w,u,v});
+            }
+        }
+        <span class="keyword">auto</span> all = allPairsMarked(n,signedEdges);
+        <span class="keyword">for</span> (<span class="keyword">int</span> s = <span class="number">0</span>; s &lt; n; ++s) {
+            assert(zeroOneDistances(g,s) == dijkstra(g,s));
+            assert(zeroOneDistances(g,s) == bellmanFordMarked(n,zeroEdges,s).dist);
+            <span class="keyword">auto</span> b = bellmanFordMarked(n,signedEdges,s);
+            <span class="keyword">for</span> (<span class="keyword">int</span> t = <span class="number">0</span>; t &lt; n; ++t) {
+                assert(b.bad[t] == all.bad[s][t]);
+                <span class="keyword">if</span> (!b.bad[t]) assert(b.dist[t] == all.dist[s][t]);
+            }
+            <span class="keyword">auto</span> d = dagDistances(dag,s);
+            assert(d &amp;&amp; *d == bellmanFordMarked(n,dagEdges,s).dist);
+        }
+        checkTopology(dagPlain,lexicographicTopology(dagPlain));
+        assert(findDirectedCycle(dagPlain).empty());
+        assert(isBipartiteGraph(plain) == bruteBipartite(plain));
+        <span class="keyword">auto</span> p = densePrimForest(matrix); <span class="keyword">auto</span> k = kruskal(n,mstEdges);
+        <span class="keyword">auto</span> brute = bruteTree(n,mstEdges);
+        assert(k == brute &amp;&amp; p.edges.size() == (size_t)(n-p.components));
+        <span class="keyword">if</span> (k) assert(p.components == <span class="number">1</span> &amp;&amp; p.cost == *k);
+        <span class="keyword">else</span> assert(p.components &gt; <span class="number">1</span>);
+        <span class="keyword">long</span> <span class="keyword">long</span> sum = <span class="number">0</span>; vector&lt;pair&lt;<span class="keyword">int</span>,<span class="keyword">int</span>&gt;&gt; chosen;
+        <span class="keyword">for</span> (<span class="keyword">auto</span> [u,v] : p.edges) { assert(matrix[u][v] != INF); sum += matrix[u][v]; chosen.push_back({u,v}); }
+        assert(sum == p.cost &amp;&amp; !hasUndirectedCycle(n,chosen));
+    }
+    assert(!isBipartiteGraph(vector&lt;vector&lt;<span class="keyword">int</span>&gt;&gt;{{<span class="number">0</span>}}));
+    assert(!isBipartiteGraph(vector&lt;vector&lt;<span class="keyword">int</span>&gt;&gt;{{<span class="number">1</span>,<span class="number">2</span>},{<span class="number">0</span>,<span class="number">2</span>},{<span class="number">0</span>,<span class="number">1</span>}}));
+    cout &lt;&lt; <span class="string">&quot;graph checks passed\n&quot;</span>;
+}</code></pre></div></div></section><nav class="chapter-pager" aria-label="相邻章节"><a href="../09-递归回溯与分治/index.html"><small>上一章</small>← 递归、回溯与分治</a><a href="../11-贪心/index.html"><small>下一章</small>贪心 →</a></nav><footer>秋招算法学习讲义 · C++17<br>例题编号供检索；难度与覆盖范围按学习顺序组织。</footer></main><aside class="toc" aria-label="本页目录"><p class="rail-label">本章小节</p><a href="#s1"><span>01</span>建图与 BFS：无权最短路</a><a href="#s2"><span>02</span>拓扑排序与有向环</a><a href="#s3"><span>03</span>Dijkstra：非负权最短路</a><a href="#s4"><span>04</span>Floyd 与负权算法的选择</a><a href="#s5"><span>05</span>最小生成树与最短路的区别</a><a href="#chapter-review"><span>练</span>综合例题与自测答案</a></aside></div><div class="toast" role="status" aria-live="polite"></div></body></html>
