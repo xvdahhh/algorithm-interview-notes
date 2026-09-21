@@ -3,7 +3,7 @@
 <meta name="description" content="秋招算法手撕学习讲义：知识推导、经典考点、C++17 示例与面试训练。">
 <title>贪心 · 算法手撕讲义</title><link rel="stylesheet" href="../assets/style.css"><script src="../assets/app.js" defer></script></head>
 <body><a class="skip" href="#main">跳到正文</a><header class="topbar"><a class="brand" href="../index.html"><span class="brand-mark">a[i]</span><span>算法手撕讲义<small>秋招学习工作区 / C++17</small></span></a><button type="button" class="nav-toggle" aria-expanded="false" aria-controls="chapter-nav">章节目录</button><a class="home-link" href="../index.html">全部章节 ↗</a></header>
-<div class="layout"><aside class="sidebar" id="chapter-nav" aria-label="章节导航"><p class="rail-label">LEARNING PATH · 学习路径</p><nav><a class="chapter-link"  href="../01-复杂度与解题方法/index.html"><span>01</span>复杂度与解题方法</a><a class="chapter-link"  href="../02-数组字符串与矩阵/index.html"><span>02</span>数组、字符串与矩阵</a><a class="chapter-link"  href="../03-链表/index.html"><span>03</span>链表</a><a class="chapter-link"  href="../04-栈队列与单调结构/index.html"><span>04</span>栈、队列与单调结构</a><a class="chapter-link"  href="../05-哈希集合与位运算/index.html"><span>05</span>哈希、集合与位运算</a><a class="chapter-link"  href="../06-排序与二分查找/index.html"><span>06</span>排序与二分查找</a><a class="chapter-link"  href="../07-树与二叉搜索树/index.html"><span>07</span>树与二叉搜索树</a><a class="chapter-link"  href="../08-堆与优先队列/index.html"><span>08</span>堆与优先队列</a><a class="chapter-link"  href="../09-递归回溯与分治/index.html"><span>09</span>递归、回溯与分治</a><a class="chapter-link"  href="../10-图论/index.html"><span>10</span>图论</a><a class="chapter-link active" aria-current=page href="../11-贪心/index.html"><span>11</span>贪心</a><a class="chapter-link"  href="../12-动态规划/index.html"><span>12</span>动态规划</a><a class="chapter-link"  href="../13-并查集与高级数据结构/index.html"><span>13</span>并查集与高级数据结构</a><a class="chapter-link"  href="../14-高频技巧与综合题型/index.html"><span>14</span>高频技巧与综合题型</a><a class="chapter-link"  href="../15-面试表达与训练计划/index.html"><span>15</span>面试表达与训练计划</a></nav><div class="sidebar-note">读懂不变量，独立写代码。<br>共 15 章 · 63 个小节<br>无需联网，浏览器直接打开。</div></aside><main id="main"><header class="chapter-header"><p class="eyebrow">CHAPTER 11 / 15</p><h1>贪心</h1><p class="lead">贪心的关键产物是一段证明。遇到局部最优规则，先寻找交换论证或前缀领先性质，再决定是否可以永久放弃其他选项。</p><div class="chapter-meta"><span>4 个小节</span><span>C++17 示例</span><a href="README.md">原始知识摘要 ↗</a></div></header><div class="reading-guide"><strong>本章怎么学</strong><p>先读原理与不变量，遮住代码手推例子，再独立实现。最后用面试追问检查理解，按练习条目做变式。</p></div><details class="environment"><summary>代码使用说明与通用头文件</summary><p>示例统一采用 C++17。页面展示核心函数或类，下载的 .cpp 已包含以下头文件，可独立编译。不同小节可能重用类型名，应分别编译；含 main 的示例可直接运行，其余需自行补充调用与测试。复制按钮复制当前代码块。</p><div class="codebox"><div class="codebar"><span>C++17</span><div><button type="button" class="copy">复制代码</button></div></div><pre tabindex="0" aria-label="C++17 代码"><code>#include &lt;algorithm&gt;
+<div class="layout"><aside class="sidebar" id="chapter-nav" aria-label="章节导航"><p class="rail-label">LEARNING PATH · 学习路径</p><nav><a class="chapter-link"  href="../01-复杂度与解题方法/index.html"><span>01</span>复杂度与解题方法</a><a class="chapter-link"  href="../02-数组字符串与矩阵/index.html"><span>02</span>数组、字符串与矩阵</a><a class="chapter-link"  href="../03-链表/index.html"><span>03</span>链表</a><a class="chapter-link"  href="../04-栈队列与单调结构/index.html"><span>04</span>栈、队列与单调结构</a><a class="chapter-link"  href="../05-哈希集合与位运算/index.html"><span>05</span>哈希、集合与位运算</a><a class="chapter-link"  href="../06-排序与二分查找/index.html"><span>06</span>排序与二分查找</a><a class="chapter-link"  href="../07-树与二叉搜索树/index.html"><span>07</span>树与二叉搜索树</a><a class="chapter-link"  href="../08-堆与优先队列/index.html"><span>08</span>堆与优先队列</a><a class="chapter-link"  href="../09-递归回溯与分治/index.html"><span>09</span>递归、回溯与分治</a><a class="chapter-link"  href="../10-图论/index.html"><span>10</span>图论</a><a class="chapter-link active" aria-current=page href="../11-贪心/index.html"><span>11</span>贪心</a><a class="chapter-link"  href="../12-动态规划/index.html"><span>12</span>动态规划</a><a class="chapter-link"  href="../13-并查集与高级数据结构/index.html"><span>13</span>并查集与高级数据结构</a><a class="chapter-link"  href="../14-高频技巧与综合题型/index.html"><span>14</span>高频技巧与综合题型</a><a class="chapter-link"  href="../15-面试表达与训练计划/index.html"><span>15</span>面试表达与训练计划</a></nav><div class="sidebar-note">读懂不变量，独立写代码。<br>共 15 章 · 63 个小节<br>无需联网，浏览器直接打开。</div></aside><main id="main"><header class="chapter-header"><p class="eyebrow">CHAPTER 11 / 15</p><h1>贪心</h1><p class="lead">贪心的关键产物是一段证明。遇到局部最优规则，先寻找交换论证或前缀领先性质，再决定是否可以永久放弃其他选项。</p><div class="chapter-meta"><span>4 个小节</span><span>C++17 示例</span><a href="README.md">原始知识摘要 ↗</a></div></header><div class="reading-guide"><strong>本章怎么学</strong><p>先读原理与不变量，遮住代码手推例子，再独立实现。最后用面试追问检查理解，按练习条目做变式。</p></div><div class="deep-intro"><div class="deep-block" id="guide-1"><h3>本章目标：写出选择规则，也写出不丢最优解的理由</h3><p>贪心不是“排序后扫一遍”的同义词。它是只保留当前选定的决策，永久放弃其他候选，因此必须证明至少存在一个最优解与这个选择一致。识别到最大数量、最少成本等词语，只是开始分析的信号，不是贪心成立的证据。</p><p>本章沿用 4 个主节：区间与交换论证、覆盖前沿与分层、最优合并、股票模型。每类都给出适用前提、手推过程、错误策略反例、C++17 实现及完整追问答案。相邻合并与股票状态转移作为贪心失效后的对照，完整动态规划方法将在第十二章展开。</p></div><div class="deep-block" id="guide-2"><h3>证明工具箱：面试时不要只说“给后面留更多空间”</h3><p class="table-hint">窄屏下可左右滑动表格，查看完整内容。</p><div class="study-table" tabindex="0" role="region" aria-label="证明工具箱：面试时不要只说“给后面留更多空间”"><table><thead><tr><th scope="col">证明方法</th><th scope="col">要说明的具体对象</th><th scope="col">关键动作</th><th scope="col">典型模型</th></tr></thead><tbody><tr><td>交换论证</td><td>某个最优解与贪心首次不同的选择</td><td>替换后仍可行，目标值不变差</td><td>最早结束区间、资源匹配</td></tr><tr><td>前缀领先</td><td>同样次数决策后的覆盖范围</td><td>归纳证明贪心前沿不小于任意方案</td><td>最少区间覆盖、跳跃层边界</td></tr><tr><td>下界 / 上界可达</td><td>所有解不可突破的界</td><td>证明界，再构造达到界的方案</td><td>最少箭、无限次无手续费股票</td></tr><tr><td>结构收缩</td><td>包含局部选择的一类最优结构</td><td>证明可收缩，剩余问题同型</td><td>Huffman 最优合并</td></tr><tr><td>排除候选</td><td>失败起点之后一整段候选</td><td>证明这整段都不能成功</td><td>加油站起点扫描</td></tr></tbody></table></div></div><div class="deep-block" id="guide-3"><h3>使用约定：端点、合法输入、溢出与失败返回</h3><p>各示例按题目模型明确输入契约。区间调度使用正长度半开区间 [l,r)，端点相接可共存；气球使用闭区间 [l,r]，单点也可被射中；覆盖使用连续实线上的区间，端点相接可覆盖但不能跨越空隙。不要通过统一把比较符号改成 &lt; 或 &lt;= 来猜答案。</p><p>索引与数量默认可用 int 表示。跳跃长度和资源大小非负；股票价格与手续费是非负 int；利润与位置相加先转 long long。合并成本可能远大于权重总和，补充版本显式检查 long long 溢出。空输入的含义由函数说明，不能将空路径、不可达和已经在终点混为一谈。</p><p>下面提供独立 C++ 下载以及一份引用它们的测试入口。当前环境未发现可用 C++ 编译器，因此会验证 HTML、下载一致性和浏览器交互，但不把这些检查表述为 C++ 运行测试通过。</p></div></div><nav class="chapter-outline" aria-label="本章阅读路线"><strong>直接跳到</strong><a href="#s1">01 区间调度与交换论证</a><a href="#s2">02 跳跃游戏：覆盖前沿与分层</a><a href="#s3">03 最优合并与小顶堆</a><a href="#s4">04 股票问题：从合法策略判断贪心边界</a><a href="#chapter-review">综合例题与自测答案</a></nav><details class="environment"><summary>代码使用说明与通用头文件</summary><p>示例统一采用 C++17。页面展示核心函数或类，下载的 .cpp 已包含以下头文件，可独立编译。不同小节可能重用类型名，应分别编译；含 main 的示例可直接运行，其余需自行补充调用与测试。复制按钮复制当前代码块。</p><div class="codebox"><div class="codebar"><span>C++17</span><div><button type="button" class="copy">复制代码</button></div></div><pre tabindex="0" aria-label="C++17 代码"><code>#include &lt;algorithm&gt;
 #include &lt;array&gt;
 #include &lt;cassert&gt;
 #include &lt;climits&gt;
@@ -27,7 +27,7 @@
 #include &lt;vector&gt;
 <span class="keyword">using</span> <span class="keyword">namespace</span> std;
 </code></pre></div><p>检查单个示例：<code>g++ -std=c++17 -Wall -Wextra -c sample.cpp</code>。这只检查编译；验证结果还需要调用函数并覆盖边界输入。代码按题目约束编写，各节明确其适用前提。</p></details><section class="lesson" id="s1"><div class="lesson-heading"><span class="lesson-number">11.01</span><h2>区间调度与交换论证</h2></div>
-<h3>知识与适用场景</h3><p>最大化互不重叠区间数量时，优先选择结束最早的区间。它为后续留下最多空间；最短区间、最早开始都不具有同样保证。</p><div class="invariant"><span>推导 / 不变量</span><p>把任意最优解的第一个区间替换成全局结束最早的区间，后续已选区间仍然可行且数量不变。因此存在以贪心选择开始的最优解，之后对剩余问题重复。</p></div>
+<h3>知识与适用场景</h3><p>最大化互不重叠区间数量时，优先选择结束最早的区间。它为后续留下最多空间；最短区间、最早开始都不具有同样保证。</p><div class="deep-block" id="s1-before-1"><h3>1.1 交换论证需要四个环节</h3><p>设当前可选区间中结束最早者为 g，某个最优方案按时间排列的第一个区间为 o。因为 end(g)≤end(o)，把 o 换为 g 后，所有原本从 end(o) 以后开始的后续区间仍能接上；被选数量没有减少。所以存在以 g 开头的最优解。</p><p>选定 g 后，只留下起点不小于 end(g) 的区间，剩余问题与原问题相同，递归地应用同一结论。这四件事缺一不可：定义最优解、给出交换、检查可行性、证明目标值不变差并说明子问题同型。只说 g 最早结束，没有完成证明。</p></div><div class="deep-block" id="s1-before-2"><h3>1.2 都叫区间题，目标不同就不能共用规则</h3><p class="table-hint">窄屏下可左右滑动表格，查看完整内容。</p><div class="study-table" tabindex="0" role="region" aria-label="1.2 都叫区间题，目标不同就不能共用规则"><table><thead><tr><th scope="col">目标</th><th scope="col">排序 / 候选规则</th><th scope="col">维护的量</th><th scope="col">端点相等</th></tr></thead><tbody><tr><td>保留最多互不重叠区间</td><td>按结束时间升序</td><td>上次选择的结束位置</td><td>半开区间可接，l&gt;=end</td></tr><tr><td>删除最少使无重叠</td><td>保留最多后用 n 减去数量</td><td>相同模型的补集</td><td>与保留题一致</td></tr><tr><td>闭区间气球最少箭</td><td>按右端点升序</td><td>最后一支箭的位置</td><td>l==arrow 仍被射中</td></tr><tr><td>覆盖目标段最少区间</td><td>按左端点排序，选可接候选中最远右端</td><td>已连续覆盖的前沿</td><td>l==frontier 可接续</td></tr><tr><td>同时需要多少会议室</td><td>按开始时间，维护所有结束时间</td><td>正在占用的房间集合</td><td>按题目决定能否复用</td></tr></tbody></table></div></div><div class="deep-block" id="s1-before-3"><h3>1.3 三个看似合理但错误的排序键</h3><p class="table-hint">窄屏下可左右滑动表格，查看完整内容。</p><div class="study-table" tabindex="0" role="region" aria-label="1.3 三个看似合理但错误的排序键"><table><thead><tr><th scope="col">错误规则</th><th scope="col">区间与模型</th><th scope="col">错误选择</th><th scope="col">更好结果</th></tr></thead><tbody><tr><td>先选最早开始</td><td>[1,4)、[2,3)、[3,5)</td><td>选 [1,4) 后无法再选</td><td>选后两段，共 2 段</td></tr><tr><td>先选最短区间</td><td>[0,3)、[2,4)、[3,6)</td><td>[2,4) 最短，却与两边都冲突</td><td>[0,3) 与 [3,6) 可并存</td></tr><tr><td>带权调度仍选最早结束</td><td>[0,2) 收益 2、[2,4) 收益 2、[0,4) 收益 10</td><td>保留两段仅得 4</td><td>保留长段收益 10，应考虑带权区间 DP</td></tr></tbody></table></div></div><div class="deep-block" id="s1-before-4"><h3>1.4 连续覆盖手推：必须检查本轮是否推进</h3><p class="table-hint">窄屏下可左右滑动表格，查看完整内容。</p><div class="study-table" tabindex="0" role="region" aria-label="1.4 连续覆盖手推：必须检查本轮是否推进"><table><thead><tr><th scope="col">目标 [0,10]</th><th scope="col">可接候选</th><th scope="col">新前沿</th><th scope="col">选择次数</th></tr></thead><tbody><tr><td>frontier=0</td><td>[0,2]、[0,4]</td><td>4，选 [0,4]</td><td>1</td></tr><tr><td>frontier=4</td><td>[2,6]、[4,7]</td><td>7，选 [4,7]</td><td>2</td></tr><tr><td>frontier=7</td><td>[6,10]</td><td>10，覆盖完成</td><td>3</td></tr><tr><td>反例：只有 [0,4]、[5,10]</td><td>到 4 后没有可接区间</td><td>无法推进，有真实空隙</td><td>返回失败，不能直接选 [5,10]</td></tr></tbody></table></div></div><div class="invariant"><span>推导 / 不变量</span><p>把任意最优解的第一个区间替换成全局结束最早的区间，后续已选区间仍然可行且数量不变。因此存在以贪心选择开始的最优解，之后对剩余问题重复。</p></div>
 <h3>手推一个例子</h3><p>[1,4]、[2,3]、[3,5]，先选 [2,3] 再选 [3,5] 可以选 2 个；按最早开始选 [1,4] 只能选 1 个。约定端点相接不冲突。</p><div class="codebox"><div class="codebar"><span>C++17</span><div><a href="examples/01.cpp" download>下载 .cpp</a><button type="button" class="copy">复制代码</button></div></div><pre tabindex="0" aria-label="C++17 代码"><code><span class="keyword">int</span> maxNonOverlapping(vector&lt;pair&lt;<span class="keyword">int</span>,<span class="keyword">int</span>&gt;&gt; intervals) {
     sort(intervals.begin(),intervals.end(),[](<span class="keyword">auto</span> a,<span class="keyword">auto</span> b){
         <span class="keyword">return</span> a.second&lt;b.second;
@@ -40,9 +40,58 @@
     <span class="keyword">return</span> count;
 }</code></pre></div>
 <dl class="analysis-grid"><div><dt>复杂度</dt><dd>排序 O(n log n)，扫描 O(n)；输入复制 O(n)。</dd></div><div><dt>易错点与边界</dt><dd>若端点相接也算冲突，判断需改为 l&gt;end。求覆盖目标区间的最少数量则需要每一步选择可衔接且延伸最远者，不能套结束最早。</dd></div></dl>
-<div class="practice"><h3>经典考点与练习</h3><p>练习：LeetCode 435 无重叠区间、452 用最少数量的箭引爆气球。</p><details><summary>面试官可能继续问什么？</summary><p>删除最少区间使不重叠，如何由保留最多区间得到答案？</p><p class="muted">先用自己的话回答，再回到本节的前提、不变量和边界检查论证。</p></details></div>
+<div class="deep-block" id="s1-after-1"><h3>1.5 返回区间选择方案：保留原下标方便验证</h3><p>正长度半开区间，l 必须小于 r。按右端点、左端点、原下标依次排序，返回按选择顺序排列的原下标；并列情况下保证结果稳定，但不承诺原下标序列字典序最小。空输入返回空方案。最大保留数量为结果长度，最少删除数量为输入长度减结果长度。时间 O(n log n)，辅助空间 O(n)。</p><div class="codebox"><div class="codebar"><span>C++17</span><div><a href="examples/detail-interval-selection.cpp" download>下载 .cpp</a><button type="button" class="copy">复制代码</button></div></div><pre tabindex="0" aria-label="C++17 代码"><code>vector&lt;<span class="keyword">int</span>&gt; selectIntervals(<span class="keyword">const</span> vector&lt;pair&lt;<span class="keyword">int</span>,<span class="keyword">int</span>&gt;&gt;&amp; intervals) {
+    vector&lt;tuple&lt;<span class="keyword">int</span>,<span class="keyword">int</span>,<span class="keyword">int</span>&gt;&gt; order; <span class="comment">// (右端点, 左端点, 原下标)</span>
+    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; (<span class="keyword">int</span>)intervals.size(); ++i) {
+        <span class="keyword">auto</span> [l,r] = intervals[i];
+        <span class="keyword">if</span> (l &gt;= r) <span class="keyword">throw</span> invalid_argument(<span class="string">&quot;positive-length interval required&quot;</span>);
+        order.push_back({r,l,i});
+    }
+    sort(order.begin(),order.end());
+    <span class="keyword">long</span> <span class="keyword">long</span> end = LLONG_MIN;
+    vector&lt;<span class="keyword">int</span>&gt; chosen;
+    <span class="keyword">for</span> (<span class="keyword">auto</span> [r,l,id] : order) <span class="keyword">if</span> (l &gt;= end) {
+        chosen.push_back(id); end = r;
+    }
+    <span class="keyword">return</span> chosen;
+}</code></pre></div></div><div class="deep-block" id="s1-after-2"><h3>1.6 最少箭：右端点同时给出下界与可达方案</h3><p>在尚未击中的气球中选右端点最小的区间 [l,r]，把箭放在 r。不论最优方案在 [l,r] 内哪里放箭，都可把这支箭右移到 r：所有它原本射中的尚未处理气球右端点都至少为 r，且左端点不大于原箭位置，右移后仍能射中。每次遇到左端点大于上支箭的位置才新增一支。</p><p>算法每次新开一箭时，对应的基准气球与前一个基准气球严格分离，因此任何解至少需要这么多支箭；我们的方案达到下界。闭区间允许 l=r，不用 r+1，从而避免最大整数端点溢出。O(n log n) 时间，输入副本与输出 O(n)。</p><div class="codebox"><div class="codebar"><span>C++17</span><div><a href="examples/detail-min-arrows.cpp" download>下载 .cpp</a><button type="button" class="copy">复制代码</button></div></div><pre tabindex="0" aria-label="C++17 代码"><code>vector&lt;<span class="keyword">int</span>&gt; minimumArrowPositions(vector&lt;pair&lt;<span class="keyword">int</span>,<span class="keyword">int</span>&gt;&gt; balloons) {
+    <span class="keyword">for</span> (<span class="keyword">auto</span> [l,r] : balloons) <span class="keyword">if</span> (l &gt; r) <span class="keyword">throw</span> invalid_argument(<span class="string">&quot;interval&quot;</span>);
+    sort(balloons.begin(),balloons.end(),[](<span class="keyword">auto</span> a,<span class="keyword">auto</span> b) {
+        <span class="keyword">if</span> (a.second != b.second) <span class="keyword">return</span> a.second &lt; b.second;
+        <span class="keyword">return</span> a.first &lt; b.first;
+    });
+    vector&lt;<span class="keyword">int</span>&gt; arrows;
+    <span class="keyword">for</span> (<span class="keyword">auto</span> [l,r] : balloons)
+        <span class="keyword">if</span> (arrows.empty() || l &gt; arrows.back()) arrows.push_back(r);
+    <span class="keyword">return</span> arrows;
+}</code></pre></div></div><div class="deep-block" id="s1-after-3"><h3>1.7 最少区间覆盖：选当前能接上的最远右端</h3><p>目标 [left,right] 是连续实线段；left==right 在本函数约定下视为无需覆盖的空目标，返回 0；left&gt;right 非法。候选要求 l&lt;r，可越过目标边界。每轮扫描所有 l≤frontier 的新候选，选最大 r；这些候选以后不必再考虑，因为它们都不比本轮选择伸得远。排序 O(n log n)、扫描 O(n)，因输入按值传递占 O(n) 空间。</p><p>前缀领先证明：在使用同样 k 段后，贪心前沿不小于任何可行方案。另一方案下一段起点不超过它的前沿，也就不超过贪心前沿，所以其延伸能力在贪心可选集合中，贪心仍不落后。由此贪心不会比最优解用更多段。</p><div class="codebox"><div class="codebar"><span>C++17</span><div><a href="examples/detail-interval-cover.cpp" download>下载 .cpp</a><button type="button" class="copy">复制代码</button></div></div><pre tabindex="0" aria-label="C++17 代码"><code>optional&lt;<span class="keyword">int</span>&gt; minimumIntervalCover(
+    vector&lt;pair&lt;<span class="keyword">int</span>,<span class="keyword">int</span>&gt;&gt; intervals, <span class="keyword">int</span> left, <span class="keyword">int</span> right) {
+    <span class="keyword">if</span> (left &gt; right) <span class="keyword">throw</span> invalid_argument(<span class="string">&quot;target&quot;</span>);
+    <span class="keyword">for</span> (<span class="keyword">auto</span> [l,r] : intervals) <span class="keyword">if</span> (l &gt;= r) <span class="keyword">throw</span> invalid_argument(<span class="string">&quot;interval&quot;</span>);
+    <span class="keyword">if</span> (left == right) <span class="keyword">return</span> <span class="number">0</span>;
+    sort(intervals.begin(),intervals.end());
+    <span class="keyword">int</span> frontier = left, used = <span class="number">0</span>;
+    size_t i = <span class="number">0</span>;
+    <span class="keyword">while</span> (frontier &lt; right) {
+        <span class="keyword">int</span> next = frontier;
+        <span class="keyword">while</span> (i &lt; intervals.size() &amp;&amp; intervals[i].first &lt;= frontier) {
+            next = max(next,intervals[i].second); ++i;
+        }
+        <span class="keyword">if</span> (next == frontier) <span class="keyword">return</span> nullopt;
+        frontier = next; ++used;
+    }
+    <span class="keyword">return</span> used;
+}</code></pre></div></div><div class="deep-block" id="s1-after-4"><h3>1.8 分发饼干：最小可用资源满足最小需求</h3><p>每个孩子最多一块饼干，一块只能给一个孩子，尺寸≥需求即满足。将需求和尺寸升序排列，过小的饼干无法满足当前最小需求，更不可能满足后面的人，可以丢弃；足够时就匹配。交换论证说明，把当前最小合适饼干给最小需求，不会降低可满足人数。排序 O(n log n+m log m)，扫描 O(n+m)，输入副本 O(n+m)。这不是有收益、可拆分或多人共享资源的模型。</p><div class="codebox"><div class="codebar"><span>C++17</span><div><a href="examples/detail-assign-resources.cpp" download>下载 .cpp</a><button type="button" class="copy">复制代码</button></div></div><pre tabindex="0" aria-label="C++17 代码"><code><span class="keyword">int</span> assignResources(vector&lt;<span class="keyword">int</span>&gt; needs, vector&lt;<span class="keyword">int</span>&gt; sizes) {
+    <span class="keyword">for</span> (<span class="keyword">int</span> x : needs) <span class="keyword">if</span> (x &lt; <span class="number">0</span>) <span class="keyword">throw</span> invalid_argument(<span class="string">&quot;need&quot;</span>);
+    <span class="keyword">for</span> (<span class="keyword">int</span> x : sizes) <span class="keyword">if</span> (x &lt; <span class="number">0</span>) <span class="keyword">throw</span> invalid_argument(<span class="string">&quot;size&quot;</span>);
+    sort(needs.begin(),needs.end()); sort(sizes.begin(),sizes.end());
+    size_t child = <span class="number">0</span>;
+    <span class="keyword">for</span> (<span class="keyword">int</span> size : sizes)
+        <span class="keyword">if</span> (child &lt; needs.size() &amp;&amp; size &gt;= needs[child]) ++child;
+    <span class="keyword">return</span> (<span class="keyword">int</span>)child;
+}</code></pre></div></div><div class="practice"><h3>经典考点与练习</h3><p>练习：LeetCode 435 无重叠区间、452 用最少数量的箭引爆气球。</p><h3>面试追问：关键点完整解答</h3><dl class="answer-list"><div><dt>删除最少区间如何转成保留最多？</dt><dd><p>任意删除方案与它的保留集合一一对应，总数 n 固定，删除数=n−保留数。因此最小化删除数等价于最大化合法保留数。若每个删除操作成本不同，目标不再是数量，不能直接用 n 减去最早结束策略的结果。</p></dd></div><div><dt>端点相等时，到底写 &gt;=、&gt; 还是 &lt;=？</dt><dd><p>先翻译语义。半开会议 [1,2)、[2,3) 可接，调度条件 l≥end；闭区间气球 [1,2]、[2,3] 可由位置 2 的同一箭击中，只有 l&gt;arrow 才新增箭；连续覆盖 [0,2] 与 [2,4] 没有空隙，允许 l≤frontier。比较符号来自模型，不来自算法名字。</p></dd></div><div><dt>结束时间相同，要不要再按起点排序？</dt><dd><p>对合法正长度、等价值区间调度而言，同结束时间的候选留下相同后续空间，扫描可行者即可，不影响最大数量。补充代码增加起点和原下标用于确定性输出。不能使用 &lt;= 作为排序比较器，否则 cmp(x,x) 为真，违反严格弱序要求。</p></dd></div><div><dt>最短区间为什么不能保证最多个？</dt><dd><p>[0,3)、[2,4)、[3,6) 中，中间长度 2 最短，但它同时占住左右两段的接缝；先选它只能得到 1 段，而左右两段可得到 2 段。区间长度小不等于结束早，也不等于对其他区间干扰小。</p></dd></div><div><dt>为何覆盖问题不能继续用最早结束？</dt><dd><p>调度追求放入更多互不重叠对象，早点结束会留下时间；覆盖追求用更少对象走到目标，应在能接上的候选里延伸最远。目标 [0,10]，有 [0,2]、[0,10] 时，最早结束会先选无必要的短段，最远延伸一段即可完成。</p></dd></div><div><dt>带权区间调度为何需要更多状态？</dt><dd><p>交换成更早结束的区间虽然保留可行性，却可能丢失收益，原交换论证的“目标不变差”不成立。可按结束时间排序，用 DP 在不选当前区间与选择它加上最后兼容前缀的最优收益之间取最大；兼容位置可二分寻找。</p></dd></div><div><dt>资源匹配把小饼干给小需求，交换论证怎么说完整？</dt><dd><p>设最小需求为 a，最小能满足它的饼干为 b。若某最优解用更大饼干 c 满足 a，而 b 给了别人 d，则 b≥d，换成 b 给 a、c 给 d 仍可行；若 b 没使用，直接替换也可行。若 a 未满足但 b 给了别人，可把 b 改给 a，满足人数不减。因此存在含该贪心匹配的最优解。</p></dd></div></dl></div>
 <label class="learned"><input type="checkbox" data-progress="11-01">我能独立实现，并解释正确性与边界</label></section><section class="lesson" id="s2"><div class="lesson-heading"><span class="lesson-number">11.02</span><h2>跳跃游戏：覆盖前沿与分层</h2></div>
-<h3>知识与适用场景</h3><p>每个位置给出向右最大跳跃长度。判断可达性只需记录所有已可达位置所能扩展的最远位置。最少跳数可以把一次跳跃能覆盖的范围看成 BFS 的一层。</p><div class="invariant"><span>推导 / 不变量</span><p>遍历当前层时更新 far；到达当前层右边界 end 时，必须增加一次跳跃并把 end 扩展到 far。如果 far 未超过当前位置，就无法继续。</p></div>
+<h3>知识与适用场景</h3><p>每个位置给出向右最大跳跃长度。判断可达性只需记录所有已可达位置所能扩展的最远位置。最少跳数可以把一次跳跃能覆盖的范围看成 BFS 的一层。</p><div class="deep-block" id="s2-before-1"><h3>2.1 不是每次真的选一个落点，而是保留整层的可能性</h3><p>从下标 i 可以选择向右跳 1..a[i] 步。因为短跳也允许，从起点出发的可达位置始终形成连续前缀 [0,far]；已经可达的位置 i 能把这个前缀延伸到 max(far,i+a[i])。一旦 i&gt;far，后面的点也不可能被越过断层到达。若题目规定恰好跳 a[i] 步，这个连续前缀性质就消失。</p><p>求最少跳数时，end 表示使用当前次数能够到达的最远边界，far 收集扫描这些位置后多跳一次的最大覆盖范围。算法不需要承诺落在某个具体点，而是合并所有同层候选；到 i==end 才提交下一层。它是利用区间结构压缩了 BFS 队列，不是盲目选择下一步 a[i] 最大的点。</p></div><div class="deep-block" id="s2-before-2"><h3>2.2 [2,3,1,1,4] 的层边界手推</h3><p class="table-hint">窄屏下可左右滑动表格，查看完整内容。</p><div class="study-table" tabindex="0" role="region" aria-label="2.2 [2,3,1,1,4] 的层边界手推"><table><thead><tr><th scope="col">扫描 i</th><th scope="col">i+a[i]</th><th scope="col">far</th><th scope="col">end 与 steps</th></tr></thead><tbody><tr><td>0</td><td>2</td><td>2</td><td>到旧边界 0：steps=1，end=2</td></tr><tr><td>1</td><td>4</td><td>4</td><td>尚未到边界 2，不增加步数</td></tr><tr><td>2</td><td>3</td><td>4</td><td>到旧边界 2：steps=2，end=4</td></tr><tr><td>终点已被覆盖</td><td>不再扫描终点</td><td>4</td><td>返回 2，不额外增加一次</td></tr><tr><td>对照 [1,0,2]</td><td>在 i=1 时只到 1</td><td>1</td><td>边界无法推进，返回 -1</td></tr></tbody></table></div></div><div class="deep-block" id="s2-before-3"><h3>2.3 同类前沿思路：划分字母区间</h3><p>要求同一个字符只出现在一个分段内，并尽可能多分段。预先记录每个字符最后出现位置 last[c]，从当前段起点扫描，维护 end=max(end,last[s[i]])。当 i&lt;end 时，前面已有字符还会在 end 出现，此时切开一定非法；当 i==end 时，当前段所有字符都已出现完，可以立即切开。</p><p>为什么立刻切能最大化段数？任何合法方案的当前段都不能早于这个位置结束；在最早合法位置切，不会给后续增加字符跨段约束，因此能留下最多可切机会。这里的目标是最多分段，不是把每个字符种类平均分配。</p></div><div class="deep-block" id="s2-before-4"><h3>2.4 加油站排除候选：失败位置之前不用逐个重试</h3><p class="table-hint">窄屏下可左右滑动表格，查看完整内容。</p><div class="study-table" tabindex="0" role="region" aria-label="2.4 加油站排除候选：失败位置之前不用逐个重试"><table><thead><tr><th scope="col">量 / 场景</th><th scope="col">含义</th><th scope="col">推理</th></tr></thead><tbody><tr><td>delta[i]=gas[i]-cost[i]</td><td>走完第 i 条边的净增量</td><td>模型为环路、油箱无容量上限</td></tr><tr><td>total&lt;0</td><td>一圈总油不足</td><td>任何起点都不可能成功</td></tr><tr><td>从 s 走到 i 首次 tank&lt;0</td><td>s..i 的和为负，s..k-1 前缀均非负</td><td>从任意 k∈[s,i] 出发走到 i 的油量也为负</td></tr><tr><td>把候选改成 i+1</td><td>排除整段 s..i</td><td>每站只扫描一次</td></tr><tr><td>total≥0 且完成扫描</td><td>最后候选是一个最低前缀和之后的位置</td><td>绕回起点也不会缺油</td></tr></tbody></table></div></div><div class="invariant"><span>推导 / 不变量</span><p>遍历当前层时更新 far；到达当前层右边界 end 时，必须增加一次跳跃并把 end 扩展到 far。如果 far 未超过当前位置，就无法继续。</p></div>
 <h3>手推一个例子</h3><p>[2,3,1,1,4]：第一层从 0 到达最远 2；扫描位置 1、2 时可把下一层扩展到 4，因此共两次跳跃。</p><div class="codebox"><div class="codebar"><span>C++17</span><div><a href="examples/02.cpp" download>下载 .cpp</a><button type="button" class="copy">复制代码</button></div></div><pre tabindex="0" aria-label="C++17 代码"><code><span class="keyword">int</span> minJumps(<span class="keyword">const</span> vector&lt;<span class="keyword">int</span>&gt;&amp; a) {
     <span class="keyword">int</span> n=(<span class="keyword">int</span>)a.size();
     <span class="keyword">if</span>(n&lt;=<span class="number">1</span>) <span class="keyword">return</span> <span class="number">0</span>;
@@ -60,9 +109,60 @@
     <span class="keyword">return</span> -<span class="number">1</span>;
 }</code></pre></div>
 <dl class="analysis-grid"><div><dt>复杂度</dt><dd>时间 O(n)，空间 O(1)。前提：a[i] 非负。</dd></div><div><dt>易错点与边界</dt><dd>不应直接跳到 a[i] 最大的位置，应比较 i+a[i] 的覆盖能力。循环不处理终点，避免到达后又增加一次跳跃。</dd></div></dl>
-<div class="practice"><h3>经典考点与练习</h3><p>练习：LeetCode 55 跳跃游戏、45 跳跃游戏 II、763 划分字母区间。</p><details><summary>面试官可能继续问什么？</summary><p>为什么当前层边界处才增加步数？若题目保证可达，哪些判断可省略？</p><p class="muted">先用自己的话回答，再回到本节的前提、不变量和边界检查论证。</p></details></div>
+<div class="deep-block" id="s2-after-1"><h3>2.5 跳跃可达性：先判断是否可达，才使用该点的跳力</h3><p>空数组在这个布尔接口中定义为没有起终点，返回 false；长度 1 返回 true。负跳跃长度拒绝。far 始终截断在 n-1，i+a[i] 先转 long long，避免 int 加法溢出。O(n) 时间，O(1) 额外空间。基础 minJumps 的空数组返回 0 是另一个接口约定，使用时要分清。</p><div class="codebox"><div class="codebar"><span>C++17</span><div><a href="examples/detail-can-jump.cpp" download>下载 .cpp</a><button type="button" class="copy">复制代码</button></div></div><pre tabindex="0" aria-label="C++17 代码"><code><span class="keyword">bool</span> canReachEnd(<span class="keyword">const</span> vector&lt;<span class="keyword">int</span>&gt;&amp; a) {
+    <span class="keyword">for</span> (<span class="keyword">int</span> x : a) <span class="keyword">if</span> (x &lt; <span class="number">0</span>) <span class="keyword">throw</span> invalid_argument(<span class="string">&quot;jump&quot;</span>);
+    <span class="keyword">if</span> (a.empty()) <span class="keyword">return</span> <span class="keyword">false</span>;
+    <span class="keyword">int</span> n = (<span class="keyword">int</span>)a.size();
+    <span class="keyword">long</span> <span class="keyword">long</span> far = <span class="number">0</span>;
+    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; n; ++i) {
+        <span class="keyword">if</span> (i &gt; far) <span class="keyword">return</span> <span class="keyword">false</span>;
+        far = max(far,min((<span class="keyword">long</span> <span class="keyword">long</span>)n-<span class="number">1</span>,(<span class="keyword">long</span> <span class="keyword">long</span>)i+a[i]));
+        <span class="keyword">if</span> (far == n-<span class="number">1</span>) <span class="keyword">return</span> <span class="keyword">true</span>;
+    }
+    <span class="keyword">return</span> <span class="keyword">false</span>;
+}</code></pre></div></div><div class="deep-block" id="s2-after-2"><h3>2.6 还原一条最少跳跃路径：只为新覆盖的位置记父节点</h3><p>每次 far 扩大时，仅给 (旧 far,新 far] 内的位置设置 parent，所有位置总共只写一次。可达位置的最少跳数随下标非递减，按下标扫描就按 BFS 层推进；第一次覆盖位置 j 的父节点拥有最少层数，因此得到最短路径。不是从所有位置向所有可跳点连边，那会退化为 O(n²)。</p><p>空数组或不可达返回 nullopt，单点返回 [0]。答案是下标序列，跳数=路径长度−1。O(n) 时间、O(n) 辅助空间；基础最少跳数模板若不要求路径可只用 O(1) 空间。</p><div class="codebox"><div class="codebar"><span>C++17</span><div><a href="examples/detail-jump-path.cpp" download>下载 .cpp</a><button type="button" class="copy">复制代码</button></div></div><pre tabindex="0" aria-label="C++17 代码"><code>optional&lt;vector&lt;<span class="keyword">int</span>&gt;&gt; shortestJumpPath(<span class="keyword">const</span> vector&lt;<span class="keyword">int</span>&gt;&amp; a) {
+    <span class="keyword">for</span> (<span class="keyword">int</span> x : a) <span class="keyword">if</span> (x &lt; <span class="number">0</span>) <span class="keyword">throw</span> invalid_argument(<span class="string">&quot;jump&quot;</span>);
+    <span class="keyword">int</span> n = (<span class="keyword">int</span>)a.size();
+    <span class="keyword">if</span> (!n) <span class="keyword">return</span> nullopt;
+    vector&lt;<span class="keyword">int</span>&gt; parent(n,-<span class="number">1</span>);
+    <span class="keyword">int</span> far = <span class="number">0</span>;
+    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; n &amp;&amp; i &lt;= far; ++i) {
+        <span class="keyword">int</span> next = (<span class="keyword">int</span>)min((<span class="keyword">long</span> <span class="keyword">long</span>)n-<span class="number">1</span>,(<span class="keyword">long</span> <span class="keyword">long</span>)i+a[i]);
+        <span class="keyword">for</span> (<span class="keyword">int</span> j = far+<span class="number">1</span>; j &lt;= next; ++j) parent[j] = i;
+        far = max(far,next);
+        <span class="keyword">if</span> (far == n-<span class="number">1</span>) break;
+    }
+    <span class="keyword">if</span> (far &lt; n-<span class="number">1</span>) <span class="keyword">return</span> nullopt;
+    vector&lt;<span class="keyword">int</span>&gt; path;
+    <span class="keyword">for</span> (<span class="keyword">int</span> v = n-<span class="number">1</span>; v != -<span class="number">1</span>; v = parent[v]) path.push_back(v);
+    reverse(path.begin(),path.end());
+    <span class="keyword">return</span> path;
+}</code></pre></div></div><div class="deep-block" id="s2-after-3"><h3>2.7 划分字母区间：在最早合法位置切段</h3><p>返回每段长度，空串返回空列表。示例按 256 种字节值处理，用 unsigned char 做下标，避免 char 为负时访问数组越界。UTF-8 中文的一个字符由多个字节组成，若题目按 Unicode 字符划分，应先解码成码点并替换映射，不能直接使用本字节模板。时间 O(n+256)、辅助空间 O(256)，返回结果另计 O(n)。</p><div class="codebox"><div class="codebar"><span>C++17</span><div><a href="examples/detail-partition-labels.cpp" download>下载 .cpp</a><button type="button" class="copy">复制代码</button></div></div><pre tabindex="0" aria-label="C++17 代码"><code>vector&lt;<span class="keyword">int</span>&gt; partitionByteLabels(<span class="keyword">const</span> string&amp; s) {
+    array&lt;<span class="keyword">int</span>,<span class="number">256</span>&gt; last; last.fill(-<span class="number">1</span>);
+    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; (<span class="keyword">int</span>)s.size(); ++i) last[(unsigned <span class="keyword">char</span>)s[i]] = i;
+    vector&lt;<span class="keyword">int</span>&gt; lengths;
+    <span class="keyword">int</span> start = <span class="number">0</span>, end = <span class="number">0</span>;
+    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; (<span class="keyword">int</span>)s.size(); ++i) {
+        end = max(end,last[(unsigned <span class="keyword">char</span>)s[i]]);
+        <span class="keyword">if</span> (i == end) { lengths.push_back(i-start+<span class="number">1</span>); start = i+<span class="number">1</span>; }
+    }
+    <span class="keyword">return</span> lengths;
+}</code></pre></div></div><div class="deep-block" id="s2-after-4"><h3>2.8 加油站：总量检查与候选排除缺一不可</h3><p>gas 与 cost 长度必须相同且元素非负，油箱无容量上限，车辆从空油箱开始。在站 i 先加 gas[i]，再花 cost[i] 去下一站。无解或空环返回 nullopt；有多个可行起点时返回其中一个，不假定题目总保证唯一。O(n) 时间、O(1) 空间。</p><p>如果从 s 到 i 失败，对任意 k∈[s,i]，sum(k..i)=sum(s..i)−sum(s..k−1)&lt;0，因为首次失败前的那些前缀都非负，故 k 也失败。最后候选对应全局最低前缀和之后的位置：往后前缀差非负，绕回前面的油量是 total 加一个非负前缀差，因此 total≥0 时整圈可行。</p><div class="codebox"><div class="codebar"><span>C++17</span><div><a href="examples/detail-gas-station.cpp" download>下载 .cpp</a><button type="button" class="copy">复制代码</button></div></div><pre tabindex="0" aria-label="C++17 代码"><code>optional&lt;<span class="keyword">int</span>&gt; gasStationStart(<span class="keyword">const</span> vector&lt;<span class="keyword">int</span>&gt;&amp; gas, <span class="keyword">const</span> vector&lt;<span class="keyword">int</span>&gt;&amp; cost) {
+    <span class="keyword">if</span> (gas.size() != cost.size()) <span class="keyword">throw</span> invalid_argument(<span class="string">&quot;length&quot;</span>);
+    <span class="keyword">if</span> (gas.empty()) <span class="keyword">return</span> nullopt;
+    <span class="keyword">long</span> <span class="keyword">long</span> total = <span class="number">0</span>, tank = <span class="number">0</span>;
+    <span class="keyword">int</span> start = <span class="number">0</span>;
+    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; (<span class="keyword">int</span>)gas.size(); ++i) {
+        <span class="keyword">if</span> (gas[i] &lt; <span class="number">0</span> || cost[i] &lt; <span class="number">0</span>) <span class="keyword">throw</span> invalid_argument(<span class="string">&quot;negative value&quot;</span>);
+        <span class="keyword">long</span> <span class="keyword">long</span> delta = (<span class="keyword">long</span> <span class="keyword">long</span>)gas[i]-cost[i];
+        total += delta; tank += delta;
+        <span class="keyword">if</span> (tank &lt; <span class="number">0</span>) { start = i+<span class="number">1</span>; tank = <span class="number">0</span>; }
+    }
+    <span class="keyword">if</span> (total &lt; <span class="number">0</span>) <span class="keyword">return</span> nullopt;
+    <span class="keyword">return</span> start;
+}</code></pre></div></div><div class="practice"><h3>经典考点与练习</h3><p>练习：LeetCode 55 跳跃游戏、45 跳跃游戏 II、763 划分字母区间。</p><h3>面试追问：关键点完整解答</h3><dl class="answer-list"><div><dt>为什么到当前层边界才增加跳数？</dt><dd><p>扫描当前层的所有位置，是在比较使用同样步数到达这些位置后再跳一次的可能范围，不能把一次扫描当成一次实际跳跃。只有当前层全部考察完，下一层最远边界才完整确定，此时才增加一步。若终点已在新边界内，直接返回，不再处理终点。</p></dd></div><div><dt>直接选择跳跃长度 a[i] 最大的位置有什么问题？</dt><dd><p>能延伸多远取决于 i+a[i]，不是 a[i] 单独大小；相同跳力在更靠右的位置可延伸更远。更稳妥的是不急着确定落点，而是统计当前层全部候选的最大 i+a[i]，保持层边界领先证明。若需要实际落点，再通过父节点恢复。</p></dd></div><div><dt>可达性为何能压缩成一个 far？允许左右跳还成立吗？</dt><dd><p>本模型允许从 i 任意向右跳不超过 a[i] 步，因此覆盖是没有缺口的前缀。允许特定跳长、左右跳、有障碍或进入位置消耗不同资源时，可达集合可能不连续或未来能力不同，就不能只用一个端点代表全部状态，应重新建图使用 BFS、最短路或 DP。</p></dd></div><div><dt>题目保证可达，哪些判断可以省略？</dt><dd><p>在非负最大跳长模型且题目确实保证可达时，可以省去 i&gt;far 和边界无法推进的失败分支；但仍需单点处理、只扫描到 n−2，以及计算 i+a[i] 时的数值安全。写通用函数时保留失败分支更便于复用。</p></dd></div><div><dt>划分字母区间为什么不能在第一次遇到新字符时就切？</dt><dd><p>字符可能在后面再次出现。比如 abac，看到 b 不表示 a 已结束；last[a]=2，前一段必须至少覆盖到 2。end 收集当前段里所有字符的最后位置，只要 i&lt;end 就一定还有已出现字符需要留在本段。</p></dd></div><div><dt>加油站 total≥0 就足够吗？为什么还要找 start？</dt><dd><p>在无容量上限的标准模型中，总量非负保证存在某个起点，但不是任意起点都行。gas=[1,2]、cost=[2,1] 的总量为 0，从 0 出发第一步就失败，从 1 才可行。排除候选扫描负责构造一个可行起点，总量检查负责判断是否存在。</p></dd></div><div><dt>加油站油箱有容量上限，还能套同一算法吗？</dt><dd><p>不能直接套。过多的油可能因容量限制被丢弃，状态不再只是所有 delta 的前缀和。容量 1、gas=[2,0]、cost=[0,2] 总量为 0，但无论从哪里开始都无法支付成本 2。原总量条件和最低前缀构造都依赖无限容量。</p></dd></div></dl></div>
 <label class="learned"><input type="checkbox" data-progress="11-02">我能独立实现，并解释正确性与边界</label></section><section class="lesson" id="s3"><div class="lesson-heading"><span class="lesson-number">11.03</span><h2>最优合并与小顶堆</h2></div>
-<h3>知识与适用场景</h3><p>每次合并两项的成本等于两项之和，希望总成本最小。小元素应更早参与合并、大元素应更晚参与，避免大权值被多次计入。这个结构对应 Huffman 树。</p><div class="invariant"><span>推导 / 不变量</span><p>选择最小的两个值合并，再把和放回集合。可以用交换论证说明存在最优树让两个最小权值成为最深的一对兄弟，因此这一步可以收缩为更小问题。</p></div>
+<h3>知识与适用场景</h3><p>每次合并两项的成本等于两项之和，希望总成本最小。小元素应更早参与合并、大元素应更晚参与，避免大权值被多次计入。这个结构对应 Huffman 树。</p><div class="deep-block" id="s3-before-1"><h3>3.1 把合并顺序看成一棵满二叉树</h3><p>每个原始权重是一片叶子，每次把两堆合成一堆相当于建立它们的父节点，内部节点权重等于两孩子的权重之和。总合并成本等于所有内部节点权重之和，也等于每片叶子权重乘它到根的深度之和，因为一片叶子会在每个祖先处被重复收费。</p><p>因此小权值适合放深处，大权值适合放浅处。取最优满二叉树中最深的一片叶子，它的兄弟一定也是叶子，否则会有更深叶子。把两个最小权值交换到这对最深兄弟位置不会增加成本：若小权 a≤b、深度 d≥e，则 a·d+b·e≤a·e+b·d。两个最小权值可作为兄弟被合并，再收缩为权重 a+b 的新叶子。</p><p>收缩后，原成本等于新树成本加固定的 a+b；如果收缩后的树不是剩余权重的最优树，就能用更好子树替换而改进原最优树，矛盾。由此得到“每次合并最小两项”的完整结构归纳，而不是仅凭第一步最便宜来猜全局最优。</p></div><div class="deep-block" id="s3-before-2"><h3>3.2 [1,2,3,4]：单次成本与累计成本别混淆</h3><p class="table-hint">窄屏下可左右滑动表格，查看完整内容。</p><div class="study-table" tabindex="0" role="region" aria-label="3.2 [1,2,3,4]：单次成本与累计成本别混淆"><table><thead><tr><th scope="col">操作前候选</th><th scope="col">取出的两项</th><th scope="col">合并后候选</th><th scope="col">本次 / 累计成本</th></tr></thead><tbody><tr><td>1、2、3、4</td><td>1、2</td><td>3、3、4</td><td>3 / 3</td></tr><tr><td>3、3、4</td><td>3、3</td><td>4、6</td><td>6 / 9</td></tr><tr><td>4、6</td><td>4、6</td><td>10</td><td>10 / 19</td></tr><tr><td>叶子深度核对</td><td>1、2 深度 3；3 深度 2；4 深度 1</td><td>3+6+6+4</td><td>19，与累计成本一致</td></tr></tbody></table></div></div><div class="deep-block" id="s3-before-3"><h3>3.3 相邻约束不是一个可以忽略的小改动</h3><p>[1,100,1] 的两个最小值不相邻。任意两堆可合并时先合 1+1=2，再合 2+100=102，总成本 104；只允许相邻合并时第一次必须合 1+100 或 100+1，成本 101，第二次 102，总成本 203。全局堆给出的 104 根本不是合法方案，不是合法方案中不够优。</p><p>二元相邻合并可以定义 dp[l][r] 为把连续区间 l..r 合成一堆的最小成本。最后一次合并一定把它分为 [l,k] 与 [k+1,r] 两堆，因此 dp[l][r]=min(dp[l][k]+dp[k+1][r]+sum(l..r))。前缀和 O(1) 取得区间总重，长度从短到长转移。每次合并 K 堆则又是另一模型，不能直接使用这个二元公式。</p></div><div class="invariant"><span>推导 / 不变量</span><p>选择最小的两个值合并，再把和放回集合。可以用交换论证说明存在最优树让两个最小权值成为最深的一对兄弟，因此这一步可以收缩为更小问题。</p></div>
 <h3>手推一个例子</h3><p>[1,2,3]：先合 1+2=3，再合 3+3=6，总成本 9；若先合 2+3=5，再加 1，总成本 11。</p><div class="codebox"><div class="codebar"><span>C++17</span><div><a href="examples/03.cpp" download>下载 .cpp</a><button type="button" class="copy">复制代码</button></div></div><pre tabindex="0" aria-label="C++17 代码"><code><span class="keyword">long</span> <span class="keyword">long</span> minMergeCost(<span class="keyword">const</span> vector&lt;<span class="keyword">int</span>&gt;&amp; weights) {
     priority_queue&lt;<span class="keyword">long</span> <span class="keyword">long</span>,vector&lt;<span class="keyword">long</span> <span class="keyword">long</span>&gt;,greater&lt;<span class="keyword">long</span> <span class="keyword">long</span>&gt;&gt; pq;
     <span class="keyword">for</span>(<span class="keyword">int</span> x:weights){
@@ -78,9 +178,44 @@
     <span class="keyword">return</span> cost;
 }</code></pre></div>
 <dl class="analysis-grid"><div><dt>复杂度</dt><dd>时间 O(n log n)，空间 O(n)。总成本需在 long long 范围内。</dd></div><div><dt>易错点与边界</dt><dd>如果只允许合并相邻区间，任取最小两项不再合法，需要区间 DP 等方法。约束改变后不能照搬贪心。</dd></div></dl>
-<div class="practice"><h3>经典考点与练习</h3><p>练习：经典合并果子；对比 LeetCode 1000 合并石头的最低成本。</p><details><summary>面试官可能继续问什么？</summary><p>为什么相邻合并不能使用同样的堆？如何构造反例？</p><p class="muted">先用自己的话回答，再回到本节的前提、不变量和边界检查论证。</p></details></div>
+<div class="deep-block" id="s3-after-1"><h3>3.4 带溢出检查的最优二元合并</h3><p>空集合和单元素无需合并，成本为 0；零权重合法。每次既检查 a+b，也检查累计成本加上本次成本。权重总和不溢出，不代表总合并成本不溢出。单元素 LLONG_MAX 的成本仍为 0；[0,LLONG_MAX] 的成本是 LLONG_MAX，合法；[1,LLONG_MAX] 会明确抛出 overflow_error，而不是发生有符号溢出。时间 O(n log n)，空间 O(n)。</p><div class="codebox"><div class="codebar"><span>C++17</span><div><a href="examples/detail-merge-checked.cpp" download>下载 .cpp</a><button type="button" class="copy">复制代码</button></div></div><pre tabindex="0" aria-label="C++17 代码"><code><span class="keyword">long</span> <span class="keyword">long</span> optimalMergeChecked(<span class="keyword">const</span> vector&lt;<span class="keyword">long</span> <span class="keyword">long</span>&gt;&amp; weights) {
+    priority_queue&lt;<span class="keyword">long</span> <span class="keyword">long</span>,vector&lt;<span class="keyword">long</span> <span class="keyword">long</span>&gt;,greater&lt;<span class="keyword">long</span> <span class="keyword">long</span>&gt;&gt; pq;
+    <span class="keyword">for</span> (<span class="keyword">long</span> <span class="keyword">long</span> x : weights) {
+        <span class="keyword">if</span> (x &lt; <span class="number">0</span>) <span class="keyword">throw</span> invalid_argument(<span class="string">&quot;nonnegative weights required&quot;</span>);
+        pq.push(x);
+    }
+    <span class="keyword">long</span> <span class="keyword">long</span> cost = <span class="number">0</span>;
+    <span class="keyword">while</span> (pq.size() &gt; <span class="number">1</span>) {
+        <span class="keyword">long</span> <span class="keyword">long</span> a = pq.top(); pq.pop();
+        <span class="keyword">long</span> <span class="keyword">long</span> b = pq.top(); pq.pop();
+        <span class="keyword">if</span> (a &gt; LLONG_MAX-b) <span class="keyword">throw</span> overflow_error(<span class="string">&quot;merged weight&quot;</span>);
+        <span class="keyword">long</span> <span class="keyword">long</span> merged = a+b;
+        <span class="keyword">if</span> (cost &gt; LLONG_MAX-merged) <span class="keyword">throw</span> overflow_error(<span class="string">&quot;total cost&quot;</span>);
+        cost += merged; pq.push(merged);
+    }
+    <span class="keyword">return</span> cost;
+}</code></pre></div></div><div class="deep-block" id="s3-after-2"><h3>3.5 对照：只允许相邻二元合并时使用区间 DP</h3><p>为使数值与资源边界明确，本教学实现限制 n≤300、0≤weight≤10^9，long long 足以容纳至多 n−1 次区间总重累加。不是通用大规模合并算法。空数组和单元素返回 0。时间 O(n³)、空间 O(n²)，比无限制合并昂贵正是因为不能安全丢弃所有分割选择。</p><div class="codebox"><div class="codebar"><span>C++17</span><div><a href="examples/detail-adjacent-merge.cpp" download>下载 .cpp</a><button type="button" class="copy">复制代码</button></div></div><pre tabindex="0" aria-label="C++17 代码"><code><span class="keyword">long</span> <span class="keyword">long</span> adjacentMergeCost(<span class="keyword">const</span> vector&lt;<span class="keyword">int</span>&gt;&amp; a) {
+    <span class="keyword">int</span> n = (<span class="keyword">int</span>)a.size();
+    <span class="keyword">if</span> (n &gt; <span class="number">300</span>) <span class="keyword">throw</span> invalid_argument(<span class="string">&quot;teaching size limit&quot;</span>);
+    vector&lt;<span class="keyword">long</span> <span class="keyword">long</span>&gt; prefix(n+<span class="number">1</span>);
+    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; n; ++i) {
+        <span class="keyword">if</span> (a[i] &lt; <span class="number">0</span> || a[i] &gt; <span class="number">1000000000</span>) <span class="keyword">throw</span> invalid_argument(<span class="string">&quot;weight&quot;</span>);
+        prefix[i+<span class="number">1</span>] = prefix[i]+a[i];
+    }
+    <span class="keyword">if</span> (n &lt;= <span class="number">1</span>) <span class="keyword">return</span> <span class="number">0</span>;
+    <span class="keyword">const</span> <span class="keyword">long</span> <span class="keyword">long</span> INF = LLONG_MAX/<span class="number">4</span>;
+    vector&lt;vector&lt;<span class="keyword">long</span> <span class="keyword">long</span>&gt;&gt; dp(n,vector&lt;<span class="keyword">long</span> <span class="keyword">long</span>&gt;(n,<span class="number">0</span>));
+    <span class="keyword">for</span> (<span class="keyword">int</span> len = <span class="number">2</span>; len &lt;= n; ++len) {
+        <span class="keyword">for</span> (<span class="keyword">int</span> l = <span class="number">0</span>; l+len &lt;= n; ++l) {
+            <span class="keyword">int</span> r = l+len-<span class="number">1</span>; dp[l][r] = INF;
+            <span class="keyword">for</span> (<span class="keyword">int</span> k = l; k &lt; r; ++k)
+                dp[l][r] = min(dp[l][r],dp[l][k]+dp[k+<span class="number">1</span>][r]+prefix[r+<span class="number">1</span>]-prefix[l]);
+        }
+    }
+    <span class="keyword">return</span> dp[<span class="number">0</span>][n-<span class="number">1</span>];
+}</code></pre></div></div><div class="practice"><h3>经典考点与练习</h3><p>练习：经典合并果子；对比 LeetCode 1000 合并石头的最低成本。</p><h3>面试追问：关键点完整解答</h3><dl class="answer-list"><div><dt>为什么必须反复取当前最小两项，而不是先排序后顺次合并？</dt><dd><p>合并得到的新权重还会参与下一轮竞争，不能只按原数组顺序取。例 [1,2,3,100]，先合 1+2=3 后，新 3 应与原 3 合并为 6；若简单把原来的 3 和 100 配一对，就造成大权重过早多次计费。堆维护动态候选集合。</p></dd></div><div><dt>初次合并成本最小，为什么不足以作为证明？</dt><dd><p>一次局部收费最低并不普遍推出最终总收费最低，后续会反复包含之前的权重。真正的证明使用整棵合并树的带权路径长度，先证明两个最小值可以成为最深兄弟，再证明收缩后的剩余问题仍最优；这是对所有未来代价的统一论证。</p></dd></div><div><dt>零权重和相同权重会不会使算法出错？</dt><dd><p>不会。交换论证使用非严格大小关系，零和并列也满足条件。并列时不同合并顺序可能得到不同树，但最小总成本相同。空或单元素没有内部节点，所以返回 0，而不是返回唯一元素权重。</p></dd></div><div><dt>为什么相邻合并不能用同一个小顶堆？</dt><dd><p>堆只保存权重，丢失原始相邻关系，可能把中间隔着其他堆的两项直接合并。[1,100,1] 中两个 1 就不能先合。即使改成每次挑最便宜相邻对，也需要新证明，不能由 Huffman 的任意换叶论证推出，因为换叶可能改变合法顺序。</p></dd></div><div><dt>相邻合并 DP 为什么每个分割都要加一次区间总和？</dt><dd><p>左右子区间先各自合成一堆，它们的费用已在两个 dp 值中；最后把这两堆合成一堆，新的收费恰好是整个区间权重之和，与分割位置无关。单点已经是一堆，不产生最后合并，所以 dp[i][i]=0。</p></dd></div><div><dt>每次必须合并 K 堆，有什么额外条件？</dt><dd><p>每次堆数减少 K−1，若最终要从 n 堆变成 1 堆，必须有 (n−1) 能被 K−1 整除。这只是必要的计数条件，具体算法还取决于能否任意选择、是否相邻等约束。相邻 K 元合并通常需要更多状态或相应的区间 DP 推导，不能把二元堆模板里的 pop 次数直接改掉就算完成。</p></dd></div><div><dt>用 long long 为什么仍需检查累计成本？</dt><dd><p>同一权重会在不同层反复计费，总成本是权重乘深度之和。即使最后一堆的总重能放入 long long，所有内部合并成本之和仍可能超界。非负数相加可先检查 a&gt;LLONG_MAX−b，再真正执行加法；事后检查溢出已太晚，因为有符号溢出属于未定义行为。</p></dd></div></dl></div>
 <label class="learned"><input type="checkbox" data-progress="11-03">我能独立实现，并解释正确性与边界</label></section><section class="lesson" id="s4"><div class="lesson-heading"><span class="lesson-number">11.04</span><h2>股票问题：从合法策略判断贪心边界</h2></div>
-<h3>知识与适用场景</h3><p>允许无限次交易、不能同时持有多股、没有手续费和冷冻期时，所有相邻上涨差值相加就是最优收益。一次长上涨的利润可以拆成若干相邻上涨之和。</p><div class="invariant"><span>推导 / 不变量</span><p>下降段不持有，上涨段捕获全部增量。对于任何合法交易，跨越的总价差不可能超过其中所有正增量之和；该上界又可通过低买高卖实现。</p></div>
+<h3>知识与适用场景</h3><p>允许无限次交易、不能同时持有多股、没有手续费和冷冻期时，所有相邻上涨差值相加就是最优收益。一次长上涨的利润可以拆成若干相邻上涨之和。</p><div class="deep-block" id="s4-before-1"><h3>4.1 无限次股票贪心：先给出上界，再证明能够达到</h3><p>没有手续费、冷冻期与次数限制，且最多持有一股时，一笔从 b 到 s 的交易收益 p[s]−p[b] 可以写成从 b+1 到 s 的所有相邻差值之和。把其中负增量删掉只会变大，因此任意合法交易组合的总收益不超过整个序列所有正增量之和。</p><p>这个上界能通过每段连续上涨前买入、上涨结束时卖出来达到。代码逐日累加正差只是计算方法，不要求真的每天同时卖出又买入；连续上涨段可以合成一次合法交易。若原题不允许同一天既卖又买，这个合并解释也保留了合法性。</p></div><div class="deep-block" id="s4-before-2"><h3>4.2 股票题先核对约束，再选状态</h3><p class="table-hint">窄屏下可左右滑动表格，查看完整内容。</p><div class="study-table" tabindex="0" role="region" aria-label="4.2 股票题先核对约束，再选状态"><table><thead><tr><th scope="col">模型</th><th scope="col">有效方法</th><th scope="col">要记住什么</th><th scope="col">典型题号</th></tr></thead><tbody><tr><td>最多一次买卖</td><td>历史最低价与当前利润</td><td>卖出不能早于买入</td><td>121</td></tr><tr><td>无限次，无费用 / 冷冻</td><td>累加正差</td><td>所有上涨增量可免费拼接</td><td>122</td></tr><tr><td>每笔交易手续费</td><td>cash / hold 两状态 DP</td><td>手续费只扣一次，拆分不免费</td><td>714</td></tr><tr><td>卖出后一天不能买</td><td>hold / sold / rest 状态 DP</td><td>昨天刚卖不允许今天买</td><td>309</td></tr><tr><td>至多 K 次交易</td><td>按完成次数扩展持仓状态</td><td>次数是一项会影响未来的资源</td><td>123、188</td></tr></tbody></table></div></div><div class="deep-block" id="s4-before-3"><h3>4.3 直接加正差何时失效？</h3><p class="table-hint">窄屏下可左右滑动表格，查看完整内容。</p><div class="study-table" tabindex="0" role="region" aria-label="4.3 直接加正差何时失效？"><table><thead><tr><th scope="col">价格与约束</th><th scope="col">错误计算</th><th scope="col">合法最优</th><th scope="col">失效原因</th></tr></thead><tbody><tr><td>[1,3,2,4]，最多一次</td><td>2+2=4</td><td>1 买 4 卖，利润 3</td><td>不能把两笔交易当一笔</td></tr><tr><td>[1,3,2,8,4,9]，手续费 2</td><td>原始正差 13</td><td>两笔收费后利润 8</td><td>拆分改变费用</td></tr><tr><td>[1,2,3,0,2]，冷冻一天</td><td>2+2=4</td><td>1 买 2 卖、0 买 2 卖，利润 3</td><td>在 3 卖后第二天不能在 0 买</td></tr><tr><td>[5,4,3]，允许不交易</td><td>若强迫买卖会负收益</td><td>0</td><td>空操作也是合法策略</td></tr></tbody></table></div></div><div class="deep-block" id="s4-before-4"><h3>4.4 DP 不是承认失败，而是保留仍可能有用的状态</h3><p>cash 表示当天处理完后不持股的最大已实现资金，hold 表示持一股时的最大资金余额。持股余额可以为负，不等于最终利润；它记录支付买价后的状态。手续费在卖出时扣：newCash=max(oldCash,oldHold+price−fee)，newHold=max(oldHold,oldCash−price)。</p><p>使用 old 状态快照，明确每天最多执行一个动作，避免写入新 cash 后又用它更新 hold，悄悄允许同日多步交易。某些特定无费用模型中这种原地更新恰好不影响数值，也不能把这种巧合推广到所有约束。</p><p>冷冻期需要区分刚卖出与早已空仓：sold=oldHold+price；rest=max(oldRest,oldSold)；hold=max(oldHold,oldRest−price)。只能从 oldRest 买入，不能从 oldSold 买。最终只能返回不持股状态的最大值，不能把未卖出的股票当作已兑现利润。</p></div><div class="invariant"><span>推导 / 不变量</span><p>下降段不持有，上涨段捕获全部增量。对于任何合法交易，跨越的总价差不可能超过其中所有正增量之和；该上界又可通过低买高卖实现。</p></div>
 <h3>手推一个例子</h3><p>[7,1,5,3,6,4]，正增量是 4 和 3，总收益 7。若限制最多一次交易，则不能把两段利润直接相加。</p><div class="codebox"><div class="codebar"><span>C++17</span><div><a href="examples/04.cpp" download>下载 .cpp</a><button type="button" class="copy">复制代码</button></div></div><pre tabindex="0" aria-label="C++17 代码"><code><span class="keyword">long</span> <span class="keyword">long</span> maxProfitUnlimited(<span class="keyword">const</span> vector&lt;<span class="keyword">int</span>&gt;&amp; prices) {
     <span class="keyword">long</span> <span class="keyword">long</span> profit=<span class="number">0</span>;
     <span class="keyword">for</span>(<span class="keyword">int</span> i=<span class="number">1</span>;i&lt;(<span class="keyword">int</span>)prices.size();++i)
@@ -88,5 +223,297 @@
     <span class="keyword">return</span> profit;
 }</code></pre></div>
 <dl class="analysis-grid"><div><dt>复杂度</dt><dd>时间 O(n)，空间 O(1)。</dd></div><div><dt>易错点与边界</dt><dd>加手续费、冷冻期或交易次数上限后，决策之间产生额外依赖，通常应建持有/未持有状态 DP。</dd></div></dl>
-<div class="practice"><h3>经典考点与练习</h3><p>练习：LeetCode 121 买卖股票的最佳时机、122 买卖股票的最佳时机 II；对比 309、714。</p><details><summary>面试官可能继续问什么？</summary><p>最多一次交易时，为什么维护历史最低价格即可？手续费会破坏哪一步证明？</p><p class="muted">先用自己的话回答，再回到本节的前提、不变量和边界检查论证。</p></details></div>
-<label class="learned"><input type="checkbox" data-progress="11-04">我能独立实现，并解释正确性与边界</label></section><nav class="chapter-pager" aria-label="相邻章节"><a href="../10-图论/index.html"><small>上一章</small>← 图论</a><a href="../12-动态规划/index.html"><small>下一章</small>动态规划 →</a></nav><footer>秋招算法学习讲义 · C++17<br>例题编号供检索；难度与覆盖范围按学习顺序组织。</footer></main><aside class="toc" aria-label="本页目录"><p class="rail-label">本章小节</p><a href="#s1"><span>01</span>区间调度与交换论证</a><a href="#s2"><span>02</span>跳跃游戏：覆盖前沿与分层</a><a href="#s3"><span>03</span>最优合并与小顶堆</a><a href="#s4"><span>04</span>股票问题：从合法策略判断贪心边界</a></aside></div><div class="toast" role="status" aria-live="polite"></div></body></html>
+<div class="deep-block" id="s4-after-1"><h3>4.5 最多一次交易：维护严格的时间顺序</h3><p>先尝试把当天作为卖出日，再用当天价格更新最低买价，使解释上最低价来自过去；允许零收益时顺序互换在数值上也不会提高利润。空数组、单日和一直下跌均返回 0。O(n) 时间、O(1) 空间；相减前使用 long long。</p><div class="codebox"><div class="codebar"><span>C++17</span><div><a href="examples/detail-stock-once.cpp" download>下载 .cpp</a><button type="button" class="copy">复制代码</button></div></div><pre tabindex="0" aria-label="C++17 代码"><code><span class="keyword">long</span> <span class="keyword">long</span> stockProfitOnce(<span class="keyword">const</span> vector&lt;<span class="keyword">int</span>&gt;&amp; prices) {
+    <span class="keyword">long</span> <span class="keyword">long</span> lowest = LLONG_MAX, answer = <span class="number">0</span>;
+    <span class="keyword">for</span> (<span class="keyword">int</span> price : prices) {
+        <span class="keyword">if</span> (price &lt; <span class="number">0</span>) <span class="keyword">throw</span> invalid_argument(<span class="string">&quot;price&quot;</span>);
+        <span class="keyword">if</span> (lowest != LLONG_MAX) answer = max(answer,(<span class="keyword">long</span> <span class="keyword">long</span>)price-lowest);
+        lowest = min(lowest,(<span class="keyword">long</span> <span class="keyword">long</span>)price);
+    }
+    <span class="keyword">return</span> answer;
+}</code></pre></div></div><div class="deep-block" id="s4-after-2"><h3>4.6 有手续费：旧 cash / hold 同步转移</h3><p>手续费为非负 int，并在每次卖出时恰扣一次。初始空仓现金 0，持股不可达，使用 NEG 表示；对不可达状态不做卖出运算。空数组返回 0。O(n) 时间、O(1) 空间。手续费为 0 时应与无限次交易贪心结果一致，可用作对照测试。</p><div class="codebox"><div class="codebar"><span>C++17</span><div><a href="examples/detail-stock-fee.cpp" download>下载 .cpp</a><button type="button" class="copy">复制代码</button></div></div><pre tabindex="0" aria-label="C++17 代码"><code><span class="keyword">long</span> <span class="keyword">long</span> stockProfitWithFee(<span class="keyword">const</span> vector&lt;<span class="keyword">int</span>&gt;&amp; prices, <span class="keyword">int</span> fee) {
+    <span class="keyword">if</span> (fee &lt; <span class="number">0</span>) <span class="keyword">throw</span> invalid_argument(<span class="string">&quot;fee&quot;</span>);
+    <span class="keyword">const</span> <span class="keyword">long</span> <span class="keyword">long</span> NEG = LLONG_MIN/<span class="number">4</span>;
+    <span class="keyword">long</span> <span class="keyword">long</span> cash = <span class="number">0</span>, hold = NEG;
+    <span class="keyword">for</span> (<span class="keyword">int</span> price : prices) {
+        <span class="keyword">if</span> (price &lt; <span class="number">0</span>) <span class="keyword">throw</span> invalid_argument(<span class="string">&quot;price&quot;</span>);
+        <span class="keyword">long</span> <span class="keyword">long</span> oldCash = cash, oldHold = hold;
+        cash = oldCash;
+        <span class="keyword">if</span> (oldHold != NEG) cash = max(cash,oldHold+price-fee);
+        hold = max(oldHold,oldCash-price);
+    }
+    <span class="keyword">return</span> cash;
+}</code></pre></div></div><div class="deep-block" id="s4-after-3"><h3>4.7 冷冻期一天：把刚卖出单独作为状态</h3><p>sold 只表示今天刚卖出，不是历史上曾卖出。rest 是今天结束时空仓且明天可买的状态；昨天 sold 的资金可进入今天 rest，但不能直接进入今天 hold。空数组返回 0，最终取 max(rest,sold)。O(n) 时间、O(1) 空间。</p><div class="codebox"><div class="codebar"><span>C++17</span><div><a href="examples/detail-stock-cooldown.cpp" download>下载 .cpp</a><button type="button" class="copy">复制代码</button></div></div><pre tabindex="0" aria-label="C++17 代码"><code><span class="keyword">long</span> <span class="keyword">long</span> stockProfitCooldown(<span class="keyword">const</span> vector&lt;<span class="keyword">int</span>&gt;&amp; prices) {
+    <span class="keyword">const</span> <span class="keyword">long</span> <span class="keyword">long</span> NEG = LLONG_MIN/<span class="number">4</span>;
+    <span class="keyword">long</span> <span class="keyword">long</span> hold = NEG, sold = NEG, rest = <span class="number">0</span>;
+    <span class="keyword">for</span> (<span class="keyword">int</span> price : prices) {
+        <span class="keyword">if</span> (price &lt; <span class="number">0</span>) <span class="keyword">throw</span> invalid_argument(<span class="string">&quot;price&quot;</span>);
+        <span class="keyword">long</span> <span class="keyword">long</span> oldHold = hold, oldSold = sold, oldRest = rest;
+        hold = max(oldHold,oldRest-price);
+        sold = oldHold == NEG ? NEG : oldHold+price;
+        rest = max(oldRest,oldSold);
+    }
+    <span class="keyword">return</span> max(rest,sold);
+}</code></pre></div></div><div class="practice"><h3>经典考点与练习</h3><p>练习：LeetCode 121 买卖股票的最佳时机、122 买卖股票的最佳时机 II；对比 309、714。</p><h3>面试追问：关键点完整解答</h3><dl class="answer-list"><div><dt>无限次交易为什么可以把正差全部相加？</dt><dd><p>每笔交易的价差都能拆成相邻增量，忽略负增量得到总收益上界。每段连续上涨买低卖高能达到所有正增量之和，因此上界可达，贪心最优。这个证明依赖没有交易费用、次数上限与冷冻限制，不能省略这些前提。</p></dd></div><div><dt>最多一次交易维护历史最低价格，为什么不直接找全局最低与最高？</dt><dd><p>全局最高可能在最低之前。[7,1,5] 的全局差为 6，但不能先在 1 买再回到过去的 7 卖，实际最大收益为 4。扫描每一天作为卖出日，只使用此前最低价格，就同时满足时间顺序与最佳买入选择。</p></dd></div><div><dt>手续费具体破坏了无费用证明的哪一步？</dt><dd><p>把一段持有拆成多笔交易会增加收费次数，因此不再能免费收集每一段小上涨。例如 [1,3,2,4]、fee=2，拆成两笔得到 0，持有到 4 才卖得到 1。所有正差仍是忽略费用的上界，但未必能用合法收费策略达到。</p></dd></div><div><dt>手续费一定要用 DP，完全不能贪心吗？</dt><dd><p>特定手续费模型也存在维护有效买入成本的贪心，但必须重新证明它如何合并交易、何时只虚拟结算并避免重复收费。这里使用两状态 DP，是为了直接表达合法状态和费用，并不是声称任何带费用问题都不存在贪心解。原来的“直接加正差”不能照用。</p></dd></div><div><dt>hold 为负数是否意味着这条状态应该丢弃？</dt><dd><p>不应该。hold=-3 表示买入后余额为 -3，未来高价卖出可能获得最佳利润。比较同样持股状态下哪个余额更大，才有意义；不能把持股和空仓余额直接混在一起只保留一个最大值，因为它们允许的后续动作不同。</p></dd></div><div><dt>冷冻期为什么不能只用一个空仓状态买入？</dt><dd><p>今天空仓可能是昨天刚卖，也可能很早已卖或从未买，两者今天能否买入不同。若都混成 cash 并允许立即买，就可能在 [1,2,3,0,2] 中选择 3 卖后次日在 0 买，得到非法利润 4。拆出 sold 与 rest 后才能区分动作权限。</p></dd></div><div><dt>贪心与 DP 的界线，是不是“当前选择影响未来”这么简单？</dt><dd><p>不是，区间选择也会影响未来。真正区别是能否证明某个选择或某个状态支配其他候选，使丢弃它们不损失最优解。若不能证明，就考虑保留按持仓、次数、冷冻等维度区分的状态。DP 有时可进一步化简成贪心，但需要新的支配或交换论证。</p></dd></div></dl></div>
+<label class="learned"><input type="checkbox" data-progress="11-04">我能独立实现，并解释正确性与边界</label></section><section class="chapter-review" id="chapter-review"><p class="eyebrow">PRACTICE / 把本章方法用起来</p><h2>综合例题与章末自测</h2><div class="deep-block" id="review-1"><h3>练习路线：每类先写证明，再写一个失效反例</h3><p class="table-hint">窄屏下可左右滑动表格，查看完整内容。</p><div class="study-table" tabindex="0" role="region" aria-label="练习路线：每类先写证明，再写一个失效反例"><table><thead><tr><th scope="col">阶段</th><th scope="col">经典题</th><th scope="col">必须解释的关键点</th><th scope="col">重点边界</th></tr></thead><tbody><tr><td>区间与匹配</td><td>435、452、455、1024</td><td>结束最早 / 延伸最远 / 最小合适资源</td><td>端点相等、重复区间、覆盖断层</td></tr><tr><td>层边界与分段</td><td>55、45、763、134</td><td>可达前缀、BFS 层、最后位置、排除起点</td><td>单点、零跳力、不可达、环形回绕</td></tr><tr><td>合并与约束改变</td><td>合并果子、1000（二元对照）</td><td>带权路径长度、兄弟交换、区间 DP</td><td>空输入、零权、相邻约束、累计溢出</td></tr><tr><td>交易模型</td><td>121、122、714、309</td><td>收益上界可达、持仓状态、动作权限</td><td>不交易、连续下降、手续费、冷冻日</td></tr></tbody></table></div></div><div class="deep-block" id="review-2"><h3>一个可复用的贪心口述模板</h3><p>先说目标：我在最小化或最大化什么；再说规则：每一步从哪些合法候选里，按什么键选；然后说不变量：此前决策后，剩余候选或覆盖前沿代表什么；接着证明：用交换、领先、结构收缩或上下界说明不丢最优；最后说边界、复杂度和改变哪条前提会失效。</p><p>不要把样例通过当成证明。先用小规模穷举找反例：枚举区间子集、跳跃路径、合并对和交易动作。若找到反例，先检查模型与证明哪一步失效，而不是凭感觉增加几个分支修补。即使随机测试全过，也仍需要一个覆盖全部合法输入的论证。</p></div><div class="deep-block" id="review-3"><h3>章末自测：从模板记忆到独立判断</h3><dl class="answer-list"><div><dt>0/1 背包能否按单位价值贪心？</dt><dd><p>一般不能。容量 50，物品 (重量,价值) 为 (10,60)、(20,100)、(30,120)，按价值密度先选前两个得到 160，后两个可得到 220。物品不可拆时，局部高密度会占用无法回收的容量；可任意拆分的分数背包才可以用密度贪心。</p></dd></div><div><dt>硬币面额任意时，先拿最大硬币能保证最少个数吗？</dt><dd><p>不能。面额 1、3、4，金额 6，先拿 4 后补两个 1 需要 3 枚，两个 3 只需 2 枚。某些特殊币制的贪心成立要另证；任意正整数币制通常考虑 DP 或 BFS。不要把日常货币的经验当通用定理。</p></dd></div><div><dt>贪心输出不唯一时怎样测试？</dt><dd><p>不应只与某一组标准下标完全相等。区间方案要检查原下标合法且不重复、彼此兼容和数量最优；箭要检查每个气球被覆盖且箭数最少；跳跃路径要检查每步合法和跳数最少；加油站只要完整绕行不缺油即可，不要求与另一个算法返回相同起点。</p></dd></div><div><dt>怎样区分测试、证明和工程输入检查？</dt><dd><p>证明说明全部满足前提的输入为什么正确；小规模对照测试帮助发现实现、边界和状态转移错误；输入检查保证调用者没有违反契约，并在可能溢出时显式失败。三者互补：浏览器复制按钮正常不能证明 C++ 算法正确，随机用例通过也不代表未知范围永远安全。</p></dd></div></dl></div><div class="deep-block" id="review-4"><h3>综合测试：穷举小输入与固定边界</h3><p>测试入口引用同目录 13 份补充函数，以及基础最少跳数、合并和无限次交易实现。请保留整个 examples 目录，只编译 detail-greedy-tests.cpp，不要将它包含的 cpp 再次参与链接。命令：g++ -std=c++17 -O2 -Wall -Wextra detail-greedy-tests.cpp -o greedy-tests，Windows 随后运行 .\greedy-tests.exe。不要定义 NDEBUG，否则 assert 不执行。</p><p>提供 100 轮固定种子小输入：区间选择与覆盖枚举子集、最少箭枚举端点集合、资源匹配枚举分配、跳数对照显式 BFS、分段枚举切点、加油站枚举起点、两种合并枚举合法合并次序、股票枚举合法买卖动作。另有端点相等、空输入、极值、非法输入及累计溢出测试。当前环境无 C++ 编译器，此测试源码尚未编译运行。</p><div class="codebox"><div class="codebar"><span>C++17</span><div><a href="examples/detail-greedy-tests.cpp" download>下载 .cpp</a><button type="button" class="copy">复制代码</button></div></div><pre tabindex="0" aria-label="C++17 代码"><code>#include <span class="string">&quot;detail-interval-selection.cpp&quot;</span>
+#include <span class="string">&quot;detail-min-arrows.cpp&quot;</span>
+#include <span class="string">&quot;detail-interval-cover.cpp&quot;</span>
+#include <span class="string">&quot;detail-assign-resources.cpp&quot;</span>
+#include <span class="string">&quot;detail-can-jump.cpp&quot;</span>
+#include <span class="string">&quot;detail-jump-path.cpp&quot;</span>
+#include <span class="string">&quot;detail-partition-labels.cpp&quot;</span>
+#include <span class="string">&quot;detail-gas-station.cpp&quot;</span>
+#include <span class="string">&quot;detail-merge-checked.cpp&quot;</span>
+#include <span class="string">&quot;detail-adjacent-merge.cpp&quot;</span>
+#include <span class="string">&quot;detail-stock-once.cpp&quot;</span>
+#include <span class="string">&quot;detail-stock-fee.cpp&quot;</span>
+#include <span class="string">&quot;detail-stock-cooldown.cpp&quot;</span>
+#include <span class="string">&quot;02.cpp&quot;</span>
+#include <span class="string">&quot;03.cpp&quot;</span>
+#include <span class="string">&quot;04.cpp&quot;</span>
+
+<span class="keyword">int</span> bitCount(<span class="keyword">int</span> mask) {
+    <span class="keyword">int</span> count = <span class="number">0</span>;
+    <span class="keyword">while</span> (mask) { count += mask &amp; <span class="number">1</span>; mask &gt;&gt;= <span class="number">1</span>; }
+    <span class="keyword">return</span> count;
+}
+<span class="keyword">int</span> bruteSchedule(<span class="keyword">const</span> vector&lt;pair&lt;<span class="keyword">int</span>,<span class="keyword">int</span>&gt;&gt;&amp; a) {
+    <span class="keyword">int</span> n = (<span class="keyword">int</span>)a.size(), best = <span class="number">0</span>;
+    <span class="keyword">for</span> (<span class="keyword">int</span> mask = <span class="number">0</span>; mask &lt; (<span class="number">1</span> &lt;&lt; n); ++mask) {
+        <span class="keyword">bool</span> ok = <span class="keyword">true</span>;
+        <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; n; ++i) <span class="keyword">if</span> ((mask &gt;&gt; i) &amp; <span class="number">1</span>)
+            <span class="keyword">for</span> (<span class="keyword">int</span> j = i+<span class="number">1</span>; j &lt; n; ++j) <span class="keyword">if</span> ((mask &gt;&gt; j) &amp; <span class="number">1</span>)
+                <span class="keyword">if</span> (max(a[i].first,a[j].first) &lt; min(a[i].second,a[j].second)) ok = <span class="keyword">false</span>;
+        <span class="keyword">if</span> (ok) best = max(best,bitCount(mask));
+    }
+    <span class="keyword">return</span> best;
+}
+<span class="keyword">int</span> bruteArrows(<span class="keyword">const</span> vector&lt;pair&lt;<span class="keyword">int</span>,<span class="keyword">int</span>&gt;&gt;&amp; a) {
+    vector&lt;<span class="keyword">int</span>&gt; endpoints;
+    <span class="keyword">for</span> (<span class="keyword">auto</span> [l,r] : a) { endpoints.push_back(l); endpoints.push_back(r); }
+    sort(endpoints.begin(),endpoints.end());
+    endpoints.erase(unique(endpoints.begin(),endpoints.end()),endpoints.end());
+    <span class="keyword">int</span> best = (<span class="keyword">int</span>)a.size();
+    <span class="comment">// 闭区间的最优刺点总可移动到一个端点；仅用于很小输入。</span>
+    <span class="keyword">for</span> (<span class="keyword">int</span> mask = <span class="number">0</span>; mask &lt; (<span class="number">1</span> &lt;&lt; endpoints.size()); ++mask) {
+        <span class="keyword">if</span> (bitCount(mask) &gt;= best) continue;
+        <span class="keyword">bool</span> ok = <span class="keyword">true</span>;
+        <span class="keyword">for</span> (<span class="keyword">auto</span> [l,r] : a) {
+            <span class="keyword">bool</span> hit = <span class="keyword">false</span>;
+            <span class="keyword">for</span> (<span class="keyword">int</span> j = <span class="number">0</span>; j &lt; (<span class="keyword">int</span>)endpoints.size(); ++j)
+                <span class="keyword">if</span> (((mask &gt;&gt; j) &amp; <span class="number">1</span>) &amp;&amp; l &lt;= endpoints[j] &amp;&amp; endpoints[j] &lt;= r) hit = <span class="keyword">true</span>;
+            <span class="keyword">if</span> (!hit) ok = <span class="keyword">false</span>;
+        }
+        <span class="keyword">if</span> (ok) best = bitCount(mask);
+    }
+    <span class="keyword">return</span> best;
+}
+optional&lt;<span class="keyword">int</span>&gt; bruteCover(vector&lt;pair&lt;<span class="keyword">int</span>,<span class="keyword">int</span>&gt;&gt; a, <span class="keyword">int</span> left, <span class="keyword">int</span> right) {
+    <span class="keyword">if</span> (left == right) <span class="keyword">return</span> <span class="number">0</span>;
+    sort(a.begin(),a.end());
+    optional&lt;<span class="keyword">int</span>&gt; best; <span class="keyword">int</span> n = (<span class="keyword">int</span>)a.size();
+    <span class="keyword">for</span> (<span class="keyword">int</span> mask = <span class="number">0</span>; mask &lt; (<span class="number">1</span> &lt;&lt; n); ++mask) {
+        <span class="keyword">int</span> reach = left;
+        <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; n; ++i) <span class="keyword">if</span> ((mask &gt;&gt; i) &amp; <span class="number">1</span>) {
+            <span class="keyword">if</span> (a[i].first &gt; reach) break;
+            reach = max(reach,a[i].second);
+        }
+        <span class="keyword">if</span> (reach &gt;= right &amp;&amp; (!best || bitCount(mask) &lt; *best)) best = bitCount(mask);
+    }
+    <span class="keyword">return</span> best;
+}
+<span class="keyword">int</span> bruteResources(<span class="keyword">const</span> vector&lt;<span class="keyword">int</span>&gt;&amp; needs, <span class="keyword">const</span> vector&lt;<span class="keyword">int</span>&gt;&amp; sizes) {
+    function&lt;<span class="keyword">int</span>(<span class="keyword">int</span>,<span class="keyword">int</span>)&gt; dfs = [&amp;](<span class="keyword">int</span> i,<span class="keyword">int</span> mask) {
+        <span class="keyword">if</span> (i == (<span class="keyword">int</span>)needs.size()) <span class="keyword">return</span> <span class="number">0</span>;
+        <span class="keyword">int</span> best = dfs(i+<span class="number">1</span>,mask);
+        <span class="keyword">for</span> (<span class="keyword">int</span> j = <span class="number">0</span>; j &lt; (<span class="keyword">int</span>)sizes.size(); ++j)
+            <span class="keyword">if</span> (!((mask &gt;&gt; j) &amp; <span class="number">1</span>) &amp;&amp; sizes[j] &gt;= needs[i])
+                best = max(best,<span class="number">1</span>+dfs(i+<span class="number">1</span>,mask|(<span class="number">1</span> &lt;&lt; j)));
+        <span class="keyword">return</span> best;
+    };
+    <span class="keyword">return</span> dfs(<span class="number">0</span>,<span class="number">0</span>);
+}
+<span class="keyword">int</span> bruteJumps(<span class="keyword">const</span> vector&lt;<span class="keyword">int</span>&gt;&amp; a) {
+    <span class="keyword">if</span> (a.empty()) <span class="keyword">return</span> -<span class="number">1</span>;
+    <span class="keyword">int</span> n = (<span class="keyword">int</span>)a.size();
+    vector&lt;<span class="keyword">int</span>&gt; d(n,-<span class="number">1</span>); queue&lt;<span class="keyword">int</span>&gt; q; d[<span class="number">0</span>] = <span class="number">0</span>; q.push(<span class="number">0</span>);
+    <span class="keyword">while</span> (!q.empty()) {
+        <span class="keyword">int</span> u = q.front(); q.pop();
+        <span class="keyword">for</span> (<span class="keyword">int</span> v = u+<span class="number">1</span>; v &lt; n &amp;&amp; (<span class="keyword">long</span> <span class="keyword">long</span>)v &lt;= (<span class="keyword">long</span> <span class="keyword">long</span>)u+a[u]; ++v)
+            <span class="keyword">if</span> (d[v] == -<span class="number">1</span>) { d[v] = d[u]+<span class="number">1</span>; q.push(v); }
+    }
+    <span class="keyword">return</span> d[n-<span class="number">1</span>];
+}
+<span class="keyword">int</span> brutePartitions(<span class="keyword">const</span> string&amp; s) {
+    <span class="keyword">if</span> (s.empty()) <span class="keyword">return</span> <span class="number">0</span>;
+    <span class="keyword">int</span> n = (<span class="keyword">int</span>)s.size(), best = <span class="number">0</span>;
+    <span class="keyword">for</span> (<span class="keyword">int</span> cuts = <span class="number">0</span>; cuts &lt; (<span class="number">1</span> &lt;&lt; (n-<span class="number">1</span>)); ++cuts) {
+        array&lt;<span class="keyword">int</span>,<span class="number">256</span>&gt; owner; owner.fill(-<span class="number">1</span>);
+        <span class="keyword">int</span> part = <span class="number">0</span>; <span class="keyword">bool</span> ok = <span class="keyword">true</span>;
+        <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; n; ++i) {
+            unsigned <span class="keyword">char</span> c = (unsigned <span class="keyword">char</span>)s[i];
+            <span class="keyword">if</span> (owner[c] != -<span class="number">1</span> &amp;&amp; owner[c] != part) ok = <span class="keyword">false</span>;
+            owner[c] = part;
+            <span class="keyword">if</span> (i &lt; n-<span class="number">1</span> &amp;&amp; ((cuts &gt;&gt; i) &amp; <span class="number">1</span>)) ++part;
+        }
+        <span class="keyword">if</span> (ok) best = max(best,part+<span class="number">1</span>);
+    }
+    <span class="keyword">return</span> best;
+}
+<span class="keyword">bool</span> validGasStart(<span class="keyword">const</span> vector&lt;<span class="keyword">int</span>&gt;&amp; gas, <span class="keyword">const</span> vector&lt;<span class="keyword">int</span>&gt;&amp; cost, <span class="keyword">int</span> start) {
+    <span class="keyword">int</span> n = (<span class="keyword">int</span>)gas.size();
+    <span class="keyword">if</span> (start &lt; <span class="number">0</span> || start &gt;= n) <span class="keyword">return</span> <span class="keyword">false</span>;
+    <span class="keyword">long</span> <span class="keyword">long</span> tank = <span class="number">0</span>;
+    <span class="keyword">for</span> (<span class="keyword">int</span> step = <span class="number">0</span>; step &lt; n; ++step) {
+        <span class="keyword">int</span> i = (start+step)%n; tank += (<span class="keyword">long</span> <span class="keyword">long</span>)gas[i]-cost[i];
+        <span class="keyword">if</span> (tank &lt; <span class="number">0</span>) <span class="keyword">return</span> <span class="keyword">false</span>;
+    }
+    <span class="keyword">return</span> <span class="keyword">true</span>;
+}
+<span class="keyword">long</span> <span class="keyword">long</span> bruteMerge(vector&lt;<span class="keyword">long</span> <span class="keyword">long</span>&gt; a, <span class="keyword">bool</span> adjacent) {
+    <span class="keyword">if</span> (a.size() &lt;= <span class="number">1</span>) <span class="keyword">return</span> <span class="number">0</span>;
+    <span class="keyword">long</span> <span class="keyword">long</span> best = LLONG_MAX;
+    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; (<span class="keyword">int</span>)a.size(); ++i)
+        <span class="keyword">for</span> (<span class="keyword">int</span> j = i+<span class="number">1</span>; j &lt; (<span class="keyword">int</span>)a.size(); ++j) {
+            <span class="keyword">if</span> (adjacent &amp;&amp; j != i+<span class="number">1</span>) continue;
+            <span class="keyword">auto</span> next = a;
+            <span class="keyword">long</span> <span class="keyword">long</span> merged = a[i]+a[j];
+            next[i] = merged; next.erase(next.begin()+j);
+            best = min(best,merged+bruteMerge(next,adjacent));
+        }
+    <span class="keyword">return</span> best;
+}
+<span class="keyword">long</span> <span class="keyword">long</span> bruteTrading(<span class="keyword">const</span> vector&lt;<span class="keyword">int</span>&gt;&amp; p, <span class="keyword">int</span> fee, <span class="keyword">bool</span> cooldown, <span class="keyword">int</span> maxSales) {
+    <span class="keyword">const</span> <span class="keyword">long</span> <span class="keyword">long</span> NEG = LLONG_MIN/<span class="number">4</span>;
+    function&lt;<span class="keyword">long</span> <span class="keyword">long</span>(<span class="keyword">int</span>,<span class="keyword">bool</span>,<span class="keyword">int</span>,<span class="keyword">bool</span>)&gt; dfs = [&amp;](<span class="keyword">int</span> day,<span class="keyword">bool</span> holding,<span class="keyword">int</span> sales,<span class="keyword">bool</span> blocked) {
+        <span class="keyword">if</span> (day == (<span class="keyword">int</span>)p.size()) <span class="keyword">return</span> holding ? NEG : <span class="number">0LL</span>;
+        <span class="keyword">long</span> <span class="keyword">long</span> best = dfs(day+<span class="number">1</span>,holding,sales,<span class="keyword">false</span>); <span class="comment">// 今天不操作</span>
+        <span class="keyword">if</span> (holding &amp;&amp; sales &lt; maxSales) {
+            best = max(best,(<span class="keyword">long</span> <span class="keyword">long</span>)p[day]-fee+dfs(day+<span class="number">1</span>,<span class="keyword">false</span>,sales+<span class="number">1</span>,cooldown));
+        } <span class="keyword">else</span> <span class="keyword">if</span> (!holding &amp;&amp; !blocked &amp;&amp; sales &lt; maxSales) {
+            <span class="keyword">long</span> <span class="keyword">long</span> later = dfs(day+<span class="number">1</span>,<span class="keyword">true</span>,sales,<span class="keyword">false</span>);
+            <span class="keyword">if</span> (later != NEG) best = max(best,later-p[day]);
+        }
+        <span class="keyword">return</span> best;
+    };
+    <span class="keyword">return</span> dfs(<span class="number">0</span>,<span class="keyword">false</span>,<span class="number">0</span>,<span class="keyword">false</span>);
+}
+template&lt;<span class="keyword">class</span> Exception, <span class="keyword">class</span> F&gt; <span class="keyword">void</span> expectThrow(F f) {
+    <span class="keyword">bool</span> thrown = <span class="keyword">false</span>;
+    try { f(); } catch (<span class="keyword">const</span> Exception&amp;) { thrown = <span class="keyword">true</span>; }
+    assert(thrown);
+}
+<span class="keyword">int</span> main() {
+    assert(selectIntervals({{<span class="number">1</span>,<span class="number">4</span>},{<span class="number">2</span>,<span class="number">3</span>},{<span class="number">3</span>,<span class="number">5</span>}}).size() == <span class="number">2</span>);
+    assert(selectIntervals({{<span class="number">0</span>,<span class="number">3</span>},{<span class="number">2</span>,<span class="number">4</span>},{<span class="number">3</span>,<span class="number">6</span>}}).size() == <span class="number">2</span>);
+    assert(selectIntervals({}).empty());
+    assert(minimumArrowPositions({{<span class="number">1</span>,<span class="number">2</span>},{<span class="number">2</span>,<span class="number">3</span>}}).size() == <span class="number">1</span>);
+    assert(minimumArrowPositions({{INT_MIN,INT_MAX},{INT_MAX,INT_MAX}}).size() == <span class="number">1</span>);
+    assert(minimumArrowPositions({}).empty());
+    assert(minimumIntervalCover({{<span class="number">0</span>,<span class="number">2</span>},{<span class="number">0</span>,<span class="number">4</span>},{<span class="number">2</span>,<span class="number">6</span>},{<span class="number">4</span>,<span class="number">7</span>},{<span class="number">6</span>,<span class="number">10</span>}},<span class="number">0</span>,<span class="number">10</span>) == optional&lt;<span class="keyword">int</span>&gt;(<span class="number">3</span>));
+    assert(!minimumIntervalCover({{<span class="number">0</span>,<span class="number">4</span>},{<span class="number">5</span>,<span class="number">10</span>}},<span class="number">0</span>,<span class="number">10</span>));
+    assert(minimumIntervalCover({},<span class="number">0</span>,<span class="number">0</span>) == optional&lt;<span class="keyword">int</span>&gt;(<span class="number">0</span>));
+    assert(assignResources({<span class="number">1</span>,<span class="number">2</span>,<span class="number">3</span>},{<span class="number">1</span>,<span class="number">1</span>}) == <span class="number">1</span>);
+    assert(!canReachEnd({}) &amp;&amp; canReachEnd({<span class="number">0</span>}));
+    assert(!canReachEnd({<span class="number">1</span>,<span class="number">0</span>,<span class="number">2</span>}) &amp;&amp; canReachEnd({INT_MAX,<span class="number">0</span>}));
+    assert(shortestJumpPath({<span class="number">0</span>}) == optional&lt;vector&lt;<span class="keyword">int</span>&gt;&gt;(vector&lt;<span class="keyword">int</span>&gt;{<span class="number">0</span>}));
+    assert(!shortestJumpPath({}) &amp;&amp; !shortestJumpPath({<span class="number">1</span>,<span class="number">0</span>,<span class="number">2</span>}));
+    assert(minJumps({<span class="number">2</span>,<span class="number">3</span>,<span class="number">1</span>,<span class="number">1</span>,<span class="number">4</span>}) == <span class="number">2</span> &amp;&amp; minJumps({<span class="number">1</span>,<span class="number">0</span>,<span class="number">2</span>}) == -<span class="number">1</span>);
+    assert(partitionByteLabels(<span class="string">&quot;ababcbacadefegdehijhklij&quot;</span>) == vector&lt;<span class="keyword">int</span>&gt;({<span class="number">9</span>,<span class="number">7</span>,<span class="number">8</span>}));
+    assert(partitionByteLabels(<span class="string">&quot;&quot;</span>).empty());
+    string bytes{<span class="keyword">char</span>(<span class="number">255</span>),&#x27;a&#x27;,<span class="keyword">char</span>(<span class="number">255</span>)};
+    assert(partitionByteLabels(bytes) == vector&lt;<span class="keyword">int</span>&gt;({<span class="number">3</span>}));
+    <span class="keyword">auto</span> station = gasStationStart({<span class="number">1</span>,<span class="number">2</span>},{<span class="number">2</span>,<span class="number">1</span>}); assert(station &amp;&amp; *station == <span class="number">1</span>);
+    assert(!gasStationStart({},{}));
+    assert(optimalMergeChecked({<span class="number">1</span>,<span class="number">2</span>,<span class="number">3</span>,<span class="number">4</span>}) == <span class="number">19</span>);
+    assert(optimalMergeChecked({<span class="number">1</span>,<span class="number">100</span>,<span class="number">1</span>}) == <span class="number">104</span> &amp;&amp; adjacentMergeCost({<span class="number">1</span>,<span class="number">100</span>,<span class="number">1</span>}) == <span class="number">203</span>);
+    assert(optimalMergeChecked({}) == <span class="number">0</span> &amp;&amp; optimalMergeChecked({LLONG_MAX}) == <span class="number">0</span>);
+    assert(optimalMergeChecked({<span class="number">0</span>,LLONG_MAX}) == LLONG_MAX);
+    assert(adjacentMergeCost({}) == <span class="number">0</span> &amp;&amp; adjacentMergeCost({<span class="number">0</span>}) == <span class="number">0</span>);
+    expectThrow&lt;overflow_error&gt;([] { optimalMergeChecked({<span class="number">1</span>,LLONG_MAX}); });
+    <span class="comment">// 总权重仍合法，但累计合并费用超过 long long。</span>
+    <span class="keyword">long</span> <span class="keyword">long</span> big = LLONG_MAX/<span class="number">3</span>;
+    expectThrow&lt;overflow_error&gt;([&amp;] { optimalMergeChecked({big,big,big}); });
+    expectThrow&lt;invalid_argument&gt;([] { selectIntervals({{<span class="number">2</span>,<span class="number">2</span>}}); });
+    expectThrow&lt;invalid_argument&gt;([] { minimumArrowPositions({{<span class="number">2</span>,<span class="number">1</span>}}); });
+    expectThrow&lt;invalid_argument&gt;([] { canReachEnd({-<span class="number">1</span>}); });
+    expectThrow&lt;invalid_argument&gt;([] { gasStationStart({<span class="number">1</span>},{}); });
+    expectThrow&lt;invalid_argument&gt;([] { optimalMergeChecked({-<span class="number">1</span>}); });
+    expectThrow&lt;invalid_argument&gt;([] { stockProfitWithFee({<span class="number">1</span>,<span class="number">2</span>},-<span class="number">1</span>); });
+    assert(stockProfitOnce({<span class="number">7</span>,<span class="number">1</span>,<span class="number">5</span>,<span class="number">3</span>,<span class="number">6</span>,<span class="number">4</span>}) == <span class="number">5</span>);
+    assert(stockProfitWithFee({<span class="number">1</span>,<span class="number">3</span>,<span class="number">2</span>,<span class="number">8</span>,<span class="number">4</span>,<span class="number">9</span>},<span class="number">2</span>) == <span class="number">8</span>);
+    assert(stockProfitCooldown({<span class="number">1</span>,<span class="number">2</span>,<span class="number">3</span>,<span class="number">0</span>,<span class="number">2</span>}) == <span class="number">3</span>);
+    assert(stockProfitOnce({}) == <span class="number">0</span> &amp;&amp; stockProfitCooldown({}) == <span class="number">0</span>);
+    assert(stockProfitWithFee({<span class="number">0</span>,INT_MAX,<span class="number">0</span>,INT_MAX},<span class="number">0</span>) == <span class="number">2LL</span>*INT_MAX);
+    mt19937 rng(<span class="number">20260921</span>);
+    <span class="keyword">for</span> (<span class="keyword">int</span> trial = <span class="number">0</span>; trial &lt; <span class="number">100</span>; ++trial) {
+        <span class="keyword">int</span> n = rng()%<span class="number">7</span>;
+        vector&lt;pair&lt;<span class="keyword">int</span>,<span class="keyword">int</span>&gt;&gt; intervals;
+        <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; n; ++i) {
+            <span class="keyword">int</span> l = (<span class="keyword">int</span>)(rng()%<span class="number">7</span>)-<span class="number">2</span>, r = l+<span class="number">1</span>+(<span class="keyword">int</span>)(rng()%<span class="number">4</span>);
+            intervals.push_back({l,r});
+        }
+        <span class="keyword">auto</span> selected = selectIntervals(intervals);
+        assert((<span class="keyword">int</span>)selected.size() == bruteSchedule(intervals));
+        vector&lt;<span class="keyword">char</span>&gt; used(n,<span class="keyword">false</span>); <span class="keyword">long</span> <span class="keyword">long</span> end = LLONG_MIN;
+        <span class="keyword">for</span> (<span class="keyword">int</span> id : selected) {
+            assert(id &gt;= <span class="number">0</span> &amp;&amp; id &lt; n &amp;&amp; !used[id]); used[id] = <span class="keyword">true</span>;
+            assert(intervals[id].first &gt;= end); end = intervals[id].second;
+        }
+        <span class="keyword">auto</span> arrows = minimumArrowPositions(intervals);
+        assert((<span class="keyword">int</span>)arrows.size() == bruteArrows(intervals));
+        <span class="keyword">for</span> (<span class="keyword">auto</span> [l,r] : intervals) {
+            <span class="keyword">bool</span> hit = <span class="keyword">false</span>;
+            <span class="keyword">for</span> (<span class="keyword">int</span> x : arrows) <span class="keyword">if</span> (l &lt;= x &amp;&amp; x &lt;= r) hit = <span class="keyword">true</span>;
+            assert(hit);
+        }
+        assert(minimumIntervalCover(intervals,<span class="number">0</span>,<span class="number">6</span>) == bruteCover(intervals,<span class="number">0</span>,<span class="number">6</span>));
+        vector&lt;<span class="keyword">int</span>&gt; needs(rng()%<span class="number">6</span>), sizes(rng()%<span class="number">6</span>);
+        <span class="keyword">for</span> (<span class="keyword">int</span>&amp; x : needs) x = rng()%<span class="number">5</span>;
+        <span class="keyword">for</span> (<span class="keyword">int</span>&amp; x : sizes) x = rng()%<span class="number">5</span>;
+        assert(assignResources(needs,sizes) == bruteResources(needs,sizes));
+        vector&lt;<span class="keyword">int</span>&gt; jumps(n); <span class="keyword">for</span> (<span class="keyword">int</span>&amp; x : jumps) x = rng()%<span class="number">5</span>;
+        <span class="keyword">int</span> expected = bruteJumps(jumps);
+        assert(canReachEnd(jumps) == (expected &gt;= <span class="number">0</span>));
+        assert(minJumps(jumps) == (jumps.empty() ? <span class="number">0</span> : expected));
+        <span class="keyword">auto</span> path = shortestJumpPath(jumps);
+        assert(path.has_value() == (expected &gt;= <span class="number">0</span>));
+        <span class="keyword">if</span> (path) {
+            assert(path-&gt;front() == <span class="number">0</span> &amp;&amp; path-&gt;back() == n-<span class="number">1</span>);
+            assert((<span class="keyword">int</span>)path-&gt;size()-<span class="number">1</span> == expected);
+            <span class="keyword">for</span> (size_t j = <span class="number">1</span>; j &lt; path-&gt;size(); ++j)
+                assert((*path)[j] &gt; (*path)[j-<span class="number">1</span>] &amp;&amp; (<span class="keyword">long</span> <span class="keyword">long</span>)(*path)[j] &lt;= (<span class="keyword">long</span> <span class="keyword">long</span>)(*path)[j-<span class="number">1</span>]+jumps[(*path)[j-<span class="number">1</span>]]);
+        }
+        string s; <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; n; ++i) s.push_back(<span class="keyword">char</span>(&#x27;a&#x27;+rng()%<span class="number">4</span>));
+        <span class="keyword">auto</span> parts = partitionByteLabels(s); assert((<span class="keyword">int</span>)parts.size() == brutePartitions(s));
+        array&lt;<span class="keyword">int</span>,<span class="number">256</span>&gt; owner; owner.fill(-<span class="number">1</span>); <span class="keyword">int</span> offset = <span class="number">0</span>;
+        <span class="keyword">for</span> (<span class="keyword">int</span> part = <span class="number">0</span>; part &lt; (<span class="keyword">int</span>)parts.size(); ++part) {
+            assert(parts[part] &gt; <span class="number">0</span> &amp;&amp; offset+parts[part] &lt;= n);
+            <span class="keyword">for</span> (<span class="keyword">int</span> j = <span class="number">0</span>; j &lt; parts[part]; ++j) {
+                unsigned <span class="keyword">char</span> c = (unsigned <span class="keyword">char</span>)s[offset++];
+                assert(owner[c] == -<span class="number">1</span> || owner[c] == part); owner[c] = part;
+            }
+        }
+        assert(offset == n);
+        vector&lt;<span class="keyword">int</span>&gt; gas(n), cost(n);
+        <span class="keyword">for</span> (<span class="keyword">int</span>&amp; x : gas) x = rng()%<span class="number">5</span>;
+        <span class="keyword">for</span> (<span class="keyword">int</span>&amp; x : cost) x = rng()%<span class="number">5</span>;
+        <span class="keyword">bool</span> possible = <span class="keyword">false</span>;
+        <span class="keyword">for</span> (<span class="keyword">int</span> start = <span class="number">0</span>; start &lt; n; ++start) possible = possible || validGasStart(gas,cost,start);
+        <span class="keyword">auto</span> start = gasStationStart(gas,cost);
+        assert(start.has_value() == possible); <span class="keyword">if</span> (start) assert(validGasStart(gas,cost,*start));
+        vector&lt;<span class="keyword">int</span>&gt; weights(rng()%<span class="number">6</span>); <span class="keyword">for</span> (<span class="keyword">int</span>&amp; x : weights) x = rng()%<span class="number">8</span>;
+        vector&lt;<span class="keyword">long</span> <span class="keyword">long</span>&gt; wide(weights.begin(),weights.end());
+        assert(optimalMergeChecked(wide) == bruteMerge(wide,<span class="keyword">false</span>));
+        assert(minMergeCost(weights) == optimalMergeChecked(wide));
+        assert(adjacentMergeCost(weights) == bruteMerge(wide,<span class="keyword">true</span>));
+        vector&lt;<span class="keyword">int</span>&gt; prices(n); <span class="keyword">for</span> (<span class="keyword">int</span>&amp; x : prices) x = rng()%<span class="number">8</span>;
+        <span class="keyword">int</span> fee = rng()%<span class="number">4</span>;
+        assert(stockProfitOnce(prices) == bruteTrading(prices,<span class="number">0</span>,<span class="keyword">false</span>,<span class="number">1</span>));
+        assert(maxProfitUnlimited(prices) == bruteTrading(prices,<span class="number">0</span>,<span class="keyword">false</span>,n));
+        assert(stockProfitWithFee(prices,<span class="number">0</span>) == maxProfitUnlimited(prices));
+        assert(stockProfitWithFee(prices,fee) == bruteTrading(prices,fee,<span class="keyword">false</span>,n));
+        assert(stockProfitCooldown(prices) == bruteTrading(prices,<span class="number">0</span>,<span class="keyword">true</span>,n));
+    }
+    cout &lt;&lt; <span class="string">&quot;greedy checks passed\n&quot;</span>;
+}</code></pre></div></div></section><nav class="chapter-pager" aria-label="相邻章节"><a href="../10-图论/index.html"><small>上一章</small>← 图论</a><a href="../12-动态规划/index.html"><small>下一章</small>动态规划 →</a></nav><footer>秋招算法学习讲义 · C++17<br>例题编号供检索；难度与覆盖范围按学习顺序组织。</footer></main><aside class="toc" aria-label="本页目录"><p class="rail-label">本章小节</p><a href="#s1"><span>01</span>区间调度与交换论证</a><a href="#s2"><span>02</span>跳跃游戏：覆盖前沿与分层</a><a href="#s3"><span>03</span>最优合并与小顶堆</a><a href="#s4"><span>04</span>股票问题：从合法策略判断贪心边界</a><a href="#chapter-review"><span>练</span>综合例题与自测答案</a></aside></div><div class="toast" role="status" aria-live="polite"></div></body></html>
