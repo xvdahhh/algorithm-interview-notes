@@ -3,7 +3,7 @@
 <meta name="description" content="秋招算法手撕学习讲义：知识推导、经典考点、C++17 示例与面试训练。">
 <title>堆与优先队列 · 算法手撕讲义</title><link rel="stylesheet" href="../assets/style.css"><script src="../assets/app.js" defer></script></head>
 <body><a class="skip" href="#main">跳到正文</a><header class="topbar"><a class="brand" href="../index.html"><span class="brand-mark">a[i]</span><span>算法手撕讲义<small>秋招学习工作区 / C++17</small></span></a><button type="button" class="nav-toggle" aria-expanded="false" aria-controls="chapter-nav">章节目录</button><a class="home-link" href="../index.html">全部章节 ↗</a></header>
-<div class="layout"><aside class="sidebar" id="chapter-nav" aria-label="章节导航"><p class="rail-label">LEARNING PATH · 学习路径</p><nav><a class="chapter-link"  href="../01-复杂度与解题方法/index.html"><span>01</span>复杂度与解题方法</a><a class="chapter-link"  href="../02-数组字符串与矩阵/index.html"><span>02</span>数组、字符串与矩阵</a><a class="chapter-link"  href="../03-链表/index.html"><span>03</span>链表</a><a class="chapter-link"  href="../04-栈队列与单调结构/index.html"><span>04</span>栈、队列与单调结构</a><a class="chapter-link"  href="../05-哈希集合与位运算/index.html"><span>05</span>哈希、集合与位运算</a><a class="chapter-link"  href="../06-排序与二分查找/index.html"><span>06</span>排序与二分查找</a><a class="chapter-link"  href="../07-树与二叉搜索树/index.html"><span>07</span>树与二叉搜索树</a><a class="chapter-link active" aria-current=page href="../08-堆与优先队列/index.html"><span>08</span>堆与优先队列</a><a class="chapter-link"  href="../09-递归回溯与分治/index.html"><span>09</span>递归、回溯与分治</a><a class="chapter-link"  href="../10-图论/index.html"><span>10</span>图论</a><a class="chapter-link"  href="../11-贪心/index.html"><span>11</span>贪心</a><a class="chapter-link"  href="../12-动态规划/index.html"><span>12</span>动态规划</a><a class="chapter-link"  href="../13-并查集与高级数据结构/index.html"><span>13</span>并查集与高级数据结构</a><a class="chapter-link"  href="../14-高频技巧与综合题型/index.html"><span>14</span>高频技巧与综合题型</a><a class="chapter-link"  href="../15-面试表达与训练计划/index.html"><span>15</span>面试表达与训练计划</a></nav><div class="sidebar-note">读懂不变量，独立写代码。<br>共 15 章 · 63 个小节<br>无需联网，浏览器直接打开。</div></aside><main id="main"><header class="chapter-header"><p class="eyebrow">CHAPTER 08 / 15</p><h1>堆与优先队列</h1><p class="lead">堆只保证当前极值可以快速取出。对动态候选集，往往不需要维护完整排序，只需维护“下一次最应该处理谁”。</p><div class="chapter-meta"><span>4 个小节</span><span>C++17 示例</span><a href="README.md">原始知识摘要 ↗</a></div></header><div class="reading-guide"><strong>本章怎么学</strong><p>先读原理与不变量，遮住代码手推例子，再独立实现。最后用面试追问检查理解，按练习条目做变式。</p></div><details class="environment"><summary>代码使用说明与通用头文件</summary><p>示例统一采用 C++17。页面展示核心函数或类，下载的 .cpp 已包含以下头文件，可独立编译。不同小节可能重用类型名，应分别编译；含 main 的示例可直接运行，其余需自行补充调用与测试。复制按钮复制当前代码块。</p><div class="codebox"><div class="codebar"><span>C++17</span><div><button type="button" class="copy">复制代码</button></div></div><pre tabindex="0" aria-label="C++17 代码"><code>#include &lt;algorithm&gt;
+<div class="layout"><aside class="sidebar" id="chapter-nav" aria-label="章节导航"><p class="rail-label">LEARNING PATH · 学习路径</p><nav><a class="chapter-link"  href="../01-复杂度与解题方法/index.html"><span>01</span>复杂度与解题方法</a><a class="chapter-link"  href="../02-数组字符串与矩阵/index.html"><span>02</span>数组、字符串与矩阵</a><a class="chapter-link"  href="../03-链表/index.html"><span>03</span>链表</a><a class="chapter-link"  href="../04-栈队列与单调结构/index.html"><span>04</span>栈、队列与单调结构</a><a class="chapter-link"  href="../05-哈希集合与位运算/index.html"><span>05</span>哈希、集合与位运算</a><a class="chapter-link"  href="../06-排序与二分查找/index.html"><span>06</span>排序与二分查找</a><a class="chapter-link"  href="../07-树与二叉搜索树/index.html"><span>07</span>树与二叉搜索树</a><a class="chapter-link active" aria-current=page href="../08-堆与优先队列/index.html"><span>08</span>堆与优先队列</a><a class="chapter-link"  href="../09-递归回溯与分治/index.html"><span>09</span>递归、回溯与分治</a><a class="chapter-link"  href="../10-图论/index.html"><span>10</span>图论</a><a class="chapter-link"  href="../11-贪心/index.html"><span>11</span>贪心</a><a class="chapter-link"  href="../12-动态规划/index.html"><span>12</span>动态规划</a><a class="chapter-link"  href="../13-并查集与高级数据结构/index.html"><span>13</span>并查集与高级数据结构</a><a class="chapter-link"  href="../14-高频技巧与综合题型/index.html"><span>14</span>高频技巧与综合题型</a><a class="chapter-link"  href="../15-面试表达与训练计划/index.html"><span>15</span>面试表达与训练计划</a></nav><div class="sidebar-note">读懂不变量，独立写代码。<br>共 15 章 · 63 个小节<br>无需联网，浏览器直接打开。</div></aside><main id="main"><header class="chapter-header"><p class="eyebrow">CHAPTER 08 / 15</p><h1>堆与优先队列</h1><p class="lead">堆只保证当前极值可以快速取出。对动态候选集，往往不需要维护完整排序，只需维护“下一次最应该处理谁”。</p><div class="chapter-meta"><span>4 个小节</span><span>C++17 示例</span><a href="README.md">原始知识摘要 ↗</a></div></header><div class="reading-guide"><strong>本章怎么学</strong><p>先读原理与不变量，遮住代码手推例子，再独立实现。最后用面试追问检查理解，按练习条目做变式。</p></div><div class="deep-intro"><div class="deep-block" id="guide-1"><h3>本章主线：维护下一次应该处理的候选</h3><p>堆不是缩小版排序数组，而是一种动态维护极值的结构。解题时先问：谁有资格进入候选集？堆顶代表当前最优、最弱入选者，还是最早结束的任务？弹出一个元素后，应该补入哪个后继？</p><p>本章保留四个主小节，并补入手写堆、比较器、过期状态、Top K、多路归并、区间覆盖、中位数、调度和最短路。所有下标与规模按各例契约处理，重复值是否去重、相等优先级如何打破平局，必须先明确。</p></div><div class="deep-block" id="guide-2"><h3>常见题型的堆顶分别代表什么</h3><p class="table-hint">窄屏下可左右滑动表格，查看完整内容。</p><div class="study-table" tabindex="0" role="region" aria-label="常见题型的堆顶分别代表什么"><table><thead><tr><th scope="col">题型</th><th scope="col">候选集合</th><th scope="col">堆顶含义</th><th scope="col">堆方向</th></tr></thead><tbody><tr><td>最大的K个</td><td>已读前缀中的K个最强者</td><td>当前答案中最弱者</td><td>小顶堆</td></tr><tr><td>最小的K个</td><td>已读前缀中的K个最小者</td><td>当前答案中最大者</td><td>大顶堆</td></tr><tr><td>合并有序序列</td><td>各路尚未输出的头部</td><td>下一项全局最小值</td><td>小顶堆</td></tr><tr><td>数据流中位数</td><td>较小一半 / 较大一半</td><td>两半的分界值</td><td>大顶堆+小顶堆</td></tr><tr><td>会议室分配</td><td>当前仍占用的房间结束时间</td><td>最早可释放的房间</td><td>小顶堆</td></tr><tr><td>Dijkstra</td><td>已发现但可能过期的距离候选</td><td>最小暂定距离</td><td>小顶堆</td></tr></tbody></table></div></div><div class="deep-block" id="guide-3"><h3>学习顺序与验证习惯</h3><p>先独立写上浮、下沉与建堆，再练第K大与多路归并；之后学习双堆不变量，最后处理删除、过期状态、比较器和综合题。每题都应写出堆内元素的语义，而不是只说“维护一个优先队列”。</p><p>查询空堆、K越界、重复值、相等优先级、极值相加、旧状态失效是本章的主要边界。C++示例统一为C++17，标准priority_queue不支持直接删除内部任意元素、更新优先级或遍历出有序序列。</p></div></div><nav class="chapter-outline" aria-label="本章阅读路线"><strong>直接跳到</strong><a href="#s1">01 堆的数组表示与向下调整</a><a href="#s2">02 固定大小堆与 Top K</a><a href="#s3">03 多路归并：只保存每一路的前沿</a><a href="#s4">04 双堆维护中位数</a><a href="#chapter-review">综合例题与自测答案</a></nav><details class="environment"><summary>代码使用说明与通用头文件</summary><p>示例统一采用 C++17。页面展示核心函数或类，下载的 .cpp 已包含以下头文件，可独立编译。不同小节可能重用类型名，应分别编译；含 main 的示例可直接运行，其余需自行补充调用与测试。复制按钮复制当前代码块。</p><div class="codebox"><div class="codebar"><span>C++17</span><div><button type="button" class="copy">复制代码</button></div></div><pre tabindex="0" aria-label="C++17 代码"><code>#include &lt;algorithm&gt;
 #include &lt;array&gt;
 #include &lt;cassert&gt;
 #include &lt;climits&gt;
@@ -27,7 +27,46 @@
 #include &lt;vector&gt;
 <span class="keyword">using</span> <span class="keyword">namespace</span> std;
 </code></pre></div><p>检查单个示例：<code>g++ -std=c++17 -Wall -Wextra -c sample.cpp</code>。这只检查编译；验证结果还需要调用函数并覆盖边界输入。代码按题目约束编写，各节明确其适用前提。</p></details><section class="lesson" id="s1"><div class="lesson-heading"><span class="lesson-number">08.01</span><h2>堆的数组表示与向下调整</h2></div>
-<h3>知识与适用场景</h3><p>0 下标完全二叉树的孩子为 2i+1、2i+2。大顶堆每个父节点不小于孩子。交换根和末尾后，只有根附近可能破坏性质，可以沿一条路径向下修复。</p><div class="invariant"><span>推导 / 不变量</span><p>从最后一个非叶节点逆序执行下沉即可建堆。底层节点多但下沉距离短，按高度求和得到 O(n)，并非 O(n log n)。</p></div>
+<h3>知识与适用场景</h3><p>0 下标完全二叉树的孩子为 2i+1、2i+2。大顶堆每个父节点不小于孩子。交换根和末尾后，只有根附近可能破坏性质，可以沿一条路径向下修复。</p><div class="deep-block" id="s1-before-1"><h3>1.1 完全二叉树形状与堆序性质是两件事</h3><p>完全二叉树要求除最后一层外填满，最后一层从左到右紧凑排列，因此无需指针就能用数组表达结构。堆序只约束父子：小顶堆父&lt;=子、大顶堆父&gt;=子。兄弟之间以及不同子树之间并不排序。</p><p>下标i的父为(i-1)/2，但只在i&gt;0时计算；左孩子2i+1、右孩子2i+2，访问前必须确认存在。大顶堆根一定最大，因为沿任意根到节点路径都不增；第二大却不一定是数组下标1。</p></div><div class="deep-block" id="s1-before-2"><h3>1.2 上浮、下沉与建堆的职责</h3><p class="table-hint">窄屏下可左右滑动表格，查看完整内容。</p><div class="study-table" tabindex="0" role="region" aria-label="1.2 上浮、下沉与建堆的职责"><table><thead><tr><th scope="col">操作</th><th scope="col">唯一可能破坏的位置</th><th scope="col">修复方向</th><th scope="col">成本</th></tr></thead><tbody><tr><td>追加新元素</td><td>新叶子与父节点</td><td>不断向父节点上浮</td><td>O(log(n+1))比较/交换</td></tr><tr><td>删除堆顶</td><td>末尾替换到根后的父子关系</td><td>与更优孩子交换下沉</td><td>O(log(n+1))</td></tr><tr><td>改变某个已知下标的键</td><td>该节点与父/孩子</td><td>按改变方向上浮或下沉</td><td>O(logn)，但先要定位下标</td></tr><tr><td>自底向上建堆</td><td>每个子树根</td><td>从最后非叶节点向前下沉</td><td>O(n)</td></tr><tr><td>查看堆顶</td><td>无需修改</td><td>直接读取</td><td>O(1)</td></tr></tbody></table></div></div><div class="deep-block" id="s1-before-3"><h3>1.3 建堆线性：按高度而不是按节点粗算</h3><p>叶子本来就是合法堆，最后一个非叶节点为floor(n/2)-1。逆序处理时，左右孩子的子树已经是堆，只需修复当前根。高度为h的节点至多约n/2^(h+1)个，总下沉工作量受n·Σ(h/2^(h+1))限制，级数收敛，所以总O(n)。</p><p>逐个push的总上界是O(nlogn)，与线性建堆并不矛盾，因为两者不是同一过程。底层vector追加可能扩容，所以“插入O(logn)”通常指堆调整成本；若计入单次分配，某次push可能O(n)，一串操作中的追加成本是均摊的。</p></div><div class="deep-block" id="s1-before-4"><h3>1.4 手写小顶堆：完整接口与安全下标</h3><p>构造参数按值接收，可复制调用者数组或接收move后的数组。建堆本身O(n)；存储O(n)、调整过程O(1)辅助空间。使用i&gt;0再算i-1，避免无符号倒序循环下溢；down先检查非叶条件，再算孩子下标。</p><div class="codebox"><div class="codebar"><span>C++17</span><div><a href="examples/detail-binary-heap.cpp" download>下载 .cpp</a><button type="button" class="copy">复制代码</button></div></div><pre tabindex="0" aria-label="C++17 代码"><code><span class="keyword">class</span> IntMinHeap {
+    vector&lt;<span class="keyword">int</span>&gt; data;
+    <span class="keyword">void</span> down(size_t root) {
+        size_t n = data.size();
+        <span class="keyword">while</span> (root &lt; n / <span class="number">2</span>) {
+            size_t child = root * <span class="number">2</span> + <span class="number">1</span>;
+            <span class="keyword">if</span> (child + <span class="number">1</span> &lt; n &amp;&amp; data[child + <span class="number">1</span>] &lt; data[child]) ++child;
+            <span class="keyword">if</span> (data[root] &lt;= data[child]) break;
+            swap(data[root], data[child]);
+            root = child;
+        }
+    }
+<span class="keyword">public</span>:
+    <span class="keyword">explicit</span> IntMinHeap(vector&lt;<span class="keyword">int</span>&gt; values = {}) : data(move(values)) {
+        <span class="keyword">for</span> (size_t i = data.size() / <span class="number">2</span>; i &gt; <span class="number">0</span>; --i) down(i - <span class="number">1</span>);
+    }
+    <span class="keyword">bool</span> empty() <span class="keyword">const</span> { <span class="keyword">return</span> data.empty(); }
+    size_t size() <span class="keyword">const</span> { <span class="keyword">return</span> data.size(); }
+    <span class="keyword">int</span> top() <span class="keyword">const</span> {
+        <span class="keyword">if</span> (empty()) <span class="keyword">throw</span> out_of_range(<span class="string">&quot;empty heap&quot;</span>);
+        <span class="keyword">return</span> data[<span class="number">0</span>];
+    }
+    <span class="keyword">void</span> push(<span class="keyword">int</span> value) {
+        data.push_back(value);
+        size_t i = data.size() - <span class="number">1</span>;
+        <span class="keyword">while</span> (i &gt; <span class="number">0</span>) {
+            size_t parent = (i - <span class="number">1</span>) / <span class="number">2</span>;
+            <span class="keyword">if</span> (data[parent] &lt;= data[i]) break;
+            swap(data[parent], data[i]); i = parent;
+        }
+    }
+    <span class="keyword">int</span> pop() {
+        <span class="keyword">if</span> (empty()) <span class="keyword">throw</span> out_of_range(<span class="string">&quot;empty heap&quot;</span>);
+        <span class="keyword">int</span> answer = data[<span class="number">0</span>];
+        data[<span class="number">0</span>] = data.back();
+        data.pop_back();
+        <span class="keyword">if</span> (!empty()) down(<span class="number">0</span>);
+        <span class="keyword">return</span> answer;
+    }
+};</code></pre></div></div><div class="invariant"><span>推导 / 不变量</span><p>从最后一个非叶节点逆序执行下沉即可建堆。底层节点多但下沉距离短，按高度求和得到 O(n)，并非 O(n log n)。</p></div>
 <h3>手推一个例子</h3><p>[3,1,5,2] 从下标 1 开始，1 与 2 交换；再处理根 3，与 5 交换，得到 [5,2,3,1]。</p><div class="codebox"><div class="codebar"><span>C++17</span><div><a href="examples/01.cpp" download>下载 .cpp</a><button type="button" class="copy">复制代码</button></div></div><pre tabindex="0" aria-label="C++17 代码"><code><span class="keyword">void</span> siftDown(vector&lt;<span class="keyword">int</span>&gt;&amp; a, <span class="keyword">int</span> i, <span class="keyword">int</span> n) {
     <span class="keyword">while</span> (<span class="number">2</span>*i+<span class="number">1</span> &lt; n) {
         <span class="keyword">int</span> child=<span class="number">2</span>*i+<span class="number">1</span>;
@@ -42,9 +81,73 @@
     <span class="keyword">for</span> (<span class="keyword">int</span> i=n/<span class="number">2</span>-<span class="number">1</span>; i&gt;=<span class="number">0</span>; --i) siftDown(a,i,n);
 }</code></pre></div>
 <dl class="analysis-grid"><div><dt>复杂度</dt><dd>建堆 O(n) 时间、O(1) 额外空间；单次上浮/下沉 O(log n)。</dd></div><div><dt>易错点与边界</dt><dd>priority_queue&lt;int&gt; 默认大顶堆，小顶堆用 greater&lt;int&gt;。堆不是整体有序数组，不能对内部存储做二分。</dd></div></dl>
-<div class="practice"><h3>经典考点与练习</h3><p>练习：手写堆排序；LeetCode 1046 最后一块石头的重量。</p><details><summary>面试官可能继续问什么？</summary><p>为什么建堆可以从 n/2-1 开始？叶节点为何不必处理？</p><p class="muted">先用自己的话回答，再回到本节的前提、不变量和边界检查论证。</p></details></div>
+<div class="deep-block" id="s1-after-1"><h3>1.5 priority_queue比较器的方向</h3><p class="table-hint">窄屏下可左右滑动表格，查看完整内容。</p><div class="study-table" tabindex="0" role="region" aria-label="1.5 priority_queue比较器的方向"><table><thead><tr><th scope="col">写法或规则</th><th scope="col">堆顶</th><th scope="col">解释</th></tr></thead><tbody><tr><td>priority_queue&lt;int&gt;</td><td>最大值</td><td>默认less，相对较小者排在后面</td></tr><tr><td>priority_queue&lt;int,vector&lt;int&gt;,greater&lt;int&gt;&gt;</td><td>最小值</td><td>greater把较大者视为低优先级</td></tr><tr><td>comp(a,b)==true</td><td>a的优先级低于b</td><td>不是“a应当先弹出”</td></tr><tr><td>相等关键字</td><td>默认不保证插入顺序</td><td>需要稳定性就显式加入序号</td></tr><tr><td>比较器用&lt;=或&gt;=</td><td>不合法</td><td>comp(x,x)必须为false，满足严格弱序</td></tr></tbody></table></div></div><div class="deep-block" id="s1-after-2"><h3>1.6 自定义优先级：优先级小者先出，同级先来先出</h3><p>调用者为每次入队分配唯一递增sequence，才实现同级FIFO；序号不得回绕。本例先比较priority再sequence，不用差值相减，避免INT_MIN与INT_MAX相减溢出。时间O(nlog(n+1))加字符串复制成本，空间O(n)加文本存储。</p><p>不要让比较器读取会在外部改变的优先级表后就期待堆自动重排。堆建立的次序已经依赖旧比较结果，应显式重建、维护带下标的堆，或采用下面的版本化旧状态淘汰。</p><div class="codebox"><div class="codebar"><span>C++17</span><div><a href="examples/detail-task-order.cpp" download>下载 .cpp</a><button type="button" class="copy">复制代码</button></div></div><pre tabindex="0" aria-label="C++17 代码"><code><span class="keyword">struct</span> ScheduledTask {
+    <span class="keyword">int</span> priority;
+    uint64_t sequence;
+    string label;
+};
+<span class="keyword">struct</span> LaterTask {
+    <span class="keyword">bool</span> operator()(<span class="keyword">const</span> ScheduledTask&amp; a, <span class="keyword">const</span> ScheduledTask&amp; b) <span class="keyword">const</span> {
+        <span class="keyword">return</span> tie(a.priority, a.sequence) &gt; tie(b.priority, b.sequence);
+    }
+};
+vector&lt;string&gt; orderedTasks(<span class="keyword">const</span> vector&lt;ScheduledTask&gt;&amp; tasks) {
+    priority_queue&lt;ScheduledTask, vector&lt;ScheduledTask&gt;, LaterTask&gt; pending;
+    <span class="keyword">for</span> (<span class="keyword">const</span> <span class="keyword">auto</span>&amp; task : tasks) pending.push(task);
+    vector&lt;string&gt; result;
+    <span class="keyword">while</span> (!pending.empty()) {
+        result.push_back(pending.top().label);
+        pending.pop();
+    }
+    <span class="keyword">return</span> result;
+}</code></pre></div></div><div class="deep-block" id="s1-after-3"><h3>1.7 标准堆算法与priority_queue不是同一个接口</h3><p>make_heap在线性时间把数组建成默认大顶堆；push_heap要求先在尾部追加一个元素，再修复新元素；pop_heap只把堆顶交换到末尾并修复前缀，不会删除末尾，通常还要pop_back。sort_heap会把堆变成有序序列，之后不再保持原来意义的堆状态。</p><p>priority_queue封装了这些细节，top返回只读引用，pop不返回值。应先复制top再pop；如果保存top引用后弹出，引用可能失效或指向已被替换的数据。</p></div><div class="deep-block" id="s1-after-4"><h3>1.8 更新与取消任务：不可变快照+版本号</h3><p>同一id更新时插入新快照，旧记录留在堆中；取消只删live表。有效性由全局唯一版本号决定，重新使用已取消id也不会误认旧记录。并列优先级按id升序出队，这与前例的FIFO规则不同。</p><p>若累计U次更新，物理堆最坏O(U)，不是当前存活任务数；某次pop可能连续清除很多旧项。整体堆操作O(Ulog(U+1))，哈希平均常数操作，空间O(U)。长时间运行可定期重建或改用支持索引删除的堆；本例不提供并发或分配失败的强事务保证。</p><div class="codebox"><div class="codebar"><span>C++17</span><div><a href="examples/detail-versioned-queue.cpp" download>下载 .cpp</a><button type="button" class="copy">复制代码</button></div></div><pre tabindex="0" aria-label="C++17 代码"><code><span class="keyword">class</span> VersionedMinQueue {
+    <span class="keyword">struct</span> State { <span class="keyword">int</span> priority; uint64_t version; };
+    <span class="keyword">using</span> Entry = tuple&lt;<span class="keyword">int</span>, <span class="keyword">int</span>, uint64_t&gt;; <span class="comment">// priority, id, version</span>
+    priority_queue&lt;Entry, vector&lt;Entry&gt;, greater&lt;Entry&gt;&gt; heap;
+    unordered_map&lt;<span class="keyword">int</span>, State&gt; live;
+    uint64_t nextVersion = <span class="number">0</span>;
+    <span class="keyword">void</span> prune() {
+        <span class="keyword">while</span> (!heap.empty()) {
+            <span class="keyword">auto</span> [priority, id, version] = heap.top();
+            <span class="keyword">auto</span> it = live.find(id);
+            <span class="keyword">if</span> (it != live.end() &amp;&amp; it-&gt;second.version == version) break;
+            heap.pop();
+        }
+    }
+<span class="keyword">public</span>:
+    <span class="keyword">void</span> put(<span class="keyword">int</span> id, <span class="keyword">int</span> priority) {
+        <span class="keyword">if</span> (nextVersion == UINT64_MAX) <span class="keyword">throw</span> overflow_error(<span class="string">&quot;version exhausted&quot;</span>);
+        uint64_t version = ++nextVersion;
+        heap.emplace(priority, id, version);
+        live[id] = {priority, version};
+    }
+    <span class="keyword">void</span> cancel(<span class="keyword">int</span> id) { live.erase(id); }
+    optional&lt;pair&lt;<span class="keyword">int</span>, <span class="keyword">int</span>&gt;&gt; pop() {
+        prune();
+        <span class="keyword">if</span> (heap.empty()) <span class="keyword">return</span> nullopt;
+        <span class="keyword">auto</span> [priority, id, version] = heap.top();
+        heap.pop(); live.erase(id);
+        <span class="keyword">return</span> pair&lt;<span class="keyword">int</span>, <span class="keyword">int</span>&gt;{id, priority};
+    }
+};</code></pre></div></div><div class="practice"><h3>经典考点与练习</h3><p>练习：手写堆排序；LeetCode 1046 最后一块石头的重量。</p><h3>面试追问：关键点完整解答</h3><dl class="answer-list"><div><dt>为什么堆数组不能直接二分查找？</dt><dd><p>它只保证父子顺序，兄弟与跨子树元素无全局次序。二分需要范围对查找谓词单调分区，堆内部不满足。找任意值一般要O(n)扫描，除非额外维护定位映射。</p></dd></div><div><dt>建堆为什么从n/2-1开始？</dt><dd><p>0下标数组中i&gt;=n/2的节点都没有孩子，是天然合法堆。逆序从最后非叶节点开始，可保证处理一个根时它的两棵子树已经合法。空数组与单元素无需下沉。</p></dd></div><div><dt>小顶堆比较器为什么反而用greater？</dt><dd><p>priority_queue将comp(a,b)=true解释为a相对b应排在后面。greater认为较大值低优先级，于是最小值留在堆顶。自定义结构应按这个语义推导，别只凭函数名猜方向。</p></dd></div><div><dt>相同优先级会按插入顺序返回吗？</dt><dd><p>标准priority_queue不保证稳定。需要先来先出时，加入唯一递增序号并作为第二关键字；只比较priority不会自动保存原顺序。</p></dd></div><div><dt>修改外部表中的优先级会让堆自动恢复顺序吗？</dt><dd><p>不会。堆不会感知比较器依赖的数据变化，旧父子关系可能失效。应使用不可变优先级快照加版本校验，或维护下标映射并对指定元素上浮/下沉。</p></dd></div><div><dt>延迟删除为什么可能越用越占内存？</dt><dd><p>未到堆顶的旧记录无法被prune触及。即使有效任务只剩一个，历史更新产生的失效项也可能还在内部，物理大小随累计操作增长；必须区分逻辑大小与物理大小。</p></dd></div></dl></div>
 <label class="learned"><input type="checkbox" data-progress="08-01">我能独立实现，并解释正确性与边界</label></section><section class="lesson" id="s2"><div class="lesson-heading"><span class="lesson-number">08.02</span><h2>固定大小堆与 Top K</h2></div>
-<h3>知识与适用场景</h3><p>求最大的 K 个时维护小顶堆：堆顶是目前入选者中最弱的，新的大值可以替换它。保留的集合始终是已扫描前缀的 K 个最大值。</p><div class="invariant"><span>推导 / 不变量</span><p>加入每个元素后若大小超过 K，就删除最小值。最终堆顶是第 K 大。K=1 时退化为维护最大值。</p></div>
+<h3>知识与适用场景</h3><p>求最大的 K 个时维护小顶堆：堆顶是目前入选者中最弱的，新的大值可以替换它。保留的集合始终是已扫描前缀的 K 个最大值。</p><div class="deep-block" id="s2-before-1"><h3>2.1 Top K不变量：保留已读前缀最强的K个</h3><p>求最大的K个，堆内是入选者，堆顶应暴露其中最弱的一位，因此用小顶堆。新值不大于堆顶时不可能改善答案；更大时替换堆顶。或者统一先push，再在超出K时pop，便于处理尚未凑满K个的阶段。</p><p>归纳证明：旧堆已包含前缀最大的K个。新元素加入后，真正的新Top K必在旧Top K与新元素中，因为旧前缀未入选者都不优于旧堆最小值。从这K+1个候选中删最小值即可维持不变量。</p></div><div class="deep-block" id="s2-before-2"><h3>2.2 [3,2,1,5,6,4]，K=2</h3><p class="table-hint">窄屏下可左右滑动表格，查看完整内容。</p><div class="study-table" tabindex="0" role="region" aria-label="2.2 [3,2,1,5,6,4]，K=2"><table><thead><tr><th scope="col">读入</th><th scope="col">保留的值（为展示而排序）</th><th scope="col">删除谁</th><th scope="col">当前第2大</th></tr></thead><tbody><tr><td>3</td><td>[3]</td><td>无</td><td>尚不足2个</td></tr><tr><td>2</td><td>[2,3]</td><td>无</td><td>2</td></tr><tr><td>1</td><td>[2,3]</td><td>1</td><td>2</td></tr><tr><td>5</td><td>[3,5]</td><td>2</td><td>3</td></tr><tr><td>6</td><td>[5,6]</td><td>3</td><td>5</td></tr><tr><td>4</td><td>[5,6]</td><td>4</td><td>5</td></tr></tbody></table></div></div><div class="deep-block" id="s2-before-3"><h3>2.3 数据流第K大：不足K个时不伪造答案</h3><p>按元素出现次数计秩，重复值不去重。若堆已满，新值等于堆顶，跳过它不会改变第K大的数值，但这不保留某个特定同值元素的身份；要输出精确记录时需加入平局规则。</p><p>每次更新O(log(K+1))堆操作上界，拒绝候选时O(1)，空间O(K)。构造时不强行分配K个空间，尚未读够时返回nullopt。</p><div class="codebox"><div class="codebar"><span>C++17</span><div><a href="examples/detail-stream-kth.cpp" download>下载 .cpp</a><button type="button" class="copy">复制代码</button></div></div><pre tabindex="0" aria-label="C++17 代码"><code><span class="keyword">class</span> KthLargestStream {
+    size_t k;
+    priority_queue&lt;<span class="keyword">int</span>, vector&lt;<span class="keyword">int</span>&gt;, greater&lt;<span class="keyword">int</span>&gt;&gt; selected;
+<span class="keyword">public</span>:
+    <span class="keyword">explicit</span> KthLargestStream(<span class="keyword">int</span> rank) {
+        <span class="keyword">if</span> (rank &lt;= <span class="number">0</span>) <span class="keyword">throw</span> invalid_argument(<span class="string">&quot;k must be positive&quot;</span>);
+        k = (size_t)rank;
+    }
+    optional&lt;<span class="keyword">int</span>&gt; add(<span class="keyword">int</span> value) {
+        <span class="keyword">if</span> (selected.size() &lt; k) selected.push(value);
+        <span class="keyword">else</span> <span class="keyword">if</span> (value &gt; selected.top()) {
+            selected.pop(); selected.push(value);
+        }
+        <span class="keyword">if</span> (selected.size() &lt; k) <span class="keyword">return</span> nullopt;
+        <span class="keyword">return</span> selected.top();
+    }
+};</code></pre></div></div><div class="invariant"><span>推导 / 不变量</span><p>加入每个元素后若大小超过 K，就删除最小值。最终堆顶是第 K 大。K=1 时退化为维护最大值。</p></div>
 <h3>手推一个例子</h3><p>[3,2,1,5,6,4]，K=2：堆最终保留 5、6，堆顶 5 即第 2 大。</p><div class="codebox"><div class="codebar"><span>C++17</span><div><a href="examples/02.cpp" download>下载 .cpp</a><button type="button" class="copy">复制代码</button></div></div><pre tabindex="0" aria-label="C++17 代码"><code><span class="keyword">int</span> kthLargest(<span class="keyword">const</span> vector&lt;<span class="keyword">int</span>&gt;&amp; a, <span class="keyword">int</span> k) {
     <span class="keyword">if</span> (k&lt;=<span class="number">0</span> || k&gt;(<span class="keyword">int</span>)a.size()) <span class="keyword">throw</span> invalid_argument(<span class="string">&quot;invalid k&quot;</span>);
     priority_queue&lt;<span class="keyword">int</span>,vector&lt;<span class="keyword">int</span>&gt;,greater&lt;<span class="keyword">int</span>&gt;&gt; heap;
@@ -55,9 +158,80 @@
     <span class="keyword">return</span> heap.top();
 }</code></pre></div>
 <dl class="analysis-grid"><div><dt>复杂度</dt><dd>时间 O(n log(k+1))，额外空间 O(k)。</dd></div><div><dt>易错点与边界</dt><dd>第 K 大通常按元素计数而不是去重后的值，重复值要保留。静态数组且可修改时，nth_element 平均线性更合适。</dd></div></dl>
-<div class="practice"><h3>经典考点与练习</h3><p>练习：LeetCode 215 第 K 个最大元素、703 数据流中的第 K 大元素、347 前 K 个高频元素。</p><details><summary>面试官可能继续问什么？</summary><p>若 k 接近 n，可否改为维护 n-k+1 个最小值？</p><p class="muted">先用自己的话回答，再回到本节的前提、不变量和边界检查论证。</p></details></div>
+<div class="deep-block" id="s2-after-1"><h3>2.4 高频元素：堆保留的是频次排名，不是数值大小</h3><p>先用哈希表统计每个值的次数，再对U个不同值选K个。这里约定频次越高越优；同频时数值越小越优。保留Top K的堆顶必须是最差入选者：频次最小、同频时数值最大。</p><p>比较器里定义“a比b更好”，则priority_queue会把相对更差者留在顶端，这正适合淘汰。频次表构建平均O(n)，选择O(Ulog(K+1))；还应计算将最终K个按规定顺序输出的成本。</p></div><div class="deep-block" id="s2-after-2"><h3>2.5 高频Top K：明确同频的确定性顺序</h3><p>约定n&lt;=100000，频次数值可用int。堆先弹最差、最后reverse，得到频次降序、同频数值升序，避免依赖哈希遍历顺序。平均总时间O(n+Ulog(K+1))，频次表O(U)、堆O(K)，输出O(K)；哈希极端冲突时统计可退化。</p><div class="codebox"><div class="codebar"><span>C++17</span><div><a href="examples/detail-top-frequency.cpp" download>下载 .cpp</a><button type="button" class="copy">复制代码</button></div></div><pre tabindex="0" aria-label="C++17 代码"><code><span class="keyword">struct</span> FrequencyItem { <span class="keyword">int</span> value; <span class="keyword">int</span> count; };
+<span class="keyword">struct</span> BetterFrequency {
+    <span class="keyword">bool</span> operator()(<span class="keyword">const</span> FrequencyItem&amp; a, <span class="keyword">const</span> FrequencyItem&amp; b) <span class="keyword">const</span> {
+        <span class="keyword">if</span> (a.count != b.count) <span class="keyword">return</span> a.count &gt; b.count;
+        <span class="keyword">return</span> a.value &lt; b.value;
+    }
+};
+vector&lt;<span class="keyword">int</span>&gt; topFrequent(<span class="keyword">const</span> vector&lt;<span class="keyword">int</span>&gt;&amp; a, <span class="keyword">int</span> k) {
+    <span class="keyword">if</span> (k &lt; <span class="number">0</span>) <span class="keyword">throw</span> invalid_argument(<span class="string">&quot;negative k&quot;</span>);
+    <span class="keyword">if</span> (k == <span class="number">0</span>) <span class="keyword">return</span> {};
+    unordered_map&lt;<span class="keyword">int</span>, <span class="keyword">int</span>&gt; count;
+    <span class="keyword">for</span> (<span class="keyword">int</span> value : a) ++count[value];
+    <span class="keyword">if</span> ((size_t)k &gt; count.size()) <span class="keyword">throw</span> invalid_argument(<span class="string">&quot;k exceeds distinct values&quot;</span>);
+    priority_queue&lt;FrequencyItem, vector&lt;FrequencyItem&gt;, BetterFrequency&gt; selected;
+    <span class="keyword">for</span> (<span class="keyword">auto</span> [value, frequency] : count) {
+        selected.push({value, frequency});
+        <span class="keyword">if</span> (selected.size() &gt; (size_t)k) selected.pop();
+    }
+    vector&lt;<span class="keyword">int</span>&gt; answer;
+    <span class="keyword">while</span> (!selected.empty()) {
+        answer.push_back(selected.top().value); selected.pop();
+    }
+    reverse(answer.begin(), answer.end());
+    <span class="keyword">return</span> answer;
+}</code></pre></div></div><div class="deep-block" id="s2-after-3"><h3>2.6 选第K大时有哪些替代方案</h3><p class="table-hint">窄屏下可左右滑动表格，查看完整内容。</p><div class="study-table" tabindex="0" role="region" aria-label="2.6 选第K大时有哪些替代方案"><table><thead><tr><th scope="col">方法</th><th scope="col">适用场景</th><th scope="col">时间</th><th scope="col">额外信息</th></tr></thead><tbody><tr><td>大小K小顶堆</td><td>流式输入、不能改原数组</td><td>O(nlog(K+1))</td><td>只存O(K)候选</td></tr><tr><td>大小n-K+1大顶堆</td><td>静态已知n且K接近n</td><td>O(nlog(n-K+2))</td><td>转为第n-K+1小</td></tr><tr><td>快速选择 / nth_element</td><td>静态数组且允许打乱</td><td>平均O(n)</td><td>不保证候选内部有序</td></tr><tr><td>完整sort</td><td>后面还有多次秩查询</td><td>O(nlogn)</td><td>得到完整有序序列</td></tr><tr><td>频次桶</td><td>只需按出现次数排名</td><td>常可O(n+U)扫描</td><td>桶空间及同频规则要另算</td></tr></tbody></table></div></div><div class="deep-block" id="s2-after-4"><h3>2.7 最近的K个点：距离平方与下标平局规则</h3><p>只比较距离无需开方，平方在非负数上保序。坐标限制到|x|,|y|&lt;=10^9，平方和&lt;=2×10^18可由long long表示；任意int极值的平方和未必能安全放入long long，不能省略范围。</p><p>大顶堆保留最小的K个(距离,原下标)，同距离优先早出现者。返回按距离及原下标升序。时间O(nlog(K+1))、辅助空间O(K)、输出O(K)。</p><div class="codebox"><div class="codebar"><span>C++17</span><div><a href="examples/detail-closest-points.cpp" download>下载 .cpp</a><button type="button" class="copy">复制代码</button></div></div><pre tabindex="0" aria-label="C++17 代码"><code>vector&lt;pair&lt;<span class="keyword">int</span>, <span class="keyword">int</span>&gt;&gt; closestPoints(<span class="keyword">const</span> vector&lt;pair&lt;<span class="keyword">int</span>, <span class="keyword">int</span>&gt;&gt;&amp; points, <span class="keyword">int</span> k) {
+    <span class="keyword">if</span> (k &lt; <span class="number">0</span> || (size_t)k &gt; points.size()) <span class="keyword">throw</span> invalid_argument(<span class="string">&quot;invalid k&quot;</span>);
+    <span class="keyword">if</span> (k == <span class="number">0</span>) <span class="keyword">return</span> {};
+    <span class="keyword">using</span> Entry = pair&lt;<span class="keyword">long</span> <span class="keyword">long</span>, size_t&gt;; <span class="comment">// squared distance, input index</span>
+    priority_queue&lt;Entry&gt; selected;
+    <span class="keyword">for</span> (size_t i = <span class="number">0</span>; i &lt; points.size(); ++i) {
+        <span class="keyword">auto</span> [x, y] = points[i];
+        <span class="keyword">if</span> (x &lt; -<span class="number">1000000000</span> || x &gt; <span class="number">1000000000</span> ||
+            y &lt; -<span class="number">1000000000</span> || y &gt; <span class="number">1000000000</span>)
+            <span class="keyword">throw</span> invalid_argument(<span class="string">&quot;coordinate outside supported range&quot;</span>);
+        <span class="keyword">long</span> <span class="keyword">long</span> distance = <span class="number">1LL</span> * x * x + <span class="number">1LL</span> * y * y;
+        selected.push({distance, i});
+        <span class="keyword">if</span> (selected.size() &gt; (size_t)k) selected.pop();
+    }
+    vector&lt;pair&lt;<span class="keyword">int</span>, <span class="keyword">int</span>&gt;&gt; answer;
+    <span class="keyword">while</span> (!selected.empty()) {
+        answer.push_back(points[selected.top().second]); selected.pop();
+    }
+    reverse(answer.begin(), answer.end());
+    <span class="keyword">return</span> answer;
+}</code></pre></div></div><div class="practice"><h3>经典考点与练习</h3><p>练习：LeetCode 215 第 K 个最大元素、703 数据流中的第 K 大元素、347 前 K 个高频元素。</p><h3>面试追问：关键点完整解答</h3><dl class="answer-list"><div><dt>求最大的K个为什么不是大顶堆？</dt><dd><p>大小K的结构要快速淘汰入选者里最小的，所以需要小顶堆。大顶堆可以把全部n个存起来再弹K次，但那是另一种时间和空间方案，不是固定大小Top K。</p></dd></div><div><dt>第K大是否先去重？</dt><dd><p>通常按元素次数计排名，不去重。[5,5,4]的第2大是5。如果题目要求第K个不同值，必须先去重，并用不同值数量校验K。</p></dd></div><div><dt>Top K堆里的内容本身有序吗？</dt><dd><p>无序，只保证堆顶是边界元素。要有序输出可依次pop再按方向reverse，或取出后排序，额外成本O(KlogK)。不能直接把内部数组当作排名结果。</p></dd></div><div><dt>高频Top K比较器为什么要考虑平局？</dt><dd><p>有些题允许任意同频答案，有些要求数值或字典序。若要求确定顺序，必须把平局规则放进完整排名中，并保证堆顶是按这个完整排名最差的入选者。</p></dd></div><div><dt>K接近n时为什么能改成维护n-K+1个最小值？</dt><dd><p>升序第n-K+1小就是降序第K大。当n-K+1远小于K，可降低堆大小；但流式输入还不知道最终n时不能直接使用这个转化。</p></dd></div><div><dt>最近点为什么要先提升类型再做乘法？</dt><dd><p>x*x如果先按int计算可能已溢出，之后赋给long long无法补救。使用1LL*x*x使乘法在宽类型执行，同时仍需保证两个平方的和在范围内。</p></dd></div></dl></div>
 <label class="learned"><input type="checkbox" data-progress="08-02">我能独立实现，并解释正确性与边界</label></section><section class="lesson" id="s3"><div class="lesson-heading"><span class="lesson-number">08.03</span><h2>多路归并：只保存每一路的前沿</h2></div>
-<h3>知识与适用场景</h3><p>每个有序序列未处理部分的最小值一定是其当前头部。因此全局最小值一定在各路头部之中，堆只需保存这些候选。</p><div class="invariant"><span>推导 / 不变量</span><p>弹出三元组 (value,row,index)，输出 value，再把同一路下一个元素入堆。每一路最多有一个候选存在于堆中。</p></div>
+<h3>知识与适用场景</h3><p>每个有序序列未处理部分的最小值一定是其当前头部。因此全局最小值一定在各路头部之中，堆只需保存这些候选。</p><div class="deep-block" id="s3-before-1"><h3>3.1 前沿不变量：每一路都已内部有序</h3><p>若每一路按非递减顺序排列，该路未输出部分的最小值一定在当前头部。全局下一最小值必属于这些头部，因此堆不必同时存下每个元素，只存每路一个候选。弹出来自第r路的项后，只推进第r路。</p><p>这和“把所有N个元素放堆里再弹出”不同：后者通常O(NlogN)、堆O(N)；前沿方式堆最多K项，总O(K+Nlog(K+1))，输出空间另算。初始化可一次make_heap为O(K)，基础示例逐路push的成本也被完整处理量上界覆盖。</p></div><div class="deep-block" id="s3-before-2"><h3>3.2 三路归并 [1,4]、[2,5]、[0,3]</h3><p class="table-hint">窄屏下可左右滑动表格，查看完整内容。</p><div class="study-table" tabindex="0" role="region" aria-label="3.2 三路归并 [1,4]、[2,5]、[0,3]"><table><thead><tr><th scope="col">弹出前候选（按值展示）</th><th scope="col">本次输出</th><th scope="col">补入哪个后继</th><th scope="col">输出前缀</th></tr></thead><tbody><tr><td>0(r2),1(r0),2(r1)</td><td>0</td><td>r2的3</td><td>0</td></tr><tr><td>1(r0),2(r1),3(r2)</td><td>1</td><td>r0的4</td><td>0,1</td></tr><tr><td>2(r1),3(r2),4(r0)</td><td>2</td><td>r1的5</td><td>0,1,2</td></tr><tr><td>3(r2),4(r0),5(r1)</td><td>3</td><td>r2耗尽，不补</td><td>0,1,2,3</td></tr><tr><td>4(r0),5(r1)</td><td>4，然后5</td><td>两路相继耗尽</td><td>0,1,2,3,4,5</td></tr></tbody></table></div></div><div class="deep-block" id="s3-before-3"><h3>3.3 合并K个链表：复用节点，先保存next</h3><p>要求输入链表分别有序、无环且彼此不共享节点。函数复用并改写原节点连接，不分配或释放节点，调用者继续负责所有权；原heads只是旧入口，不再代表彼此独立的链。相同值时按来源编号决胜，每路内部仍按原顺序。</p><p>共享尾节点会让同一个对象可能被入堆多次，从而破坏结构，不能把这套算法直接用于共享节点图。时间O(K+Nlog(K+1))，堆O(K)，没有新建结果节点的O(N)空间。</p><div class="codebox"><div class="codebar"><span>C++17</span><div><a href="examples/detail-merge-lists.cpp" download>下载 .cpp</a><button type="button" class="copy">复制代码</button></div></div><pre tabindex="0" aria-label="C++17 代码"><code><span class="keyword">struct</span> ListNode {
+    <span class="keyword">int</span> val;
+    ListNode* next = <span class="keyword">nullptr</span>;
+    <span class="keyword">explicit</span> ListNode(<span class="keyword">int</span> value) : val(value) {}
+};
+<span class="keyword">struct</span> ListEntry { ListNode* node; size_t row; };
+<span class="keyword">struct</span> LaterListEntry {
+    <span class="keyword">bool</span> operator()(<span class="keyword">const</span> ListEntry&amp; a, <span class="keyword">const</span> ListEntry&amp; b) <span class="keyword">const</span> {
+        <span class="keyword">if</span> (a.node-&gt;val != b.node-&gt;val) <span class="keyword">return</span> a.node-&gt;val &gt; b.node-&gt;val;
+        <span class="keyword">return</span> a.row &gt; b.row;
+    }
+};
+ListNode* mergeSortedLists(<span class="keyword">const</span> vector&lt;ListNode*&gt;&amp; heads) {
+    priority_queue&lt;ListEntry, vector&lt;ListEntry&gt;, LaterListEntry&gt; pending;
+    <span class="keyword">for</span> (size_t row = <span class="number">0</span>; row &lt; heads.size(); ++row)
+        <span class="keyword">if</span> (heads[row]) pending.push({heads[row], row});
+    ListNode dummy(<span class="number">0</span>);
+    ListNode* tail = &amp;dummy;
+    <span class="keyword">while</span> (!pending.empty()) {
+        <span class="keyword">auto</span> [node, row] = pending.top(); pending.pop();
+        ListNode* successor = node-&gt;next;
+        <span class="keyword">if</span> (successor) pending.push({successor, row});
+        tail-&gt;next = node;
+        tail = node;
+        tail-&gt;next = <span class="keyword">nullptr</span>;
+    }
+    <span class="keyword">return</span> dummy.next;
+}</code></pre></div></div><div class="invariant"><span>推导 / 不变量</span><p>弹出三元组 (value,row,index)，输出 value，再把同一路下一个元素入堆。每一路最多有一个候选存在于堆中。</p></div>
 <h3>手推一个例子</h3><p>[1,4]、[2,5]、[0,3]：堆初始 0、1、2；弹出 0 后补入 3；持续得到 0、1、2、3、4、5。</p><div class="codebox"><div class="codebar"><span>C++17</span><div><a href="examples/03.cpp" download>下载 .cpp</a><button type="button" class="copy">复制代码</button></div></div><pre tabindex="0" aria-label="C++17 代码"><code>vector&lt;<span class="keyword">int</span>&gt; mergeSorted(<span class="keyword">const</span> vector&lt;vector&lt;<span class="keyword">int</span>&gt;&gt;&amp; a) {
     <span class="keyword">using</span> Item=tuple&lt;<span class="keyword">int</span>,<span class="keyword">int</span>,<span class="keyword">int</span>&gt;;
     priority_queue&lt;Item,vector&lt;Item&gt;,greater&lt;Item&gt;&gt; pq;
@@ -72,9 +246,47 @@
     <span class="keyword">return</span> ans;
 }</code></pre></div>
 <dl class="analysis-grid"><div><dt>复杂度</dt><dd>总元素数 N，路数 K：时间 O(N log(K+1)+K)，额外堆空间 O(K)，输出 O(N)。</dd></div><div><dt>易错点与边界</dt><dd>保存来源索引才能推进正确的序列。K 个链表合并时，弹出节点后要保留 next，避免错误修改连接。</dd></div></dl>
-<div class="practice"><h3>经典考点与练习</h3><p>练习：LeetCode 23 合并 K 个升序链表、373 查找和最小的 K 对数字。</p><details><summary>面试官可能继续问什么？</summary><p>如果数据量超过内存，为何这个思路仍适用外部归并？</p><p class="muted">先用自己的话回答，再回到本节的前提、不变量和边界检查论证。</p></details></div>
+<div class="deep-block" id="s3-after-1"><h3>3.4 K个最小数对：把二维组合看成有序行</h3><p>对于升序a、b，固定i后，a[i]+b[0],a[i]+b[1],…构成有序的一行。初始化每行j=0候选，弹出(i,j)后只加入(i,j+1)，从而每个下标对只生成一次，不需要visited集合。</p><p>可以只初始化前min(K,|a|)行：若某行i&gt;=K，则至少已有K行的首项不大于该行首项；按(和,i,j)打破平局时，它们也优先于该行。因此前K个输出无需更后行。两个输入都须有序，这个剪枝才成立。</p></div><div class="deep-block" id="s3-after-2"><h3>3.5 最小数对：行前沿归并</h3><p>K超过组合总数时返回所有数对；重复值可对应不同下标组合，输出允许相同的值对。两个int相加先提升long long。代码不内部验证有序性，避免额外扫描掩盖前沿算法的成本。</p><p>设R=min(K,|a|)、Q为实际输出数，时间O((R+Q)log(R+1))，堆O(R)、输出O(Q)。没有计算|a|*|b|，也就避免了不必要的组合数乘法溢出。</p><div class="codebox"><div class="codebar"><span>C++17</span><div><a href="examples/detail-smallest-pairs.cpp" download>下载 .cpp</a><button type="button" class="copy">复制代码</button></div></div><pre tabindex="0" aria-label="C++17 代码"><code>vector&lt;pair&lt;<span class="keyword">int</span>, <span class="keyword">int</span>&gt;&gt; smallestPairs(<span class="keyword">const</span> vector&lt;<span class="keyword">int</span>&gt;&amp; a, <span class="keyword">const</span> vector&lt;<span class="keyword">int</span>&gt;&amp; b, <span class="keyword">int</span> k) {
+    <span class="keyword">if</span> (k &lt; <span class="number">0</span>) <span class="keyword">throw</span> invalid_argument(<span class="string">&quot;negative k&quot;</span>);
+    <span class="keyword">if</span> (k == <span class="number">0</span> || a.empty() || b.empty()) <span class="keyword">return</span> {};
+    <span class="keyword">using</span> Entry = tuple&lt;<span class="keyword">long</span> <span class="keyword">long</span>, size_t, size_t&gt;;
+    priority_queue&lt;Entry, vector&lt;Entry&gt;, greater&lt;Entry&gt;&gt; pending;
+    size_t initial = min((size_t)k, a.size());
+    <span class="keyword">for</span> (size_t i = <span class="number">0</span>; i &lt; initial; ++i) pending.emplace((<span class="keyword">long</span> <span class="keyword">long</span>)a[i] + b[<span class="number">0</span>], i, <span class="number">0</span>);
+    vector&lt;pair&lt;<span class="keyword">int</span>, <span class="keyword">int</span>&gt;&gt; result;
+    <span class="keyword">while</span> (!pending.empty() &amp;&amp; result.size() &lt; (size_t)k) {
+        <span class="keyword">auto</span> [sum, i, j] = pending.top(); pending.pop();
+        result.push_back({a[i], b[j]});
+        <span class="keyword">if</span> (j + <span class="number">1</span> &lt; b.size()) pending.emplace((<span class="keyword">long</span> <span class="keyword">long</span>)a[i] + b[j + <span class="number">1</span>], i, j + <span class="number">1</span>);
+    }
+    <span class="keyword">return</span> result;
+}</code></pre></div></div><div class="deep-block" id="s3-after-3"><h3>3.6 覆盖所有列表的最小区间：同时维护当前最小与最大</h3><p>每个非空有序列表选一个当前元素，堆顶给当前最小值L，另记当前最大值R，则[L,R]覆盖所有列表。若只推进非最小的某路，最小值不变而最大值不能变小，区间不会变窄；要改善答案，必须推进当前最小值所在路。</p><p>当该路耗尽时无法再把下界右移而保持每路都有代表，算法结束。最大值只需一个变量并取max更新，因为每一路只向右移动、当前值不会下降。</p></div><div class="deep-block" id="s3-after-4"><h3>3.7 覆盖K个有序列表的最小区间</h3><p>要求各列表非递减；任一路为空返回nullopt。相同长度选择更小左端点，宽度先转long long以覆盖INT_MIN与INT_MAX。时间O(Nlog(K+1)+K)，堆O(K)，输出O(1)。</p><div class="codebox"><div class="codebar"><span>C++17</span><div><a href="examples/detail-smallest-range.cpp" download>下载 .cpp</a><button type="button" class="copy">复制代码</button></div></div><pre tabindex="0" aria-label="C++17 代码"><code>optional&lt;pair&lt;<span class="keyword">int</span>, <span class="keyword">int</span>&gt;&gt; smallestCoveringRange(<span class="keyword">const</span> vector&lt;vector&lt;<span class="keyword">int</span>&gt;&gt;&amp; lists) {
+    <span class="keyword">if</span> (lists.empty()) <span class="keyword">return</span> nullopt;
+    <span class="keyword">using</span> Entry = tuple&lt;<span class="keyword">int</span>, size_t, size_t&gt;;
+    priority_queue&lt;Entry, vector&lt;Entry&gt;, greater&lt;Entry&gt;&gt; pending;
+    <span class="keyword">int</span> currentMax = INT_MIN;
+    <span class="keyword">for</span> (size_t row = <span class="number">0</span>; row &lt; lists.size(); ++row) {
+        <span class="keyword">if</span> (lists[row].empty()) <span class="keyword">return</span> nullopt;
+        pending.emplace(lists[row][<span class="number">0</span>], row, <span class="number">0</span>);
+        currentMax = max(currentMax, lists[row][<span class="number">0</span>]);
+    }
+    <span class="keyword">int</span> bestLeft = get&lt;<span class="number">0</span>&gt;(pending.top()), bestRight = currentMax;
+    <span class="keyword">while</span> (<span class="keyword">true</span>) {
+        <span class="keyword">auto</span> [currentMin, row, index] = pending.top(); pending.pop();
+        <span class="keyword">long</span> <span class="keyword">long</span> width = (<span class="keyword">long</span> <span class="keyword">long</span>)currentMax - currentMin;
+        <span class="keyword">long</span> <span class="keyword">long</span> bestWidth = (<span class="keyword">long</span> <span class="keyword">long</span>)bestRight - bestLeft;
+        <span class="keyword">if</span> (width &lt; bestWidth || (width == bestWidth &amp;&amp; currentMin &lt; bestLeft)) {
+            bestLeft = currentMin; bestRight = currentMax;
+        }
+        <span class="keyword">if</span> (index + <span class="number">1</span> == lists[row].size()) break;
+        <span class="keyword">int</span> next = lists[row][index + <span class="number">1</span>];
+        currentMax = max(currentMax, next);
+        pending.emplace(next, row, index + <span class="number">1</span>);
+    }
+    <span class="keyword">return</span> pair&lt;<span class="keyword">int</span>, <span class="keyword">int</span>&gt;{bestLeft, bestRight};
+}</code></pre></div></div><div class="deep-block" id="s3-after-5"><h3>3.8 三类前沿归并的不同终止条件</h3><p class="table-hint">窄屏下可左右滑动表格，查看完整内容。</p><div class="study-table" tabindex="0" role="region" aria-label="3.8 三类前沿归并的不同终止条件"><table><thead><tr><th scope="col">题型</th><th scope="col">每路提供什么</th><th scope="col">弹出后的动作</th><th scope="col">何时结束</th></tr></thead><tbody><tr><td>完整归并</td><td>每路未输出的最小元素</td><td>有后继则补入</td><td>堆为空</td></tr><tr><td>K个最小数对</td><td>每个固定i的下一j</td><td>推进同一i的j</td><td>输出K个或堆空</td></tr><tr><td>覆盖所有列表的区间</td><td>每路一个当前代表</td><td>推进当前最小的来源</td><td>任一路耗尽，无法继续覆盖</td></tr></tbody></table></div></div><div class="deep-block" id="s3-after-6"><h3>3.9 外部归并为什么不需要把所有数据读入内存</h3><p>每路可以是磁盘上的有序文件，堆保存各文件当前记录及来源编号，每弹出一项就从同一来源读下一项。实际工程一般每路使用块缓冲减少I/O，因此内存除O(K)堆外还要算K路输入缓冲和输出缓冲。</p><p>可用文件句柄数量与内存限制约束一次归并的路数，路数太多时需多轮归并。算法能流式读取，但并不意味着硬盘I/O成本等于纯内存的比较复杂度。</p></div><div class="practice"><h3>经典考点与练习</h3><p>练习：LeetCode 23 合并 K 个升序链表、373 查找和最小的 K 对数字。</p><h3>面试追问：关键点完整解答</h3><dl class="answer-list"><div><dt>为什么只保留各路头部不会漏掉全局最小值？</dt><dd><p>每路后面的元素都不小于该路头部。如果一个未处理元素是全局最小，它所在路的头部至少和它一样小，所以总存在一个头部能作为下一项输出。</p></dd></div><div><dt>弹出后为什么必须记录来源？</dt><dd><p>要补入的是被弹出项所在序列的后继，不是任意一路的下一个。只存value无法在重复值出现时区分来源，可能漏读或重复输出。</p></dd></div><div><dt>合并链表时为何先保存next？</dt><dd><p>后续会改变输出尾节点的next，例如清空尾指针。若先改再读，会失去原链表后继。先保存next，再更新堆和结果链接，可保持未处理链条可达。</p></dd></div><div><dt>K个最小数对为什么不需要visited？</dt><dd><p>本实现每个(i,j)只有一个来源：同一行的(i,j-1)，各行只从j=0开始，因此不会被重复生成。若改成同时向(i+1,j)、(i,j+1)扩展，则需要去重。</p></dd></div><div><dt>最小覆盖区间为什么推进当前最小项？</dt><dd><p>保持当前最小项不动时，推进其他有序路不会提高左端点，却可能增大右端点，不能缩短区间。必须先让当前最小项离开，才有机会得到更靠右、更窄的候选区间。</p></dd></div><div><dt>某一路耗尽时，为什么最小区间算法就能停止？</dt><dd><p>此时已经检查了包含这一路最后一个代表的当前候选。继续右移下界将失去该路代表，无法维持全覆盖；其他路单独推进也不能缩小当前下界不变的区间。</p></dd></div></dl></div>
 <label class="learned"><input type="checkbox" data-progress="08-03">我能独立实现，并解释正确性与边界</label></section><section class="lesson" id="s4"><div class="lesson-heading"><span class="lesson-number">08.04</span><h2>双堆维护中位数</h2></div>
-<h3>知识与适用场景</h3><p>大顶堆 lo 保存较小一半，小顶堆 hi 保存较大一半。维护 lo 的元素数等于 hi，或比 hi 多 1；并保证所有 lo 元素 &lt;= 所有 hi 元素。</p><div class="invariant"><span>推导 / 不变量</span><p>先按 lo.top 分流，再通过移动堆顶平衡大小。奇数个元素的中位数是 lo.top，偶数个是两个堆顶平均值。</p></div>
+<h3>知识与适用场景</h3><p>大顶堆 lo 保存较小一半，小顶堆 hi 保存较大一半。维护 lo 的元素数等于 hi，或比 hi 多 1；并保证所有 lo 元素 &lt;= 所有 hi 元素。</p><div class="deep-block" id="s4-before-1"><h3>4.1 双堆同时满足次序与数量，缺一不可</h3><p>lo为大顶堆保存较小半，hi为小顶堆保存较大半。数量要求|lo|=|hi|或|lo|=|hi|+1；次序要求每个lo元素&lt;=每个hi元素。两堆各自已满足堆序时，检查lo.top()&lt;=hi.top()即可表达这个跨堆次序。</p><p>奇数时lo多一个，中央元素就是lo.top；偶数时中间两个是lo.top与hi.top。只有大小平衡而没有跨堆次序，堆顶平均不一定是中位数。</p></div><div class="deep-block" id="s4-before-2"><h3>4.2 按lo.top分流，为什么移动堆顶能恢复平衡</h3><p>新值&lt;=lo最大值就进入lo，否则进入hi，能保持跨堆次序。若lo多出两个，将lo最大值移入hi；若hi更多，将hi最小值移入lo。移动的恰是边界元素，不会使两侧交错。原先大小差至多1，单次插入后只需常数次跨堆移动。</p><p>基础MedianFinder的中位数和先提升到long long再求均值，避免两个int先相加溢出。该接口在无数据时抛出异常，不能返回0伪装有效中位数。</p></div><div class="deep-block" id="s4-before-3"><h3>4.3 依次插入1、5、2、4</h3><p class="table-hint">窄屏下可左右滑动表格，查看完整内容。</p><div class="study-table" tabindex="0" role="region" aria-label="4.3 依次插入1、5、2、4"><table><thead><tr><th scope="col">新值</th><th scope="col">lo（按值展示）</th><th scope="col">hi（按值展示）</th><th scope="col">中位数</th></tr></thead><tbody><tr><td>1</td><td>[1]</td><td>[]</td><td>1</td></tr><tr><td>5</td><td>[1]</td><td>[5]</td><td>3</td></tr><tr><td>2</td><td>[1,2]</td><td>[5]</td><td>2</td></tr><tr><td>4</td><td>[1,2]</td><td>[4,5]</td><td>3</td></tr></tbody></table></div></div><div class="deep-block" id="s4-before-4"><h3>4.4 滑动窗口中位数多了删除操作</h3><p>priority_queue不能直接删掉一个非堆顶旧值。延迟删除可以在哈希表中记录待删次数，并维护两堆的有效大小；读取、搬移堆顶前清理失效项。物理size含旧记录，不能用它代替有效大小；重复值的删除次数也必须准确。</p><p>朴素延迟删除实现中，失效项可能长期埋在堆内部，物理空间增长到O(n)，堆操作也可能按logn计，而不是无条件O(k)空间、O(nlogk)时间。可定期重建、使用带下标堆，或用下方两个multiset得到直接删除和清楚的界。</p></div><div class="invariant"><span>推导 / 不变量</span><p>先按 lo.top 分流，再通过移动堆顶平衡大小。奇数个元素的中位数是 lo.top，偶数个是两个堆顶平均值。</p></div>
 <h3>手推一个例子</h3><p>插入 1、5、2：最终 lo={1,2}，hi={5}，中位数 2；再插入 4，两个堆顶为 2 和 4，中位数 3。</p><div class="codebox"><div class="codebar"><span>C++17</span><div><a href="examples/04.cpp" download>下载 .cpp</a><button type="button" class="copy">复制代码</button></div></div><pre tabindex="0" aria-label="C++17 代码"><code><span class="keyword">class</span> MedianFinder {
     priority_queue&lt;<span class="keyword">int</span>&gt; lo;
     priority_queue&lt;<span class="keyword">int</span>,vector&lt;<span class="keyword">int</span>&gt;,greater&lt;<span class="keyword">int</span>&gt;&gt; hi;
@@ -92,5 +304,616 @@
     }
 };</code></pre></div>
 <dl class="analysis-grid"><div><dt>复杂度</dt><dd>插入 O(log n)，查询 O(1)，存储 O(n)。</dd></div><div><dt>易错点与边界</dt><dd>两个 int 先相加可能溢出，先转 long long。若还支持删除任意旧值，需要额外的延迟删除或有序多重集合。</dd></div></dl>
-<div class="practice"><h3>经典考点与练习</h3><p>练习：LeetCode 295 数据流的中位数、480 滑动窗口中位数。</p><details><summary>面试官可能继续问什么？</summary><p>滑动窗口中位数比数据流中位数多了哪项操作？</p><p class="muted">先用自己的话回答，再回到本节的前提、不变量和边界检查论证。</p></details></div>
-<label class="learned"><input type="checkbox" data-progress="08-04">我能独立实现，并解释正确性与边界</label></section><nav class="chapter-pager" aria-label="相邻章节"><a href="../07-树与二叉搜索树/index.html"><small>上一章</small>← 树与二叉搜索树</a><a href="../09-递归回溯与分治/index.html"><small>下一章</small>递归、回溯与分治 →</a></nav><footer>秋招算法学习讲义 · C++17<br>例题编号供检索；难度与覆盖范围按学习顺序组织。</footer></main><aside class="toc" aria-label="本页目录"><p class="rail-label">本章小节</p><a href="#s1"><span>01</span>堆的数组表示与向下调整</a><a href="#s2"><span>02</span>固定大小堆与 Top K</a><a href="#s3"><span>03</span>多路归并：只保存每一路的前沿</a><a href="#s4"><span>04</span>双堆维护中位数</a></aside></div><div class="toast" role="status" aria-live="polite"></div></body></html>
+<div class="deep-block" id="s4-after-1"><h3>4.5 两个有序多重集合：支持删除的滑动中位数</h3><p>这里用平衡搜索树而不是堆，是双半区不变量的另一种实现。multiset支持重复值，erase(iterator)只删一个实例；erase(value)会删掉所有等值元素，不适合窗口移除单次出现。</p><p>如果同一值跨越两个半区，删任一份同值实例都不影响数值多重集合，再平衡即可。每次增删O(log(k+1))，查询端点O(1)，总O(nlog(k+1))、辅助空间O(k)、输出O(n-k+1)。非法窗口大小返回空数组。</p><div class="codebox"><div class="codebar"><span>C++17</span><div><a href="examples/detail-sliding-median.cpp" download>下载 .cpp</a><button type="button" class="copy">复制代码</button></div></div><pre tabindex="0" aria-label="C++17 代码"><code>#include &lt;set&gt;
+#include &lt;iterator&gt;
+
+<span class="keyword">class</span> RemovableMedian {
+    multiset&lt;<span class="keyword">int</span>&gt; lo, hi;
+    <span class="keyword">void</span> rebalance() {
+        <span class="keyword">while</span> (lo.size() &gt; hi.size() + <span class="number">1</span>) {
+            <span class="keyword">auto</span> it = prev(lo.end());
+            hi.insert(*it); lo.erase(it);
+        }
+        <span class="keyword">while</span> (lo.size() &lt; hi.size()) {
+            <span class="keyword">auto</span> it = hi.begin();
+            lo.insert(*it); hi.erase(it);
+        }
+    }
+<span class="keyword">public</span>:
+    <span class="keyword">void</span> add(<span class="keyword">int</span> value) {
+        <span class="keyword">if</span> (lo.empty() || value &lt;= *prev(lo.end())) lo.insert(value);
+        <span class="keyword">else</span> hi.insert(value);
+        rebalance();
+    }
+    <span class="keyword">void</span> remove(<span class="keyword">int</span> value) {
+        <span class="keyword">auto</span> it = lo.find(value);
+        <span class="keyword">if</span> (it != lo.end()) lo.erase(it);
+        <span class="keyword">else</span> {
+            <span class="keyword">auto</span> other = hi.find(value);
+            <span class="keyword">if</span> (other == hi.end()) <span class="keyword">throw</span> invalid_argument(<span class="string">&quot;value not present&quot;</span>);
+            hi.erase(other);
+        }
+        rebalance();
+    }
+    <span class="keyword">double</span> median() <span class="keyword">const</span> {
+        <span class="keyword">if</span> (lo.empty()) <span class="keyword">throw</span> out_of_range(<span class="string">&quot;no data&quot;</span>);
+        <span class="keyword">if</span> (lo.size() != hi.size()) <span class="keyword">return</span> *prev(lo.end());
+        <span class="keyword">return</span> ((<span class="keyword">long</span> <span class="keyword">long</span>)*prev(lo.end()) + *hi.begin()) / <span class="number">2</span>.<span class="number">0</span>;
+    }
+};
+vector&lt;<span class="keyword">double</span>&gt; slidingMedians(<span class="keyword">const</span> vector&lt;<span class="keyword">int</span>&gt;&amp; a, <span class="keyword">int</span> k) {
+    <span class="keyword">if</span> (k &lt;= <span class="number">0</span> || (size_t)k &gt; a.size()) <span class="keyword">return</span> {};
+    RemovableMedian state;
+    vector&lt;<span class="keyword">double</span>&gt; answer;
+    <span class="keyword">for</span> (size_t i = <span class="number">0</span>; i &lt; a.size(); ++i) {
+        <span class="keyword">if</span> (i &gt;= (size_t)k) state.remove(a[i - k]);
+        state.add(a[i]);
+        <span class="keyword">if</span> (i + <span class="number">1</span> &gt;= (size_t)k) answer.push_back(state.median());
+    }
+    <span class="keyword">return</span> answer;
+}</code></pre></div></div><div class="deep-block" id="s4-after-2"><h3>4.6 会议室：释放结束时间不晚于新会议开始的房间</h3><p>会议用半开区间[start,end)，同一时刻结束和开始可复用房间，所以条件是&lt;=。本实现清除全部已结束会议，堆仅代表当前活动会议，最大堆大小就是峰值并发，也就是最少房间数。</p><p>约定会议数可用int表示；空列表返回0，零时长与反向区间拒绝。时间O(nlog(n+1))，复制与堆空间O(n)。另一种只弹一个房间的写法维护的是已分配房间集合，语义不同，不应混用两个证明。</p><div class="codebox"><div class="codebar"><span>C++17</span><div><a href="examples/detail-meeting-rooms.cpp" download>下载 .cpp</a><button type="button" class="copy">复制代码</button></div></div><pre tabindex="0" aria-label="C++17 代码"><code><span class="keyword">int</span> minimumMeetingRooms(vector&lt;pair&lt;<span class="keyword">int</span>, <span class="keyword">int</span>&gt;&gt; meetings) {
+    <span class="keyword">for</span> (<span class="keyword">auto</span> [start, end] : meetings)
+        <span class="keyword">if</span> (start &gt;= end) <span class="keyword">throw</span> invalid_argument(<span class="string">&quot;require start &lt; end&quot;</span>);
+    sort(meetings.begin(), meetings.end());
+    priority_queue&lt;<span class="keyword">int</span>, vector&lt;<span class="keyword">int</span>&gt;, greater&lt;<span class="keyword">int</span>&gt;&gt; occupied;
+    <span class="keyword">int</span> best = <span class="number">0</span>;
+    <span class="keyword">for</span> (<span class="keyword">auto</span> [start, end] : meetings) {
+        <span class="keyword">while</span> (!occupied.empty() &amp;&amp; occupied.top() &lt;= start) occupied.pop();
+        occupied.push(end);
+        best = max(best, (<span class="keyword">int</span>)occupied.size());
+    }
+    <span class="keyword">return</span> best;
+}</code></pre></div></div><div class="deep-block" id="s4-after-3"><h3>4.7 Dijkstra：堆给候选次序，非负边给正确性</h3><p>从源点距离0开始，每次取暂定距离最小的候选。边权非负时，任何尚未扩展路径再经过其他边不会产生比当前最小距离更短的绕行，因此有效堆顶可以安全扩展。出现负边后该理由失效，不能继续声称是标准Dijkstra。</p><p>标准priority_queue没有decrease-key，发现更短距离时直接插入新快照(d,v)。旧记录仍在堆中，弹出时若d!=dist[v]就跳过。不能像普通无权BFS那样入队即永久标记完成：一个节点第一次发现的距离可能随后改善。</p></div><div class="deep-block" id="s4-after-4"><h3>4.8 旧距离快照：s→a为10，s→b为1，b→a为1</h3><p class="table-hint">窄屏下可左右滑动表格，查看完整内容。</p><div class="study-table" tabindex="0" role="region" aria-label="4.8 旧距离快照：s→a为10，s→b为1，b→a为1"><table><thead><tr><th scope="col">弹出的候选</th><th scope="col">当前距离</th><th scope="col">处理</th><th scope="col">后续候选</th></tr></thead><tbody><tr><td>(0,s)</td><td>s=0</td><td>松弛a=10，b=1</td><td>(1,b),(10,a)</td></tr><tr><td>(1,b)</td><td>b=1</td><td>把a改进为2</td><td>(2,a),(10,a)</td></tr><tr><td>(2,a)</td><td>a=2</td><td>有效，扩展a</td><td>(10,a)</td></tr><tr><td>(10,a)</td><td>a=2</td><td>过期，跳过</td><td>空</td></tr></tbody></table></div></div><div class="deep-block" id="s4-after-5"><h3>4.9 非负权最短路：过期记录与不可达值</h3><p>约束V&lt;=100000、边权在[0,10^9]，距离及松弛加法在long long内；允许平行边、零权边与自环，负边在开始前拒绝。不可达点用nullopt，避免把大哨兵当作真实距离返回。</p><p>每条边至多造成一次成功松弛，可能产生O(E)堆项。此懒惰实现时间O(V+Elog(E+1))、辅助空间O(V+E)，不含输入图；对简单图常写成O((V+E)logV)，但有大量平行边时需保留堆规模的区别。</p><div class="codebox"><div class="codebar"><span>C++17</span><div><a href="examples/detail-dijkstra.cpp" download>下载 .cpp</a><button type="button" class="copy">复制代码</button></div></div><pre tabindex="0" aria-label="C++17 代码"><code><span class="keyword">struct</span> WeightedEdge { <span class="keyword">int</span> to; <span class="keyword">int</span> weight; };
+vector&lt;optional&lt;<span class="keyword">long</span> <span class="keyword">long</span>&gt;&gt; shortestDistances(
+    <span class="keyword">const</span> vector&lt;vector&lt;WeightedEdge&gt;&gt;&amp; graph, <span class="keyword">int</span> source) {
+    <span class="keyword">if</span> (graph.size() &gt; <span class="number">100000</span>) <span class="keyword">throw</span> invalid_argument(<span class="string">&quot;too many vertices&quot;</span>);
+    <span class="keyword">int</span> n = (<span class="keyword">int</span>)graph.size();
+    <span class="keyword">if</span> (source &lt; <span class="number">0</span> || source &gt;= n) <span class="keyword">throw</span> out_of_range(<span class="string">&quot;invalid source&quot;</span>);
+    <span class="keyword">for</span> (<span class="keyword">const</span> <span class="keyword">auto</span>&amp; edges : graph)
+        <span class="keyword">for</span> (<span class="keyword">const</span> <span class="keyword">auto</span>&amp; edge : edges)
+            <span class="keyword">if</span> (edge.to &lt; <span class="number">0</span> || edge.to &gt;= n || edge.weight &lt; <span class="number">0</span> ||
+                edge.weight &gt; <span class="number">1000000000</span>)
+                <span class="keyword">throw</span> invalid_argument(<span class="string">&quot;invalid edge&quot;</span>);
+    <span class="keyword">const</span> <span class="keyword">long</span> <span class="keyword">long</span> INF = LLONG_MAX / <span class="number">4</span>;
+    vector&lt;<span class="keyword">long</span> <span class="keyword">long</span>&gt; distance(n, INF);
+    <span class="keyword">using</span> Entry = pair&lt;<span class="keyword">long</span> <span class="keyword">long</span>, <span class="keyword">int</span>&gt;;
+    priority_queue&lt;Entry, vector&lt;Entry&gt;, greater&lt;Entry&gt;&gt; pending;
+    distance[source] = <span class="number">0</span>; pending.push({<span class="number">0</span>, source});
+    <span class="keyword">while</span> (!pending.empty()) {
+        <span class="keyword">auto</span> [value, u] = pending.top(); pending.pop();
+        <span class="keyword">if</span> (value != distance[u]) continue;
+        <span class="keyword">for</span> (<span class="keyword">const</span> <span class="keyword">auto</span>&amp; edge : graph[u]) {
+            <span class="keyword">long</span> <span class="keyword">long</span> candidate = value + edge.weight;
+            <span class="keyword">if</span> (candidate &lt; distance[edge.to]) {
+                distance[edge.to] = candidate;
+                pending.push({candidate, edge.to});
+            }
+        }
+    }
+    vector&lt;optional&lt;<span class="keyword">long</span> <span class="keyword">long</span>&gt;&gt; result(n);
+    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; n; ++i)
+        <span class="keyword">if</span> (distance[i] != INF) result[i] = distance[i];
+    <span class="keyword">return</span> result;
+}</code></pre></div></div><div class="practice"><h3>经典考点与练习</h3><p>练习：LeetCode 295 数据流的中位数、480 滑动窗口中位数。</p><h3>面试追问：关键点完整解答</h3><dl class="answer-list"><div><dt>两个堆数量平衡就能读出中位数吗？</dt><dd><p>不够，还要保证lo中每个值都不大于hi中每个值。若小值在hi、大值在lo，即使大小相等，两堆顶也未必是有序序列中间两个位置。</p></dd></div><div><dt>从lo向hi移动哪个元素才正确？</dt><dd><p>移动lo的最大值，也就是lo.top，它是两半边界上最适合进入较大半的元素。反过来从hi向lo移动最小值，保证跨堆有序关系不被破坏。</p></dd></div><div><dt>滑动窗口删除为什么不能直接用priority_queue.pop？</dt><dd><p>过期元素可能不在堆顶，pop删掉的是当前极值而非指定旧值。需要定位删除、延迟删除，或改用支持按值找实例的有序多重集合。</p></dd></div><div><dt>multiset移除一个过期值为什么用erase(iterator)？</dt><dd><p>同一个值可能在窗口中出现多次。erase(value)删除所有匹配值，破坏剩余窗口；find得到一个实例后erase(iterator)只移除一次，符合滑出一个位置的语义。</p></dd></div><div><dt>会议结束于t、另一个开始于t，需要两个房间吗？</dt><dd><p>按本节半开区间约定不需要，结束时间&lt;=新开始时间即可释放。如果题目用闭区间或要求清理间隔，必须相应改变复用条件。</p></dd></div><div><dt>Dijkstra为什么不能第一次入队就标记完成？</dt><dd><p>第一次发现不一定最短，例如直达a为10，经b可到2。必须允许更短距离再次入队；弹出时用当前dist核对快照，旧的10需要跳过，非负权保证有效最小候选的扩展正确。</p></dd></div></dl></div>
+<label class="learned"><input type="checkbox" data-progress="08-04">我能独立实现，并解释正确性与边界</label></section><section class="chapter-review" id="chapter-review"><p class="eyebrow">PRACTICE / 把本章方法用起来</p><h2>综合例题与章末自测</h2><div class="deep-block" id="review-1"><h3>经典考点与训练路线</h3><p class="table-hint">窄屏下可左右滑动表格，查看完整内容。</p><div class="study-table" tabindex="0" role="region" aria-label="经典考点与训练路线"><table><thead><tr><th scope="col">阶段</th><th scope="col">练习</th><th scope="col">必须解释的关键点</th><th scope="col">重点边界</th></tr></thead><tbody><tr><td>堆实现</td><td>手写堆；1046 最后一块石头</td><td>上浮/下沉、建堆线性、比较器方向</td><td>空堆、单元素、重复值</td></tr><tr><td>Top K</td><td>215 第K大；703 流中第K大；347 高频；973 最近点</td><td>边界候选、重复计秩、平局规则</td><td>K=0/1/n、未满K、坐标极值</td></tr><tr><td>多路归并</td><td>23 合并链表；373 最小数对</td><td>每路前沿、来源索引、后继</td><td>空路、重复值、共享节点前提</td></tr><tr><td>范围覆盖</td><td>632 最小区间</td><td>当前最大值、只推进最小路</td><td>空列表、单路、跨度溢出</td></tr><tr><td>中位数</td><td>295 数据流；480 滑动窗口</td><td>次序与数量、删除旧值、物理与逻辑大小</td><td>全相等、偶数、INT极值</td></tr><tr><td>调度与最短路</td><td>253 会议室；743 网络延迟</td><td>端点语义、过期快照、非负边</td><td>相接会议、零权、不可达、多次改进</td></tr></tbody></table></div></div><div class="deep-block" id="review-2"><h3>综合测试：候选不变量与独立暴力对照</h3><p>测试程序包含12份补充示例实现：手写堆同标准优先队列对照，版本化队列同有效状态表扫描对照，流式秩与高频排序对照，最小数对同完整笛卡尔积排序对照，区间覆盖同端点穷举对照，中位数同窗口排序对照，Dijkstra同Floyd对照。</p><p>提供固定种子的200组小输入、1000次堆混合操作和1000次版本队列操作，还检查链表合并无环、无重复节点及元素完整性，以及会议室与峰值重叠数一致。测试规模故意较小，以便使用简单参照算法；不能代替正确性证明。</p><p>下载后可执行 g++ -std=c++17 -O2 -Wall -Wextra detail-heap-tests.cpp -o chapter08-tests，再运行程序。本测试不包含原有四个基础示例的独立运行检查；实际编译执行状态见全站验证记录。</p></div><div class="deep-block" id="review-3"><h3>完整对照测试：堆、排名、前沿、中位数与最短路</h3><p>使用显式require，避免NDEBUG关闭assert后测试失效。链表测试使用deque固定节点地址，不对容器拥有的节点执行delete。</p><div class="codebox"><div class="codebar"><span>C++17</span><div><a href="examples/detail-heap-tests.cpp" download>下载 .cpp</a><button type="button" class="copy">复制代码</button></div></div><pre tabindex="0" aria-label="C++17 代码"><code><span class="keyword">class</span> IntMinHeap {
+    vector&lt;<span class="keyword">int</span>&gt; data;
+    <span class="keyword">void</span> down(size_t root) {
+        size_t n = data.size();
+        <span class="keyword">while</span> (root &lt; n / <span class="number">2</span>) {
+            size_t child = root * <span class="number">2</span> + <span class="number">1</span>;
+            <span class="keyword">if</span> (child + <span class="number">1</span> &lt; n &amp;&amp; data[child + <span class="number">1</span>] &lt; data[child]) ++child;
+            <span class="keyword">if</span> (data[root] &lt;= data[child]) break;
+            swap(data[root], data[child]);
+            root = child;
+        }
+    }
+<span class="keyword">public</span>:
+    <span class="keyword">explicit</span> IntMinHeap(vector&lt;<span class="keyword">int</span>&gt; values = {}) : data(move(values)) {
+        <span class="keyword">for</span> (size_t i = data.size() / <span class="number">2</span>; i &gt; <span class="number">0</span>; --i) down(i - <span class="number">1</span>);
+    }
+    <span class="keyword">bool</span> empty() <span class="keyword">const</span> { <span class="keyword">return</span> data.empty(); }
+    size_t size() <span class="keyword">const</span> { <span class="keyword">return</span> data.size(); }
+    <span class="keyword">int</span> top() <span class="keyword">const</span> {
+        <span class="keyword">if</span> (empty()) <span class="keyword">throw</span> out_of_range(<span class="string">&quot;empty heap&quot;</span>);
+        <span class="keyword">return</span> data[<span class="number">0</span>];
+    }
+    <span class="keyword">void</span> push(<span class="keyword">int</span> value) {
+        data.push_back(value);
+        size_t i = data.size() - <span class="number">1</span>;
+        <span class="keyword">while</span> (i &gt; <span class="number">0</span>) {
+            size_t parent = (i - <span class="number">1</span>) / <span class="number">2</span>;
+            <span class="keyword">if</span> (data[parent] &lt;= data[i]) break;
+            swap(data[parent], data[i]); i = parent;
+        }
+    }
+    <span class="keyword">int</span> pop() {
+        <span class="keyword">if</span> (empty()) <span class="keyword">throw</span> out_of_range(<span class="string">&quot;empty heap&quot;</span>);
+        <span class="keyword">int</span> answer = data[<span class="number">0</span>];
+        data[<span class="number">0</span>] = data.back();
+        data.pop_back();
+        <span class="keyword">if</span> (!empty()) down(<span class="number">0</span>);
+        <span class="keyword">return</span> answer;
+    }
+};
+
+<span class="keyword">struct</span> ScheduledTask {
+    <span class="keyword">int</span> priority;
+    uint64_t sequence;
+    string label;
+};
+<span class="keyword">struct</span> LaterTask {
+    <span class="keyword">bool</span> operator()(<span class="keyword">const</span> ScheduledTask&amp; a, <span class="keyword">const</span> ScheduledTask&amp; b) <span class="keyword">const</span> {
+        <span class="keyword">return</span> tie(a.priority, a.sequence) &gt; tie(b.priority, b.sequence);
+    }
+};
+vector&lt;string&gt; orderedTasks(<span class="keyword">const</span> vector&lt;ScheduledTask&gt;&amp; tasks) {
+    priority_queue&lt;ScheduledTask, vector&lt;ScheduledTask&gt;, LaterTask&gt; pending;
+    <span class="keyword">for</span> (<span class="keyword">const</span> <span class="keyword">auto</span>&amp; task : tasks) pending.push(task);
+    vector&lt;string&gt; result;
+    <span class="keyword">while</span> (!pending.empty()) {
+        result.push_back(pending.top().label);
+        pending.pop();
+    }
+    <span class="keyword">return</span> result;
+}
+
+<span class="keyword">class</span> VersionedMinQueue {
+    <span class="keyword">struct</span> State { <span class="keyword">int</span> priority; uint64_t version; };
+    <span class="keyword">using</span> Entry = tuple&lt;<span class="keyword">int</span>, <span class="keyword">int</span>, uint64_t&gt;; <span class="comment">// priority, id, version</span>
+    priority_queue&lt;Entry, vector&lt;Entry&gt;, greater&lt;Entry&gt;&gt; heap;
+    unordered_map&lt;<span class="keyword">int</span>, State&gt; live;
+    uint64_t nextVersion = <span class="number">0</span>;
+    <span class="keyword">void</span> prune() {
+        <span class="keyword">while</span> (!heap.empty()) {
+            <span class="keyword">auto</span> [priority, id, version] = heap.top();
+            <span class="keyword">auto</span> it = live.find(id);
+            <span class="keyword">if</span> (it != live.end() &amp;&amp; it-&gt;second.version == version) break;
+            heap.pop();
+        }
+    }
+<span class="keyword">public</span>:
+    <span class="keyword">void</span> put(<span class="keyword">int</span> id, <span class="keyword">int</span> priority) {
+        <span class="keyword">if</span> (nextVersion == UINT64_MAX) <span class="keyword">throw</span> overflow_error(<span class="string">&quot;version exhausted&quot;</span>);
+        uint64_t version = ++nextVersion;
+        heap.emplace(priority, id, version);
+        live[id] = {priority, version};
+    }
+    <span class="keyword">void</span> cancel(<span class="keyword">int</span> id) { live.erase(id); }
+    optional&lt;pair&lt;<span class="keyword">int</span>, <span class="keyword">int</span>&gt;&gt; pop() {
+        prune();
+        <span class="keyword">if</span> (heap.empty()) <span class="keyword">return</span> nullopt;
+        <span class="keyword">auto</span> [priority, id, version] = heap.top();
+        heap.pop(); live.erase(id);
+        <span class="keyword">return</span> pair&lt;<span class="keyword">int</span>, <span class="keyword">int</span>&gt;{id, priority};
+    }
+};
+
+<span class="keyword">class</span> KthLargestStream {
+    size_t k;
+    priority_queue&lt;<span class="keyword">int</span>, vector&lt;<span class="keyword">int</span>&gt;, greater&lt;<span class="keyword">int</span>&gt;&gt; selected;
+<span class="keyword">public</span>:
+    <span class="keyword">explicit</span> KthLargestStream(<span class="keyword">int</span> rank) {
+        <span class="keyword">if</span> (rank &lt;= <span class="number">0</span>) <span class="keyword">throw</span> invalid_argument(<span class="string">&quot;k must be positive&quot;</span>);
+        k = (size_t)rank;
+    }
+    optional&lt;<span class="keyword">int</span>&gt; add(<span class="keyword">int</span> value) {
+        <span class="keyword">if</span> (selected.size() &lt; k) selected.push(value);
+        <span class="keyword">else</span> <span class="keyword">if</span> (value &gt; selected.top()) {
+            selected.pop(); selected.push(value);
+        }
+        <span class="keyword">if</span> (selected.size() &lt; k) <span class="keyword">return</span> nullopt;
+        <span class="keyword">return</span> selected.top();
+    }
+};
+
+<span class="keyword">struct</span> FrequencyItem { <span class="keyword">int</span> value; <span class="keyword">int</span> count; };
+<span class="keyword">struct</span> BetterFrequency {
+    <span class="keyword">bool</span> operator()(<span class="keyword">const</span> FrequencyItem&amp; a, <span class="keyword">const</span> FrequencyItem&amp; b) <span class="keyword">const</span> {
+        <span class="keyword">if</span> (a.count != b.count) <span class="keyword">return</span> a.count &gt; b.count;
+        <span class="keyword">return</span> a.value &lt; b.value;
+    }
+};
+vector&lt;<span class="keyword">int</span>&gt; topFrequent(<span class="keyword">const</span> vector&lt;<span class="keyword">int</span>&gt;&amp; a, <span class="keyword">int</span> k) {
+    <span class="keyword">if</span> (k &lt; <span class="number">0</span>) <span class="keyword">throw</span> invalid_argument(<span class="string">&quot;negative k&quot;</span>);
+    <span class="keyword">if</span> (k == <span class="number">0</span>) <span class="keyword">return</span> {};
+    unordered_map&lt;<span class="keyword">int</span>, <span class="keyword">int</span>&gt; count;
+    <span class="keyword">for</span> (<span class="keyword">int</span> value : a) ++count[value];
+    <span class="keyword">if</span> ((size_t)k &gt; count.size()) <span class="keyword">throw</span> invalid_argument(<span class="string">&quot;k exceeds distinct values&quot;</span>);
+    priority_queue&lt;FrequencyItem, vector&lt;FrequencyItem&gt;, BetterFrequency&gt; selected;
+    <span class="keyword">for</span> (<span class="keyword">auto</span> [value, frequency] : count) {
+        selected.push({value, frequency});
+        <span class="keyword">if</span> (selected.size() &gt; (size_t)k) selected.pop();
+    }
+    vector&lt;<span class="keyword">int</span>&gt; answer;
+    <span class="keyword">while</span> (!selected.empty()) {
+        answer.push_back(selected.top().value); selected.pop();
+    }
+    reverse(answer.begin(), answer.end());
+    <span class="keyword">return</span> answer;
+}
+
+vector&lt;pair&lt;<span class="keyword">int</span>, <span class="keyword">int</span>&gt;&gt; closestPoints(<span class="keyword">const</span> vector&lt;pair&lt;<span class="keyword">int</span>, <span class="keyword">int</span>&gt;&gt;&amp; points, <span class="keyword">int</span> k) {
+    <span class="keyword">if</span> (k &lt; <span class="number">0</span> || (size_t)k &gt; points.size()) <span class="keyword">throw</span> invalid_argument(<span class="string">&quot;invalid k&quot;</span>);
+    <span class="keyword">if</span> (k == <span class="number">0</span>) <span class="keyword">return</span> {};
+    <span class="keyword">using</span> Entry = pair&lt;<span class="keyword">long</span> <span class="keyword">long</span>, size_t&gt;; <span class="comment">// squared distance, input index</span>
+    priority_queue&lt;Entry&gt; selected;
+    <span class="keyword">for</span> (size_t i = <span class="number">0</span>; i &lt; points.size(); ++i) {
+        <span class="keyword">auto</span> [x, y] = points[i];
+        <span class="keyword">if</span> (x &lt; -<span class="number">1000000000</span> || x &gt; <span class="number">1000000000</span> ||
+            y &lt; -<span class="number">1000000000</span> || y &gt; <span class="number">1000000000</span>)
+            <span class="keyword">throw</span> invalid_argument(<span class="string">&quot;coordinate outside supported range&quot;</span>);
+        <span class="keyword">long</span> <span class="keyword">long</span> distance = <span class="number">1LL</span> * x * x + <span class="number">1LL</span> * y * y;
+        selected.push({distance, i});
+        <span class="keyword">if</span> (selected.size() &gt; (size_t)k) selected.pop();
+    }
+    vector&lt;pair&lt;<span class="keyword">int</span>, <span class="keyword">int</span>&gt;&gt; answer;
+    <span class="keyword">while</span> (!selected.empty()) {
+        answer.push_back(points[selected.top().second]); selected.pop();
+    }
+    reverse(answer.begin(), answer.end());
+    <span class="keyword">return</span> answer;
+}
+
+<span class="keyword">struct</span> ListNode {
+    <span class="keyword">int</span> val;
+    ListNode* next = <span class="keyword">nullptr</span>;
+    <span class="keyword">explicit</span> ListNode(<span class="keyword">int</span> value) : val(value) {}
+};
+<span class="keyword">struct</span> ListEntry { ListNode* node; size_t row; };
+<span class="keyword">struct</span> LaterListEntry {
+    <span class="keyword">bool</span> operator()(<span class="keyword">const</span> ListEntry&amp; a, <span class="keyword">const</span> ListEntry&amp; b) <span class="keyword">const</span> {
+        <span class="keyword">if</span> (a.node-&gt;val != b.node-&gt;val) <span class="keyword">return</span> a.node-&gt;val &gt; b.node-&gt;val;
+        <span class="keyword">return</span> a.row &gt; b.row;
+    }
+};
+ListNode* mergeSortedLists(<span class="keyword">const</span> vector&lt;ListNode*&gt;&amp; heads) {
+    priority_queue&lt;ListEntry, vector&lt;ListEntry&gt;, LaterListEntry&gt; pending;
+    <span class="keyword">for</span> (size_t row = <span class="number">0</span>; row &lt; heads.size(); ++row)
+        <span class="keyword">if</span> (heads[row]) pending.push({heads[row], row});
+    ListNode dummy(<span class="number">0</span>);
+    ListNode* tail = &amp;dummy;
+    <span class="keyword">while</span> (!pending.empty()) {
+        <span class="keyword">auto</span> [node, row] = pending.top(); pending.pop();
+        ListNode* successor = node-&gt;next;
+        <span class="keyword">if</span> (successor) pending.push({successor, row});
+        tail-&gt;next = node;
+        tail = node;
+        tail-&gt;next = <span class="keyword">nullptr</span>;
+    }
+    <span class="keyword">return</span> dummy.next;
+}
+
+vector&lt;pair&lt;<span class="keyword">int</span>, <span class="keyword">int</span>&gt;&gt; smallestPairs(<span class="keyword">const</span> vector&lt;<span class="keyword">int</span>&gt;&amp; a, <span class="keyword">const</span> vector&lt;<span class="keyword">int</span>&gt;&amp; b, <span class="keyword">int</span> k) {
+    <span class="keyword">if</span> (k &lt; <span class="number">0</span>) <span class="keyword">throw</span> invalid_argument(<span class="string">&quot;negative k&quot;</span>);
+    <span class="keyword">if</span> (k == <span class="number">0</span> || a.empty() || b.empty()) <span class="keyword">return</span> {};
+    <span class="keyword">using</span> Entry = tuple&lt;<span class="keyword">long</span> <span class="keyword">long</span>, size_t, size_t&gt;;
+    priority_queue&lt;Entry, vector&lt;Entry&gt;, greater&lt;Entry&gt;&gt; pending;
+    size_t initial = min((size_t)k, a.size());
+    <span class="keyword">for</span> (size_t i = <span class="number">0</span>; i &lt; initial; ++i) pending.emplace((<span class="keyword">long</span> <span class="keyword">long</span>)a[i] + b[<span class="number">0</span>], i, <span class="number">0</span>);
+    vector&lt;pair&lt;<span class="keyword">int</span>, <span class="keyword">int</span>&gt;&gt; result;
+    <span class="keyword">while</span> (!pending.empty() &amp;&amp; result.size() &lt; (size_t)k) {
+        <span class="keyword">auto</span> [sum, i, j] = pending.top(); pending.pop();
+        result.push_back({a[i], b[j]});
+        <span class="keyword">if</span> (j + <span class="number">1</span> &lt; b.size()) pending.emplace((<span class="keyword">long</span> <span class="keyword">long</span>)a[i] + b[j + <span class="number">1</span>], i, j + <span class="number">1</span>);
+    }
+    <span class="keyword">return</span> result;
+}
+
+optional&lt;pair&lt;<span class="keyword">int</span>, <span class="keyword">int</span>&gt;&gt; smallestCoveringRange(<span class="keyword">const</span> vector&lt;vector&lt;<span class="keyword">int</span>&gt;&gt;&amp; lists) {
+    <span class="keyword">if</span> (lists.empty()) <span class="keyword">return</span> nullopt;
+    <span class="keyword">using</span> Entry = tuple&lt;<span class="keyword">int</span>, size_t, size_t&gt;;
+    priority_queue&lt;Entry, vector&lt;Entry&gt;, greater&lt;Entry&gt;&gt; pending;
+    <span class="keyword">int</span> currentMax = INT_MIN;
+    <span class="keyword">for</span> (size_t row = <span class="number">0</span>; row &lt; lists.size(); ++row) {
+        <span class="keyword">if</span> (lists[row].empty()) <span class="keyword">return</span> nullopt;
+        pending.emplace(lists[row][<span class="number">0</span>], row, <span class="number">0</span>);
+        currentMax = max(currentMax, lists[row][<span class="number">0</span>]);
+    }
+    <span class="keyword">int</span> bestLeft = get&lt;<span class="number">0</span>&gt;(pending.top()), bestRight = currentMax;
+    <span class="keyword">while</span> (<span class="keyword">true</span>) {
+        <span class="keyword">auto</span> [currentMin, row, index] = pending.top(); pending.pop();
+        <span class="keyword">long</span> <span class="keyword">long</span> width = (<span class="keyword">long</span> <span class="keyword">long</span>)currentMax - currentMin;
+        <span class="keyword">long</span> <span class="keyword">long</span> bestWidth = (<span class="keyword">long</span> <span class="keyword">long</span>)bestRight - bestLeft;
+        <span class="keyword">if</span> (width &lt; bestWidth || (width == bestWidth &amp;&amp; currentMin &lt; bestLeft)) {
+            bestLeft = currentMin; bestRight = currentMax;
+        }
+        <span class="keyword">if</span> (index + <span class="number">1</span> == lists[row].size()) break;
+        <span class="keyword">int</span> next = lists[row][index + <span class="number">1</span>];
+        currentMax = max(currentMax, next);
+        pending.emplace(next, row, index + <span class="number">1</span>);
+    }
+    <span class="keyword">return</span> pair&lt;<span class="keyword">int</span>, <span class="keyword">int</span>&gt;{bestLeft, bestRight};
+}
+
+#include &lt;set&gt;
+#include &lt;iterator&gt;
+
+<span class="keyword">class</span> RemovableMedian {
+    multiset&lt;<span class="keyword">int</span>&gt; lo, hi;
+    <span class="keyword">void</span> rebalance() {
+        <span class="keyword">while</span> (lo.size() &gt; hi.size() + <span class="number">1</span>) {
+            <span class="keyword">auto</span> it = prev(lo.end());
+            hi.insert(*it); lo.erase(it);
+        }
+        <span class="keyword">while</span> (lo.size() &lt; hi.size()) {
+            <span class="keyword">auto</span> it = hi.begin();
+            lo.insert(*it); hi.erase(it);
+        }
+    }
+<span class="keyword">public</span>:
+    <span class="keyword">void</span> add(<span class="keyword">int</span> value) {
+        <span class="keyword">if</span> (lo.empty() || value &lt;= *prev(lo.end())) lo.insert(value);
+        <span class="keyword">else</span> hi.insert(value);
+        rebalance();
+    }
+    <span class="keyword">void</span> remove(<span class="keyword">int</span> value) {
+        <span class="keyword">auto</span> it = lo.find(value);
+        <span class="keyword">if</span> (it != lo.end()) lo.erase(it);
+        <span class="keyword">else</span> {
+            <span class="keyword">auto</span> other = hi.find(value);
+            <span class="keyword">if</span> (other == hi.end()) <span class="keyword">throw</span> invalid_argument(<span class="string">&quot;value not present&quot;</span>);
+            hi.erase(other);
+        }
+        rebalance();
+    }
+    <span class="keyword">double</span> median() <span class="keyword">const</span> {
+        <span class="keyword">if</span> (lo.empty()) <span class="keyword">throw</span> out_of_range(<span class="string">&quot;no data&quot;</span>);
+        <span class="keyword">if</span> (lo.size() != hi.size()) <span class="keyword">return</span> *prev(lo.end());
+        <span class="keyword">return</span> ((<span class="keyword">long</span> <span class="keyword">long</span>)*prev(lo.end()) + *hi.begin()) / <span class="number">2</span>.<span class="number">0</span>;
+    }
+};
+vector&lt;<span class="keyword">double</span>&gt; slidingMedians(<span class="keyword">const</span> vector&lt;<span class="keyword">int</span>&gt;&amp; a, <span class="keyword">int</span> k) {
+    <span class="keyword">if</span> (k &lt;= <span class="number">0</span> || (size_t)k &gt; a.size()) <span class="keyword">return</span> {};
+    RemovableMedian state;
+    vector&lt;<span class="keyword">double</span>&gt; answer;
+    <span class="keyword">for</span> (size_t i = <span class="number">0</span>; i &lt; a.size(); ++i) {
+        <span class="keyword">if</span> (i &gt;= (size_t)k) state.remove(a[i - k]);
+        state.add(a[i]);
+        <span class="keyword">if</span> (i + <span class="number">1</span> &gt;= (size_t)k) answer.push_back(state.median());
+    }
+    <span class="keyword">return</span> answer;
+}
+
+<span class="keyword">int</span> minimumMeetingRooms(vector&lt;pair&lt;<span class="keyword">int</span>, <span class="keyword">int</span>&gt;&gt; meetings) {
+    <span class="keyword">for</span> (<span class="keyword">auto</span> [start, end] : meetings)
+        <span class="keyword">if</span> (start &gt;= end) <span class="keyword">throw</span> invalid_argument(<span class="string">&quot;require start &lt; end&quot;</span>);
+    sort(meetings.begin(), meetings.end());
+    priority_queue&lt;<span class="keyword">int</span>, vector&lt;<span class="keyword">int</span>&gt;, greater&lt;<span class="keyword">int</span>&gt;&gt; occupied;
+    <span class="keyword">int</span> best = <span class="number">0</span>;
+    <span class="keyword">for</span> (<span class="keyword">auto</span> [start, end] : meetings) {
+        <span class="keyword">while</span> (!occupied.empty() &amp;&amp; occupied.top() &lt;= start) occupied.pop();
+        occupied.push(end);
+        best = max(best, (<span class="keyword">int</span>)occupied.size());
+    }
+    <span class="keyword">return</span> best;
+}
+
+<span class="keyword">struct</span> WeightedEdge { <span class="keyword">int</span> to; <span class="keyword">int</span> weight; };
+vector&lt;optional&lt;<span class="keyword">long</span> <span class="keyword">long</span>&gt;&gt; shortestDistances(
+    <span class="keyword">const</span> vector&lt;vector&lt;WeightedEdge&gt;&gt;&amp; graph, <span class="keyword">int</span> source) {
+    <span class="keyword">if</span> (graph.size() &gt; <span class="number">100000</span>) <span class="keyword">throw</span> invalid_argument(<span class="string">&quot;too many vertices&quot;</span>);
+    <span class="keyword">int</span> n = (<span class="keyword">int</span>)graph.size();
+    <span class="keyword">if</span> (source &lt; <span class="number">0</span> || source &gt;= n) <span class="keyword">throw</span> out_of_range(<span class="string">&quot;invalid source&quot;</span>);
+    <span class="keyword">for</span> (<span class="keyword">const</span> <span class="keyword">auto</span>&amp; edges : graph)
+        <span class="keyword">for</span> (<span class="keyword">const</span> <span class="keyword">auto</span>&amp; edge : edges)
+            <span class="keyword">if</span> (edge.to &lt; <span class="number">0</span> || edge.to &gt;= n || edge.weight &lt; <span class="number">0</span> ||
+                edge.weight &gt; <span class="number">1000000000</span>)
+                <span class="keyword">throw</span> invalid_argument(<span class="string">&quot;invalid edge&quot;</span>);
+    <span class="keyword">const</span> <span class="keyword">long</span> <span class="keyword">long</span> INF = LLONG_MAX / <span class="number">4</span>;
+    vector&lt;<span class="keyword">long</span> <span class="keyword">long</span>&gt; distance(n, INF);
+    <span class="keyword">using</span> Entry = pair&lt;<span class="keyword">long</span> <span class="keyword">long</span>, <span class="keyword">int</span>&gt;;
+    priority_queue&lt;Entry, vector&lt;Entry&gt;, greater&lt;Entry&gt;&gt; pending;
+    distance[source] = <span class="number">0</span>; pending.push({<span class="number">0</span>, source});
+    <span class="keyword">while</span> (!pending.empty()) {
+        <span class="keyword">auto</span> [value, u] = pending.top(); pending.pop();
+        <span class="keyword">if</span> (value != distance[u]) continue;
+        <span class="keyword">for</span> (<span class="keyword">const</span> <span class="keyword">auto</span>&amp; edge : graph[u]) {
+            <span class="keyword">long</span> <span class="keyword">long</span> candidate = value + edge.weight;
+            <span class="keyword">if</span> (candidate &lt; distance[edge.to]) {
+                distance[edge.to] = candidate;
+                pending.push({candidate, edge.to});
+            }
+        }
+    }
+    vector&lt;optional&lt;<span class="keyword">long</span> <span class="keyword">long</span>&gt;&gt; result(n);
+    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; n; ++i)
+        <span class="keyword">if</span> (distance[i] != INF) result[i] = distance[i];
+    <span class="keyword">return</span> result;
+}
+
+<span class="keyword">void</span> require(<span class="keyword">bool</span> ok, <span class="keyword">const</span> string&amp; message) {
+    <span class="keyword">if</span> (!ok) <span class="keyword">throw</span> runtime_error(message);
+}
+optional&lt;pair&lt;<span class="keyword">int</span>,<span class="keyword">int</span>&gt;&gt; bruteRange(<span class="keyword">const</span> vector&lt;vector&lt;<span class="keyword">int</span>&gt;&gt;&amp; rows) {
+    <span class="keyword">if</span> (rows.empty()) <span class="keyword">return</span> nullopt;
+    vector&lt;<span class="keyword">int</span>&gt; values;
+    <span class="keyword">for</span> (<span class="keyword">const</span> <span class="keyword">auto</span>&amp; row : rows) {
+        <span class="keyword">if</span> (row.empty()) <span class="keyword">return</span> nullopt;
+        values.insert(values.end(), row.begin(), row.end());
+    }
+    sort(values.begin(), values.end());
+    optional&lt;pair&lt;<span class="keyword">int</span>,<span class="keyword">int</span>&gt;&gt; best;
+    <span class="keyword">for</span> (<span class="keyword">int</span> left : values) <span class="keyword">for</span> (<span class="keyword">int</span> right : values) {
+        <span class="keyword">if</span> (left &gt; right) continue;
+        <span class="keyword">bool</span> covers = <span class="keyword">true</span>;
+        <span class="keyword">for</span> (<span class="keyword">const</span> <span class="keyword">auto</span>&amp; row : rows) {
+            <span class="keyword">bool</span> found = <span class="keyword">false</span>;
+            <span class="keyword">for</span> (<span class="keyword">int</span> value : row) <span class="keyword">if</span> (left &lt;= value &amp;&amp; value &lt;= right) found = <span class="keyword">true</span>;
+            <span class="keyword">if</span> (!found) covers = <span class="keyword">false</span>;
+        }
+        <span class="keyword">if</span> (!covers) continue;
+        <span class="keyword">if</span> (!best || (<span class="keyword">long</span> <span class="keyword">long</span>)right - left &lt; (<span class="keyword">long</span> <span class="keyword">long</span>)best-&gt;second - best-&gt;first ||
+            ((<span class="keyword">long</span> <span class="keyword">long</span>)right - left == (<span class="keyword">long</span> <span class="keyword">long</span>)best-&gt;second - best-&gt;first &amp;&amp;
+             left &lt; best-&gt;first)) best = pair&lt;<span class="keyword">int</span>,<span class="keyword">int</span>&gt;{left, right};
+    }
+    <span class="keyword">return</span> best;
+}
+vector&lt;<span class="keyword">double</span>&gt; bruteMedians(<span class="keyword">const</span> vector&lt;<span class="keyword">int</span>&gt;&amp; a, <span class="keyword">int</span> k) {
+    vector&lt;<span class="keyword">double</span>&gt; result;
+    <span class="keyword">if</span> (k &lt;= <span class="number">0</span> || (size_t)k &gt; a.size()) <span class="keyword">return</span> result;
+    <span class="keyword">for</span> (size_t i = <span class="number">0</span>; i + k &lt;= a.size(); ++i) {
+        vector&lt;<span class="keyword">int</span>&gt; window(a.begin() + i, a.begin() + i + k);
+        sort(window.begin(), window.end());
+        result.push_back(k % <span class="number">2</span> ? window[k / <span class="number">2</span>] :
+            ((<span class="keyword">long</span> <span class="keyword">long</span>)window[k / <span class="number">2</span> - <span class="number">1</span>] + window[k / <span class="number">2</span>]) / <span class="number">2</span>.<span class="number">0</span>);
+    }
+    <span class="keyword">return</span> result;
+}
+<span class="keyword">int</span> main() {
+    IntMinHeap heap({<span class="number">3</span>,<span class="number">1</span>,<span class="number">5</span>,<span class="number">2</span>,<span class="number">2</span>});
+    vector&lt;<span class="keyword">int</span>&gt; popped;
+    <span class="keyword">while</span> (!heap.empty()) popped.push_back(heap.pop());
+    require(popped == vector&lt;<span class="keyword">int</span>&gt;({<span class="number">1</span>,<span class="number">2</span>,<span class="number">2</span>,<span class="number">3</span>,<span class="number">5</span>}), <span class="string">&quot;bottom-up heap&quot;</span>);
+    <span class="keyword">bool</span> rejected = <span class="keyword">false</span>;
+    try { heap.pop(); } catch (<span class="keyword">const</span> out_of_range&amp;) { rejected = <span class="keyword">true</span>; }
+    require(rejected, <span class="string">&quot;empty heap&quot;</span>);
+    require(orderedTasks({{<span class="number">2</span>,<span class="number">0</span>,<span class="string">&quot;a&quot;</span>},{<span class="number">1</span>,<span class="number">1</span>,<span class="string">&quot;b&quot;</span>},{<span class="number">1</span>,<span class="number">2</span>,<span class="string">&quot;c&quot;</span>}}) ==
+            vector&lt;string&gt;({<span class="string">&quot;b&quot;</span>,<span class="string">&quot;c&quot;</span>,<span class="string">&quot;a&quot;</span>}), <span class="string">&quot;comparator and FIFO&quot;</span>);
+    require(slidingMedians({INT_MIN,INT_MAX},<span class="number">2</span>) == vector&lt;<span class="keyword">double</span>&gt;{-<span class="number">0</span>.<span class="number">5</span>}, <span class="string">&quot;median overflow&quot;</span>);
+    require(minimumMeetingRooms({{<span class="number">0</span>,<span class="number">10</span>},{<span class="number">10</span>,<span class="number">20</span>}}) == <span class="number">1</span>, <span class="string">&quot;touching intervals&quot;</span>);
+    require(topFrequent({<span class="number">2</span>,<span class="number">2</span>,<span class="number">1</span>,<span class="number">1</span>,<span class="number">3</span>},<span class="number">2</span>) == vector&lt;<span class="keyword">int</span>&gt;({<span class="number">1</span>,<span class="number">2</span>}), <span class="string">&quot;frequency tie&quot;</span>);
+    require(smallestCoveringRange({{INT_MIN},{INT_MAX}}) ==
+            optional&lt;pair&lt;<span class="keyword">int</span>,<span class="keyword">int</span>&gt;&gt;{pair&lt;<span class="keyword">int</span>,<span class="keyword">int</span>&gt;{INT_MIN,INT_MAX}}, <span class="string">&quot;range width overflow&quot;</span>);
+    mt19937 rng(<span class="number">20260921</span>);
+    uniform_int_distribution&lt;<span class="keyword">int</span>&gt; value(-<span class="number">5</span>,<span class="number">5</span>), length(<span class="number">0</span>,<span class="number">12</span>);
+    priority_queue&lt;<span class="keyword">int</span>, vector&lt;<span class="keyword">int</span>&gt;, greater&lt;<span class="keyword">int</span>&gt;&gt; referenceHeap;
+    <span class="keyword">for</span> (<span class="keyword">int</span> step = <span class="number">0</span>; step &lt; <span class="number">1000</span>; ++step) {
+        <span class="keyword">if</span> (referenceHeap.empty() || rng() % <span class="number">2</span> == <span class="number">0</span>) {
+            <span class="keyword">int</span> x = value(rng); heap.push(x); referenceHeap.push(x);
+        } <span class="keyword">else</span> {
+            require(heap.pop() == referenceHeap.top(), <span class="string">&quot;heap pop&quot;</span>); referenceHeap.pop();
+        }
+        require(heap.size() == referenceHeap.size(), <span class="string">&quot;heap size&quot;</span>);
+        <span class="keyword">if</span> (!heap.empty()) require(heap.top() == referenceHeap.top(), <span class="string">&quot;heap top&quot;</span>);
+    }
+    VersionedMinQueue versioned;
+    unordered_map&lt;<span class="keyword">int</span>,<span class="keyword">int</span>&gt; live;
+    <span class="keyword">for</span> (<span class="keyword">int</span> step = <span class="number">0</span>; step &lt; <span class="number">1000</span>; ++step) {
+        <span class="keyword">int</span> operation = rng() % <span class="number">3</span>, id = rng() % <span class="number">8</span>;
+        <span class="keyword">if</span> (operation == <span class="number">0</span>) {
+            <span class="keyword">int</span> priority = value(rng); versioned.put(id,priority); live[id]=priority;
+        } <span class="keyword">else</span> <span class="keyword">if</span> (operation == <span class="number">1</span>) {
+            versioned.cancel(id); live.erase(id);
+        } <span class="keyword">else</span> {
+            optional&lt;pair&lt;<span class="keyword">int</span>,<span class="keyword">int</span>&gt;&gt; expected;
+            <span class="keyword">for</span> (<span class="keyword">auto</span> [key, priority] : live)
+                <span class="keyword">if</span> (!expected || tie(priority,key) &lt; tie(expected-&gt;second,expected-&gt;first))
+                    expected = pair&lt;<span class="keyword">int</span>,<span class="keyword">int</span>&gt;{key,priority};
+            require(versioned.pop() == expected, <span class="string">&quot;versioned snapshots&quot;</span>);
+            <span class="keyword">if</span> (expected) live.erase(expected-&gt;first);
+        }
+    }
+    <span class="keyword">for</span> (<span class="keyword">int</span> run = <span class="number">0</span>; run &lt; <span class="number">200</span>; ++run) {
+        vector&lt;<span class="keyword">int</span>&gt; a(length(rng));
+        <span class="keyword">for</span> (<span class="keyword">int</span>&amp; x : a) x = value(rng);
+        <span class="keyword">int</span> rank = <span class="number">1</span> + rng() % <span class="number">5</span>;
+        KthLargestStream stream(rank);
+        vector&lt;<span class="keyword">int</span>&gt; prefix;
+        <span class="keyword">for</span> (<span class="keyword">int</span> x : a) {
+            prefix.push_back(x);
+            sort(prefix.begin(), prefix.end(), greater&lt;<span class="keyword">int</span>&gt;());
+            <span class="keyword">auto</span> actual = stream.add(x);
+            <span class="keyword">if</span> (prefix.size() &lt; (size_t)rank) require(!actual, <span class="string">&quot;insufficient stream&quot;</span>);
+            <span class="keyword">else</span> require(actual == optional&lt;<span class="keyword">int</span>&gt;{prefix[rank-<span class="number">1</span>]}, <span class="string">&quot;stream rank&quot;</span>);
+        }
+        unordered_map&lt;<span class="keyword">int</span>,<span class="keyword">int</span>&gt; frequency;
+        <span class="keyword">for</span> (<span class="keyword">int</span> x : a) ++frequency[x];
+        vector&lt;<span class="keyword">int</span>&gt; ordered;
+        <span class="keyword">for</span> (<span class="keyword">auto</span> [x,count] : frequency) ordered.push_back(x);
+        sort(ordered.begin(),ordered.end(),[&amp;](<span class="keyword">int</span> x,<span class="keyword">int</span> y) {
+            <span class="keyword">if</span> (frequency[x] != frequency[y]) <span class="keyword">return</span> frequency[x] &gt; frequency[y];
+            <span class="keyword">return</span> x &lt; y;
+        });
+        <span class="keyword">int</span> k = rng() % (ordered.size()+<span class="number">1</span>);
+        <span class="keyword">auto</span> expectedFrequency = ordered;
+        expectedFrequency.resize(k);
+        require(topFrequent(a,k) == expectedFrequency, <span class="string">&quot;top frequency&quot;</span>);
+        <span class="keyword">int</span> width = a.empty() ? <span class="number">1</span> : <span class="number">1</span> + rng() % a.size();
+        require(slidingMedians(a,width) == bruteMedians(a,width), <span class="string">&quot;window median&quot;</span>);
+        vector&lt;pair&lt;<span class="keyword">int</span>,<span class="keyword">int</span>&gt;&gt; points;
+        <span class="keyword">for</span> (<span class="keyword">int</span> x : a) points.push_back({x,value(rng)});
+        vector&lt;size_t&gt; indices(points.size());
+        iota(indices.begin(),indices.end(),<span class="number">0</span>);
+        <span class="keyword">auto</span> distance = [&amp;](size_t i) {
+            <span class="keyword">return</span> <span class="number">1LL</span>*points[i].first*points[i].first +
+                   <span class="number">1LL</span>*points[i].second*points[i].second;
+        };
+        sort(indices.begin(),indices.end(),[&amp;](size_t i,size_t j) {
+            <span class="keyword">return</span> pair&lt;<span class="keyword">long</span> <span class="keyword">long</span>,size_t&gt;{distance(i),i} &lt;
+                   pair&lt;<span class="keyword">long</span> <span class="keyword">long</span>,size_t&gt;{distance(j),j};
+        });
+        <span class="keyword">int</span> pointCount = rng() % (points.size()+<span class="number">1</span>);
+        vector&lt;pair&lt;<span class="keyword">int</span>,<span class="keyword">int</span>&gt;&gt; expectedPoints;
+        <span class="keyword">for</span> (<span class="keyword">int</span> i=<span class="number">0</span>;i&lt;pointCount;++i) expectedPoints.push_back(points[indices[i]]);
+        require(closestPoints(points,pointCount) == expectedPoints, <span class="string">&quot;closest points&quot;</span>);
+        vector&lt;vector&lt;<span class="keyword">int</span>&gt;&gt; rows(<span class="number">3</span>);
+        <span class="keyword">for</span> (<span class="keyword">auto</span>&amp; row : rows) {
+            row.resize(rng()%<span class="number">5</span>);
+            <span class="keyword">for</span> (<span class="keyword">int</span>&amp; x : row) x=value(rng);
+            sort(row.begin(),row.end());
+        }
+        require(smallestCoveringRange(rows) == bruteRange(rows), <span class="string">&quot;covering range&quot;</span>);
+        vector&lt;tuple&lt;<span class="keyword">long</span> <span class="keyword">long</span>,size_t,size_t&gt;&gt; pairs;
+        <span class="keyword">for</span> (size_t i=<span class="number">0</span>;i&lt;rows[<span class="number">0</span>].size();++i)
+            <span class="keyword">for</span> (size_t j=<span class="number">0</span>;j&lt;rows[<span class="number">1</span>].size();++j)
+                pairs.emplace_back((<span class="keyword">long</span> <span class="keyword">long</span>)rows[<span class="number">0</span>][i]+rows[<span class="number">1</span>][j],i,j);
+        sort(pairs.begin(),pairs.end());
+        <span class="keyword">int</span> requested = rng()%<span class="number">10</span>;
+        vector&lt;pair&lt;<span class="keyword">int</span>,<span class="keyword">int</span>&gt;&gt; expectedPairs;
+        <span class="keyword">for</span> (size_t p=<span class="number">0</span>;p&lt;pairs.size() &amp;&amp; p&lt;(size_t)requested;++p) {
+            <span class="keyword">auto</span> [sum,i,j]=pairs[p];
+            expectedPairs.push_back({rows[<span class="number">0</span>][i],rows[<span class="number">1</span>][j]});
+        }
+        require(smallestPairs(rows[<span class="number">0</span>],rows[<span class="number">1</span>],requested) == expectedPairs, <span class="string">&quot;pair frontier&quot;</span>);
+        deque&lt;ListNode&gt; storage;
+        vector&lt;ListNode*&gt; heads;
+        vector&lt;<span class="keyword">int</span>&gt; flat;
+        <span class="keyword">for</span> (<span class="keyword">const</span> <span class="keyword">auto</span>&amp; row : rows) {
+            ListNode* head=<span class="keyword">nullptr</span>; ListNode* tail=<span class="keyword">nullptr</span>;
+            <span class="keyword">for</span> (<span class="keyword">int</span> x : row) {
+                storage.emplace_back(x);
+                ListNode* fresh=&amp;storage.back();
+                <span class="keyword">if</span> (tail) tail-&gt;next=fresh; <span class="keyword">else</span> head=fresh;
+                tail=fresh; flat.push_back(x);
+            }
+            heads.push_back(head);
+        }
+        ListNode* merged=mergeSortedLists(heads);
+        unordered_set&lt;ListNode*&gt; seen;
+        vector&lt;<span class="keyword">int</span>&gt; actualValues;
+        <span class="keyword">for</span> (ListNode* p=merged;p;p=p-&gt;next) {
+            require(seen.insert(p).second,<span class="string">&quot;list cycle or duplicate node&quot;</span>);
+            actualValues.push_back(p-&gt;val);
+        }
+        sort(flat.begin(),flat.end());
+        require(actualValues==flat &amp;&amp; seen.size()==storage.size(),<span class="string">&quot;list merge&quot;</span>);
+        vector&lt;pair&lt;<span class="keyword">int</span>,<span class="keyword">int</span>&gt;&gt; meetings;
+        <span class="keyword">for</span> (<span class="keyword">int</span> x : a) meetings.push_back({x,x+<span class="number">1</span>+(<span class="keyword">int</span>)(rng()%<span class="number">5</span>)});
+        <span class="keyword">int</span> needed=<span class="number">0</span>;
+        <span class="keyword">for</span> (<span class="keyword">auto</span> [start,end] : meetings) {
+            <span class="keyword">int</span> active=<span class="number">0</span>;
+            <span class="keyword">for</span> (<span class="keyword">auto</span> [s,e] : meetings) active += s&lt;=start &amp;&amp; start&lt;e;
+            needed=max(needed,active);
+        }
+        require(minimumMeetingRooms(meetings)==needed,<span class="string">&quot;rooms vs overlap&quot;</span>);
+        <span class="keyword">int</span> n=<span class="number">1</span>+rng()%<span class="number">6</span>;
+        vector&lt;vector&lt;WeightedEdge&gt;&gt; graph(n);
+        <span class="keyword">const</span> <span class="keyword">long</span> <span class="keyword">long</span> INF=<span class="number">1000000000000000LL</span>;
+        vector&lt;vector&lt;<span class="keyword">long</span> <span class="keyword">long</span>&gt;&gt; distanceMatrix(n,vector&lt;<span class="keyword">long</span> <span class="keyword">long</span>&gt;(n,INF));
+        <span class="keyword">for</span> (<span class="keyword">int</span> i=<span class="number">0</span>;i&lt;n;++i) distanceMatrix[i][i]=<span class="number">0</span>;
+        <span class="keyword">for</span> (<span class="keyword">int</span> i=<span class="number">0</span>;i&lt;n;++i) <span class="keyword">for</span> (<span class="keyword">int</span> j=<span class="number">0</span>;j&lt;n;++j) <span class="keyword">if</span> (rng()%<span class="number">3</span>==<span class="number">0</span>) {
+            <span class="keyword">int</span> weight=rng()%<span class="number">10</span>;
+            graph[i].push_back({j,weight});
+            distanceMatrix[i][j]=min(distanceMatrix[i][j],(<span class="keyword">long</span> <span class="keyword">long</span>)weight);
+        }
+        <span class="keyword">for</span> (<span class="keyword">int</span> via=<span class="number">0</span>;via&lt;n;++via) <span class="keyword">for</span> (<span class="keyword">int</span> i=<span class="number">0</span>;i&lt;n;++i) <span class="keyword">for</span> (<span class="keyword">int</span> j=<span class="number">0</span>;j&lt;n;++j)
+            distanceMatrix[i][j]=min(distanceMatrix[i][j],
+                                    distanceMatrix[i][via]+distanceMatrix[via][j]);
+        <span class="keyword">auto</span> actual=shortestDistances(graph,<span class="number">0</span>);
+        <span class="keyword">for</span> (<span class="keyword">int</span> i=<span class="number">0</span>;i&lt;n;++i) {
+            <span class="keyword">if</span> (distanceMatrix[<span class="number">0</span>][i]==INF) require(!actual[i],<span class="string">&quot;unreachable&quot;</span>);
+            <span class="keyword">else</span> require(actual[i]==optional&lt;<span class="keyword">long</span> <span class="keyword">long</span>&gt;{distanceMatrix[<span class="number">0</span>][i]},<span class="string">&quot;Dijkstra vs Floyd&quot;</span>);
+        }
+    }
+    cout &lt;&lt; <span class="string">&quot;All chapter 8 checks passed&quot;</span> &lt;&lt; endl;
+}</code></pre></div></div><div class="deep-block" id="review-4"><h3>章末自测与完整答案</h3><dl class="answer-list"><div><dt>1. [5,5,4]的第2大是多少，为什么？</dt><dd><p>是5，通常按元素出现次数计秩。若先去重会变成4，那回答的是第2个不同值，属于另一道题。</p></dd></div><div><dt>2. 求最小的3个，堆顶应该暴露谁？</dt><dd><p>应暴露当前入选的3个中最大的一个，所以用大顶堆。新的更小值可替换这个最差入选者，保持前缀最小3个的不变量。</p></dd></div><div><dt>3. comp(a,b)=true是否表示a先出队？</dt><dd><p>不是，priority_queue中表示a的优先级低于b。默认less让最大值在堆顶，greater让最小值在堆顶；相等时应返回false。</p></dd></div><div><dt>4. 两堆大小相同，但lo里是100、hi里是1，满足中位数结构吗？</dt><dd><p>不满足，跨堆次序已经反了。这个两元素特例平均值碰巧仍正确，不能说明结构正确；继续插入其他值就可能出错。需要lo全体&lt;=hi全体与数量关系同时成立。</p></dd></div><div><dt>5. 延迟删除后堆的size能用作有效窗口大小吗？</dt><dd><p>不能，size包含尚未弹出的旧记录。要单独维护有效大小并清理堆顶；物理堆还可能随操作累积，必须独立分析内存和重建策略。</p></dd></div><div><dt>6. K路归并为什么不是把每一路第一个输出完就顺序读下一路？</dt><dd><p>某一路后继可能大于其他路当前头部。每输出一次必须重新在所有路头部中选最小，才能保证全局有序，而不是先完整输出某一路。</p></dd></div><div><dt>7. 会议[0,10)和[10,20)需要几个房间？</dt><dd><p>一个。按半开区间，前者在10已结束，不与后者重叠，所以释放条件为end&lt;=start。若业务要求周转时间，条件应另行调整。</p></dd></div><div><dt>8. 最短路堆中(10,a)与(2,a)同时存在，应该怎么办？</dt><dd><p>弹出(2,a)时若dist[a]=2则有效；之后(10,a)与当前dist不符，应直接跳过。不能把旧快照扩展成有效工作，也不能在a首次入队为10时就永久定值。</p></dd></div></dl></div></section><nav class="chapter-pager" aria-label="相邻章节"><a href="../07-树与二叉搜索树/index.html"><small>上一章</small>← 树与二叉搜索树</a><a href="../09-递归回溯与分治/index.html"><small>下一章</small>递归、回溯与分治 →</a></nav><footer>秋招算法学习讲义 · C++17<br>例题编号供检索；难度与覆盖范围按学习顺序组织。</footer></main><aside class="toc" aria-label="本页目录"><p class="rail-label">本章小节</p><a href="#s1"><span>01</span>堆的数组表示与向下调整</a><a href="#s2"><span>02</span>固定大小堆与 Top K</a><a href="#s3"><span>03</span>多路归并：只保存每一路的前沿</a><a href="#s4"><span>04</span>双堆维护中位数</a><a href="#chapter-review"><span>练</span>综合例题与自测答案</a></aside></div><div class="toast" role="status" aria-live="polite"></div></body></html>

@@ -1,0 +1,901 @@
+{
+  "intro": [
+    {
+      "type": "text",
+      "title": "本章主线：维护下一次应该处理的候选",
+      "paragraphs": [
+        "堆不是缩小版排序数组，而是一种动态维护极值的结构。解题时先问：谁有资格进入候选集？堆顶代表当前最优、最弱入选者，还是最早结束的任务？弹出一个元素后，应该补入哪个后继？",
+        "本章保留四个主小节，并补入手写堆、比较器、过期状态、Top K、多路归并、区间覆盖、中位数、调度和最短路。所有下标与规模按各例契约处理，重复值是否去重、相等优先级如何打破平局，必须先明确。"
+      ]
+    },
+    {
+      "type": "table",
+      "title": "常见题型的堆顶分别代表什么",
+      "columns": [
+        "题型",
+        "候选集合",
+        "堆顶含义",
+        "堆方向"
+      ],
+      "rows": [
+        [
+          "最大的K个",
+          "已读前缀中的K个最强者",
+          "当前答案中最弱者",
+          "小顶堆"
+        ],
+        [
+          "最小的K个",
+          "已读前缀中的K个最小者",
+          "当前答案中最大者",
+          "大顶堆"
+        ],
+        [
+          "合并有序序列",
+          "各路尚未输出的头部",
+          "下一项全局最小值",
+          "小顶堆"
+        ],
+        [
+          "数据流中位数",
+          "较小一半 / 较大一半",
+          "两半的分界值",
+          "大顶堆+小顶堆"
+        ],
+        [
+          "会议室分配",
+          "当前仍占用的房间结束时间",
+          "最早可释放的房间",
+          "小顶堆"
+        ],
+        [
+          "Dijkstra",
+          "已发现但可能过期的距离候选",
+          "最小暂定距离",
+          "小顶堆"
+        ]
+      ]
+    },
+    {
+      "type": "text",
+      "title": "学习顺序与验证习惯",
+      "paragraphs": [
+        "先独立写上浮、下沉与建堆，再练第K大与多路归并；之后学习双堆不变量，最后处理删除、过期状态、比较器和综合题。每题都应写出堆内元素的语义，而不是只说“维护一个优先队列”。",
+        "查询空堆、K越界、重复值、相等优先级、极值相加、旧状态失效是本章的主要边界。C++示例统一为C++17，标准priority_queue不支持直接删除内部任意元素、更新优先级或遍历出有序序列。"
+      ]
+    }
+  ],
+  "sections": {
+    "1": {
+      "before": [
+        {
+          "type": "text",
+          "title": "1.1 完全二叉树形状与堆序性质是两件事",
+          "paragraphs": [
+            "完全二叉树要求除最后一层外填满，最后一层从左到右紧凑排列，因此无需指针就能用数组表达结构。堆序只约束父子：小顶堆父<=子、大顶堆父>=子。兄弟之间以及不同子树之间并不排序。",
+            "下标i的父为(i-1)/2，但只在i>0时计算；左孩子2i+1、右孩子2i+2，访问前必须确认存在。大顶堆根一定最大，因为沿任意根到节点路径都不增；第二大却不一定是数组下标1。"
+          ]
+        },
+        {
+          "type": "table",
+          "title": "1.2 上浮、下沉与建堆的职责",
+          "columns": [
+            "操作",
+            "唯一可能破坏的位置",
+            "修复方向",
+            "成本"
+          ],
+          "rows": [
+            [
+              "追加新元素",
+              "新叶子与父节点",
+              "不断向父节点上浮",
+              "O(log(n+1))比较/交换"
+            ],
+            [
+              "删除堆顶",
+              "末尾替换到根后的父子关系",
+              "与更优孩子交换下沉",
+              "O(log(n+1))"
+            ],
+            [
+              "改变某个已知下标的键",
+              "该节点与父/孩子",
+              "按改变方向上浮或下沉",
+              "O(logn)，但先要定位下标"
+            ],
+            [
+              "自底向上建堆",
+              "每个子树根",
+              "从最后非叶节点向前下沉",
+              "O(n)"
+            ],
+            [
+              "查看堆顶",
+              "无需修改",
+              "直接读取",
+              "O(1)"
+            ]
+          ]
+        },
+        {
+          "type": "text",
+          "title": "1.3 建堆线性：按高度而不是按节点粗算",
+          "paragraphs": [
+            "叶子本来就是合法堆，最后一个非叶节点为floor(n/2)-1。逆序处理时，左右孩子的子树已经是堆，只需修复当前根。高度为h的节点至多约n/2^(h+1)个，总下沉工作量受n·Σ(h/2^(h+1))限制，级数收敛，所以总O(n)。",
+            "逐个push的总上界是O(nlogn)，与线性建堆并不矛盾，因为两者不是同一过程。底层vector追加可能扩容，所以“插入O(logn)”通常指堆调整成本；若计入单次分配，某次push可能O(n)，一串操作中的追加成本是均摊的。"
+          ]
+        },
+        {
+          "type": "code",
+          "title": "1.4 手写小顶堆：完整接口与安全下标",
+          "file": "detail-binary-heap.cpp",
+          "code": "class IntMinHeap {\n    vector<int> data;\n    void down(size_t root) {\n        size_t n = data.size();\n        while (root < n / 2) {\n            size_t child = root * 2 + 1;\n            if (child + 1 < n && data[child + 1] < data[child]) ++child;\n            if (data[root] <= data[child]) break;\n            swap(data[root], data[child]);\n            root = child;\n        }\n    }\npublic:\n    explicit IntMinHeap(vector<int> values = {}) : data(move(values)) {\n        for (size_t i = data.size() / 2; i > 0; --i) down(i - 1);\n    }\n    bool empty() const { return data.empty(); }\n    size_t size() const { return data.size(); }\n    int top() const {\n        if (empty()) throw out_of_range(\"empty heap\");\n        return data[0];\n    }\n    void push(int value) {\n        data.push_back(value);\n        size_t i = data.size() - 1;\n        while (i > 0) {\n            size_t parent = (i - 1) / 2;\n            if (data[parent] <= data[i]) break;\n            swap(data[parent], data[i]); i = parent;\n        }\n    }\n    int pop() {\n        if (empty()) throw out_of_range(\"empty heap\");\n        int answer = data[0];\n        data[0] = data.back();\n        data.pop_back();\n        if (!empty()) down(0);\n        return answer;\n    }\n};",
+          "paragraphs": [
+            "构造参数按值接收，可复制调用者数组或接收move后的数组。建堆本身O(n)；存储O(n)、调整过程O(1)辅助空间。使用i>0再算i-1，避免无符号倒序循环下溢；down先检查非叶条件，再算孩子下标。"
+          ]
+        }
+      ],
+      "after": [
+        {
+          "type": "table",
+          "title": "1.5 priority_queue比较器的方向",
+          "columns": [
+            "写法或规则",
+            "堆顶",
+            "解释"
+          ],
+          "rows": [
+            [
+              "priority_queue<int>",
+              "最大值",
+              "默认less，相对较小者排在后面"
+            ],
+            [
+              "priority_queue<int,vector<int>,greater<int>>",
+              "最小值",
+              "greater把较大者视为低优先级"
+            ],
+            [
+              "comp(a,b)==true",
+              "a的优先级低于b",
+              "不是“a应当先弹出”"
+            ],
+            [
+              "相等关键字",
+              "默认不保证插入顺序",
+              "需要稳定性就显式加入序号"
+            ],
+            [
+              "比较器用<=或>=",
+              "不合法",
+              "comp(x,x)必须为false，满足严格弱序"
+            ]
+          ]
+        },
+        {
+          "type": "code",
+          "title": "1.6 自定义优先级：优先级小者先出，同级先来先出",
+          "file": "detail-task-order.cpp",
+          "code": "struct ScheduledTask {\n    int priority;\n    uint64_t sequence;\n    string label;\n};\nstruct LaterTask {\n    bool operator()(const ScheduledTask& a, const ScheduledTask& b) const {\n        return tie(a.priority, a.sequence) > tie(b.priority, b.sequence);\n    }\n};\nvector<string> orderedTasks(const vector<ScheduledTask>& tasks) {\n    priority_queue<ScheduledTask, vector<ScheduledTask>, LaterTask> pending;\n    for (const auto& task : tasks) pending.push(task);\n    vector<string> result;\n    while (!pending.empty()) {\n        result.push_back(pending.top().label);\n        pending.pop();\n    }\n    return result;\n}",
+          "paragraphs": [
+            "调用者为每次入队分配唯一递增sequence，才实现同级FIFO；序号不得回绕。本例先比较priority再sequence，不用差值相减，避免INT_MIN与INT_MAX相减溢出。时间O(nlog(n+1))加字符串复制成本，空间O(n)加文本存储。",
+            "不要让比较器读取会在外部改变的优先级表后就期待堆自动重排。堆建立的次序已经依赖旧比较结果，应显式重建、维护带下标的堆，或采用下面的版本化旧状态淘汰。"
+          ]
+        },
+        {
+          "type": "text",
+          "title": "1.7 标准堆算法与priority_queue不是同一个接口",
+          "paragraphs": [
+            "make_heap在线性时间把数组建成默认大顶堆；push_heap要求先在尾部追加一个元素，再修复新元素；pop_heap只把堆顶交换到末尾并修复前缀，不会删除末尾，通常还要pop_back。sort_heap会把堆变成有序序列，之后不再保持原来意义的堆状态。",
+            "priority_queue封装了这些细节，top返回只读引用，pop不返回值。应先复制top再pop；如果保存top引用后弹出，引用可能失效或指向已被替换的数据。"
+          ]
+        },
+        {
+          "type": "code",
+          "title": "1.8 更新与取消任务：不可变快照+版本号",
+          "file": "detail-versioned-queue.cpp",
+          "code": "class VersionedMinQueue {\n    struct State { int priority; uint64_t version; };\n    using Entry = tuple<int, int, uint64_t>; // priority, id, version\n    priority_queue<Entry, vector<Entry>, greater<Entry>> heap;\n    unordered_map<int, State> live;\n    uint64_t nextVersion = 0;\n    void prune() {\n        while (!heap.empty()) {\n            auto [priority, id, version] = heap.top();\n            auto it = live.find(id);\n            if (it != live.end() && it->second.version == version) break;\n            heap.pop();\n        }\n    }\npublic:\n    void put(int id, int priority) {\n        if (nextVersion == UINT64_MAX) throw overflow_error(\"version exhausted\");\n        uint64_t version = ++nextVersion;\n        heap.emplace(priority, id, version);\n        live[id] = {priority, version};\n    }\n    void cancel(int id) { live.erase(id); }\n    optional<pair<int, int>> pop() {\n        prune();\n        if (heap.empty()) return nullopt;\n        auto [priority, id, version] = heap.top();\n        heap.pop(); live.erase(id);\n        return pair<int, int>{id, priority};\n    }\n};",
+          "paragraphs": [
+            "同一id更新时插入新快照，旧记录留在堆中；取消只删live表。有效性由全局唯一版本号决定，重新使用已取消id也不会误认旧记录。并列优先级按id升序出队，这与前例的FIFO规则不同。",
+            "若累计U次更新，物理堆最坏O(U)，不是当前存活任务数；某次pop可能连续清除很多旧项。整体堆操作O(Ulog(U+1))，哈希平均常数操作，空间O(U)。长时间运行可定期重建或改用支持索引删除的堆；本例不提供并发或分配失败的强事务保证。"
+          ]
+        }
+      ],
+      "answers": [
+        {
+          "question": "为什么堆数组不能直接二分查找？",
+          "answer": [
+            "它只保证父子顺序，兄弟与跨子树元素无全局次序。二分需要范围对查找谓词单调分区，堆内部不满足。找任意值一般要O(n)扫描，除非额外维护定位映射。"
+          ]
+        },
+        {
+          "question": "建堆为什么从n/2-1开始？",
+          "answer": [
+            "0下标数组中i>=n/2的节点都没有孩子，是天然合法堆。逆序从最后非叶节点开始，可保证处理一个根时它的两棵子树已经合法。空数组与单元素无需下沉。"
+          ]
+        },
+        {
+          "question": "小顶堆比较器为什么反而用greater？",
+          "answer": [
+            "priority_queue将comp(a,b)=true解释为a相对b应排在后面。greater认为较大值低优先级，于是最小值留在堆顶。自定义结构应按这个语义推导，别只凭函数名猜方向。"
+          ]
+        },
+        {
+          "question": "相同优先级会按插入顺序返回吗？",
+          "answer": [
+            "标准priority_queue不保证稳定。需要先来先出时，加入唯一递增序号并作为第二关键字；只比较priority不会自动保存原顺序。"
+          ]
+        },
+        {
+          "question": "修改外部表中的优先级会让堆自动恢复顺序吗？",
+          "answer": [
+            "不会。堆不会感知比较器依赖的数据变化，旧父子关系可能失效。应使用不可变优先级快照加版本校验，或维护下标映射并对指定元素上浮/下沉。"
+          ]
+        },
+        {
+          "question": "延迟删除为什么可能越用越占内存？",
+          "answer": [
+            "未到堆顶的旧记录无法被prune触及。即使有效任务只剩一个，历史更新产生的失效项也可能还在内部，物理大小随累计操作增长；必须区分逻辑大小与物理大小。"
+          ]
+        }
+      ]
+    },
+    "2": {
+      "before": [
+        {
+          "type": "text",
+          "title": "2.1 Top K不变量：保留已读前缀最强的K个",
+          "paragraphs": [
+            "求最大的K个，堆内是入选者，堆顶应暴露其中最弱的一位，因此用小顶堆。新值不大于堆顶时不可能改善答案；更大时替换堆顶。或者统一先push，再在超出K时pop，便于处理尚未凑满K个的阶段。",
+            "归纳证明：旧堆已包含前缀最大的K个。新元素加入后，真正的新Top K必在旧Top K与新元素中，因为旧前缀未入选者都不优于旧堆最小值。从这K+1个候选中删最小值即可维持不变量。"
+          ]
+        },
+        {
+          "type": "table",
+          "title": "2.2 [3,2,1,5,6,4]，K=2",
+          "columns": [
+            "读入",
+            "保留的值（为展示而排序）",
+            "删除谁",
+            "当前第2大"
+          ],
+          "rows": [
+            [
+              "3",
+              "[3]",
+              "无",
+              "尚不足2个"
+            ],
+            [
+              "2",
+              "[2,3]",
+              "无",
+              "2"
+            ],
+            [
+              "1",
+              "[2,3]",
+              "1",
+              "2"
+            ],
+            [
+              "5",
+              "[3,5]",
+              "2",
+              "3"
+            ],
+            [
+              "6",
+              "[5,6]",
+              "3",
+              "5"
+            ],
+            [
+              "4",
+              "[5,6]",
+              "4",
+              "5"
+            ]
+          ]
+        },
+        {
+          "type": "code",
+          "title": "2.3 数据流第K大：不足K个时不伪造答案",
+          "file": "detail-stream-kth.cpp",
+          "code": "class KthLargestStream {\n    size_t k;\n    priority_queue<int, vector<int>, greater<int>> selected;\npublic:\n    explicit KthLargestStream(int rank) {\n        if (rank <= 0) throw invalid_argument(\"k must be positive\");\n        k = (size_t)rank;\n    }\n    optional<int> add(int value) {\n        if (selected.size() < k) selected.push(value);\n        else if (value > selected.top()) {\n            selected.pop(); selected.push(value);\n        }\n        if (selected.size() < k) return nullopt;\n        return selected.top();\n    }\n};",
+          "paragraphs": [
+            "按元素出现次数计秩，重复值不去重。若堆已满，新值等于堆顶，跳过它不会改变第K大的数值，但这不保留某个特定同值元素的身份；要输出精确记录时需加入平局规则。",
+            "每次更新O(log(K+1))堆操作上界，拒绝候选时O(1)，空间O(K)。构造时不强行分配K个空间，尚未读够时返回nullopt。"
+          ]
+        }
+      ],
+      "after": [
+        {
+          "type": "text",
+          "title": "2.4 高频元素：堆保留的是频次排名，不是数值大小",
+          "paragraphs": [
+            "先用哈希表统计每个值的次数，再对U个不同值选K个。这里约定频次越高越优；同频时数值越小越优。保留Top K的堆顶必须是最差入选者：频次最小、同频时数值最大。",
+            "比较器里定义“a比b更好”，则priority_queue会把相对更差者留在顶端，这正适合淘汰。频次表构建平均O(n)，选择O(Ulog(K+1))；还应计算将最终K个按规定顺序输出的成本。"
+          ]
+        },
+        {
+          "type": "code",
+          "title": "2.5 高频Top K：明确同频的确定性顺序",
+          "file": "detail-top-frequency.cpp",
+          "code": "struct FrequencyItem { int value; int count; };\nstruct BetterFrequency {\n    bool operator()(const FrequencyItem& a, const FrequencyItem& b) const {\n        if (a.count != b.count) return a.count > b.count;\n        return a.value < b.value;\n    }\n};\nvector<int> topFrequent(const vector<int>& a, int k) {\n    if (k < 0) throw invalid_argument(\"negative k\");\n    if (k == 0) return {};\n    unordered_map<int, int> count;\n    for (int value : a) ++count[value];\n    if ((size_t)k > count.size()) throw invalid_argument(\"k exceeds distinct values\");\n    priority_queue<FrequencyItem, vector<FrequencyItem>, BetterFrequency> selected;\n    for (auto [value, frequency] : count) {\n        selected.push({value, frequency});\n        if (selected.size() > (size_t)k) selected.pop();\n    }\n    vector<int> answer;\n    while (!selected.empty()) {\n        answer.push_back(selected.top().value); selected.pop();\n    }\n    reverse(answer.begin(), answer.end());\n    return answer;\n}",
+          "paragraphs": [
+            "约定n<=100000，频次数值可用int。堆先弹最差、最后reverse，得到频次降序、同频数值升序，避免依赖哈希遍历顺序。平均总时间O(n+Ulog(K+1))，频次表O(U)、堆O(K)，输出O(K)；哈希极端冲突时统计可退化。"
+          ]
+        },
+        {
+          "type": "table",
+          "title": "2.6 选第K大时有哪些替代方案",
+          "columns": [
+            "方法",
+            "适用场景",
+            "时间",
+            "额外信息"
+          ],
+          "rows": [
+            [
+              "大小K小顶堆",
+              "流式输入、不能改原数组",
+              "O(nlog(K+1))",
+              "只存O(K)候选"
+            ],
+            [
+              "大小n-K+1大顶堆",
+              "静态已知n且K接近n",
+              "O(nlog(n-K+2))",
+              "转为第n-K+1小"
+            ],
+            [
+              "快速选择 / nth_element",
+              "静态数组且允许打乱",
+              "平均O(n)",
+              "不保证候选内部有序"
+            ],
+            [
+              "完整sort",
+              "后面还有多次秩查询",
+              "O(nlogn)",
+              "得到完整有序序列"
+            ],
+            [
+              "频次桶",
+              "只需按出现次数排名",
+              "常可O(n+U)扫描",
+              "桶空间及同频规则要另算"
+            ]
+          ]
+        },
+        {
+          "type": "code",
+          "title": "2.7 最近的K个点：距离平方与下标平局规则",
+          "file": "detail-closest-points.cpp",
+          "code": "vector<pair<int, int>> closestPoints(const vector<pair<int, int>>& points, int k) {\n    if (k < 0 || (size_t)k > points.size()) throw invalid_argument(\"invalid k\");\n    if (k == 0) return {};\n    using Entry = pair<long long, size_t>; // squared distance, input index\n    priority_queue<Entry> selected;\n    for (size_t i = 0; i < points.size(); ++i) {\n        auto [x, y] = points[i];\n        if (x < -1000000000 || x > 1000000000 ||\n            y < -1000000000 || y > 1000000000)\n            throw invalid_argument(\"coordinate outside supported range\");\n        long long distance = 1LL * x * x + 1LL * y * y;\n        selected.push({distance, i});\n        if (selected.size() > (size_t)k) selected.pop();\n    }\n    vector<pair<int, int>> answer;\n    while (!selected.empty()) {\n        answer.push_back(points[selected.top().second]); selected.pop();\n    }\n    reverse(answer.begin(), answer.end());\n    return answer;\n}",
+          "paragraphs": [
+            "只比较距离无需开方，平方在非负数上保序。坐标限制到|x|,|y|<=10^9，平方和<=2×10^18可由long long表示；任意int极值的平方和未必能安全放入long long，不能省略范围。",
+            "大顶堆保留最小的K个(距离,原下标)，同距离优先早出现者。返回按距离及原下标升序。时间O(nlog(K+1))、辅助空间O(K)、输出O(K)。"
+          ]
+        }
+      ],
+      "answers": [
+        {
+          "question": "求最大的K个为什么不是大顶堆？",
+          "answer": [
+            "大小K的结构要快速淘汰入选者里最小的，所以需要小顶堆。大顶堆可以把全部n个存起来再弹K次，但那是另一种时间和空间方案，不是固定大小Top K。"
+          ]
+        },
+        {
+          "question": "第K大是否先去重？",
+          "answer": [
+            "通常按元素次数计排名，不去重。[5,5,4]的第2大是5。如果题目要求第K个不同值，必须先去重，并用不同值数量校验K。"
+          ]
+        },
+        {
+          "question": "Top K堆里的内容本身有序吗？",
+          "answer": [
+            "无序，只保证堆顶是边界元素。要有序输出可依次pop再按方向reverse，或取出后排序，额外成本O(KlogK)。不能直接把内部数组当作排名结果。"
+          ]
+        },
+        {
+          "question": "高频Top K比较器为什么要考虑平局？",
+          "answer": [
+            "有些题允许任意同频答案，有些要求数值或字典序。若要求确定顺序，必须把平局规则放进完整排名中，并保证堆顶是按这个完整排名最差的入选者。"
+          ]
+        },
+        {
+          "question": "K接近n时为什么能改成维护n-K+1个最小值？",
+          "answer": [
+            "升序第n-K+1小就是降序第K大。当n-K+1远小于K，可降低堆大小；但流式输入还不知道最终n时不能直接使用这个转化。"
+          ]
+        },
+        {
+          "question": "最近点为什么要先提升类型再做乘法？",
+          "answer": [
+            "x*x如果先按int计算可能已溢出，之后赋给long long无法补救。使用1LL*x*x使乘法在宽类型执行，同时仍需保证两个平方的和在范围内。"
+          ]
+        }
+      ]
+    },
+    "3": {
+      "before": [
+        {
+          "type": "text",
+          "title": "3.1 前沿不变量：每一路都已内部有序",
+          "paragraphs": [
+            "若每一路按非递减顺序排列，该路未输出部分的最小值一定在当前头部。全局下一最小值必属于这些头部，因此堆不必同时存下每个元素，只存每路一个候选。弹出来自第r路的项后，只推进第r路。",
+            "这和“把所有N个元素放堆里再弹出”不同：后者通常O(NlogN)、堆O(N)；前沿方式堆最多K项，总O(K+Nlog(K+1))，输出空间另算。初始化可一次make_heap为O(K)，基础示例逐路push的成本也被完整处理量上界覆盖。"
+          ]
+        },
+        {
+          "type": "table",
+          "title": "3.2 三路归并 [1,4]、[2,5]、[0,3]",
+          "columns": [
+            "弹出前候选（按值展示）",
+            "本次输出",
+            "补入哪个后继",
+            "输出前缀"
+          ],
+          "rows": [
+            [
+              "0(r2),1(r0),2(r1)",
+              "0",
+              "r2的3",
+              "0"
+            ],
+            [
+              "1(r0),2(r1),3(r2)",
+              "1",
+              "r0的4",
+              "0,1"
+            ],
+            [
+              "2(r1),3(r2),4(r0)",
+              "2",
+              "r1的5",
+              "0,1,2"
+            ],
+            [
+              "3(r2),4(r0),5(r1)",
+              "3",
+              "r2耗尽，不补",
+              "0,1,2,3"
+            ],
+            [
+              "4(r0),5(r1)",
+              "4，然后5",
+              "两路相继耗尽",
+              "0,1,2,3,4,5"
+            ]
+          ]
+        },
+        {
+          "type": "code",
+          "title": "3.3 合并K个链表：复用节点，先保存next",
+          "file": "detail-merge-lists.cpp",
+          "code": "struct ListNode {\n    int val;\n    ListNode* next = nullptr;\n    explicit ListNode(int value) : val(value) {}\n};\nstruct ListEntry { ListNode* node; size_t row; };\nstruct LaterListEntry {\n    bool operator()(const ListEntry& a, const ListEntry& b) const {\n        if (a.node->val != b.node->val) return a.node->val > b.node->val;\n        return a.row > b.row;\n    }\n};\nListNode* mergeSortedLists(const vector<ListNode*>& heads) {\n    priority_queue<ListEntry, vector<ListEntry>, LaterListEntry> pending;\n    for (size_t row = 0; row < heads.size(); ++row)\n        if (heads[row]) pending.push({heads[row], row});\n    ListNode dummy(0);\n    ListNode* tail = &dummy;\n    while (!pending.empty()) {\n        auto [node, row] = pending.top(); pending.pop();\n        ListNode* successor = node->next;\n        if (successor) pending.push({successor, row});\n        tail->next = node;\n        tail = node;\n        tail->next = nullptr;\n    }\n    return dummy.next;\n}",
+          "paragraphs": [
+            "要求输入链表分别有序、无环且彼此不共享节点。函数复用并改写原节点连接，不分配或释放节点，调用者继续负责所有权；原heads只是旧入口，不再代表彼此独立的链。相同值时按来源编号决胜，每路内部仍按原顺序。",
+            "共享尾节点会让同一个对象可能被入堆多次，从而破坏结构，不能把这套算法直接用于共享节点图。时间O(K+Nlog(K+1))，堆O(K)，没有新建结果节点的O(N)空间。"
+          ]
+        }
+      ],
+      "after": [
+        {
+          "type": "text",
+          "title": "3.4 K个最小数对：把二维组合看成有序行",
+          "paragraphs": [
+            "对于升序a、b，固定i后，a[i]+b[0],a[i]+b[1],…构成有序的一行。初始化每行j=0候选，弹出(i,j)后只加入(i,j+1)，从而每个下标对只生成一次，不需要visited集合。",
+            "可以只初始化前min(K,|a|)行：若某行i>=K，则至少已有K行的首项不大于该行首项；按(和,i,j)打破平局时，它们也优先于该行。因此前K个输出无需更后行。两个输入都须有序，这个剪枝才成立。"
+          ]
+        },
+        {
+          "type": "code",
+          "title": "3.5 最小数对：行前沿归并",
+          "file": "detail-smallest-pairs.cpp",
+          "code": "vector<pair<int, int>> smallestPairs(const vector<int>& a, const vector<int>& b, int k) {\n    if (k < 0) throw invalid_argument(\"negative k\");\n    if (k == 0 || a.empty() || b.empty()) return {};\n    using Entry = tuple<long long, size_t, size_t>;\n    priority_queue<Entry, vector<Entry>, greater<Entry>> pending;\n    size_t initial = min((size_t)k, a.size());\n    for (size_t i = 0; i < initial; ++i) pending.emplace((long long)a[i] + b[0], i, 0);\n    vector<pair<int, int>> result;\n    while (!pending.empty() && result.size() < (size_t)k) {\n        auto [sum, i, j] = pending.top(); pending.pop();\n        result.push_back({a[i], b[j]});\n        if (j + 1 < b.size()) pending.emplace((long long)a[i] + b[j + 1], i, j + 1);\n    }\n    return result;\n}",
+          "paragraphs": [
+            "K超过组合总数时返回所有数对；重复值可对应不同下标组合，输出允许相同的值对。两个int相加先提升long long。代码不内部验证有序性，避免额外扫描掩盖前沿算法的成本。",
+            "设R=min(K,|a|)、Q为实际输出数，时间O((R+Q)log(R+1))，堆O(R)、输出O(Q)。没有计算|a|*|b|，也就避免了不必要的组合数乘法溢出。"
+          ]
+        },
+        {
+          "type": "text",
+          "title": "3.6 覆盖所有列表的最小区间：同时维护当前最小与最大",
+          "paragraphs": [
+            "每个非空有序列表选一个当前元素，堆顶给当前最小值L，另记当前最大值R，则[L,R]覆盖所有列表。若只推进非最小的某路，最小值不变而最大值不能变小，区间不会变窄；要改善答案，必须推进当前最小值所在路。",
+            "当该路耗尽时无法再把下界右移而保持每路都有代表，算法结束。最大值只需一个变量并取max更新，因为每一路只向右移动、当前值不会下降。"
+          ]
+        },
+        {
+          "type": "code",
+          "title": "3.7 覆盖K个有序列表的最小区间",
+          "file": "detail-smallest-range.cpp",
+          "code": "optional<pair<int, int>> smallestCoveringRange(const vector<vector<int>>& lists) {\n    if (lists.empty()) return nullopt;\n    using Entry = tuple<int, size_t, size_t>;\n    priority_queue<Entry, vector<Entry>, greater<Entry>> pending;\n    int currentMax = INT_MIN;\n    for (size_t row = 0; row < lists.size(); ++row) {\n        if (lists[row].empty()) return nullopt;\n        pending.emplace(lists[row][0], row, 0);\n        currentMax = max(currentMax, lists[row][0]);\n    }\n    int bestLeft = get<0>(pending.top()), bestRight = currentMax;\n    while (true) {\n        auto [currentMin, row, index] = pending.top(); pending.pop();\n        long long width = (long long)currentMax - currentMin;\n        long long bestWidth = (long long)bestRight - bestLeft;\n        if (width < bestWidth || (width == bestWidth && currentMin < bestLeft)) {\n            bestLeft = currentMin; bestRight = currentMax;\n        }\n        if (index + 1 == lists[row].size()) break;\n        int next = lists[row][index + 1];\n        currentMax = max(currentMax, next);\n        pending.emplace(next, row, index + 1);\n    }\n    return pair<int, int>{bestLeft, bestRight};\n}",
+          "paragraphs": [
+            "要求各列表非递减；任一路为空返回nullopt。相同长度选择更小左端点，宽度先转long long以覆盖INT_MIN与INT_MAX。时间O(Nlog(K+1)+K)，堆O(K)，输出O(1)。"
+          ]
+        },
+        {
+          "type": "table",
+          "title": "3.8 三类前沿归并的不同终止条件",
+          "columns": [
+            "题型",
+            "每路提供什么",
+            "弹出后的动作",
+            "何时结束"
+          ],
+          "rows": [
+            [
+              "完整归并",
+              "每路未输出的最小元素",
+              "有后继则补入",
+              "堆为空"
+            ],
+            [
+              "K个最小数对",
+              "每个固定i的下一j",
+              "推进同一i的j",
+              "输出K个或堆空"
+            ],
+            [
+              "覆盖所有列表的区间",
+              "每路一个当前代表",
+              "推进当前最小的来源",
+              "任一路耗尽，无法继续覆盖"
+            ]
+          ]
+        },
+        {
+          "type": "text",
+          "title": "3.9 外部归并为什么不需要把所有数据读入内存",
+          "paragraphs": [
+            "每路可以是磁盘上的有序文件，堆保存各文件当前记录及来源编号，每弹出一项就从同一来源读下一项。实际工程一般每路使用块缓冲减少I/O，因此内存除O(K)堆外还要算K路输入缓冲和输出缓冲。",
+            "可用文件句柄数量与内存限制约束一次归并的路数，路数太多时需多轮归并。算法能流式读取，但并不意味着硬盘I/O成本等于纯内存的比较复杂度。"
+          ]
+        }
+      ],
+      "answers": [
+        {
+          "question": "为什么只保留各路头部不会漏掉全局最小值？",
+          "answer": [
+            "每路后面的元素都不小于该路头部。如果一个未处理元素是全局最小，它所在路的头部至少和它一样小，所以总存在一个头部能作为下一项输出。"
+          ]
+        },
+        {
+          "question": "弹出后为什么必须记录来源？",
+          "answer": [
+            "要补入的是被弹出项所在序列的后继，不是任意一路的下一个。只存value无法在重复值出现时区分来源，可能漏读或重复输出。"
+          ]
+        },
+        {
+          "question": "合并链表时为何先保存next？",
+          "answer": [
+            "后续会改变输出尾节点的next，例如清空尾指针。若先改再读，会失去原链表后继。先保存next，再更新堆和结果链接，可保持未处理链条可达。"
+          ]
+        },
+        {
+          "question": "K个最小数对为什么不需要visited？",
+          "answer": [
+            "本实现每个(i,j)只有一个来源：同一行的(i,j-1)，各行只从j=0开始，因此不会被重复生成。若改成同时向(i+1,j)、(i,j+1)扩展，则需要去重。"
+          ]
+        },
+        {
+          "question": "最小覆盖区间为什么推进当前最小项？",
+          "answer": [
+            "保持当前最小项不动时，推进其他有序路不会提高左端点，却可能增大右端点，不能缩短区间。必须先让当前最小项离开，才有机会得到更靠右、更窄的候选区间。"
+          ]
+        },
+        {
+          "question": "某一路耗尽时，为什么最小区间算法就能停止？",
+          "answer": [
+            "此时已经检查了包含这一路最后一个代表的当前候选。继续右移下界将失去该路代表，无法维持全覆盖；其他路单独推进也不能缩小当前下界不变的区间。"
+          ]
+        }
+      ]
+    },
+    "4": {
+      "before": [
+        {
+          "type": "text",
+          "title": "4.1 双堆同时满足次序与数量，缺一不可",
+          "paragraphs": [
+            "lo为大顶堆保存较小半，hi为小顶堆保存较大半。数量要求|lo|=|hi|或|lo|=|hi|+1；次序要求每个lo元素<=每个hi元素。两堆各自已满足堆序时，检查lo.top()<=hi.top()即可表达这个跨堆次序。",
+            "奇数时lo多一个，中央元素就是lo.top；偶数时中间两个是lo.top与hi.top。只有大小平衡而没有跨堆次序，堆顶平均不一定是中位数。"
+          ]
+        },
+        {
+          "type": "text",
+          "title": "4.2 按lo.top分流，为什么移动堆顶能恢复平衡",
+          "paragraphs": [
+            "新值<=lo最大值就进入lo，否则进入hi，能保持跨堆次序。若lo多出两个，将lo最大值移入hi；若hi更多，将hi最小值移入lo。移动的恰是边界元素，不会使两侧交错。原先大小差至多1，单次插入后只需常数次跨堆移动。",
+            "基础MedianFinder的中位数和先提升到long long再求均值，避免两个int先相加溢出。该接口在无数据时抛出异常，不能返回0伪装有效中位数。"
+          ]
+        },
+        {
+          "type": "table",
+          "title": "4.3 依次插入1、5、2、4",
+          "columns": [
+            "新值",
+            "lo（按值展示）",
+            "hi（按值展示）",
+            "中位数"
+          ],
+          "rows": [
+            [
+              "1",
+              "[1]",
+              "[]",
+              "1"
+            ],
+            [
+              "5",
+              "[1]",
+              "[5]",
+              "3"
+            ],
+            [
+              "2",
+              "[1,2]",
+              "[5]",
+              "2"
+            ],
+            [
+              "4",
+              "[1,2]",
+              "[4,5]",
+              "3"
+            ]
+          ]
+        },
+        {
+          "type": "text",
+          "title": "4.4 滑动窗口中位数多了删除操作",
+          "paragraphs": [
+            "priority_queue不能直接删掉一个非堆顶旧值。延迟删除可以在哈希表中记录待删次数，并维护两堆的有效大小；读取、搬移堆顶前清理失效项。物理size含旧记录，不能用它代替有效大小；重复值的删除次数也必须准确。",
+            "朴素延迟删除实现中，失效项可能长期埋在堆内部，物理空间增长到O(n)，堆操作也可能按logn计，而不是无条件O(k)空间、O(nlogk)时间。可定期重建、使用带下标堆，或用下方两个multiset得到直接删除和清楚的界。"
+          ]
+        }
+      ],
+      "after": [
+        {
+          "type": "code",
+          "title": "4.5 两个有序多重集合：支持删除的滑动中位数",
+          "file": "detail-sliding-median.cpp",
+          "code": "#include <set>\n#include <iterator>\n\nclass RemovableMedian {\n    multiset<int> lo, hi;\n    void rebalance() {\n        while (lo.size() > hi.size() + 1) {\n            auto it = prev(lo.end());\n            hi.insert(*it); lo.erase(it);\n        }\n        while (lo.size() < hi.size()) {\n            auto it = hi.begin();\n            lo.insert(*it); hi.erase(it);\n        }\n    }\npublic:\n    void add(int value) {\n        if (lo.empty() || value <= *prev(lo.end())) lo.insert(value);\n        else hi.insert(value);\n        rebalance();\n    }\n    void remove(int value) {\n        auto it = lo.find(value);\n        if (it != lo.end()) lo.erase(it);\n        else {\n            auto other = hi.find(value);\n            if (other == hi.end()) throw invalid_argument(\"value not present\");\n            hi.erase(other);\n        }\n        rebalance();\n    }\n    double median() const {\n        if (lo.empty()) throw out_of_range(\"no data\");\n        if (lo.size() != hi.size()) return *prev(lo.end());\n        return ((long long)*prev(lo.end()) + *hi.begin()) / 2.0;\n    }\n};\nvector<double> slidingMedians(const vector<int>& a, int k) {\n    if (k <= 0 || (size_t)k > a.size()) return {};\n    RemovableMedian state;\n    vector<double> answer;\n    for (size_t i = 0; i < a.size(); ++i) {\n        if (i >= (size_t)k) state.remove(a[i - k]);\n        state.add(a[i]);\n        if (i + 1 >= (size_t)k) answer.push_back(state.median());\n    }\n    return answer;\n}",
+          "paragraphs": [
+            "这里用平衡搜索树而不是堆，是双半区不变量的另一种实现。multiset支持重复值，erase(iterator)只删一个实例；erase(value)会删掉所有等值元素，不适合窗口移除单次出现。",
+            "如果同一值跨越两个半区，删任一份同值实例都不影响数值多重集合，再平衡即可。每次增删O(log(k+1))，查询端点O(1)，总O(nlog(k+1))、辅助空间O(k)、输出O(n-k+1)。非法窗口大小返回空数组。"
+          ]
+        },
+        {
+          "type": "code",
+          "title": "4.6 会议室：释放结束时间不晚于新会议开始的房间",
+          "file": "detail-meeting-rooms.cpp",
+          "code": "int minimumMeetingRooms(vector<pair<int, int>> meetings) {\n    for (auto [start, end] : meetings)\n        if (start >= end) throw invalid_argument(\"require start < end\");\n    sort(meetings.begin(), meetings.end());\n    priority_queue<int, vector<int>, greater<int>> occupied;\n    int best = 0;\n    for (auto [start, end] : meetings) {\n        while (!occupied.empty() && occupied.top() <= start) occupied.pop();\n        occupied.push(end);\n        best = max(best, (int)occupied.size());\n    }\n    return best;\n}",
+          "paragraphs": [
+            "会议用半开区间[start,end)，同一时刻结束和开始可复用房间，所以条件是<=。本实现清除全部已结束会议，堆仅代表当前活动会议，最大堆大小就是峰值并发，也就是最少房间数。",
+            "约定会议数可用int表示；空列表返回0，零时长与反向区间拒绝。时间O(nlog(n+1))，复制与堆空间O(n)。另一种只弹一个房间的写法维护的是已分配房间集合，语义不同，不应混用两个证明。"
+          ]
+        },
+        {
+          "type": "text",
+          "title": "4.7 Dijkstra：堆给候选次序，非负边给正确性",
+          "paragraphs": [
+            "从源点距离0开始，每次取暂定距离最小的候选。边权非负时，任何尚未扩展路径再经过其他边不会产生比当前最小距离更短的绕行，因此有效堆顶可以安全扩展。出现负边后该理由失效，不能继续声称是标准Dijkstra。",
+            "标准priority_queue没有decrease-key，发现更短距离时直接插入新快照(d,v)。旧记录仍在堆中，弹出时若d!=dist[v]就跳过。不能像普通无权BFS那样入队即永久标记完成：一个节点第一次发现的距离可能随后改善。"
+          ]
+        },
+        {
+          "type": "table",
+          "title": "4.8 旧距离快照：s→a为10，s→b为1，b→a为1",
+          "columns": [
+            "弹出的候选",
+            "当前距离",
+            "处理",
+            "后续候选"
+          ],
+          "rows": [
+            [
+              "(0,s)",
+              "s=0",
+              "松弛a=10，b=1",
+              "(1,b),(10,a)"
+            ],
+            [
+              "(1,b)",
+              "b=1",
+              "把a改进为2",
+              "(2,a),(10,a)"
+            ],
+            [
+              "(2,a)",
+              "a=2",
+              "有效，扩展a",
+              "(10,a)"
+            ],
+            [
+              "(10,a)",
+              "a=2",
+              "过期，跳过",
+              "空"
+            ]
+          ]
+        },
+        {
+          "type": "code",
+          "title": "4.9 非负权最短路：过期记录与不可达值",
+          "file": "detail-dijkstra.cpp",
+          "code": "struct WeightedEdge { int to; int weight; };\nvector<optional<long long>> shortestDistances(\n    const vector<vector<WeightedEdge>>& graph, int source) {\n    if (graph.size() > 100000) throw invalid_argument(\"too many vertices\");\n    int n = (int)graph.size();\n    if (source < 0 || source >= n) throw out_of_range(\"invalid source\");\n    for (const auto& edges : graph)\n        for (const auto& edge : edges)\n            if (edge.to < 0 || edge.to >= n || edge.weight < 0 ||\n                edge.weight > 1000000000)\n                throw invalid_argument(\"invalid edge\");\n    const long long INF = LLONG_MAX / 4;\n    vector<long long> distance(n, INF);\n    using Entry = pair<long long, int>;\n    priority_queue<Entry, vector<Entry>, greater<Entry>> pending;\n    distance[source] = 0; pending.push({0, source});\n    while (!pending.empty()) {\n        auto [value, u] = pending.top(); pending.pop();\n        if (value != distance[u]) continue;\n        for (const auto& edge : graph[u]) {\n            long long candidate = value + edge.weight;\n            if (candidate < distance[edge.to]) {\n                distance[edge.to] = candidate;\n                pending.push({candidate, edge.to});\n            }\n        }\n    }\n    vector<optional<long long>> result(n);\n    for (int i = 0; i < n; ++i)\n        if (distance[i] != INF) result[i] = distance[i];\n    return result;\n}",
+          "paragraphs": [
+            "约束V<=100000、边权在[0,10^9]，距离及松弛加法在long long内；允许平行边、零权边与自环，负边在开始前拒绝。不可达点用nullopt，避免把大哨兵当作真实距离返回。",
+            "每条边至多造成一次成功松弛，可能产生O(E)堆项。此懒惰实现时间O(V+Elog(E+1))、辅助空间O(V+E)，不含输入图；对简单图常写成O((V+E)logV)，但有大量平行边时需保留堆规模的区别。"
+          ]
+        }
+      ],
+      "answers": [
+        {
+          "question": "两个堆数量平衡就能读出中位数吗？",
+          "answer": [
+            "不够，还要保证lo中每个值都不大于hi中每个值。若小值在hi、大值在lo，即使大小相等，两堆顶也未必是有序序列中间两个位置。"
+          ]
+        },
+        {
+          "question": "从lo向hi移动哪个元素才正确？",
+          "answer": [
+            "移动lo的最大值，也就是lo.top，它是两半边界上最适合进入较大半的元素。反过来从hi向lo移动最小值，保证跨堆有序关系不被破坏。"
+          ]
+        },
+        {
+          "question": "滑动窗口删除为什么不能直接用priority_queue.pop？",
+          "answer": [
+            "过期元素可能不在堆顶，pop删掉的是当前极值而非指定旧值。需要定位删除、延迟删除，或改用支持按值找实例的有序多重集合。"
+          ]
+        },
+        {
+          "question": "multiset移除一个过期值为什么用erase(iterator)？",
+          "answer": [
+            "同一个值可能在窗口中出现多次。erase(value)删除所有匹配值，破坏剩余窗口；find得到一个实例后erase(iterator)只移除一次，符合滑出一个位置的语义。"
+          ]
+        },
+        {
+          "question": "会议结束于t、另一个开始于t，需要两个房间吗？",
+          "answer": [
+            "按本节半开区间约定不需要，结束时间<=新开始时间即可释放。如果题目用闭区间或要求清理间隔，必须相应改变复用条件。"
+          ]
+        },
+        {
+          "question": "Dijkstra为什么不能第一次入队就标记完成？",
+          "answer": [
+            "第一次发现不一定最短，例如直达a为10，经b可到2。必须允许更短距离再次入队；弹出时用当前dist核对快照，旧的10需要跳过，非负权保证有效最小候选的扩展正确。"
+          ]
+        }
+      ]
+    }
+  },
+  "outro": [
+    {
+      "type": "table",
+      "title": "经典考点与训练路线",
+      "columns": [
+        "阶段",
+        "练习",
+        "必须解释的关键点",
+        "重点边界"
+      ],
+      "rows": [
+        [
+          "堆实现",
+          "手写堆；1046 最后一块石头",
+          "上浮/下沉、建堆线性、比较器方向",
+          "空堆、单元素、重复值"
+        ],
+        [
+          "Top K",
+          "215 第K大；703 流中第K大；347 高频；973 最近点",
+          "边界候选、重复计秩、平局规则",
+          "K=0/1/n、未满K、坐标极值"
+        ],
+        [
+          "多路归并",
+          "23 合并链表；373 最小数对",
+          "每路前沿、来源索引、后继",
+          "空路、重复值、共享节点前提"
+        ],
+        [
+          "范围覆盖",
+          "632 最小区间",
+          "当前最大值、只推进最小路",
+          "空列表、单路、跨度溢出"
+        ],
+        [
+          "中位数",
+          "295 数据流；480 滑动窗口",
+          "次序与数量、删除旧值、物理与逻辑大小",
+          "全相等、偶数、INT极值"
+        ],
+        [
+          "调度与最短路",
+          "253 会议室；743 网络延迟",
+          "端点语义、过期快照、非负边",
+          "相接会议、零权、不可达、多次改进"
+        ]
+      ]
+    },
+    {
+      "type": "text",
+      "title": "综合测试：候选不变量与独立暴力对照",
+      "paragraphs": [
+        "测试程序包含12份补充示例实现：手写堆同标准优先队列对照，版本化队列同有效状态表扫描对照，流式秩与高频排序对照，最小数对同完整笛卡尔积排序对照，区间覆盖同端点穷举对照，中位数同窗口排序对照，Dijkstra同Floyd对照。",
+        "提供固定种子的200组小输入、1000次堆混合操作和1000次版本队列操作，还检查链表合并无环、无重复节点及元素完整性，以及会议室与峰值重叠数一致。测试规模故意较小，以便使用简单参照算法；不能代替正确性证明。",
+        "下载后可执行 g++ -std=c++17 -O2 -Wall -Wextra detail-heap-tests.cpp -o chapter08-tests，再运行程序。本测试不包含原有四个基础示例的独立运行检查；实际编译执行状态见全站验证记录。"
+      ]
+    },
+    {
+      "type": "code",
+      "title": "完整对照测试：堆、排名、前沿、中位数与最短路",
+      "file": "detail-heap-tests.cpp",
+      "code": "class IntMinHeap {\n    vector<int> data;\n    void down(size_t root) {\n        size_t n = data.size();\n        while (root < n / 2) {\n            size_t child = root * 2 + 1;\n            if (child + 1 < n && data[child + 1] < data[child]) ++child;\n            if (data[root] <= data[child]) break;\n            swap(data[root], data[child]);\n            root = child;\n        }\n    }\npublic:\n    explicit IntMinHeap(vector<int> values = {}) : data(move(values)) {\n        for (size_t i = data.size() / 2; i > 0; --i) down(i - 1);\n    }\n    bool empty() const { return data.empty(); }\n    size_t size() const { return data.size(); }\n    int top() const {\n        if (empty()) throw out_of_range(\"empty heap\");\n        return data[0];\n    }\n    void push(int value) {\n        data.push_back(value);\n        size_t i = data.size() - 1;\n        while (i > 0) {\n            size_t parent = (i - 1) / 2;\n            if (data[parent] <= data[i]) break;\n            swap(data[parent], data[i]); i = parent;\n        }\n    }\n    int pop() {\n        if (empty()) throw out_of_range(\"empty heap\");\n        int answer = data[0];\n        data[0] = data.back();\n        data.pop_back();\n        if (!empty()) down(0);\n        return answer;\n    }\n};\n\nstruct ScheduledTask {\n    int priority;\n    uint64_t sequence;\n    string label;\n};\nstruct LaterTask {\n    bool operator()(const ScheduledTask& a, const ScheduledTask& b) const {\n        return tie(a.priority, a.sequence) > tie(b.priority, b.sequence);\n    }\n};\nvector<string> orderedTasks(const vector<ScheduledTask>& tasks) {\n    priority_queue<ScheduledTask, vector<ScheduledTask>, LaterTask> pending;\n    for (const auto& task : tasks) pending.push(task);\n    vector<string> result;\n    while (!pending.empty()) {\n        result.push_back(pending.top().label);\n        pending.pop();\n    }\n    return result;\n}\n\nclass VersionedMinQueue {\n    struct State { int priority; uint64_t version; };\n    using Entry = tuple<int, int, uint64_t>; // priority, id, version\n    priority_queue<Entry, vector<Entry>, greater<Entry>> heap;\n    unordered_map<int, State> live;\n    uint64_t nextVersion = 0;\n    void prune() {\n        while (!heap.empty()) {\n            auto [priority, id, version] = heap.top();\n            auto it = live.find(id);\n            if (it != live.end() && it->second.version == version) break;\n            heap.pop();\n        }\n    }\npublic:\n    void put(int id, int priority) {\n        if (nextVersion == UINT64_MAX) throw overflow_error(\"version exhausted\");\n        uint64_t version = ++nextVersion;\n        heap.emplace(priority, id, version);\n        live[id] = {priority, version};\n    }\n    void cancel(int id) { live.erase(id); }\n    optional<pair<int, int>> pop() {\n        prune();\n        if (heap.empty()) return nullopt;\n        auto [priority, id, version] = heap.top();\n        heap.pop(); live.erase(id);\n        return pair<int, int>{id, priority};\n    }\n};\n\nclass KthLargestStream {\n    size_t k;\n    priority_queue<int, vector<int>, greater<int>> selected;\npublic:\n    explicit KthLargestStream(int rank) {\n        if (rank <= 0) throw invalid_argument(\"k must be positive\");\n        k = (size_t)rank;\n    }\n    optional<int> add(int value) {\n        if (selected.size() < k) selected.push(value);\n        else if (value > selected.top()) {\n            selected.pop(); selected.push(value);\n        }\n        if (selected.size() < k) return nullopt;\n        return selected.top();\n    }\n};\n\nstruct FrequencyItem { int value; int count; };\nstruct BetterFrequency {\n    bool operator()(const FrequencyItem& a, const FrequencyItem& b) const {\n        if (a.count != b.count) return a.count > b.count;\n        return a.value < b.value;\n    }\n};\nvector<int> topFrequent(const vector<int>& a, int k) {\n    if (k < 0) throw invalid_argument(\"negative k\");\n    if (k == 0) return {};\n    unordered_map<int, int> count;\n    for (int value : a) ++count[value];\n    if ((size_t)k > count.size()) throw invalid_argument(\"k exceeds distinct values\");\n    priority_queue<FrequencyItem, vector<FrequencyItem>, BetterFrequency> selected;\n    for (auto [value, frequency] : count) {\n        selected.push({value, frequency});\n        if (selected.size() > (size_t)k) selected.pop();\n    }\n    vector<int> answer;\n    while (!selected.empty()) {\n        answer.push_back(selected.top().value); selected.pop();\n    }\n    reverse(answer.begin(), answer.end());\n    return answer;\n}\n\nvector<pair<int, int>> closestPoints(const vector<pair<int, int>>& points, int k) {\n    if (k < 0 || (size_t)k > points.size()) throw invalid_argument(\"invalid k\");\n    if (k == 0) return {};\n    using Entry = pair<long long, size_t>; // squared distance, input index\n    priority_queue<Entry> selected;\n    for (size_t i = 0; i < points.size(); ++i) {\n        auto [x, y] = points[i];\n        if (x < -1000000000 || x > 1000000000 ||\n            y < -1000000000 || y > 1000000000)\n            throw invalid_argument(\"coordinate outside supported range\");\n        long long distance = 1LL * x * x + 1LL * y * y;\n        selected.push({distance, i});\n        if (selected.size() > (size_t)k) selected.pop();\n    }\n    vector<pair<int, int>> answer;\n    while (!selected.empty()) {\n        answer.push_back(points[selected.top().second]); selected.pop();\n    }\n    reverse(answer.begin(), answer.end());\n    return answer;\n}\n\nstruct ListNode {\n    int val;\n    ListNode* next = nullptr;\n    explicit ListNode(int value) : val(value) {}\n};\nstruct ListEntry { ListNode* node; size_t row; };\nstruct LaterListEntry {\n    bool operator()(const ListEntry& a, const ListEntry& b) const {\n        if (a.node->val != b.node->val) return a.node->val > b.node->val;\n        return a.row > b.row;\n    }\n};\nListNode* mergeSortedLists(const vector<ListNode*>& heads) {\n    priority_queue<ListEntry, vector<ListEntry>, LaterListEntry> pending;\n    for (size_t row = 0; row < heads.size(); ++row)\n        if (heads[row]) pending.push({heads[row], row});\n    ListNode dummy(0);\n    ListNode* tail = &dummy;\n    while (!pending.empty()) {\n        auto [node, row] = pending.top(); pending.pop();\n        ListNode* successor = node->next;\n        if (successor) pending.push({successor, row});\n        tail->next = node;\n        tail = node;\n        tail->next = nullptr;\n    }\n    return dummy.next;\n}\n\nvector<pair<int, int>> smallestPairs(const vector<int>& a, const vector<int>& b, int k) {\n    if (k < 0) throw invalid_argument(\"negative k\");\n    if (k == 0 || a.empty() || b.empty()) return {};\n    using Entry = tuple<long long, size_t, size_t>;\n    priority_queue<Entry, vector<Entry>, greater<Entry>> pending;\n    size_t initial = min((size_t)k, a.size());\n    for (size_t i = 0; i < initial; ++i) pending.emplace((long long)a[i] + b[0], i, 0);\n    vector<pair<int, int>> result;\n    while (!pending.empty() && result.size() < (size_t)k) {\n        auto [sum, i, j] = pending.top(); pending.pop();\n        result.push_back({a[i], b[j]});\n        if (j + 1 < b.size()) pending.emplace((long long)a[i] + b[j + 1], i, j + 1);\n    }\n    return result;\n}\n\noptional<pair<int, int>> smallestCoveringRange(const vector<vector<int>>& lists) {\n    if (lists.empty()) return nullopt;\n    using Entry = tuple<int, size_t, size_t>;\n    priority_queue<Entry, vector<Entry>, greater<Entry>> pending;\n    int currentMax = INT_MIN;\n    for (size_t row = 0; row < lists.size(); ++row) {\n        if (lists[row].empty()) return nullopt;\n        pending.emplace(lists[row][0], row, 0);\n        currentMax = max(currentMax, lists[row][0]);\n    }\n    int bestLeft = get<0>(pending.top()), bestRight = currentMax;\n    while (true) {\n        auto [currentMin, row, index] = pending.top(); pending.pop();\n        long long width = (long long)currentMax - currentMin;\n        long long bestWidth = (long long)bestRight - bestLeft;\n        if (width < bestWidth || (width == bestWidth && currentMin < bestLeft)) {\n            bestLeft = currentMin; bestRight = currentMax;\n        }\n        if (index + 1 == lists[row].size()) break;\n        int next = lists[row][index + 1];\n        currentMax = max(currentMax, next);\n        pending.emplace(next, row, index + 1);\n    }\n    return pair<int, int>{bestLeft, bestRight};\n}\n\n#include <set>\n#include <iterator>\n\nclass RemovableMedian {\n    multiset<int> lo, hi;\n    void rebalance() {\n        while (lo.size() > hi.size() + 1) {\n            auto it = prev(lo.end());\n            hi.insert(*it); lo.erase(it);\n        }\n        while (lo.size() < hi.size()) {\n            auto it = hi.begin();\n            lo.insert(*it); hi.erase(it);\n        }\n    }\npublic:\n    void add(int value) {\n        if (lo.empty() || value <= *prev(lo.end())) lo.insert(value);\n        else hi.insert(value);\n        rebalance();\n    }\n    void remove(int value) {\n        auto it = lo.find(value);\n        if (it != lo.end()) lo.erase(it);\n        else {\n            auto other = hi.find(value);\n            if (other == hi.end()) throw invalid_argument(\"value not present\");\n            hi.erase(other);\n        }\n        rebalance();\n    }\n    double median() const {\n        if (lo.empty()) throw out_of_range(\"no data\");\n        if (lo.size() != hi.size()) return *prev(lo.end());\n        return ((long long)*prev(lo.end()) + *hi.begin()) / 2.0;\n    }\n};\nvector<double> slidingMedians(const vector<int>& a, int k) {\n    if (k <= 0 || (size_t)k > a.size()) return {};\n    RemovableMedian state;\n    vector<double> answer;\n    for (size_t i = 0; i < a.size(); ++i) {\n        if (i >= (size_t)k) state.remove(a[i - k]);\n        state.add(a[i]);\n        if (i + 1 >= (size_t)k) answer.push_back(state.median());\n    }\n    return answer;\n}\n\nint minimumMeetingRooms(vector<pair<int, int>> meetings) {\n    for (auto [start, end] : meetings)\n        if (start >= end) throw invalid_argument(\"require start < end\");\n    sort(meetings.begin(), meetings.end());\n    priority_queue<int, vector<int>, greater<int>> occupied;\n    int best = 0;\n    for (auto [start, end] : meetings) {\n        while (!occupied.empty() && occupied.top() <= start) occupied.pop();\n        occupied.push(end);\n        best = max(best, (int)occupied.size());\n    }\n    return best;\n}\n\nstruct WeightedEdge { int to; int weight; };\nvector<optional<long long>> shortestDistances(\n    const vector<vector<WeightedEdge>>& graph, int source) {\n    if (graph.size() > 100000) throw invalid_argument(\"too many vertices\");\n    int n = (int)graph.size();\n    if (source < 0 || source >= n) throw out_of_range(\"invalid source\");\n    for (const auto& edges : graph)\n        for (const auto& edge : edges)\n            if (edge.to < 0 || edge.to >= n || edge.weight < 0 ||\n                edge.weight > 1000000000)\n                throw invalid_argument(\"invalid edge\");\n    const long long INF = LLONG_MAX / 4;\n    vector<long long> distance(n, INF);\n    using Entry = pair<long long, int>;\n    priority_queue<Entry, vector<Entry>, greater<Entry>> pending;\n    distance[source] = 0; pending.push({0, source});\n    while (!pending.empty()) {\n        auto [value, u] = pending.top(); pending.pop();\n        if (value != distance[u]) continue;\n        for (const auto& edge : graph[u]) {\n            long long candidate = value + edge.weight;\n            if (candidate < distance[edge.to]) {\n                distance[edge.to] = candidate;\n                pending.push({candidate, edge.to});\n            }\n        }\n    }\n    vector<optional<long long>> result(n);\n    for (int i = 0; i < n; ++i)\n        if (distance[i] != INF) result[i] = distance[i];\n    return result;\n}\n\nvoid require(bool ok, const string& message) {\n    if (!ok) throw runtime_error(message);\n}\noptional<pair<int,int>> bruteRange(const vector<vector<int>>& rows) {\n    if (rows.empty()) return nullopt;\n    vector<int> values;\n    for (const auto& row : rows) {\n        if (row.empty()) return nullopt;\n        values.insert(values.end(), row.begin(), row.end());\n    }\n    sort(values.begin(), values.end());\n    optional<pair<int,int>> best;\n    for (int left : values) for (int right : values) {\n        if (left > right) continue;\n        bool covers = true;\n        for (const auto& row : rows) {\n            bool found = false;\n            for (int value : row) if (left <= value && value <= right) found = true;\n            if (!found) covers = false;\n        }\n        if (!covers) continue;\n        if (!best || (long long)right - left < (long long)best->second - best->first ||\n            ((long long)right - left == (long long)best->second - best->first &&\n             left < best->first)) best = pair<int,int>{left, right};\n    }\n    return best;\n}\nvector<double> bruteMedians(const vector<int>& a, int k) {\n    vector<double> result;\n    if (k <= 0 || (size_t)k > a.size()) return result;\n    for (size_t i = 0; i + k <= a.size(); ++i) {\n        vector<int> window(a.begin() + i, a.begin() + i + k);\n        sort(window.begin(), window.end());\n        result.push_back(k % 2 ? window[k / 2] :\n            ((long long)window[k / 2 - 1] + window[k / 2]) / 2.0);\n    }\n    return result;\n}\nint main() {\n    IntMinHeap heap({3,1,5,2,2});\n    vector<int> popped;\n    while (!heap.empty()) popped.push_back(heap.pop());\n    require(popped == vector<int>({1,2,2,3,5}), \"bottom-up heap\");\n    bool rejected = false;\n    try { heap.pop(); } catch (const out_of_range&) { rejected = true; }\n    require(rejected, \"empty heap\");\n    require(orderedTasks({{2,0,\"a\"},{1,1,\"b\"},{1,2,\"c\"}}) ==\n            vector<string>({\"b\",\"c\",\"a\"}), \"comparator and FIFO\");\n    require(slidingMedians({INT_MIN,INT_MAX},2) == vector<double>{-0.5}, \"median overflow\");\n    require(minimumMeetingRooms({{0,10},{10,20}}) == 1, \"touching intervals\");\n    require(topFrequent({2,2,1,1,3},2) == vector<int>({1,2}), \"frequency tie\");\n    require(smallestCoveringRange({{INT_MIN},{INT_MAX}}) ==\n            optional<pair<int,int>>{pair<int,int>{INT_MIN,INT_MAX}}, \"range width overflow\");\n    mt19937 rng(20260921);\n    uniform_int_distribution<int> value(-5,5), length(0,12);\n    priority_queue<int, vector<int>, greater<int>> referenceHeap;\n    for (int step = 0; step < 1000; ++step) {\n        if (referenceHeap.empty() || rng() % 2 == 0) {\n            int x = value(rng); heap.push(x); referenceHeap.push(x);\n        } else {\n            require(heap.pop() == referenceHeap.top(), \"heap pop\"); referenceHeap.pop();\n        }\n        require(heap.size() == referenceHeap.size(), \"heap size\");\n        if (!heap.empty()) require(heap.top() == referenceHeap.top(), \"heap top\");\n    }\n    VersionedMinQueue versioned;\n    unordered_map<int,int> live;\n    for (int step = 0; step < 1000; ++step) {\n        int operation = rng() % 3, id = rng() % 8;\n        if (operation == 0) {\n            int priority = value(rng); versioned.put(id,priority); live[id]=priority;\n        } else if (operation == 1) {\n            versioned.cancel(id); live.erase(id);\n        } else {\n            optional<pair<int,int>> expected;\n            for (auto [key, priority] : live)\n                if (!expected || tie(priority,key) < tie(expected->second,expected->first))\n                    expected = pair<int,int>{key,priority};\n            require(versioned.pop() == expected, \"versioned snapshots\");\n            if (expected) live.erase(expected->first);\n        }\n    }\n    for (int run = 0; run < 200; ++run) {\n        vector<int> a(length(rng));\n        for (int& x : a) x = value(rng);\n        int rank = 1 + rng() % 5;\n        KthLargestStream stream(rank);\n        vector<int> prefix;\n        for (int x : a) {\n            prefix.push_back(x);\n            sort(prefix.begin(), prefix.end(), greater<int>());\n            auto actual = stream.add(x);\n            if (prefix.size() < (size_t)rank) require(!actual, \"insufficient stream\");\n            else require(actual == optional<int>{prefix[rank-1]}, \"stream rank\");\n        }\n        unordered_map<int,int> frequency;\n        for (int x : a) ++frequency[x];\n        vector<int> ordered;\n        for (auto [x,count] : frequency) ordered.push_back(x);\n        sort(ordered.begin(),ordered.end(),[&](int x,int y) {\n            if (frequency[x] != frequency[y]) return frequency[x] > frequency[y];\n            return x < y;\n        });\n        int k = rng() % (ordered.size()+1);\n        auto expectedFrequency = ordered;\n        expectedFrequency.resize(k);\n        require(topFrequent(a,k) == expectedFrequency, \"top frequency\");\n        int width = a.empty() ? 1 : 1 + rng() % a.size();\n        require(slidingMedians(a,width) == bruteMedians(a,width), \"window median\");\n        vector<pair<int,int>> points;\n        for (int x : a) points.push_back({x,value(rng)});\n        vector<size_t> indices(points.size());\n        iota(indices.begin(),indices.end(),0);\n        auto distance = [&](size_t i) {\n            return 1LL*points[i].first*points[i].first +\n                   1LL*points[i].second*points[i].second;\n        };\n        sort(indices.begin(),indices.end(),[&](size_t i,size_t j) {\n            return pair<long long,size_t>{distance(i),i} <\n                   pair<long long,size_t>{distance(j),j};\n        });\n        int pointCount = rng() % (points.size()+1);\n        vector<pair<int,int>> expectedPoints;\n        for (int i=0;i<pointCount;++i) expectedPoints.push_back(points[indices[i]]);\n        require(closestPoints(points,pointCount) == expectedPoints, \"closest points\");\n        vector<vector<int>> rows(3);\n        for (auto& row : rows) {\n            row.resize(rng()%5);\n            for (int& x : row) x=value(rng);\n            sort(row.begin(),row.end());\n        }\n        require(smallestCoveringRange(rows) == bruteRange(rows), \"covering range\");\n        vector<tuple<long long,size_t,size_t>> pairs;\n        for (size_t i=0;i<rows[0].size();++i)\n            for (size_t j=0;j<rows[1].size();++j)\n                pairs.emplace_back((long long)rows[0][i]+rows[1][j],i,j);\n        sort(pairs.begin(),pairs.end());\n        int requested = rng()%10;\n        vector<pair<int,int>> expectedPairs;\n        for (size_t p=0;p<pairs.size() && p<(size_t)requested;++p) {\n            auto [sum,i,j]=pairs[p];\n            expectedPairs.push_back({rows[0][i],rows[1][j]});\n        }\n        require(smallestPairs(rows[0],rows[1],requested) == expectedPairs, \"pair frontier\");\n        deque<ListNode> storage;\n        vector<ListNode*> heads;\n        vector<int> flat;\n        for (const auto& row : rows) {\n            ListNode* head=nullptr; ListNode* tail=nullptr;\n            for (int x : row) {\n                storage.emplace_back(x);\n                ListNode* fresh=&storage.back();\n                if (tail) tail->next=fresh; else head=fresh;\n                tail=fresh; flat.push_back(x);\n            }\n            heads.push_back(head);\n        }\n        ListNode* merged=mergeSortedLists(heads);\n        unordered_set<ListNode*> seen;\n        vector<int> actualValues;\n        for (ListNode* p=merged;p;p=p->next) {\n            require(seen.insert(p).second,\"list cycle or duplicate node\");\n            actualValues.push_back(p->val);\n        }\n        sort(flat.begin(),flat.end());\n        require(actualValues==flat && seen.size()==storage.size(),\"list merge\");\n        vector<pair<int,int>> meetings;\n        for (int x : a) meetings.push_back({x,x+1+(int)(rng()%5)});\n        int needed=0;\n        for (auto [start,end] : meetings) {\n            int active=0;\n            for (auto [s,e] : meetings) active += s<=start && start<e;\n            needed=max(needed,active);\n        }\n        require(minimumMeetingRooms(meetings)==needed,\"rooms vs overlap\");\n        int n=1+rng()%6;\n        vector<vector<WeightedEdge>> graph(n);\n        const long long INF=1000000000000000LL;\n        vector<vector<long long>> distanceMatrix(n,vector<long long>(n,INF));\n        for (int i=0;i<n;++i) distanceMatrix[i][i]=0;\n        for (int i=0;i<n;++i) for (int j=0;j<n;++j) if (rng()%3==0) {\n            int weight=rng()%10;\n            graph[i].push_back({j,weight});\n            distanceMatrix[i][j]=min(distanceMatrix[i][j],(long long)weight);\n        }\n        for (int via=0;via<n;++via) for (int i=0;i<n;++i) for (int j=0;j<n;++j)\n            distanceMatrix[i][j]=min(distanceMatrix[i][j],\n                                    distanceMatrix[i][via]+distanceMatrix[via][j]);\n        auto actual=shortestDistances(graph,0);\n        for (int i=0;i<n;++i) {\n            if (distanceMatrix[0][i]==INF) require(!actual[i],\"unreachable\");\n            else require(actual[i]==optional<long long>{distanceMatrix[0][i]},\"Dijkstra vs Floyd\");\n        }\n    }\n    cout << \"All chapter 8 checks passed\" << endl;\n}",
+      "paragraphs": [
+        "使用显式require，避免NDEBUG关闭assert后测试失效。链表测试使用deque固定节点地址，不对容器拥有的节点执行delete。"
+      ]
+    },
+    {
+      "type": "qa",
+      "title": "章末自测与完整答案",
+      "items": [
+        {
+          "question": "1. [5,5,4]的第2大是多少，为什么？",
+          "answer": [
+            "是5，通常按元素出现次数计秩。若先去重会变成4，那回答的是第2个不同值，属于另一道题。"
+          ]
+        },
+        {
+          "question": "2. 求最小的3个，堆顶应该暴露谁？",
+          "answer": [
+            "应暴露当前入选的3个中最大的一个，所以用大顶堆。新的更小值可替换这个最差入选者，保持前缀最小3个的不变量。"
+          ]
+        },
+        {
+          "question": "3. comp(a,b)=true是否表示a先出队？",
+          "answer": [
+            "不是，priority_queue中表示a的优先级低于b。默认less让最大值在堆顶，greater让最小值在堆顶；相等时应返回false。"
+          ]
+        },
+        {
+          "question": "4. 两堆大小相同，但lo里是100、hi里是1，满足中位数结构吗？",
+          "answer": [
+            "不满足，跨堆次序已经反了。这个两元素特例平均值碰巧仍正确，不能说明结构正确；继续插入其他值就可能出错。需要lo全体<=hi全体与数量关系同时成立。"
+          ]
+        },
+        {
+          "question": "5. 延迟删除后堆的size能用作有效窗口大小吗？",
+          "answer": [
+            "不能，size包含尚未弹出的旧记录。要单独维护有效大小并清理堆顶；物理堆还可能随操作累积，必须独立分析内存和重建策略。"
+          ]
+        },
+        {
+          "question": "6. K路归并为什么不是把每一路第一个输出完就顺序读下一路？",
+          "answer": [
+            "某一路后继可能大于其他路当前头部。每输出一次必须重新在所有路头部中选最小，才能保证全局有序，而不是先完整输出某一路。"
+          ]
+        },
+        {
+          "question": "7. 会议[0,10)和[10,20)需要几个房间？",
+          "answer": [
+            "一个。按半开区间，前者在10已结束，不与后者重叠，所以释放条件为end<=start。若业务要求周转时间，条件应另行调整。"
+          ]
+        },
+        {
+          "question": "8. 最短路堆中(10,a)与(2,a)同时存在，应该怎么办？",
+          "answer": [
+            "弹出(2,a)时若dist[a]=2则有效；之后(10,a)与当前dist不符，应直接跳过。不能把旧快照扩展成有效工作，也不能在a首次入队为10时就永久定值。"
+          ]
+        }
+      ]
+    }
+  ]
+}
