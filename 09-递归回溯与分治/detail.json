@@ -1,0 +1,840 @@
+{
+  "intro": [
+    {
+      "type": "text",
+      "title": "本章目标：先定义搜索空间，再决定怎么裁剪",
+      "paragraphs": [
+        "递归是组织函数调用的方法；回溯是在决策树上尝试选择并恢复共享状态；分治将问题拆成子问题后合并；记忆化缓存重复子问题。这些概念可以组合，但并非同义词。看到dfs函数不能直接断言它是回溯或时间为指数。",
+        "每个模板都先回答：参数描述什么状态、这一层做哪个决定、终止时输出什么、哪一项严格递减、子调用结束后谁恢复状态。C++17示例中的规模限制用于控制输出爆炸；即使合法规模也需结合时限与内存评估。"
+      ]
+    },
+    {
+      "type": "table",
+      "title": "四种思路的区别",
+      "columns": [
+        "思路",
+        "子问题之间的关系",
+        "返回或保存什么",
+        "典型场景"
+      ],
+      "rows": [
+        [
+          "递归遍历",
+          "通常访问不同节点",
+          "子树信息或访问结果",
+          "树的高度、遍历"
+        ],
+        [
+          "回溯枚举",
+          "各分支代表不同决策",
+          "路径副本或计数",
+          "排列、组合、约束搜索"
+        ],
+        [
+          "分治",
+          "拆分后分别求解，再合并",
+          "能合成原问题的信息",
+          "归并、最大子段信息"
+        ],
+        [
+          "记忆化",
+          "不同路径可能到达同一状态",
+          "该状态的结果，不是仅仅访问标记",
+          "零钱兑换、单词拆分"
+        ]
+      ]
+    },
+    {
+      "type": "text",
+      "title": "复杂度与安全边界",
+      "paragraphs": [
+        "输出所有子集有2^n个答案，所有无重复全排列有n!个答案，复制每个长度O(n)的路径也是成本。不要把递归节点数、路径缓冲空间和全部结果空间混在一起。路径用引用共享时需要撤销，答案用push_back(path)保存副本；参数按值传递则不必恢复那份局部副本，但有复制开销。",
+        "递归深度并不会因记忆化自动减少。金额一万、长度一万的链式子问题仍可能产生深调用栈，依赖环境时应改用显式栈或自底向上DP。本章测试用小输入验证逻辑，不承诺极深递归可以安全运行。"
+      ]
+    }
+  ],
+  "sections": {
+    "1": {
+      "before": [
+        {
+          "type": "text",
+          "title": "1.1 start不是下一个必须选择的位置，而是允许选择的最小下标",
+          "paragraphs": [
+            "组合不关心选取顺序，让所选下标严格递增就能给每组元素一个唯一表示。选择i后传i+1，排除了先选后面再返回前面的路径，因此不会同时生成[1,2]和[2,1]。",
+            "子集题每个递归节点都代表一个答案，进入函数就记录；恰选K个的组合题只在路径长度达到K时记录。空输入的子集有一个空集；从n个数选0个也有一个空组合，不是没有答案。"
+          ]
+        },
+        {
+          "type": "table",
+          "title": "1.2 子集、组合、排列的不同状态",
+          "columns": [
+            "题型",
+            "下一层候选",
+            "记录答案的时机",
+            "数量（元素互异）"
+          ],
+          "rows": [
+            [
+              "全部子集",
+              "i之后的位置",
+              "每个递归节点",
+              "2^n"
+            ],
+            [
+              "恰选K个",
+              "i之后的位置",
+              "path长度为K",
+              "C(n,K)"
+            ],
+            [
+              "全部排列",
+              "全部尚未使用的下标",
+              "path长度为n",
+              "n!"
+            ],
+            [
+              "允许复用的组合总和",
+              "从i开始，允许再选i",
+              "剩余目标为0",
+              "依赖候选值与目标"
+            ]
+          ]
+        },
+        {
+          "type": "code",
+          "title": "1.3 恰选K个：用剩余数量收紧循环边界",
+          "file": "detail-combinations.cpp",
+          "code": "vector<vector<int>> chooseK(int n, int k) {\n    if (n < 0 || n > 20 || k < 0 || k > n)\n        throw invalid_argument(\"require 0 <= k <= n <= 20\");\n    vector<vector<int>> answer;\n    vector<int> path;\n    function<void(int)> dfs = [&](int start) {\n        int need = k - (int)path.size();\n        if (need == 0) { answer.push_back(path); return; }\n        for (int value = start; value <= n - need + 1; ++value) {\n            path.push_back(value);\n            dfs(value + 1);\n            path.pop_back();\n        }\n    };\n    dfs(1);\n    return answer;\n}",
+          "paragraphs": [
+            "选择当前value之前还需要need个数，value..n必须至少有need个位置，所以value<=n-need+1。这个剪枝只排除数量不足的分支，不丢合法组合。",
+            "辅助栈和路径O(k)，输出O(k·C(n,k))；含k=0的统一上界可写O((k+1)·C(n,k))。n上限只是教学保护，不是通用组合公式限制。"
+          ]
+        },
+        {
+          "type": "text",
+          "title": "1.4 组合总和：可复用与不可复用只差一项关键状态",
+          "paragraphs": [
+            "允许无限使用某个候选时，选择i后下一层仍从i开始；每个下标最多使用一次时，下一层从i+1开始。两者都用start规范顺序，防止同一组合的排列被反复输出。",
+            "无限复用必须有保证终止的量。本章要求候选严格为正，剩余目标每次严格减少；0会让剩余目标不变，负数可能让它增大，所以不能直接放入同一递归模板。"
+          ]
+        }
+      ],
+      "after": [
+        {
+          "type": "code",
+          "title": "1.5 组合总和I：正数候选、允许复用",
+          "file": "detail-combination-unlimited.cpp",
+          "code": "vector<vector<int>> combinationUnlimited(vector<int> candidates, int target) {\n    if (target < 0 || target > 100 || candidates.size() > 20)\n        throw invalid_argument(\"unsupported target or candidate count\");\n    for (int value : candidates)\n        if (value <= 0) throw invalid_argument(\"positive candidates required\");\n    sort(candidates.begin(), candidates.end());\n    candidates.erase(unique(candidates.begin(), candidates.end()), candidates.end());\n    vector<vector<int>> answer;\n    vector<int> path;\n    function<void(int,int)> dfs = [&](int start, int remaining) {\n        if (remaining == 0) { answer.push_back(path); return; }\n        for (int i = start; i < (int)candidates.size(); ++i) {\n            if (candidates[i] > remaining) break;\n            path.push_back(candidates[i]);\n            dfs(i, remaining - candidates[i]);\n            path.pop_back();\n        }\n    };\n    dfs(0, target);\n    return answer;\n}",
+          "paragraphs": [
+            "本接口把候选视为数值种类，先去重；target=0返回一个空组合，空候选且正目标返回无答案。排序后当前值超过remaining，后续更大值也不可行，可以break。",
+            "设最小候选c、深度D=floor(target/c)、不同候选数m，粗上界为指数级搜索，加上所有输出路径长度；不能写O(target·m)，那是某些DP的状态复杂度。辅助空间O(m+D)，不含输出；候选为空时不定义c，直接结束。"
+          ]
+        },
+        {
+          "type": "code",
+          "title": "1.6 组合总和II：每个位置一次，同层跳过相等值",
+          "file": "detail-combination-once.cpp",
+          "code": "vector<vector<int>> combinationOnce(vector<int> candidates, int target) {\n    if (target < 0 || target > 100 || candidates.size() > 20)\n        throw invalid_argument(\"unsupported target or candidate count\");\n    for (int value : candidates)\n        if (value <= 0) throw invalid_argument(\"positive candidates required\");\n    sort(candidates.begin(), candidates.end());\n    vector<vector<int>> answer;\n    vector<int> path;\n    function<void(int,int)> dfs = [&](int start, int remaining) {\n        if (remaining == 0) { answer.push_back(path); return; }\n        for (int i = start; i < (int)candidates.size(); ++i) {\n            if (i > start && candidates[i] == candidates[i - 1]) continue;\n            if (candidates[i] > remaining) break;\n            path.push_back(candidates[i]);\n            dfs(i + 1, remaining - candidates[i]);\n            path.pop_back();\n        }\n    };\n    dfs(0, target);\n    return answer;\n}",
+          "paragraphs": [
+            "相同数值的不同位置都可能被使用，例如[1,1,2]、target=2有[1,1]和[2]，不能先把输入整体去重。i>start只跳过本层重复起点，下一层仍能选择第二个1。",
+            "最坏时间可用O(n·2^n)上界（含路径复制），辅助O(n)，输出另算；实际受正数和剪枝影响。接口按值接收候选，排序不会改调用者原数组。"
+          ]
+        },
+        {
+          "type": "table",
+          "title": "1.7 [1a,1b,2]，目标2：树层与树枝",
+          "columns": [
+            "位置",
+            "可以选谁",
+            "结果",
+            "原因"
+          ],
+          "rows": [
+            [
+              "根层start=0",
+              "1a、2；跳过1b",
+              "从不同首值启动",
+              "根层两个1等价"
+            ],
+            [
+              "已选1a，start=1",
+              "可以选1b",
+              "[1,1]",
+              "第二个1在更深层，不是根层重复"
+            ],
+            [
+              "根层直接选2",
+              "剩余0",
+              "[2]",
+              "合法单元素组合"
+            ],
+            [
+              "若全局unique删除1b",
+              "不能再选第二个1",
+              "漏掉[1,1]",
+              "错误丢失可使用次数"
+            ]
+          ]
+        }
+      ],
+      "answers": [
+        {
+          "question": "为什么子集进入函数就记录，排列却等满长才记录？",
+          "answer": [
+            "子集任意长度都合法，每个路径前缀就是一个子集；全排列要求每个位置恰好使用一次，未满长只是中间状态。记录时机由答案定义决定，不是统一模板规定。"
+          ]
+        },
+        {
+          "question": "start解决了什么重复，能代替used吗？",
+          "answer": [
+            "start强制下标递增，消除组合的顺序重复；排列需要允许不同先后次序，不能用递增下标限制，通常用used记录本条路径已选位置。"
+          ]
+        },
+        {
+          "question": "选K个时为什么上界是n-need+1？",
+          "answer": [
+            "从候选value到n总共有n-value+1个数，要至少填满need个位置，因此n-value+1>=need，整理得到value<=n-need+1。"
+          ]
+        },
+        {
+          "question": "无限复用为什么传i，而不是i+1？",
+          "answer": [
+            "传i保留当前候选，允许下一层再次使用；传i+1会把当前下标永久排除，变成每个位置只用一次的模型。终止性必须另由正候选使remaining下降保证。"
+          ]
+        },
+        {
+          "question": "候选含0或负数能直接套组合总和I吗？",
+          "answer": [
+            "不能。0会让状态原地递归，负数可使剩余金额上升；还可能存在无限多个满足条件的组合。需要限制使用次数或重新定义有限状态空间。"
+          ]
+        },
+        {
+          "question": "组合总和II为什么不能直接unique整个数组？",
+          "answer": [
+            "题目中的相同值来自不同可用位置，可能需要同时选多个。应保留次数，仅对同一层的等价分支去重；全局unique会减少可用次数，漏掉合法组合。"
+          ]
+        }
+      ]
+    },
+    "2": {
+      "before": [
+        {
+          "type": "text",
+          "title": "2.1 全排列的不变量：used与path必须同步",
+          "paragraphs": [
+            "path按顺序保存本次排列的前缀，used[i]恰好表示下标i已经出现在该前缀。每层扫描所有未使用位置，选择后置true并push，返回后pop并置false。递归深度等于已选数量，最多n层。",
+            "即使两个位置值相等，它们也是两个可用实例。基础去重条件i>0且a[i]==a[i-1]且!used[i-1]，给相等实例规定选择先后次序：前一个尚未使用时，不允许越过它从后一个启动分支；前一个已在祖先路径中时，后一个可以继续使用。"
+          ]
+        },
+        {
+          "type": "table",
+          "title": "2.2 [1a,1b,2]的相等位置如何处理",
+          "columns": [
+            "当前路径",
+            "used[1a]",
+            "能选1b吗",
+            "解释"
+          ],
+          "rows": [
+            [
+              "[]",
+              "false",
+              "不能",
+              "本层从1a开始已代表所有首值为1的排列"
+            ],
+            [
+              "[1a]",
+              "true",
+              "可以",
+              "要允许连续使用两个1"
+            ],
+            [
+              "[2]",
+              "false",
+              "不能",
+              "下一位为1的分支仍由1a代表"
+            ],
+            [
+              "[2,1a]",
+              "true",
+              "可以",
+              "得到[2,1,1]"
+            ]
+          ]
+        },
+        {
+          "type": "code",
+          "title": "2.3 重复子集：与排列不同的同层条件",
+          "file": "detail-subsets-unique.cpp",
+          "code": "vector<vector<int>> uniqueSubsets(vector<int> a) {\n    if (a.size() > 20) throw invalid_argument(\"too many elements\");\n    sort(a.begin(), a.end());\n    vector<vector<int>> answer;\n    vector<int> path;\n    function<void(int)> dfs = [&](int start) {\n        answer.push_back(path);\n        for (int i = start; i < (int)a.size(); ++i) {\n            if (i > start && a[i] == a[i - 1]) continue;\n            path.push_back(a[i]); dfs(i + 1); path.pop_back();\n        }\n    };\n    dfs(0);\n    return answer;\n}",
+          "paragraphs": [
+            "子集用i>start判断同层相等候选，不是i>0；否则进入新层后会把合法的第二个相同值也剪掉。若不同值的频次为c1..cm，唯一子集数为∏(cj+1)。最坏时间与输出O(n·2^n)，辅助O(n)。"
+          ]
+        }
+      ],
+      "after": [
+        {
+          "type": "text",
+          "title": "2.4 排列的另一种状态：剩余频次",
+          "paragraphs": [
+            "排序+used按位置管理同值实例；频次版则把相等位置合成一种候选，每次选择某个值就扣一次剩余数量。分支直接按不同值展开，天然不会产生同值位置交换的重复。",
+            "频次版仍需保证每次选择后恢复计数，且答案拷贝不能引用之后会被改变的path。所有计数恢复后，再次调用函数不会受到上次递归影响。"
+          ]
+        },
+        {
+          "type": "code",
+          "title": "2.5 频次版唯一全排列",
+          "file": "detail-permutations-frequency.cpp",
+          "code": "vector<vector<int>> frequencyPermutations(vector<int> a) {\n    if (a.size() > 9) throw invalid_argument(\"permutation output too large\");\n    sort(a.begin(), a.end());\n    vector<int> values, count;\n    for (int x : a) {\n        if (values.empty() || values.back() != x) {\n            values.push_back(x); count.push_back(1);\n        } else ++count.back();\n    }\n    vector<vector<int>> answer;\n    vector<int> path;\n    function<void()> dfs = [&] {\n        if (path.size() == a.size()) { answer.push_back(path); return; }\n        for (size_t i = 0; i < values.size(); ++i) {\n            if (count[i] == 0) continue;\n            --count[i]; path.push_back(values[i]);\n            dfs();\n            path.pop_back(); ++count[i];\n        }\n    };\n    dfs();\n    return answer;\n}",
+          "paragraphs": [
+            "空数组返回一个空排列。若唯一排列数P=n!/∏cj!，仅保存结果就需O(nP)；该实现还会在每个内部节点扫描m个不同值，精确表述为O(m·搜索节点数+nP)，最坏仍在O(n·n!)量级。路径、计数和递归O(n)，输出另算。"
+          ]
+        },
+        {
+          "type": "code",
+          "title": "2.6 电话号码字母组合：每层对应一个输入位置",
+          "file": "detail-phone-letters.cpp",
+          "code": "vector<string> phoneLetters(const string& digits) {\n    const array<string, 10> letters{\"\", \"\", \"abc\", \"def\", \"ghi\", \"jkl\",\n                                  \"mno\", \"pqrs\", \"tuv\", \"wxyz\"};\n    if (digits.size() > 8) throw invalid_argument(\"output too large\");\n    for (char c : digits)\n        if (c < '2' || c > '9') throw invalid_argument(\"digits 2..9 required\");\n    if (digits.empty()) return {};\n    vector<string> answer;\n    string path;\n    function<void(size_t)> dfs = [&](size_t index) {\n        if (index == digits.size()) { answer.push_back(path); return; }\n        for (char c : letters[digits[index] - '0']) {\n            path.push_back(c); dfs(index + 1); path.pop_back();\n        }\n    };\n    dfs(0);\n    return answer;\n}",
+          "paragraphs": [
+            "不是所有回溯题都需要start或used。这里第index层只处理digits[index]，位置顺序固定；重复数字仍是不同输入位置，不需要跨层去重。空号码按本接口约定返回无字符串，而不是一个空串，这与组合的数学空解约定不同。",
+            "长度n、每位候选数bi，答案数P=∏bi，时间与输出O(nP)，辅助O(n)，上界O(n·4^n)。"
+          ]
+        },
+        {
+          "type": "table",
+          "title": "2.7 去重策略不能跨题型照搬",
+          "columns": [
+            "场景",
+            "正确策略",
+            "保留的信息",
+            "错误做法"
+          ],
+          "rows": [
+            [
+              "可无限复用的数值种类",
+              "候选值先unique",
+              "每种值可无限使用",
+              "把同值下标当成不同币种重复枚举"
+            ],
+            [
+              "每个位置只用一次的组合",
+              "排序，i>start时跳过同值",
+              "保留同值的可用次数",
+              "整体unique后漏掉重复值组合"
+            ],
+            [
+              "按位置构造唯一排列",
+              "排序+used，规范同值选择顺序",
+              "各位置是否已进入路径",
+              "相等就无条件跳过"
+            ],
+            [
+              "按值构造唯一排列",
+              "不同值+剩余频次",
+              "每种值还剩几份",
+              "扣减后忘记恢复"
+            ]
+          ]
+        }
+      ],
+      "answers": [
+        {
+          "question": "排列为什么不能像组合一样递归传i+1？",
+          "answer": [
+            "那会强制所选下标递增，只保留每组下标的一种顺序，漏掉[2,1]等合法排列。排列每层都可从所有未使用位置选择，顺序本身就是答案信息。"
+          ]
+        },
+        {
+          "question": "!used[i-1]到底表示什么？",
+          "answer": [
+            "它表示前一个同值实例不在当前祖先路径上。此时选择后一个会与同层先选前一个产生等价分支，所以跳过；若前一个已使用，后一个是另一份可用实例，应允许选择。"
+          ]
+        },
+        {
+          "question": "子集去重为何写i>start，而不是i>0？",
+          "answer": [
+            "去重只针对当前循环层的兄弟候选。新一层的第一个i=start即使与前一位置值相同，也可能是合法增加一次重复值，不能跳过。"
+          ]
+        },
+        {
+          "question": "频次版排列如何避免重复？",
+          "answer": [
+            "同一个值只对应一个分支，剩余数量描述还能用几份。交换两个同值下标不再产生不同状态路径，从源头消除了位置身份带来的等价排列。"
+          ]
+        },
+        {
+          "question": "ans.push_back(path)之后再pop_back会改变已有答案吗？",
+          "answer": [
+            "vector的push_back(path)复制当前vector，已有答案拥有自己的元素。若改成存path的指针、引用或视图，则后续修改会影响观察结果；这种保存方式不适合这里的独立答案。"
+          ]
+        },
+        {
+          "question": "电话号码为什么没有used标记？",
+          "answer": [
+            "每层由index唯一指定处理哪个输入位置，递归到index+1自然保证每个位置用一次。used解决自由挑选位置时的复用问题，这里不存在该自由度。"
+          ]
+        }
+      ]
+    },
+    "3": {
+      "before": [
+        {
+          "type": "text",
+          "title": "3.1 剪枝是一项正确性声明",
+          "paragraphs": [
+            "可行性剪枝证明当前前缀已无法补成合法解；最优性剪枝证明即使乐观补全也不优于已有最优值；排序后的break还要求后续所有候选同样不可行。只因“看起来不太可能”就跳过会漏解。",
+            "括号生成的约束right<=left对所有前缀成立。一旦某个前缀右括号更多，未来追加字符不能改写过去这个前缀，因此整条分支必无解。相反，组合和超过target是否可剪，依赖剩余数是否全非负。"
+          ]
+        },
+        {
+          "type": "table",
+          "title": "3.2 三种剪枝需要不同的证明",
+          "columns": [
+            "剪枝",
+            "依据",
+            "示例",
+            "容易误用之处"
+          ],
+          "rows": [
+            [
+              "可行性",
+              "已违反不可修复约束",
+              "括号right>left、皇后攻击",
+              "不能用当前值推断允许负数的未来"
+            ],
+            [
+              "数量/范围",
+              "资源不足或不可能达到目标",
+              "剩余位置少于need",
+              "边界偏一会剪掉最后一组"
+            ],
+            [
+              "最优性",
+              "乐观下界都不优于当前best",
+              "最少成本搜索",
+              "下界必须真的不大于可达最优"
+            ],
+            [
+              "搜索顺序优化",
+              "优先最受约束变量",
+              "数独先填候选最少的格",
+              "改变顺序本身不等于减少解空间"
+            ]
+          ]
+        },
+        {
+          "type": "code",
+          "title": "3.3 N皇后：按行选择，列与对角线常数检查",
+          "file": "detail-n-queens.cpp",
+          "code": "vector<vector<string>> solveNQueens(int n) {\n    if (n < 0 || n > 12) throw invalid_argument(\"require 0 <= n <= 12\");\n    if (n == 0) return {{}};\n    vector<vector<string>> answer;\n    vector<string> board(n, string(n, '.'));\n    vector<bool> column(n, false), down(2*n-1, false), up(2*n-1, false);\n    function<void(int)> dfs = [&](int row) {\n        if (row == n) { answer.push_back(board); return; }\n        for (int col = 0; col < n; ++col) {\n            int d = row - col + n - 1, u = row + col;\n            if (column[col] || down[d] || up[u]) continue;\n            board[row][col] = 'Q';\n            column[col] = down[d] = up[u] = true;\n            dfs(row + 1);\n            column[col] = down[d] = up[u] = false;\n            board[row][col] = '.';\n        }\n    };\n    dfs(0);\n    return answer;\n}",
+          "paragraphs": [
+            "每层固定一行，因此行冲突自动排除；同一左上到右下对角线row-col相同，偏移n-1变成非负下标；另一方向row+col相同。只有验证三种占用全为空后才置true，因此返回时置false不会误删祖先占用。",
+            "按列唯一性，候选前缀数受排列树限制；本例每层扫描n列，粗上界O(n·n!+S·n²)，S为解数。辅助棋盘O(n²)、标记与栈O(n)，输出O(S·n²)。n=0约定一个空棋盘解，n=2/3无解。"
+          ]
+        }
+      ],
+      "after": [
+        {
+          "type": "text",
+          "title": "3.4 单词搜索：visited属于一条路径，不属于整次搜索",
+          "paragraphs": [
+            "从网格任一位置开始，每步走上下左右，路径内不能重复使用同一格。不同起点、不同搜索分支仍可使用同一格，所以DFS返回时必须取消本格访问标记。用图遍历那种永久visited会漏掉其他路径。",
+            "缓存仅(row,col,index)通常不正确，因为剩余可用格还由当前visited集合决定。同一格同一字符位置，经不同路线到达时，可能有不同后续可行性。"
+          ]
+        },
+        {
+          "type": "code",
+          "title": "3.5 单词搜索：输入不修改，成功路径也恢复visited",
+          "file": "detail-word-search.cpp",
+          "code": "bool wordExists(const vector<string>& board, const string& word) {\n    if (board.empty()) return word.empty();\n    size_t columns = board[0].size();\n    for (const auto& row : board)\n        if (row.size() != columns) throw invalid_argument(\"rectangular board required\");\n    if (board.size() > 20 || columns > 20)\n        throw invalid_argument(\"board too large for this example\");\n    if (word.empty()) return true;\n    if (columns == 0 || word.size() > board.size()*columns) return false;\n    array<int,256> available{}, needed{};\n    for (const auto& row : board)\n        for (unsigned char c : row) ++available[c];\n    for (unsigned char c : word)\n        if (++needed[c] > available[c]) return false;\n    int rows = (int)board.size(), cols = (int)columns;\n    vector<vector<bool>> used(rows, vector<bool>(cols, false));\n    const int dr[4] = {-1,1,0,0}, dc[4] = {0,0,-1,1};\n    function<bool(int,int,size_t)> dfs = [&](int r,int c,size_t index) {\n        if (used[r][c] || board[r][c] != word[index]) return false;\n        if (index + 1 == word.size()) return true;\n        used[r][c] = true;\n        bool found = false;\n        for (int direction=0; direction<4 && !found; ++direction) {\n            int nr=r+dr[direction], nc=c+dc[direction];\n            if (nr>=0 && nr<rows && nc>=0 && nc<cols)\n                found = dfs(nr,nc,index+1);\n        }\n        used[r][c] = false;\n        return found;\n    };\n    for (int r=0;r<rows;++r)\n        for (int c=0;c<cols;++c)\n            if (dfs(r,c,0)) return true;\n    return false;\n}",
+          "paragraphs": [
+            "字符频次不足时可安全提前返回false，但足够并不保证相邻关系可满足。代码按字节字符工作，不进行Unicode码点分割。空单词约定存在。",
+            "设L为单词长度，粗上界O(RC·4^L)，排除立即回头后可收紧到首步4、后续至多3的形式；频次检查额外O(RC+L)。visited空间O(RC)、递归O(L)。board为const，不用特殊字符覆盖输入，避免与合法字符冲突。"
+          ]
+        },
+        {
+          "type": "code",
+          "title": "3.6 数独：候选最少优先，失败后恢复棋盘",
+          "file": "detail-sudoku.cpp",
+          "code": "bool solveSudoku(vector<string>& board) {\n    if (board.size()!=9) throw invalid_argument(\"9 rows required\");\n    for (const auto& line:board)\n        if (line.size()!=9) throw invalid_argument(\"9 columns required\");\n    array<unsigned,9> row{}, col{}, box{};\n    vector<pair<int,int>> empty;\n    for (int r=0;r<9;++r) for (int c=0;c<9;++c) {\n        if (board[r][c]=='.') { empty.push_back({r,c}); continue; }\n        if (board[r][c]<'1' || board[r][c]>'9') throw invalid_argument(\"bad symbol\");\n        unsigned bit=1U<<(board[r][c]-'1');\n        int b=(r/3)*3+c/3;\n        if ((row[r]|col[c]|box[b])&bit) throw invalid_argument(\"conflicting clues\");\n        row[r]|=bit; col[c]|=bit; box[b]|=bit;\n    }\n    auto candidates = [&](int r,int c) {\n        return 511U & ~(row[r]|col[c]|box[(r/3)*3+c/3]);\n    };\n    auto countBits = [](unsigned x) {\n        int count=0;\n        while (x) { x&=x-1; ++count; }\n        return count;\n    };\n    function<bool(size_t)> dfs = [&](size_t index) {\n        if (index==empty.size()) return true;\n        size_t best=index;\n        int minimum=10;\n        for (size_t i=index;i<empty.size();++i) {\n            auto [r,c]=empty[i];\n            int count=countBits(candidates(r,c));\n            if (count<minimum) { minimum=count; best=i; }\n        }\n        if (minimum==0) return false;\n        swap(empty[index],empty[best]);\n        auto [r,c]=empty[index];\n        int b=(r/3)*3+c/3;\n        unsigned options=candidates(r,c);\n        for (int digit=0;digit<9;++digit) {\n            unsigned bit=1U<<digit;\n            if (!(options&bit)) continue;\n            row[r]|=bit; col[c]|=bit; box[b]|=bit;\n            board[r][c]=char('1'+digit);\n            if (dfs(index+1)) return true;\n            board[r][c]='.';\n            row[r]^=bit; col[c]^=bit; box[b]^=bit;\n        }\n        swap(empty[index],empty[best]);\n        return false;\n    };\n    return dfs(0);\n}",
+          "paragraphs": [
+            "成功时保留找到的一份完整解；若合法初始棋盘无解，所有尝试赋值都撤销，返回false且棋盘不变。非法字符或初始线索冲突在修改棋盘之前抛异常。该接口不判断解是否唯一。",
+            "每步选候选数最少的空格（MRV），这是搜索顺序启发，不是跳过合法答案。设E为空格数、V为搜索节点数，扫描剩余空格与候选检查共O(E·V)的粗上界，V最坏仍指数；辅助状态与递归O(E+81)。"
+          ]
+        },
+        {
+          "type": "table",
+          "title": "3.7 返回前需要恢复哪些状态",
+          "columns": [
+            "场景",
+            "普通失败返回",
+            "成功提前返回",
+            "契约"
+          ],
+          "rows": [
+            [
+              "枚举全部答案",
+              "path与used必须恢复",
+              "通常无提前成功返回",
+              "兄弟分支看到相同入口状态"
+            ],
+            [
+              "只判断单词存在",
+              "used必须恢复",
+              "本例也恢复",
+              "输入const，状态仅属路径"
+            ],
+            [
+              "求一份数独解",
+              "恢复数字与占用",
+              "保留解中的修改",
+              "成功返回棋盘即结果"
+            ],
+            [
+              "参数按值复制",
+              "修改仅在局部副本",
+              "无需恢复调用者副本",
+              "需计算复制成本"
+            ]
+          ]
+        }
+      ],
+      "answers": [
+        {
+          "question": "括号前缀右括号多于左括号，之后补左括号能修复吗？",
+          "answer": [
+            "不能。合法括号要求每个前缀都满足右数不超过左数，追加字符不能改变已出现的错误前缀，因此该分支永远无解。"
+          ]
+        },
+        {
+          "question": "N皇后为何只存列与两组对角线，不存行？",
+          "answer": [
+            "递归层数直接决定当前行，每行只放一次，行约束由搜索结构保证。列和两种对角线仍可能被祖先行占用，必须显式记录。"
+          ]
+        },
+        {
+          "question": "单词搜索找到答案后为什么还恢复visited？",
+          "answer": [
+            "visited代表当前路径；统一在返回前恢复能维持函数契约，防止调用逻辑复用状态时出错。特别是如果改成覆盖board标记，更必须在成功早退前恢复，否则会修改用户输入。"
+          ]
+        },
+        {
+          "question": "数独成功时为何反而不撤销数字？",
+          "answer": [
+            "该接口的目标就是原地写入一份解，成功路径上的修改是输出。失败分支必须恢复，成功分支有意保留；是否撤销取决于公开接口契约，而不是所有回溯都机械pop。"
+          ]
+        },
+        {
+          "question": "MRV会不会因为优先换格子而漏掉解？",
+          "answer": [
+            "不会，它只改变先决定哪个空格，仍枚举该格所有合法数字。与真正剪枝不同，MRV依赖尽早暴露约束冲突来减少实际搜索，不提供多项式最坏复杂度保证。"
+          ]
+        },
+        {
+          "question": "最优性剪枝的乐观下界可以随便估计吗？",
+          "answer": [
+            "不可以。最小化问题中，下界必须不大于该分支真实能达到的最优成本；只有下界已经不小于当前best时，才能证明分支不会改进。过高的估计可能剪掉最优解。"
+          ]
+        }
+      ]
+    },
+    "4": {
+      "before": [
+        {
+          "type": "text",
+          "title": "4.1 记忆化缓存的是函数值，不是这次来过的标记",
+          "paragraphs": [
+            "固定正硬币集合且无限使用时，最少硬币数只由剩余金额rem决定，f(rem)=min(1+f(rem-c))，f(0)=0。不同选择前缀达到同一个rem，未来选项相同，因此可共用答案。未计算、不可达、合法答案0必须区分。",
+            "基础零钱兑换示例以-1为未计算、INF为不可达；不能把初值设0再用它表示没访问，因为金额0的最优值确实为0。时间O(A·m)来自至多A+1种状态、每种尝试m个硬币，而不是从递归语法本身得到。前提是所有硬币为正且A可在内存中建表。"
+          ]
+        },
+        {
+          "type": "table",
+          "title": "4.2 缓存键必须包含所有影响未来的信息",
+          "columns": [
+            "问题",
+            "充分状态",
+            "不足的键",
+            "原因"
+          ],
+          "rows": [
+            [
+              "固定硬币集合、无限复用、最少数量",
+              "remaining",
+              "只看递归深度",
+              "同深度可剩不同金额"
+            ],
+            [
+              "硬币组合计数（避免顺序重复）",
+              "start与remaining",
+              "仅remaining",
+              "可选币种后缀不同"
+            ],
+            [
+              "固定字符串与词典的单词拆分",
+              "起始位置",
+              "仅已用单词数",
+              "后缀内容不确定"
+            ],
+            [
+              "单词网格路径内不得复用",
+              "位置、字符下标、访问集合",
+              "位置与字符下标",
+              "可用格受之前路径限制"
+            ],
+            [
+              "子区间表达式求值",
+              "左右端点",
+              "区间长度",
+              "同长区间的数字和运算符不同"
+            ]
+          ]
+        },
+        {
+          "type": "text",
+          "title": "4.3 方案数量与最少数量不能照抄转移",
+          "paragraphs": [
+            "最少数量在各选择间取min；方案数量要相加，还要规定顺序是否算不同。硬币[1,2]、金额3：若顺序重要，111、12、21共3种；若只看数量组合，只有111和12两种，需要start限制可选币种或在迭代DP中采用合适循环顺序。",
+            "枚举所有答案时，不能简单把某状态记成“访问过”就跳过后续到达。不同前缀可能应与相同后缀解组合，直接剪掉会漏输出；可以缓存所有后缀答案再拼接，但输出量与存储量仍无法消除。"
+          ]
+        },
+        {
+          "type": "code",
+          "title": "4.4 单词拆分：后缀位置足以描述状态",
+          "file": "detail-word-break.cpp",
+          "code": "bool wordBreakMemo(const string& text, const vector<string>& dictionary) {\n    if (text.size() > 10000) throw invalid_argument(\"text too large\");\n    for (const auto& word : dictionary)\n        if (word.empty()) throw invalid_argument(\"empty word forbidden\");\n    vector<int> memo(text.size() + 1, -1);\n    memo[text.size()] = 1;\n    function<bool(size_t)> dfs = [&](size_t start) {\n        if (memo[start] != -1) return memo[start] != 0;\n        for (const string& word : dictionary) {\n            if (word.size() <= text.size() - start &&\n                text.compare(start, word.size(), word) == 0 &&\n                dfs(start + word.size())) {\n                memo[start] = 1;\n                return true;\n            }\n        }\n        memo[start] = 0;\n        return false;\n    };\n    return dfs(0);\n}",
+          "paragraphs": [
+            "词典可无限使用，空text可拆分为零个词；空词典只能匹配空text。拒绝空词是为保证位置严格前进。text与词典在一次调用中固定，start完整决定后缀子问题，失败状态也需要缓存。",
+            "若词典总字符数为L、text长度为n，逐词compare的时间上界O(nL+n)，缓存O(n)，调用栈最坏O(n)。不能省略字符串比较成本后就写每个状态O(词数)。重复词不会影响布尔结果，但会增加扫描成本。"
+          ]
+        }
+      ],
+      "after": [
+        {
+          "type": "text",
+          "title": "4.5 分治不是必须互不重叠，关键是如何合并",
+          "paragraphs": [
+            "归并排序在下标范围上分成不重叠的两半；表达式不同括号化会反复用到相同子区间，因此分治也可以结合记忆化。先设计子问题的返回信息，再问是否有重叠、是否适合缓存。",
+            "快速排序分区并不总是让某个基准元素精确就位：三路分区确定的是整个相等区域；分治只继续处理两侧。第六章已详细讨论分区，本章用表达式与最大子段展示不同的合并方式。"
+          ]
+        },
+        {
+          "type": "code",
+          "title": "4.6 所有括号化结果：按最后执行的运算符分治",
+          "file": "detail-expression-results.cpp",
+          "code": "vector<long long> expressionResults(const string& expression) {\n    vector<int> numbers;\n    vector<char> operators;\n    size_t pos = 0;\n    while (pos < expression.size()) {\n        if (expression[pos] < '0' || expression[pos] > '9')\n            throw invalid_argument(\"expected nonnegative integer\");\n        int value = 0;\n        while (pos < expression.size() && expression[pos] >= '0' && expression[pos] <= '9') {\n            int digit = expression[pos++] - '0';\n            if (value > (100 - digit) / 10) throw invalid_argument(\"number exceeds 100\");\n            value = value * 10 + digit;\n        }\n        numbers.push_back(value);\n        if (numbers.size() > 8) throw invalid_argument(\"too many operands\");\n        if (pos == expression.size()) break;\n        char op = expression[pos++];\n        if (op != '+' && op != '-' && op != '*') throw invalid_argument(\"bad operator\");\n        operators.push_back(op);\n        if (pos == expression.size()) throw invalid_argument(\"missing operand\");\n    }\n    if (numbers.empty()) throw invalid_argument(\"empty expression\");\n    int n = (int)numbers.size();\n    vector<vector<vector<long long>>> memo(n, vector<vector<long long>>(n));\n    vector<vector<bool>> ready(n, vector<bool>(n, false));\n    function<const vector<long long>&(int,int)> solve =\n        [&](int left, int right) -> const vector<long long>& {\n            if (ready[left][right]) return memo[left][right];\n            auto& result = memo[left][right];\n            if (left == right) result.push_back(numbers[left]);\n            else for (int split = left; split < right; ++split) {\n                const auto& a = solve(left, split);\n                const auto& b = solve(split + 1, right);\n                for (long long x : a) for (long long y : b) {\n                    char op = operators[split];\n                    if (op == '+') result.push_back(x + y);\n                    else if (op == '-') result.push_back(x - y);\n                    else result.push_back(x * y);\n                }\n            }\n            ready[left][right] = true;\n            return result;\n        };\n    return solve(0, n - 1);\n}",
+          "paragraphs": [
+            "输入语法仅支持0..100的十进制整数及二元+、-、*，不含空格、一元负号和已有括号；返回所有二叉括号化的计算结果，同一个数值由不同括号化得到时保留多次。8个操作数的限制控制输出，也使所有中间整数安全落在long long内。",
+            "每个根运算符切分都组合左结果与右结果的笛卡尔积，保证不漏括号化。n个操作数有Catalan(n-1)种结构；记忆化只避免子区间重复求解，不会把结果列表变成多项式。令M为所有子区间结果数量之和，不含输入解析的时间O(n³+M)，解析另需O(表达式字符数)、空间O(n²+M)，另有O(n)栈与最终返回副本。"
+          ]
+        },
+        {
+          "type": "table",
+          "title": "4.7 最大子段合并需要四项信息",
+          "columns": [
+            "子区间信息",
+            "语义",
+            "合并公式",
+            "原因"
+          ],
+          "rows": [
+            [
+              "sum",
+              "整段总和",
+              "L.sum+R.sum",
+              "跨越两段"
+            ],
+            [
+              "prefix",
+              "非空最大前缀和",
+              "max(L.prefix,L.sum+R.prefix)",
+              "前缀停在左侧或穿过整个左段"
+            ],
+            [
+              "suffix",
+              "非空最大后缀和",
+              "max(R.suffix,R.sum+L.suffix)",
+              "后缀停在右侧或穿过整个右段"
+            ],
+            [
+              "best",
+              "非空最大连续子段和",
+              "max(L.best,R.best,L.suffix+R.prefix)",
+              "最优在左、在右或跨分界"
+            ]
+          ]
+        },
+        {
+          "type": "code",
+          "title": "4.8 最大子段和：常数时间合并子区间报告",
+          "file": "detail-max-subarray-divide.cpp",
+          "code": "struct SegmentSummary {\n    long long sum, prefix, suffix, best;\n};\nSegmentSummary summarizeSegment(const vector<int>& a, int left, int right) {\n    if (right - left == 1) {\n        long long value = a[left];\n        return {value, value, value, value};\n    }\n    int middle = left + (right - left) / 2;\n    auto l = summarizeSegment(a, left, middle);\n    auto r = summarizeSegment(a, middle, right);\n    return {l.sum + r.sum,\n            max(l.prefix, l.sum + r.prefix),\n            max(r.suffix, r.sum + l.suffix),\n            max({l.best, r.best, l.suffix + r.prefix})};\n}\noptional<long long> maximumSubarrayDivide(const vector<int>& a) {\n    if (a.size() > 100000) throw invalid_argument(\"array too large\");\n    for (int value : a)\n        if (value < -1000000000 || value > 1000000000)\n            throw invalid_argument(\"value outside supported range\");\n    if (a.empty()) return nullopt;\n    return summarizeSegment(a, 0, (int)a.size()).best;\n}",
+          "paragraphs": [
+            "区间为非空半开范围[left,right)，辅助函数只由公开入口在合法范围调用。叶子四项均为该值，因此全负数组也会返回最大负数，不会把空子段0误当答案。空输入返回nullopt。",
+            "递推T(n)=2T(n/2)+O(1)，时间O(n)、递归空间O(logn)。若每层从中点向两边扫描求跨界答案，则合并为O(n)，总O(nlogn)；返回更充分的信息能降低合并成本。这组报告也可用于线段树的区间最大子段查询。"
+          ]
+        }
+      ],
+      "answers": [
+        {
+          "question": "缓存键为什么不能随意省掉start或used？",
+          "answer": [
+            "只有在省略信息不影响未来可选项与目标时才安全。组合计数的start决定还能使用哪些候选，单词路径的used决定哪些格子禁用；省掉它们会合并本质不同的子问题。"
+          ]
+        },
+        {
+          "question": "记忆化为什么要缓存失败状态？",
+          "answer": [
+            "不同前缀也会反复到达同一个无解后缀。只缓存成功会让无解区域被重复搜索，仍可能指数退化。应把未计算、成功、失败明确区分。"
+          ]
+        },
+        {
+          "question": "memo能降低递归深度吗？",
+          "answer": [
+            "通常只减少重复调用总数，不改变最长依赖链。零钱兑换有1元硬币时可能沿金额每次减1递归，深度仍O(amount)；需要迭代DP来消除系统栈风险。"
+          ]
+        },
+        {
+          "question": "表达式求值结果为什么不去重？",
+          "answer": [
+            "题目通常按不同括号化输出结果，即使数值相同也保留。例如两个不同运算树都可能得到-10。若要求不同数值集合才额外去重，不能悄悄改变答案语义。"
+          ]
+        },
+        {
+          "question": "分治最大子段只返回best够不够？",
+          "answer": [
+            "不够，父区间还需要知道能跨边界连接的最大后缀与前缀，以及整段sum。只返回内部最优无法正确计算跨界候选，需要一份可合并的完整报告。"
+          ]
+        },
+        {
+          "question": "为什么这里最大子段分治是O(n)而不是O(nlogn)？",
+          "answer": [
+            "每个递归节点只合并四个常数大小统计，不再扫描整个区间；二叉递归树共有O(n)节点。分治复杂度由子问题与合并工作量共同决定，不是见到二分就统一乘logn。"
+          ]
+        }
+      ]
+    }
+  },
+  "outro": [
+    {
+      "type": "table",
+      "title": "经典考点与分层训练路线",
+      "columns": [
+        "阶段",
+        "经典题",
+        "必须回答的问题",
+        "关键边界"
+      ],
+      "rows": [
+        [
+          "枚举模板",
+          "78 子集；77 组合；39 组合总和",
+          "何时记录；start含义；终止量",
+          "空解、K=0、目标0"
+        ],
+        [
+          "重复处理",
+          "47 全排列II；90 子集II；40 组合总和II",
+          "位置与数值；树层与树枝",
+          "[1,1,2]；全部相同"
+        ],
+        [
+          "固定层决策",
+          "17 电话号码；22 括号生成",
+          "每层对象；合法前缀",
+          "空输入、非法字符、n=0"
+        ],
+        [
+          "约束搜索",
+          "51 N皇后；79 单词搜索；37 数独",
+          "占用恢复；成功返回契约；MRV",
+          "无解、重复字符、缺候选"
+        ],
+        [
+          "记忆化",
+          "322 零钱兑换；139 单词拆分",
+          "状态充分；失败缓存；栈深",
+          "不可达、空目标、重复子问题"
+        ],
+        [
+          "分治合并",
+          "241 不同方式加括号；53 最大子数组",
+          "根切分；重复结果；合并信息",
+          "全负、单元素、运算溢出"
+        ]
+      ]
+    },
+    {
+      "type": "text",
+      "title": "综合测试：小规模穷举校验去重和状态恢复",
+      "paragraphs": [
+        "测试独立包含12份补充示例，使用位掩码穷举子集、next_permutation枚举排列、按每种值数量枚举无限复用组合、路径位掩码搜索网格、迭代可达性验证单词拆分，以及双循环枚举最大子段作参照。",
+        "固定种子提供200组小输入，N皇后0..6的已知解数与逐格攻击检查，20组数独挖空再求解，以及一份合法线索但无解的数独，检查失败返回时棋盘不变。表达式用固定例子检查不同括号化的重复数值不会丢失。",
+        "下载后可执行 g++ -std=c++17 -O2 -Wall -Wextra detail-search-tests.cpp -o chapter09-tests，再运行程序。原有四个基础模板不在此文件中重复纳入；本章提供测试源码，实际编译运行状态见全站验证记录。"
+      ]
+    },
+    {
+      "type": "code",
+      "title": "完整对照测试：枚举结果、剪枝与失败回滚",
+      "file": "detail-search-tests.cpp",
+      "code": "#include <set>\n\nvector<vector<int>> chooseK(int n, int k) {\n    if (n < 0 || n > 20 || k < 0 || k > n)\n        throw invalid_argument(\"require 0 <= k <= n <= 20\");\n    vector<vector<int>> answer;\n    vector<int> path;\n    function<void(int)> dfs = [&](int start) {\n        int need = k - (int)path.size();\n        if (need == 0) { answer.push_back(path); return; }\n        for (int value = start; value <= n - need + 1; ++value) {\n            path.push_back(value);\n            dfs(value + 1);\n            path.pop_back();\n        }\n    };\n    dfs(1);\n    return answer;\n}\n\nvector<vector<int>> combinationUnlimited(vector<int> candidates, int target) {\n    if (target < 0 || target > 100 || candidates.size() > 20)\n        throw invalid_argument(\"unsupported target or candidate count\");\n    for (int value : candidates)\n        if (value <= 0) throw invalid_argument(\"positive candidates required\");\n    sort(candidates.begin(), candidates.end());\n    candidates.erase(unique(candidates.begin(), candidates.end()), candidates.end());\n    vector<vector<int>> answer;\n    vector<int> path;\n    function<void(int,int)> dfs = [&](int start, int remaining) {\n        if (remaining == 0) { answer.push_back(path); return; }\n        for (int i = start; i < (int)candidates.size(); ++i) {\n            if (candidates[i] > remaining) break;\n            path.push_back(candidates[i]);\n            dfs(i, remaining - candidates[i]);\n            path.pop_back();\n        }\n    };\n    dfs(0, target);\n    return answer;\n}\n\nvector<vector<int>> combinationOnce(vector<int> candidates, int target) {\n    if (target < 0 || target > 100 || candidates.size() > 20)\n        throw invalid_argument(\"unsupported target or candidate count\");\n    for (int value : candidates)\n        if (value <= 0) throw invalid_argument(\"positive candidates required\");\n    sort(candidates.begin(), candidates.end());\n    vector<vector<int>> answer;\n    vector<int> path;\n    function<void(int,int)> dfs = [&](int start, int remaining) {\n        if (remaining == 0) { answer.push_back(path); return; }\n        for (int i = start; i < (int)candidates.size(); ++i) {\n            if (i > start && candidates[i] == candidates[i - 1]) continue;\n            if (candidates[i] > remaining) break;\n            path.push_back(candidates[i]);\n            dfs(i + 1, remaining - candidates[i]);\n            path.pop_back();\n        }\n    };\n    dfs(0, target);\n    return answer;\n}\n\nvector<vector<int>> uniqueSubsets(vector<int> a) {\n    if (a.size() > 20) throw invalid_argument(\"too many elements\");\n    sort(a.begin(), a.end());\n    vector<vector<int>> answer;\n    vector<int> path;\n    function<void(int)> dfs = [&](int start) {\n        answer.push_back(path);\n        for (int i = start; i < (int)a.size(); ++i) {\n            if (i > start && a[i] == a[i - 1]) continue;\n            path.push_back(a[i]); dfs(i + 1); path.pop_back();\n        }\n    };\n    dfs(0);\n    return answer;\n}\n\nvector<vector<int>> frequencyPermutations(vector<int> a) {\n    if (a.size() > 9) throw invalid_argument(\"permutation output too large\");\n    sort(a.begin(), a.end());\n    vector<int> values, count;\n    for (int x : a) {\n        if (values.empty() || values.back() != x) {\n            values.push_back(x); count.push_back(1);\n        } else ++count.back();\n    }\n    vector<vector<int>> answer;\n    vector<int> path;\n    function<void()> dfs = [&] {\n        if (path.size() == a.size()) { answer.push_back(path); return; }\n        for (size_t i = 0; i < values.size(); ++i) {\n            if (count[i] == 0) continue;\n            --count[i]; path.push_back(values[i]);\n            dfs();\n            path.pop_back(); ++count[i];\n        }\n    };\n    dfs();\n    return answer;\n}\n\nvector<string> phoneLetters(const string& digits) {\n    const array<string, 10> letters{\"\", \"\", \"abc\", \"def\", \"ghi\", \"jkl\",\n                                  \"mno\", \"pqrs\", \"tuv\", \"wxyz\"};\n    if (digits.size() > 8) throw invalid_argument(\"output too large\");\n    for (char c : digits)\n        if (c < '2' || c > '9') throw invalid_argument(\"digits 2..9 required\");\n    if (digits.empty()) return {};\n    vector<string> answer;\n    string path;\n    function<void(size_t)> dfs = [&](size_t index) {\n        if (index == digits.size()) { answer.push_back(path); return; }\n        for (char c : letters[digits[index] - '0']) {\n            path.push_back(c); dfs(index + 1); path.pop_back();\n        }\n    };\n    dfs(0);\n    return answer;\n}\n\nvector<vector<string>> solveNQueens(int n) {\n    if (n < 0 || n > 12) throw invalid_argument(\"require 0 <= n <= 12\");\n    if (n == 0) return {{}};\n    vector<vector<string>> answer;\n    vector<string> board(n, string(n, '.'));\n    vector<bool> column(n, false), down(2*n-1, false), up(2*n-1, false);\n    function<void(int)> dfs = [&](int row) {\n        if (row == n) { answer.push_back(board); return; }\n        for (int col = 0; col < n; ++col) {\n            int d = row - col + n - 1, u = row + col;\n            if (column[col] || down[d] || up[u]) continue;\n            board[row][col] = 'Q';\n            column[col] = down[d] = up[u] = true;\n            dfs(row + 1);\n            column[col] = down[d] = up[u] = false;\n            board[row][col] = '.';\n        }\n    };\n    dfs(0);\n    return answer;\n}\n\nbool wordExists(const vector<string>& board, const string& word) {\n    if (board.empty()) return word.empty();\n    size_t columns = board[0].size();\n    for (const auto& row : board)\n        if (row.size() != columns) throw invalid_argument(\"rectangular board required\");\n    if (board.size() > 20 || columns > 20)\n        throw invalid_argument(\"board too large for this example\");\n    if (word.empty()) return true;\n    if (columns == 0 || word.size() > board.size()*columns) return false;\n    array<int,256> available{}, needed{};\n    for (const auto& row : board)\n        for (unsigned char c : row) ++available[c];\n    for (unsigned char c : word)\n        if (++needed[c] > available[c]) return false;\n    int rows = (int)board.size(), cols = (int)columns;\n    vector<vector<bool>> used(rows, vector<bool>(cols, false));\n    const int dr[4] = {-1,1,0,0}, dc[4] = {0,0,-1,1};\n    function<bool(int,int,size_t)> dfs = [&](int r,int c,size_t index) {\n        if (used[r][c] || board[r][c] != word[index]) return false;\n        if (index + 1 == word.size()) return true;\n        used[r][c] = true;\n        bool found = false;\n        for (int direction=0; direction<4 && !found; ++direction) {\n            int nr=r+dr[direction], nc=c+dc[direction];\n            if (nr>=0 && nr<rows && nc>=0 && nc<cols)\n                found = dfs(nr,nc,index+1);\n        }\n        used[r][c] = false;\n        return found;\n    };\n    for (int r=0;r<rows;++r)\n        for (int c=0;c<cols;++c)\n            if (dfs(r,c,0)) return true;\n    return false;\n}\n\nbool solveSudoku(vector<string>& board) {\n    if (board.size()!=9) throw invalid_argument(\"9 rows required\");\n    for (const auto& line:board)\n        if (line.size()!=9) throw invalid_argument(\"9 columns required\");\n    array<unsigned,9> row{}, col{}, box{};\n    vector<pair<int,int>> empty;\n    for (int r=0;r<9;++r) for (int c=0;c<9;++c) {\n        if (board[r][c]=='.') { empty.push_back({r,c}); continue; }\n        if (board[r][c]<'1' || board[r][c]>'9') throw invalid_argument(\"bad symbol\");\n        unsigned bit=1U<<(board[r][c]-'1');\n        int b=(r/3)*3+c/3;\n        if ((row[r]|col[c]|box[b])&bit) throw invalid_argument(\"conflicting clues\");\n        row[r]|=bit; col[c]|=bit; box[b]|=bit;\n    }\n    auto candidates = [&](int r,int c) {\n        return 511U & ~(row[r]|col[c]|box[(r/3)*3+c/3]);\n    };\n    auto countBits = [](unsigned x) {\n        int count=0;\n        while (x) { x&=x-1; ++count; }\n        return count;\n    };\n    function<bool(size_t)> dfs = [&](size_t index) {\n        if (index==empty.size()) return true;\n        size_t best=index;\n        int minimum=10;\n        for (size_t i=index;i<empty.size();++i) {\n            auto [r,c]=empty[i];\n            int count=countBits(candidates(r,c));\n            if (count<minimum) { minimum=count; best=i; }\n        }\n        if (minimum==0) return false;\n        swap(empty[index],empty[best]);\n        auto [r,c]=empty[index];\n        int b=(r/3)*3+c/3;\n        unsigned options=candidates(r,c);\n        for (int digit=0;digit<9;++digit) {\n            unsigned bit=1U<<digit;\n            if (!(options&bit)) continue;\n            row[r]|=bit; col[c]|=bit; box[b]|=bit;\n            board[r][c]=char('1'+digit);\n            if (dfs(index+1)) return true;\n            board[r][c]='.';\n            row[r]^=bit; col[c]^=bit; box[b]^=bit;\n        }\n        swap(empty[index],empty[best]);\n        return false;\n    };\n    return dfs(0);\n}\n\nbool wordBreakMemo(const string& text, const vector<string>& dictionary) {\n    if (text.size() > 10000) throw invalid_argument(\"text too large\");\n    for (const auto& word : dictionary)\n        if (word.empty()) throw invalid_argument(\"empty word forbidden\");\n    vector<int> memo(text.size() + 1, -1);\n    memo[text.size()] = 1;\n    function<bool(size_t)> dfs = [&](size_t start) {\n        if (memo[start] != -1) return memo[start] != 0;\n        for (const string& word : dictionary) {\n            if (word.size() <= text.size() - start &&\n                text.compare(start, word.size(), word) == 0 &&\n                dfs(start + word.size())) {\n                memo[start] = 1;\n                return true;\n            }\n        }\n        memo[start] = 0;\n        return false;\n    };\n    return dfs(0);\n}\n\nvector<long long> expressionResults(const string& expression) {\n    vector<int> numbers;\n    vector<char> operators;\n    size_t pos = 0;\n    while (pos < expression.size()) {\n        if (expression[pos] < '0' || expression[pos] > '9')\n            throw invalid_argument(\"expected nonnegative integer\");\n        int value = 0;\n        while (pos < expression.size() && expression[pos] >= '0' && expression[pos] <= '9') {\n            int digit = expression[pos++] - '0';\n            if (value > (100 - digit) / 10) throw invalid_argument(\"number exceeds 100\");\n            value = value * 10 + digit;\n        }\n        numbers.push_back(value);\n        if (numbers.size() > 8) throw invalid_argument(\"too many operands\");\n        if (pos == expression.size()) break;\n        char op = expression[pos++];\n        if (op != '+' && op != '-' && op != '*') throw invalid_argument(\"bad operator\");\n        operators.push_back(op);\n        if (pos == expression.size()) throw invalid_argument(\"missing operand\");\n    }\n    if (numbers.empty()) throw invalid_argument(\"empty expression\");\n    int n = (int)numbers.size();\n    vector<vector<vector<long long>>> memo(n, vector<vector<long long>>(n));\n    vector<vector<bool>> ready(n, vector<bool>(n, false));\n    function<const vector<long long>&(int,int)> solve =\n        [&](int left, int right) -> const vector<long long>& {\n            if (ready[left][right]) return memo[left][right];\n            auto& result = memo[left][right];\n            if (left == right) result.push_back(numbers[left]);\n            else for (int split = left; split < right; ++split) {\n                const auto& a = solve(left, split);\n                const auto& b = solve(split + 1, right);\n                for (long long x : a) for (long long y : b) {\n                    char op = operators[split];\n                    if (op == '+') result.push_back(x + y);\n                    else if (op == '-') result.push_back(x - y);\n                    else result.push_back(x * y);\n                }\n            }\n            ready[left][right] = true;\n            return result;\n        };\n    return solve(0, n - 1);\n}\n\nstruct SegmentSummary {\n    long long sum, prefix, suffix, best;\n};\nSegmentSummary summarizeSegment(const vector<int>& a, int left, int right) {\n    if (right - left == 1) {\n        long long value = a[left];\n        return {value, value, value, value};\n    }\n    int middle = left + (right - left) / 2;\n    auto l = summarizeSegment(a, left, middle);\n    auto r = summarizeSegment(a, middle, right);\n    return {l.sum + r.sum,\n            max(l.prefix, l.sum + r.prefix),\n            max(r.suffix, r.sum + l.suffix),\n            max({l.best, r.best, l.suffix + r.prefix})};\n}\noptional<long long> maximumSubarrayDivide(const vector<int>& a) {\n    if (a.size() > 100000) throw invalid_argument(\"array too large\");\n    for (int value : a)\n        if (value < -1000000000 || value > 1000000000)\n            throw invalid_argument(\"value outside supported range\");\n    if (a.empty()) return nullopt;\n    return summarizeSegment(a, 0, (int)a.size()).best;\n}\n\nvoid require(bool ok, const string& message) {\n    if (!ok) throw runtime_error(message);\n}\nvector<vector<int>> canonical(vector<vector<int>> value) {\n    sort(value.begin(), value.end());\n    return value;\n}\nvector<vector<int>> bruteSubsets(vector<int> a, optional<int> target = nullopt) {\n    sort(a.begin(),a.end());\n    set<vector<int>> answer;\n    for (unsigned mask=0;mask<(1U<<a.size());++mask) {\n        vector<int> path;\n        int sum=0;\n        for (size_t i=0;i<a.size();++i) if (mask&(1U<<i)) {\n            path.push_back(a[i]); sum+=a[i];\n        }\n        if (!target || sum==*target) answer.insert(path);\n    }\n    return {answer.begin(),answer.end()};\n}\nvector<vector<int>> bruteUnlimited(vector<int> candidates,int target) {\n    sort(candidates.begin(),candidates.end());\n    candidates.erase(unique(candidates.begin(),candidates.end()),candidates.end());\n    vector<vector<int>> answer;\n    vector<int> path;\n    function<void(size_t,int)> dfs=[&](size_t index,int remaining) {\n        if (index==candidates.size()) {\n            if (remaining==0) answer.push_back(path);\n            return;\n        }\n        size_t saved=path.size();\n        int value=candidates[index];\n        for (int count=0;count<=remaining/value;++count) {\n            path.resize(saved);\n            path.insert(path.end(),count,value);\n            dfs(index+1,remaining-count*value);\n        }\n        path.resize(saved);\n    };\n    dfs(0,target);\n    return canonical(answer);\n}\nbool bruteWord(const vector<string>& board,const string& word) {\n    if (word.empty()) return true;\n    int rows=(int)board.size(),cols=(int)board[0].size();\n    function<bool(int,size_t,unsigned)> dfs=[&](int position,size_t index,unsigned used) {\n        if ((used&(1U<<position)) || board[position/cols][position%cols]!=word[index])\n            return false;\n        if (index+1==word.size()) return true;\n        used|=1U<<position;\n        for (int next=0;next<rows*cols;++next)\n            if (abs(position/cols-next/cols)+abs(position%cols-next%cols)==1 &&\n                dfs(next,index+1,used)) return true;\n        return false;\n    };\n    for (int position=0;position<rows*cols;++position)\n        if (dfs(position,0,0)) return true;\n    return false;\n}\nbool validSudokuSolution(const vector<string>& board) {\n    for (const auto& row:board) for (char c:row) if (c<'1'||c>'9') return false;\n    for (int i=0;i<9;++i) {\n        unsigned row=0,col=0,box=0;\n        for (int j=0;j<9;++j) {\n            row|=1U<<(board[i][j]-'1');\n            col|=1U<<(board[j][i]-'1');\n            box|=1U<<(board[(i/3)*3+j/3][(i%3)*3+j%3]-'1');\n        }\n        if (row!=511 || col!=511 || box!=511) return false;\n    }\n    return true;\n}\nint main() {\n    require(chooseK(0,0)==vector<vector<int>>{{}}, \"empty combination\");\n    require(uniqueSubsets({})==vector<vector<int>>{{}}, \"empty subset\");\n    require(frequencyPermutations({})==vector<vector<int>>{{}}, \"empty permutation\");\n    require(phoneLetters(\"\").empty() && phoneLetters(\"23\").size()==9, \"phone contract\");\n    require(canonical(combinationOnce({1,1,2},2))==vector<vector<int>>({{1,1},{2}}),\n            \"same-level duplicate removal\");\n    require(!maximumSubarrayDivide({}), \"empty maximum subarray\");\n    require(maximumSubarrayDivide({-5,-2,-8})==optional<long long>{-2}, \"all negative\");\n    auto expression=expressionResults(\"2*3-4*5\");\n    sort(expression.begin(),expression.end());\n    require(expression==vector<long long>({-34,-14,-10,-10,10}), \"expression multiplicities\");\n    require(expressionResults(\"100\")==vector<long long>{100}, \"single operand\");\n    bool rejected=false;\n    try { (void)combinationUnlimited({0,1},3); }\n    catch (const invalid_argument&) { rejected=true; }\n    require(rejected,\"nonpositive unlimited choice\");\n    const int queenCounts[]={1,1,0,0,2,10,4};\n    for (int n=0;n<=6;++n) {\n        auto boards=solveNQueens(n);\n        require(boards.size()==(size_t)queenCounts[n],\"queen count\");\n        set<vector<string>> distinct(boards.begin(),boards.end());\n        require(distinct.size()==boards.size(),\"queen duplicates\");\n        for (const auto& board:boards) {\n            set<int> cols,down,up;\n            for (int r=0;r<n;++r) {\n                int found=0;\n                for (int c=0;c<n;++c) if (board[r][c]=='Q') {\n                    ++found;\n                    require(cols.insert(c).second && down.insert(r-c).second &&\n                            up.insert(r+c).second,\"queen attack\");\n                }\n                require(found==1,\"one queen per row\");\n            }\n        }\n    }\n    mt19937 rng(20260921);\n    for (int run=0;run<200;++run) {\n        int n=rng()%8;\n        vector<int> a(n);\n        for (int& x:a) x=1+rng()%3;\n        int target=rng()%9;\n        require(canonical(uniqueSubsets(a))==bruteSubsets(a),\"unique subsets\");\n        require(canonical(combinationOnce(a,target))==bruteSubsets(a,target),\"single use sum\");\n        require(canonical(combinationUnlimited(a,target))==bruteUnlimited(a,target),\"reuse sum\");\n        auto perm=a;\n        sort(perm.begin(),perm.end());\n        vector<vector<int>> expectedPerm;\n        do { expectedPerm.push_back(perm); } while (next_permutation(perm.begin(),perm.end()));\n        require(canonical(frequencyPermutations(a))==expectedPerm,\"permutations\");\n        int k=rng()%(n+1);\n        vector<int> range(n);\n        iota(range.begin(),range.end(),1);\n        auto subsets=bruteSubsets(range);\n        vector<vector<int>> expectedChoose;\n        for (auto& subset:subsets) if ((int)subset.size()==k) expectedChoose.push_back(subset);\n        require(canonical(chooseK(n,k))==expectedChoose,\"choose k\");\n        vector<int> values(n);\n        for (int& x:values) x=(int)(rng()%11)-5;\n        optional<long long> bruteBest;\n        for (int l=0;l<n;++l) {\n            long long sum=0;\n            for (int r=l;r<n;++r) {\n                sum+=values[r];\n                if (!bruteBest || sum>*bruteBest) bruteBest=sum;\n            }\n        }\n        require(maximumSubarrayDivide(values)==bruteBest,\"segment merge\");\n        vector<string> board(2,string(3,'a'));\n        for (auto& row:board) for (char& c:row) c=char('a'+rng()%2);\n        string word(rng()%8,'a');\n        for (char& c:word) c=char('a'+rng()%2);\n        auto saved=board;\n        require(wordExists(board,word)==bruteWord(board,word),\"word path\");\n        require(board==saved,\"word board unchanged\");\n        string text(rng()%9,'a');\n        for (char& c:text) c=char('a'+rng()%2);\n        vector<string> dictionary={\"a\",\"ab\",\"ba\"};\n        vector<bool> reachable(text.size()+1,false);\n        reachable[0]=true;\n        for (size_t i=0;i<text.size();++i) if (reachable[i])\n            for (const auto& token:dictionary)\n                if (i+token.size()<=text.size() && text.substr(i,token.size())==token)\n                    reachable[i+token.size()]=true;\n        require(wordBreakMemo(text,dictionary)==reachable.back(),\"word break\");\n    }\n    const vector<string> solved={\"534678912\",\"672195348\",\"198342567\",\n                                \"859761423\",\"426853791\",\"713924856\",\n                                \"961537284\",\"287419635\",\"345286179\"};\n    for (int run=0;run<20;++run) {\n        auto puzzle=solved;\n        for (int i=0;i<25;++i) puzzle[rng()%9][rng()%9]='.';\n        auto clues=puzzle;\n        require(solveSudoku(puzzle) && validSudokuSolution(puzzle),\"Sudoku solution\");\n        for (int r=0;r<9;++r) for (int c=0;c<9;++c)\n            if (clues[r][c]!='.') require(puzzle[r][c]==clues[r][c],\"clue preserved\");\n    }\n    vector<string> impossible(9,string(9,'.'));\n    impossible[0]=\"12345678.\";\n    impossible[1]=\"........9\";\n    auto original=impossible;\n    require(!solveSudoku(impossible) && impossible==original,\"unsatisfiable rollback\");\n    cout << \"All chapter 9 checks passed\" << endl;\n}",
+      "paragraphs": [
+        "显式require不会被NDEBUG关闭。穷举参照只对小规模使用，不代表生产规模的算法；随机测试也不能替代正确性证明。"
+      ]
+    },
+    {
+      "type": "qa",
+      "title": "章末自测与完整解答",
+      "items": [
+        {
+          "question": "1. 子集输入为空时，是0个答案还是1个答案？",
+          "answer": [
+            "数学上有一个空子集，因此返回包含空vector的结果。恰选0个与空数组全排列也采用一个空解；但电话号码空输入等业务接口可约定无结果，必须明确语义。"
+          ]
+        },
+        {
+          "question": "2. [1,1,2]目标为2、每个位置最多用一次，有哪些答案？",
+          "answer": [
+            "有[1,1]和[2]。全局去重会漏掉前者；同层跳过第二个1只是避免重复首选分支，不妨碍下一层再选它。"
+          ]
+        },
+        {
+          "question": "3. 排列去重中前一个相同值已used，后一个为什么能选？",
+          "answer": [
+            "前一个是祖先选择，不是本层重复分支。还剩下另一个同值实例可用，允许选择才能生成含多个1的合法排列。"
+          ]
+        },
+        {
+          "question": "4. 当前组合和超过目标，一定可以剪枝吗？",
+          "answer": [
+            "只有后续无法降低和时才成立，例如剩余候选全为正数。若允许负数，继续选取可能降低和，直接剪会漏解。"
+          ]
+        },
+        {
+          "question": "5. 单词搜索能只缓存位置与字符下标吗？",
+          "answer": [
+            "一般不能，因为路径内已经占用哪些格子会影响后续可行性。不同visited集合下的相同位置与字符下标不是同一个子问题。"
+          ]
+        },
+        {
+          "question": "6. 数独的MRV保证多项式时间吗？",
+          "answer": [
+            "不保证。它只是优先选择约束最强的变量，常能更早发现矛盾，但最坏搜索仍可能指数。正确性来自仍枚举全部合法候选，而不是依靠启发式承诺。"
+          ]
+        },
+        {
+          "question": "7. 缓存了所有rem后，零钱兑换递归还会栈溢出吗？",
+          "answer": [
+            "可能。记忆化减少重复状态，却可能仍先走一条每次减1的长依赖链。大金额时用迭代DP能避免系统递归栈深限制。"
+          ]
+        },
+        {
+          "question": "8. 最大子段分治为什么返回四个量，而不只返回最优值？",
+          "answer": [
+            "父区间需要判断内部最优和跨界最优。跨界必须用左最大后缀加右最大前缀；生成父前后缀还需整段sum，因此四项共同构成可组合状态。"
+          ]
+        }
+      ]
+    }
+  ]
+}
