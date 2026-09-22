@@ -3,7 +3,7 @@
 <meta name="description" content="秋招算法手撕学习讲义：知识推导、经典考点、C++17 示例与面试训练。">
 <title>动态规划 · 算法手撕讲义</title><link rel="stylesheet" href="../assets/style.css"><script src="../assets/app.js" defer></script></head>
 <body><a class="skip" href="#main">跳到正文</a><header class="topbar"><a class="brand" href="../index.html"><span class="brand-mark">a[i]</span><span>算法手撕讲义<small>秋招学习工作区 / C++17</small></span></a><button type="button" class="nav-toggle" aria-expanded="false" aria-controls="chapter-nav">章节目录</button><a class="home-link" href="../index.html">全部章节 ↗</a></header>
-<div class="layout"><aside class="sidebar" id="chapter-nav" aria-label="章节导航"><p class="rail-label">LEARNING PATH · 学习路径</p><nav><a class="chapter-link"  href="../01-复杂度与解题方法/index.html"><span>01</span>复杂度与解题方法</a><a class="chapter-link"  href="../02-数组字符串与矩阵/index.html"><span>02</span>数组、字符串与矩阵</a><a class="chapter-link"  href="../03-链表/index.html"><span>03</span>链表</a><a class="chapter-link"  href="../04-栈队列与单调结构/index.html"><span>04</span>栈、队列与单调结构</a><a class="chapter-link"  href="../05-哈希集合与位运算/index.html"><span>05</span>哈希、集合与位运算</a><a class="chapter-link"  href="../06-排序与二分查找/index.html"><span>06</span>排序与二分查找</a><a class="chapter-link"  href="../07-树与二叉搜索树/index.html"><span>07</span>树与二叉搜索树</a><a class="chapter-link"  href="../08-堆与优先队列/index.html"><span>08</span>堆与优先队列</a><a class="chapter-link"  href="../09-递归回溯与分治/index.html"><span>09</span>递归、回溯与分治</a><a class="chapter-link"  href="../10-图论/index.html"><span>10</span>图论</a><a class="chapter-link"  href="../11-贪心/index.html"><span>11</span>贪心</a><a class="chapter-link active" aria-current=page href="../12-动态规划/index.html"><span>12</span>动态规划</a><a class="chapter-link"  href="../13-并查集与高级数据结构/index.html"><span>13</span>并查集与高级数据结构</a><a class="chapter-link"  href="../14-高频技巧与综合题型/index.html"><span>14</span>高频技巧与综合题型</a><a class="chapter-link"  href="../15-面试表达与训练计划/index.html"><span>15</span>面试表达与训练计划</a></nav><div class="sidebar-note">读懂不变量，独立写代码。<br>共 15 章 · 63 个小节<br>无需联网，浏览器直接打开。</div></aside><main id="main"><header class="chapter-header"><p class="eyebrow">CHAPTER 12 / 15</p><h1>动态规划</h1><p class="lead">先写状态的完整中文定义，再写方程。每个状态都必须有可解释的含义；初始化、遍历顺序与最终答案都由这个含义推导。</p><div class="chapter-meta"><span>6 个小节</span><span>C++17 示例</span><a href="README.md">原始知识摘要 ↗</a></div></header><div class="reading-guide"><strong>本章怎么学</strong><p>先读原理与不变量，遮住代码手推例子，再独立实现。最后用面试追问检查理解，按练习条目做变式。</p></div><details class="environment"><summary>代码使用说明与通用头文件</summary><p>示例统一采用 C++17。页面展示核心函数或类，下载的 .cpp 已包含以下头文件，可独立编译。不同小节可能重用类型名，应分别编译；含 main 的示例可直接运行，其余需自行补充调用与测试。复制按钮复制当前代码块。</p><div class="codebox"><div class="codebar"><span>C++17</span><div><button type="button" class="copy">复制代码</button></div></div><pre tabindex="0" aria-label="C++17 代码"><code>#include &lt;algorithm&gt;
+<div class="layout"><aside class="sidebar" id="chapter-nav" aria-label="章节导航"><p class="rail-label">LEARNING PATH · 学习路径</p><nav><a class="chapter-link"  href="../01-复杂度与解题方法/index.html"><span>01</span>复杂度与解题方法</a><a class="chapter-link"  href="../02-数组字符串与矩阵/index.html"><span>02</span>数组、字符串与矩阵</a><a class="chapter-link"  href="../03-链表/index.html"><span>03</span>链表</a><a class="chapter-link"  href="../04-栈队列与单调结构/index.html"><span>04</span>栈、队列与单调结构</a><a class="chapter-link"  href="../05-哈希集合与位运算/index.html"><span>05</span>哈希、集合与位运算</a><a class="chapter-link"  href="../06-排序与二分查找/index.html"><span>06</span>排序与二分查找</a><a class="chapter-link"  href="../07-树与二叉搜索树/index.html"><span>07</span>树与二叉搜索树</a><a class="chapter-link"  href="../08-堆与优先队列/index.html"><span>08</span>堆与优先队列</a><a class="chapter-link"  href="../09-递归回溯与分治/index.html"><span>09</span>递归、回溯与分治</a><a class="chapter-link"  href="../10-图论/index.html"><span>10</span>图论</a><a class="chapter-link"  href="../11-贪心/index.html"><span>11</span>贪心</a><a class="chapter-link active" aria-current=page href="../12-动态规划/index.html"><span>12</span>动态规划</a><a class="chapter-link"  href="../13-并查集与高级数据结构/index.html"><span>13</span>并查集与高级数据结构</a><a class="chapter-link"  href="../14-高频技巧与综合题型/index.html"><span>14</span>高频技巧与综合题型</a><a class="chapter-link"  href="../15-面试表达与训练计划/index.html"><span>15</span>面试表达与训练计划</a></nav><div class="sidebar-note">读懂不变量，独立写代码。<br>共 15 章 · 63 个小节<br>无需联网，浏览器直接打开。</div></aside><main id="main"><header class="chapter-header"><p class="eyebrow">CHAPTER 12 / 15</p><h1>动态规划</h1><p class="lead">先写状态的完整中文定义，再写方程。每个状态都必须有可解释的含义；初始化、遍历顺序与最终答案都由这个含义推导。</p><div class="chapter-meta"><span>6 个小节</span><span>C++17 示例</span><a href="README.md">原始知识摘要 ↗</a></div></header><div class="reading-guide"><strong>本章怎么学</strong><p>先读原理与不变量，遮住代码手推例子，再独立实现。最后用面试追问检查理解，按练习条目做变式。</p></div><div class="deep-intro"><div class="deep-block" id="guide-1"><h3>从递归到 DP：把重复的子问题合并，而不是背一组公式</h3><p>先写出暴力决策：当前能做哪些选择，每个选择之后还剩什么问题。如果不同决策历史会到达同一个未来问题，就可以用状态合并它们。关键是这些历史必须拥有相同的后续合法动作与同样的目标含义；省略持仓、剩余容量或父节点选择等信息，会把本来不同的问题错误合并。</p><p>把每个状态看成一个节点，转移依赖看成边。普通递推 DP 实际是在依赖图上按拓扑顺序计算。记忆化搜索按需访问这张图，遇到已有结果就返回；递推显式安排顺序。记忆化并不自动消除递归深度，也不解决带循环依赖的状态设计。</p></div><div class="deep-block" id="guide-2"><h3>五步法落到纸上：每一行代码都应有对应含义</h3><p class="table-hint">窄屏下可左右滑动表格，查看完整内容。</p><div class="study-table" tabindex="0" role="region" aria-label="五步法落到纸上：每一行代码都应有对应含义"><table><thead><tr><th scope="col">步骤</th><th scope="col">必须回答的问题</th><th scope="col">常见错误</th></tr></thead><tbody><tr><td>状态</td><td>范围是什么？必须以谁结尾？是恰好还是至多？</td><td>把以 i 结尾与前 i 项最优混用</td></tr><tr><td>转移</td><td>按最后一步或选 / 不选划分，是否穷尽且不漏？</td><td>不同含义的状态直接取 max</td></tr><tr><td>初值</td><td>空问题有几种方案？不可达如何表示？</td><td>所有格子都初始化为 0</td></tr><tr><td>顺序</td><td>前驱属于上一层还是本层？</td><td>压缩后读取已覆盖的数据</td></tr><tr><td>答案</td><td>是最后一格、整行最大值，还是根的多个状态？</td><td>直接 return dp.back()</td></tr><tr><td>验证</td><td>能否还原方案？最小反例与暴力参照是什么？</td><td>只看样例输出，不检查合法性</td></tr></tbody></table></div></div><div class="deep-block" id="guide-3"><h3>复杂度从状态数与转移成本算起</h3><p>DP 的时间通常是可访问状态数乘每个状态的转移工作量，加上预处理、复制和恢复答案的成本。0/1 背包 O(nC) 依赖容量的数值 C，属于伪多项式，不是关于 C 的二进制输入长度的多项式。区间 DP 若每格枚举一个分割点，通常是 O(n³)，不是看到二维数组就写 O(n²)。</p><p>先写清二维或多维状态，再考虑压缩。滚动数组减少保存的层数，却不减少理论状态数；压缩最优值后可能丢失方案恢复所需的信息。字符串示例按字节比较，若按 Unicode 字符操作应先解码。各规模须可用 int 表示并满足内存约束；计数示例明确采用模数，不能把取模结果当作是否可达的判据。</p></div></div><nav class="chapter-outline" aria-label="本章阅读路线"><strong>直接跳到</strong><a href="#s1">01 线性 DP：以当前位置结尾</a><a href="#s2">02 0/1 背包：容量倒序的原因</a><a href="#s3">03 完全背包与计数顺序</a><a href="#s4">04 序列 DP：最长公共子序列与编辑距离</a><a href="#s5">05 区间 DP：由短区间构造长区间</a><a href="#s6">06 树形与状态机 DP：把限制写进状态</a><a href="#chapter-review">综合例题与自测答案</a></nav><details class="environment"><summary>代码使用说明与通用头文件</summary><p>示例统一采用 C++17。页面展示核心函数或类，下载的 .cpp 已包含以下头文件，可独立编译。不同小节可能重用类型名，应分别编译；含 main 的示例可直接运行，其余需自行补充调用与测试。复制按钮复制当前代码块。</p><div class="codebox"><div class="codebar"><span>C++17</span><div><button type="button" class="copy">复制代码</button></div></div><pre tabindex="0" aria-label="C++17 代码"><code>#include &lt;algorithm&gt;
 #include &lt;array&gt;
 #include &lt;cassert&gt;
 #include &lt;climits&gt;
@@ -27,7 +27,7 @@
 #include &lt;vector&gt;
 <span class="keyword">using</span> <span class="keyword">namespace</span> std;
 </code></pre></div><p>检查单个示例：<code>g++ -std=c++17 -Wall -Wextra -c sample.cpp</code>。这只检查编译；验证结果还需要调用函数并覆盖边界输入。代码按题目约束编写，各节明确其适用前提。</p></details><section class="lesson" id="s1"><div class="lesson-heading"><span class="lesson-number">12.01</span><h2>线性 DP：以当前位置结尾</h2></div>
-<h3>知识与适用场景</h3><p>最大子数组和的状态是“必须以 i 结尾的非空子数组最大和”，不是前 i 个元素的全局最优。状态只需在继续前一段和从当前元素重新开始之间选择。</p><div class="invariant"><span>推导 / 不变量</span><p>endHere=max(a[i],endHere+a[i])；全局答案取所有 endHere 的最大值。若前一段和为负，接上它只会让当前更差，应重新开始。</p></div>
+<h3>知识与适用场景</h3><p>最大子数组和的状态是“必须以 i 结尾的非空子数组最大和”，不是前 i 个元素的全局最优。状态只需在继续前一段和从当前元素重新开始之间选择。</p><div class="deep-block" id="s1-before-1"><h3>1.1 必须以 i 结尾，与前 i 项全局最优是两个问题</h3><p>end[i] 表示必须以 a[i] 结尾的非空连续子数组最大和。它要么只取 a[i]，要么接在一个以 i−1 结尾的最优段后面。只有这两类情况，因而 end[i]=max(a[i],end[i−1]+a[i])。best[i] 才是前缀全局最优，等于 max(best[i−1],end[i])。</p><p>不能用 best[i−1]+a[i] 代替连续延伸：a=[5,−100,4] 时，前缀最优仍是 5，但 5 与 4 不相邻，直接相加虚构出了不存在的和 9。要求非空时，全负数组必须返回其中最大的负数，不能用 0 作为答案初值。</p></div><div class="deep-block" id="s1-before-2"><h3>1.2 手推状态与答案：两条变量各司其职</h3><p class="table-hint">窄屏下可左右滑动表格，查看完整内容。</p><div class="study-table" tabindex="0" role="region" aria-label="1.2 手推状态与答案：两条变量各司其职"><table><thead><tr><th scope="col">i / 元素</th><th scope="col">以这里结尾的最优和</th><th scope="col">前缀全局最优</th><th scope="col">决策</th></tr></thead><tbody><tr><td>0 / −2</td><td>−2</td><td>−2</td><td>非空，用首元素初始化</td></tr><tr><td>1 / 1</td><td>1</td><td>1</td><td>重新开始</td></tr><tr><td>2 / −3</td><td>−2</td><td>1</td><td>延续到 −3，但不是全局最优</td></tr><tr><td>3 / 4</td><td>4</td><td>4</td><td>丢弃此前负前缀</td></tr><tr><td>4 / −1</td><td>3</td><td>4</td><td>局部下降不代表立刻放弃</td></tr><tr><td>5 / 2；6 / 1</td><td>5；6</td><td>5；6</td><td>最终最优段 [3,6]，和 6</td></tr></tbody></table></div></div><div class="deep-block" id="s1-before-3"><h3>1.3 打家劫舍：空方案是合法初态</h3><p>令 dp[i] 表示只考虑前 i 间房、相邻不能同时选的最大收益，允许一个都不选。最后一间不选则为 dp[i−1]，选则为 dp[i−2]+value[i−1]。dp[0]=0，dp[1]=max(0,value[0])；若示例允许负值，也应保留空方案。</p><p>环形房屋的首尾相邻。任何合法方案至少不选首或不选尾，所以分别求 [0,n−1) 与 [1,n) 两段线性最优后取 max。两类可以重叠，不影响求最大值；若是计数，直接相加就可能重复计数。n=1 必须单独处理。</p></div><div class="invariant"><span>推导 / 不变量</span><p>endHere=max(a[i],endHere+a[i])；全局答案取所有 endHere 的最大值。若前一段和为负，接上它只会让当前更差，应重新开始。</p></div>
 <h3>手推一个例子</h3><p>[-2,1,-3,4,-1,2,1,-5,4]：处理到 4 时重新开始，随后累加 -1、2、1 得到 6，是最终最大值。</p><div class="codebox"><div class="codebar"><span>C++17</span><div><a href="examples/01.cpp" download>下载 .cpp</a><button type="button" class="copy">复制代码</button></div></div><pre tabindex="0" aria-label="C++17 代码"><code><span class="keyword">long</span> <span class="keyword">long</span> maxSubArray(<span class="keyword">const</span> vector&lt;<span class="keyword">int</span>&gt;&amp; a) {
     <span class="keyword">if</span>(a.empty()) <span class="keyword">throw</span> invalid_argument(<span class="string">&quot;nonempty array required&quot;</span>);
     <span class="keyword">long</span> <span class="keyword">long</span> endHere=a[<span class="number">0</span>],best=a[<span class="number">0</span>];
@@ -38,9 +38,39 @@
     <span class="keyword">return</span> best;
 }</code></pre></div>
 <dl class="analysis-grid"><div><dt>复杂度</dt><dd>时间 O(n)，滚动状态空间 O(1)。</dd></div><div><dt>易错点与边界</dt><dd>若允许空子数组则全负数组答案可为 0；本题要求非空，必须用首元素初始化。打家劫舍中则可以一个都不选。</dd></div></dl>
-<div class="practice"><h3>经典考点与练习</h3><p>练习：LeetCode 53 最大子数组和、198 打家劫舍、213 打家劫舍 II。</p><details><summary>面试官可能继续问什么？</summary><p>如何返回子数组左右下标？为何不能只保存当前全局 best 做下一轮转移？</p><p class="muted">先用自己的话回答，再回到本节的前提、不变量和边界检查论证。</p></details></div>
+<div class="deep-block" id="s1-after-1"><h3>1.4 最大子数组和与下标：明确平局规则</h3><p>返回闭区间 [left,right]。同最大和时选左端点更小的，再选右端点更小的。状态保存当前段的起点，不只保存全局答案起点。时间 O(n)、额外空间 O(1)，不会修改输入。</p><div class="codebox"><div class="codebar"><span>C++17</span><div><a href="examples/detail-max-subarray-range.cpp" download>下载 .cpp</a><button type="button" class="copy">复制代码</button></div></div><pre tabindex="0" aria-label="C++17 代码"><code><span class="keyword">struct</span> BestSubarray { <span class="keyword">long</span> <span class="keyword">long</span> sum; <span class="keyword">int</span> left, right; };
+BestSubarray maxSubarrayRange(<span class="keyword">const</span> vector&lt;<span class="keyword">int</span>&gt;&amp; a) {
+    <span class="keyword">if</span> (a.empty()) <span class="keyword">throw</span> invalid_argument(<span class="string">&quot;nonempty array required&quot;</span>);
+    <span class="keyword">long</span> <span class="keyword">long</span> ending = a[<span class="number">0</span>];
+    <span class="keyword">int</span> start = <span class="number">0</span>;
+    BestSubarray best{a[<span class="number">0</span>],<span class="number">0</span>,<span class="number">0</span>};
+    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">1</span>; i &lt; (<span class="keyword">int</span>)a.size(); ++i) {
+        <span class="keyword">if</span> (ending &lt; <span class="number">0</span>) { ending = a[i]; start = i; }
+        <span class="keyword">else</span> ending += a[i]; <span class="comment">// 等于 0 时延续，保留较早左端点</span>
+        <span class="keyword">if</span> (ending &gt; best.sum ||
+            (ending == best.sum &amp;&amp; (start &lt; best.left ||
+             (start == best.left &amp;&amp; i &lt; best.right)))) {
+            best = {ending,start,i};
+        }
+    }
+    <span class="keyword">return</span> best;
+}</code></pre></div></div><div class="deep-block" id="s1-after-2"><h3>1.5 环形打家劫舍：拆成两个允许空选的线性问题</h3><p>允许负房值但可不选；空数组和全负数组返回 0。两个线性扫描总时间 O(n)、额外空间 O(1)。没有复制子数组，也没有错误地同时选首尾。</p><div class="codebox"><div class="codebar"><span>C++17</span><div><a href="examples/detail-rob-circle.cpp" download>下载 .cpp</a><button type="button" class="copy">复制代码</button></div></div><pre tabindex="0" aria-label="C++17 代码"><code><span class="keyword">long</span> <span class="keyword">long</span> robLinearRange(<span class="keyword">const</span> vector&lt;<span class="keyword">int</span>&gt;&amp; value, <span class="keyword">int</span> left, <span class="keyword">int</span> right) {
+    <span class="comment">// 半开区间 [left,right)，调用者保证下标合法</span>
+    <span class="keyword">long</span> <span class="keyword">long</span> prev2 = <span class="number">0</span>, prev1 = <span class="number">0</span>;
+    <span class="keyword">for</span> (<span class="keyword">int</span> i = left; i &lt; right; ++i) {
+        <span class="keyword">long</span> <span class="keyword">long</span> current = max(prev1,prev2+value[i]);
+        prev2 = prev1; prev1 = current;
+    }
+    <span class="keyword">return</span> prev1;
+}
+<span class="keyword">long</span> <span class="keyword">long</span> robCircle(<span class="keyword">const</span> vector&lt;<span class="keyword">int</span>&gt;&amp; value) {
+    <span class="keyword">int</span> n = (<span class="keyword">int</span>)value.size();
+    <span class="keyword">if</span> (!n) <span class="keyword">return</span> <span class="number">0</span>;
+    <span class="keyword">if</span> (n == <span class="number">1</span>) <span class="keyword">return</span> max(<span class="number">0LL</span>,(<span class="keyword">long</span> <span class="keyword">long</span>)value[<span class="number">0</span>]);
+    <span class="keyword">return</span> max(robLinearRange(value,<span class="number">0</span>,n-<span class="number">1</span>),robLinearRange(value,<span class="number">1</span>,n));
+}</code></pre></div></div><div class="deep-block" id="s1-after-3"><h3>1.6 记忆化如何从同一个状态定义产生</h3><p>线性劫舍也能写成 f(i)=max(f(i+1),value[i]+f(i+2))，边界 i≥n 返回 0。缓存键为 i，因为 value 固定且剩余问题只由起点决定。用 seen 数组区分未计算与已经算出 0，不能把 memo[i]==0 当成未算标记，否则全零输入会反复计算。</p><p>这个递归版本仍可能有 O(n) 深度。滚动递推只依赖前两项，用 O(1) 辅助空间且没有深调用栈；记忆化的优势是自然表达状态并跳过不用访问的部分，而不是天然更省空间。</p></div><div class="practice"><h3>经典考点与练习</h3><p>练习：LeetCode 53 最大子数组和、198 打家劫舍、213 打家劫舍 II。</p><h3>面试追问：关键点完整解答</h3><dl class="answer-list"><div><dt>为什么不能只维护全局 best 来转移最大子数组？</dt><dd><p>best 可能在很早以前结束，不满足紧邻当前元素的连接条件。需要单独维护以当前位置结尾的 endHere，连接合法后再更新全局 best。状态中的“结尾”不是修饰语，而是决定转移是否合法的约束。</p></dd></div><div><dt>最大子数组全负时为什么不返回 0？</dt><dd><p>题目要求非空。[-5,−2] 的答案是 −2，空数组不是候选。若题意明确允许空选，才可让 0 参与竞争；不要把打家劫舍允许不选的初始化搬到非空子数组题。</p></dd></div><div><dt>返回左右下标时，何时更新当前起点？</dt><dd><p>当旧 ending&lt;0 时，从当前元素重新开始，起点改为 i。旧 ending==0 时延续与重启的和相同；本实现为保留更早左端点选择延续。只有当前候选按约定优于全局答案时，才同步更新答案的两个端点。</p></dd></div><div><dt>环形劫舍为什么不直接算线性答案，再删掉较小的首尾？</dt><dd><p>线性方案一旦选了首尾，删掉其中一个后，它的邻居可能应该重新入选，仅删一个不能重新优化。正确做法是按至少不选首或不选尾划分所有合法方案，两种限制下分别完整求最优。</p></dd></div><div><dt>缓存值为 0 为什么不能代表未计算？</dt><dd><p>0 常是合法答案，例如空问题、全负允许不选或全部为零。把它当未计算会破坏每个状态只算一次的复杂度保证。可以另设 seen，或使用不会与合法结果冲突的显式标记。</p></dd></div><div><dt>滚动变量更新为何要先保存 current？</dt><dd><p>新 dp[i] 依赖旧 dp[i−1] 与旧 dp[i−2]。如果先覆盖 prev2 或 prev1，再计算另一个变量，就可能读到本轮值。先用旧值求 current，再整体移动窗口，才能保持状态含义。</p></dd></div></dl></div>
 <label class="learned"><input type="checkbox" data-progress="12-01">我能独立实现，并解释正确性与边界</label></section><section class="lesson" id="s2"><div class="lesson-heading"><span class="lesson-number">12.02</span><h2>0/1 背包：容量倒序的原因</h2></div>
-<h3>知识与适用场景</h3><p>dp[c] 表示处理到当前物品时，在容量不超过 c 的限制下能获得的最大价值。每个物品最多用一次；二维转移应从上一行取值。</p><div class="invariant"><span>推导 / 不变量</span><p>压缩为一维后按容量倒序，使 dp[c-weight] 尚未使用本轮物品。如果正序，会把本轮更新值再次拿来转移，错误地重复选择同一件物品。</p></div>
+<h3>知识与适用场景</h3><p>dp[c] 表示处理到当前物品时，在容量不超过 c 的限制下能获得的最大价值。每个物品最多用一次；二维转移应从上一行取值。</p><div class="deep-block" id="s2-before-1"><h3>2.1 先写二维状态，才看得见一维覆盖了什么</h3><p>令 f[i][c] 表示只用前 i 件物品、总重量不超过 c 的最大价值。第 i 件不选，来源是 f[i−1][c]；选，来源是 f[i−1][c−w]+v。两项都来自上一行，这正是每件最多用一次的约束。</p><p>压缩为 dp[c] 后，倒序更新 c，使更小的 c−w 尚未被本件物品改写，读到的仍是上一行。对于完全背包，选本件后还能继续选它，来源反而应是当前行 f[i][c−w]，因此正序更新。方向不是口诀，而是数据依赖。</p></div><div class="deep-block" id="s2-before-2"><h3>2.2 单件 w=2、v=3，容量 4 的更新对照</h3><p class="table-hint">窄屏下可左右滑动表格，查看完整内容。</p><div class="study-table" tabindex="0" role="region" aria-label="2.2 单件 w=2、v=3，容量 4 的更新对照"><table><thead><tr><th scope="col">方向</th><th scope="col">先更新的位置</th><th scope="col">更新 dp[4] 时读什么</th><th scope="col">结论</th></tr></thead><tbody><tr><td>正序（错误的 0/1）</td><td>dp[2]=3</td><td>读到本轮 dp[2]=3，再加 3</td><td>得到 6，重复用了唯一物品</td></tr><tr><td>倒序（正确的 0/1）</td><td>先 dp[4]，再 dp[3]，最后 dp[2]</td><td>读到旧 dp[2]=0</td><td>得到 3，每件仅一次</td></tr><tr><td>二维上一行读取</td><td>任意容量顺序均可</td><td>明确读 f[i−1][2]</td><td>没有覆盖问题</td></tr><tr><td>完全背包正序</td><td>dp[2]=3 后继续 dp[4]</td><td>允许读取本轮值</td><td>重复使用合法，6 正确</td></tr></tbody></table></div></div><div class="deep-block" id="s2-before-3"><h3>2.3 初值必须由容量语义决定</h3><p class="table-hint">窄屏下可左右滑动表格，查看完整内容。</p><div class="study-table" tabindex="0" role="region" aria-label="2.3 初值必须由容量语义决定"><table><thead><tr><th scope="col">状态含义</th><th scope="col">dp[0]</th><th scope="col">其余状态</th><th scope="col">最终答案</th></tr></thead><tbody><tr><td>总重不超过 c，允许不选，最大价值</td><td>0</td><td>0，因为空方案合法</td><td>dp[C]</td></tr><tr><td>总重恰好 c，最大价值</td><td>0</td><td>不可达，不是 0</td><td>dp[C]，可能无解</td></tr><tr><td>总重恰好 c，是否可达</td><td>true</td><td>false</td><td>reachable[C]</td></tr><tr><td>总重恰好 c，计数</td><td>1，空选择一种</td><td>0</td><td>ways[C]</td></tr><tr><td>恰好金额 c，最少物品数</td><td>0</td><td>INF</td><td>不可达时另返回失败</td></tr></tbody></table></div></div><div class="deep-block" id="s2-before-4"><h3>2.4 分割等和子集与目标和的代数入口</h3><p>非负数组总和 S 若为奇数，不可能分成两个相同整数和。否则问题等价于选一部分下标使和为 S/2，使用布尔 0/1 背包倒序更新。相同数值的不同下标仍是不同物品，不应随手去重；零值不影响可达性。</p><p>目标和中，给非负数分配正负号，令被赋正号部分总和为 P，则 P−(S−P)=target，得到 P=(S+target)/2。先检查 |target|≤S 与奇偶性，再转成计数 0/1 背包。零值的正负号是两个不同选择，会使每个可达方案数翻倍，不能为了方便删掉零。</p></div><div class="invariant"><span>推导 / 不变量</span><p>压缩为一维后按容量倒序，使 dp[c-weight] 尚未使用本轮物品。如果正序，会把本轮更新值再次拿来转移，错误地重复选择同一件物品。</p></div>
 <h3>手推一个例子</h3><p>只有一件重量 2、价值 3 的物品，容量 4。正序会先把 dp[2] 更新为 3，再把 dp[4] 更新为 6；倒序则 dp[4] 只能得到 3。</p><div class="codebox"><div class="codebar"><span>C++17</span><div><a href="examples/02.cpp" download>下载 .cpp</a><button type="button" class="copy">复制代码</button></div></div><pre tabindex="0" aria-label="C++17 代码"><code><span class="keyword">long</span> <span class="keyword">long</span> knapsack01(<span class="keyword">const</span> vector&lt;<span class="keyword">int</span>&gt;&amp; weight,
                      <span class="keyword">const</span> vector&lt;<span class="keyword">int</span>&gt;&amp; value,<span class="keyword">int</span> capacity) {
     <span class="keyword">if</span>(capacity&lt;<span class="number">0</span> || weight.size()!=value.size())
@@ -54,9 +84,38 @@
     <span class="keyword">return</span> dp[capacity];
 }</code></pre></div>
 <dl class="analysis-grid"><div><dt>复杂度</dt><dd>时间 O(nC)，空间 O(C)，属于伪多项式算法，C 的数值可能很大。</dd></div><div><dt>易错点与边界</dt><dd>恰好装满与不超过容量不同：恰好装满应仅 dp[0]=0，其余设负无穷，并跳过不可达转移。</dd></div></dl>
-<div class="practice"><h3>经典考点与练习</h3><p>练习：LeetCode 416 分割等和子集、494 目标和、1049 最后一块石头的重量 II。</p><details><summary>面试官可能继续问什么？</summary><p>如何把分割等和子集转成布尔背包？总和为奇数为何可立即失败？</p><p class="muted">先用自己的话回答，再回到本节的前提、不变量和边界检查论证。</p></details></div>
+<div class="deep-block" id="s2-after-1"><h3>2.5 恰好装满的 0/1 背包：显式表达不可达</h3><p>正重量，价值可为负；容量上限 200000 用于控制教学示例资源。恰好装满可能必须接受负收益，例如重量 2、价值 −3、容量 2 的答案是 −3，不是 0。optional 区分无解与任意有限值。由于选中件数至多为容量，int 价值累加在 long long 内安全。时间 O(nC)，空间 O(C)。</p><div class="codebox"><div class="codebar"><span>C++17</span><div><a href="examples/detail-knapsack-exact.cpp" download>下载 .cpp</a><button type="button" class="copy">复制代码</button></div></div><pre tabindex="0" aria-label="C++17 代码"><code>optional&lt;<span class="keyword">long</span> <span class="keyword">long</span>&gt; knapsackExact(<span class="keyword">const</span> vector&lt;<span class="keyword">int</span>&gt;&amp; weight,
+                                  <span class="keyword">const</span> vector&lt;<span class="keyword">int</span>&gt;&amp; value, <span class="keyword">int</span> capacity) {
+    <span class="keyword">if</span> (capacity &lt; <span class="number">0</span> || capacity &gt; <span class="number">200000</span> || weight.size() != value.size())
+        <span class="keyword">throw</span> invalid_argument(<span class="string">&quot;capacity/length&quot;</span>);
+    vector&lt;optional&lt;<span class="keyword">long</span> <span class="keyword">long</span>&gt;&gt; dp(capacity+<span class="number">1</span>);
+    dp[<span class="number">0</span>] = <span class="number">0</span>;
+    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; (<span class="keyword">int</span>)weight.size(); ++i) {
+        <span class="keyword">if</span> (weight[i] &lt;= <span class="number">0</span>) <span class="keyword">throw</span> invalid_argument(<span class="string">&quot;positive weight&quot;</span>);
+        <span class="keyword">for</span> (<span class="keyword">int</span> c = capacity; c &gt;= weight[i]; --c) {
+            <span class="keyword">if</span> (!dp[c-weight[i]]) continue;
+            <span class="keyword">long</span> <span class="keyword">long</span> candidate = *dp[c-weight[i]]+value[i];
+            <span class="keyword">if</span> (!dp[c] || candidate &gt; *dp[c]) dp[c] = candidate;
+        }
+    }
+    <span class="keyword">return</span> dp[capacity];
+}</code></pre></div></div><div class="deep-block" id="s2-after-2"><h3>2.6 布尔背包：分割等和子集</h3><p>采用允许空子集的定义，因此空数组和全零数组返回 true。题目若要求两组都非空，需按题意增加条件或状态。零重量布尔物品只会保持已有可达值，不会造成无限循环；本循环 c 为有符号 int。时间 O(n·S)，空间 O(S)，这里 S 表示目标和而非输入位数。</p><div class="codebox"><div class="codebar"><span>C++17</span><div><a href="examples/detail-equal-partition.cpp" download>下载 .cpp</a><button type="button" class="copy">复制代码</button></div></div><pre tabindex="0" aria-label="C++17 代码"><code><span class="keyword">bool</span> equalPartition(<span class="keyword">const</span> vector&lt;<span class="keyword">int</span>&gt;&amp; a) {
+    <span class="keyword">long</span> <span class="keyword">long</span> sum = <span class="number">0</span>;
+    <span class="keyword">for</span> (<span class="keyword">int</span> x : a) {
+        <span class="keyword">if</span> (x &lt; <span class="number">0</span>) <span class="keyword">throw</span> invalid_argument(<span class="string">&quot;nonnegative values&quot;</span>);
+        sum += x;
+    }
+    <span class="keyword">if</span> (sum % <span class="number">2</span>) <span class="keyword">return</span> <span class="keyword">false</span>;
+    <span class="keyword">if</span> (sum/<span class="number">2</span> &gt; <span class="number">200000</span>) <span class="keyword">throw</span> invalid_argument(<span class="string">&quot;teaching target limit&quot;</span>);
+    <span class="keyword">int</span> target = (<span class="keyword">int</span>)(sum/<span class="number">2</span>);
+    vector&lt;<span class="keyword">char</span>&gt; reachable(target+<span class="number">1</span>,<span class="keyword">false</span>); reachable[<span class="number">0</span>] = <span class="keyword">true</span>;
+    <span class="keyword">for</span> (<span class="keyword">int</span> x : a)
+        <span class="keyword">for</span> (<span class="keyword">int</span> c = target; c &gt;= x; --c)
+            <span class="keyword">if</span> (reachable[c-x]) reachable[c] = <span class="keyword">true</span>;
+    <span class="keyword">return</span> reachable[target];
+}</code></pre></div></div><div class="practice"><h3>经典考点与练习</h3><p>练习：LeetCode 416 分割等和子集、494 目标和、1049 最后一块石头的重量 II。</p><h3>面试追问：关键点完整解答</h3><dl class="answer-list"><div><dt>恰好装满为何不能把所有 dp 初始化为 0？</dt><dd><p>这会把本来凑不出的容量当成零价值的可行前驱。例如只有重量 2 的物品，容量 3 会从虚假的 dp[1]=0 转移出一个假答案。只让 dp[0] 可达，其余显式标不可达，才能保证所有转移有合法来源。</p></dd></div><div><dt>二维 0/1 背包是否也必须倒序容量？</dt><dd><p>不必须，只要它始终读取上一行 f[i−1]，当前行的计算顺序可以正序。倒序是将两行压缩到同一数组后，为避免覆盖上一行小容量状态才需要的技巧。</p></dd></div><div><dt>零重量物品该如何处理？</dt><dd><p>本章价值型背包接口要求正重量，拒绝零重以统一数值与循环契约。若允许 0/1 零重物品，可专门处理每件至多一次；完全背包若有零重正价值物品，最优值无上界。布尔子集中的零不会改变可达性，计数中却会倍增方案，不能混为一谈。</p></dd></div><div><dt>为什么背包 O(nC) 不一定适合大输入？</dt><dd><p>C=10^9 即使只有几十件物品，数组和循环也不可接受。输入只需约 30 位表达容量，但 DP 按数值铺开。可结合物品数、价值总和考虑按价值 DP、折半枚举或其他结构，不应看到 O(nC) 就默认可运行。</p></dd></div><div><dt>一维背包能否只放一个 parent[c] 就可靠恢复物品？</dt><dd><p>容易出错：记录的前驱容量在后续物品中可能被覆盖，回溯时拿到的是另一时刻的方案，甚至重复使用同一件。需要保留分层决策、不可变路径节点，或用重新计算等经过证明的方法；本节接口只承诺最优值，不伪造恢复链。</p></dd></div><div><dt>总和为偶数是否意味着一定能等分？</dt><dd><p>不是，仅是必要条件。[1,2,5] 总和 8，但无法选出和为 4 的子集。奇数可立即失败，偶数仍须检查目标容量是否真的可达。</p></dd></div></dl></div>
 <label class="learned"><input type="checkbox" data-progress="12-02">我能独立实现，并解释正确性与边界</label></section><section class="lesson" id="s3"><div class="lesson-heading"><span class="lesson-number">12.03</span><h2>完全背包与计数顺序</h2></div>
-<h3>知识与适用场景</h3><p>物品可无限次使用时，同一轮允许重复依赖当前物品，所以容量正序遍历。计数题必须再区分组合与排列：组合忽略选择顺序，排列保留顺序。</p><div class="invariant"><span>推导 / 不变量</span><p>求硬币组合数时外层遍历币种、内层正序遍历金额。每种组合按币种顺序构建一次。若外层金额、内层币种，转移是在为序列追加最后一枚硬币，通常计数排列。</p></div>
+<h3>知识与适用场景</h3><p>物品可无限次使用时，同一轮允许重复依赖当前物品，所以容量正序遍历。计数题必须再区分组合与排列：组合忽略选择顺序，排列保留顺序。</p><div class="deep-block" id="s3-before-1"><h3>3.1 完全背包正序，是允许同一物品再次成为前驱</h3><p>最少硬币数 minCoins[s] 表示恰好凑成金额 s 的最少枚数。对最后一枚硬币 c，有 minCoins[s]=min(minCoins[s−c]+1)。币值为正时，前驱金额严格更小，可以按金额递增计算，且不可达前驱不参与转移。</p><p>计数问题要进一步问：选择顺序算不算不同？币种外层是在限定可用币种集合，金额外层是在为序列追加最后一枚。两种循环只是交换两行代码，却改变了状态含义和枚举对象。</p></div><div class="deep-block" id="s3-before-2"><h3>3.2 币种 [1,2]、金额 3：组合数的逐币种状态</h3><p class="table-hint">窄屏下可左右滑动表格，查看完整内容。</p><div class="study-table" tabindex="0" role="region" aria-label="3.2 币种 [1,2]、金额 3：组合数的逐币种状态"><table><thead><tr><th scope="col">处理阶段</th><th scope="col">dp[0]</th><th scope="col">dp[1]</th><th scope="col">dp[2]</th><th scope="col">dp[3]</th></tr></thead><tbody><tr><td>初始，只能选空集</td><td>1</td><td>0</td><td>0</td><td>0</td></tr><tr><td>处理币种 1 后</td><td>1</td><td>1</td><td>1</td><td>1</td></tr><tr><td>处理币种 2 后</td><td>1</td><td>1</td><td>2</td><td>2</td></tr><tr><td>组合解释</td><td>空选择</td><td>{1}</td><td>{1,1} 或 {2}</td><td>{1,1,1} 或 {1,2}</td></tr></tbody></table></div></div><div class="deep-block" id="s3-before-3"><h3>3.3 同样的加法，不同的计数对象</h3><p class="table-hint">窄屏下可左右滑动表格，查看完整内容。</p><div class="study-table" tabindex="0" role="region" aria-label="3.3 同样的加法，不同的计数对象"><table><thead><tr><th scope="col">模型</th><th scope="col">外层 / 内层</th><th scope="col">dp[0]</th><th scope="col">[1,2] 凑 3</th></tr></thead><tbody><tr><td>硬币组合，顺序不重要</td><td>币种 / 金额正序</td><td>1</td><td>2</td></tr><tr><td>有序序列，顺序重要</td><td>金额正序 / 所有币种</td><td>1</td><td>3：[1,1,1]、[1,2]、[2,1]</td></tr><tr><td>每个物品仅一次的子集计数</td><td>物品 / 容量倒序</td><td>1</td><td>取决于提供了几个实体物品</td></tr><tr><td>最少硬币数</td><td>金额 / 币种，取 min</td><td>0</td><td>2 枚，不是 2 种</td></tr></tbody></table></div></div><div class="deep-block" id="s3-before-4"><h3>3.4 零、负币值和重复币种都不是无害输入</h3><p>无限使用零币值会使同一金额对应无限多长度不同的序列，也会产生同状态依赖；负币值可能让金额上下游来回跳，普通从小到大的递推不再成立。本章无限硬币接口只接受正整数。</p><p>补充示例把相同面值视为同一币种，会排序去重。例如 [1,1,2] 与 [1,2] 结果相同。如果题目把同面值但不同标签视为不同选择，就应保留标签并重新明确方案定义；基础组合模板则要求调用者提供互异币种。</p></div><div class="invariant"><span>推导 / 不变量</span><p>求硬币组合数时外层遍历币种、内层正序遍历金额。每种组合按币种顺序构建一次。若外层金额、内层币种，转移是在为序列追加最后一枚硬币，通常计数排列。</p></div>
 <h3>手推一个例子</h3><p>硬币 [1,2]，金额 3：组合为 {1,1,1}、{1,2} 共 2；排列还区分 [1,2] 与 [2,1]，共 3。</p><div class="codebox"><div class="codebar"><span>C++17</span><div><a href="examples/03.cpp" download>下载 .cpp</a><button type="button" class="copy">复制代码</button></div></div><pre tabindex="0" aria-label="C++17 代码"><code><span class="keyword">long</span> <span class="keyword">long</span> coinCombinations(<span class="keyword">const</span> vector&lt;<span class="keyword">int</span>&gt;&amp; coins,<span class="keyword">int</span> amount) {
     <span class="keyword">if</span>(amount&lt;<span class="number">0</span>) <span class="keyword">return</span> <span class="number">0</span>;
     vector&lt;<span class="keyword">long</span> <span class="keyword">long</span>&gt; dp(amount+<span class="number">1</span>,<span class="number">0</span>);
@@ -68,9 +127,46 @@
     <span class="keyword">return</span> dp[amount];
 }</code></pre></div>
 <dl class="analysis-grid"><div><dt>复杂度</dt><dd>时间 O(币种数·amount)，空间 O(amount)。示例假设币种互异，方案数不超过 long long。</dd></div><div><dt>易错点与边界</dt><dd>dp[0]=1 代表一种空选择，是计数的起点。最少硬币数问题把加法计数改为 min，并把不可达初始化为 INF。</dd></div></dl>
-<div class="practice"><h3>经典考点与练习</h3><p>练习：LeetCode 322 零钱兑换、518 零钱兑换 II、377 组合总和 IV。</p><details><summary>面试官可能继续问什么？</summary><p>为什么重复币种会造成重复计数？需要取模时在哪里进行？</p><p class="muted">先用自己的话回答，再回到本节的前提、不变量和边界检查论证。</p></details></div>
+<div class="deep-block" id="s3-after-1"><h3>3.5 最少硬币及一种实际组成方案</h3><p>amount=0 返回有值的空向量，表示无需硬币；凑不出返回 nullopt。last[s] 指向更小金额且该状态已经计算完，不像按物品滚动的 0/1 背包会被后续层修改。时间 O(k log k+kA)，空间 O(k+A)，含币种副本；相等成本不覆盖前驱，仅承诺一种最优方案。</p><div class="codebox"><div class="codebar"><span>C++17</span><div><a href="examples/detail-min-coins-path.cpp" download>下载 .cpp</a><button type="button" class="copy">复制代码</button></div></div><pre tabindex="0" aria-label="C++17 代码"><code>optional&lt;vector&lt;<span class="keyword">int</span>&gt;&gt; minimumCoinsPath(vector&lt;<span class="keyword">int</span>&gt; coins, <span class="keyword">int</span> amount) {
+    <span class="keyword">if</span> (amount &lt; <span class="number">0</span> || amount &gt; <span class="number">200000</span>) <span class="keyword">throw</span> invalid_argument(<span class="string">&quot;amount&quot;</span>);
+    <span class="keyword">for</span> (<span class="keyword">int</span> c : coins) <span class="keyword">if</span> (c &lt;= <span class="number">0</span>) <span class="keyword">throw</span> invalid_argument(<span class="string">&quot;positive coin&quot;</span>);
+    sort(coins.begin(),coins.end());
+    coins.erase(unique(coins.begin(),coins.end()),coins.end());
+    <span class="keyword">const</span> <span class="keyword">int</span> INF = amount+<span class="number">1</span>;
+    vector&lt;<span class="keyword">int</span>&gt; dp(amount+<span class="number">1</span>,INF), last(amount+<span class="number">1</span>,-<span class="number">1</span>);
+    dp[<span class="number">0</span>] = <span class="number">0</span>;
+    <span class="keyword">for</span> (<span class="keyword">int</span> s = <span class="number">1</span>; s &lt;= amount; ++s)
+        <span class="keyword">for</span> (<span class="keyword">int</span> c : coins) {
+            <span class="keyword">if</span> (c &gt; s) break;
+            <span class="keyword">if</span> (dp[s-c] != INF &amp;&amp; dp[s-c]+<span class="number">1</span> &lt; dp[s]) {
+                dp[s] = dp[s-c]+<span class="number">1</span>; last[s] = c;
+            }
+        }
+    <span class="keyword">if</span> (dp[amount] == INF) <span class="keyword">return</span> nullopt;
+    vector&lt;<span class="keyword">int</span>&gt; chosen;
+    <span class="keyword">for</span> (<span class="keyword">int</span> s = amount; s &gt; <span class="number">0</span>; s -= last[s]) chosen.push_back(last[s]);
+    <span class="keyword">return</span> chosen;
+}</code></pre></div></div><div class="deep-block" id="s3-after-2"><h3>3.6 组合与有序序列计数：显式模数与币种去重</h3><p>返回 {无序组合数 mod M, 有序序列数 mod M}。每次加法立即取模，操作数已小于 M，long long 足够。结果 0 可能是方案数恰为模数的倍数，不代表无解；可达性需要布尔状态或其他独立判断。时间 O(k log k+kA)，空间 O(k+A)。</p><div class="codebox"><div class="codebar"><span>C++17</span><div><a href="examples/detail-coin-counts.cpp" download>下载 .cpp</a><button type="button" class="copy">复制代码</button></div></div><pre tabindex="0" aria-label="C++17 代码"><code>pair&lt;<span class="keyword">long</span> <span class="keyword">long</span>,<span class="keyword">long</span> <span class="keyword">long</span>&gt; coinCountsMod(vector&lt;<span class="keyword">int</span>&gt; coins, <span class="keyword">int</span> amount,
+                                         <span class="keyword">int</span> mod = <span class="number">1000000007</span>) {
+    <span class="keyword">if</span> (amount &lt; <span class="number">0</span> || amount &gt; <span class="number">200000</span> || mod &lt; <span class="number">2</span> || mod &gt; <span class="number">1000000007</span>)
+        <span class="keyword">throw</span> invalid_argument(<span class="string">&quot;amount/mod&quot;</span>);
+    <span class="keyword">for</span> (<span class="keyword">int</span> c : coins) <span class="keyword">if</span> (c &lt;= <span class="number">0</span>) <span class="keyword">throw</span> invalid_argument(<span class="string">&quot;positive coin&quot;</span>);
+    sort(coins.begin(),coins.end());
+    coins.erase(unique(coins.begin(),coins.end()),coins.end());
+    vector&lt;<span class="keyword">long</span> <span class="keyword">long</span>&gt; combos(amount+<span class="number">1</span>), ordered(amount+<span class="number">1</span>);
+    combos[<span class="number">0</span>] = ordered[<span class="number">0</span>] = <span class="number">1</span>;
+    <span class="keyword">for</span> (<span class="keyword">int</span> c : coins)
+        <span class="keyword">for</span> (<span class="keyword">int</span> s = c; s &lt;= amount; ++s)
+            combos[s] = (combos[s]+combos[s-c])%mod;
+    <span class="keyword">for</span> (<span class="keyword">int</span> s = <span class="number">1</span>; s &lt;= amount; ++s)
+        <span class="keyword">for</span> (<span class="keyword">int</span> c : coins) {
+            <span class="keyword">if</span> (c &gt; s) break;
+            ordered[s] = (ordered[s]+ordered[s-c])%mod;
+        }
+    <span class="keyword">return</span> {combos[amount],ordered[amount]};
+}</code></pre></div></div><div class="practice"><h3>经典考点与练习</h3><p>练习：LeetCode 322 零钱兑换、518 零钱兑换 II、377 组合总和 IV。</p><h3>面试追问：关键点完整解答</h3><dl class="answer-list"><div><dt>dp[0]=1 为什么不是凭空多出一个方案？</dt><dd><p>构成金额 0 有一种空选择。它充当递推的乘法单位：例如第一枚币 c 使 dp[c] 加上 dp[0]，恰好产生只用这一枚的方案。若初始全零，所有加法状态永远为零。最少枚数中 dp[0]=0 是成本定义，不能与计数混淆。</p></dd></div><div><dt>为什么金额外层会计入 [1,2] 与 [2,1] 两种？</dt><dd><p>在金额 s 时遍历 c，相当于按最后一枚分类。s=3 的 c=1 接在序列 [2] 后得到 [2,1]；c=2 接在 [1] 后得到 [1,2]。最后元素不同是互不重叠的分类，正适合有序序列。</p></dd></div><div><dt>为什么币种外层不会重复构造同一组合？</dt><dd><p>处理第 i 种币后，只允许用前 i 种币，且按固定币种顺序扩展。任意多重集合都由每个币种使用次数唯一确定，不会再以反过来的币种顺序构造第二次。这个理由依赖相同币种没有被重复列为两个类型。</p></dd></div><div><dt>重复面值应该总是去重吗？</dt><dd><p>不总是。无限面额模型通常去重，因为相同面额不是不同选择；0/1 背包里的两个同重量物品可能是可各用一次的独立实体，去重会改变问题。先明确物品身份与方案判等规则，再决定。</p></dd></div><div><dt>最少硬币是不是每次拿最大面额即可？</dt><dd><p>任意币制不成立。面额 [1,3,4]、金额 6，先拿 4 需要再拿两个 1，共 3 枚；两个 3 只需 2 枚。DP 保留各剩余金额的最优值，不依赖特殊币制性质。</p></dd></div><div><dt>有序计数中的零值为什么特别危险？</dt><dd><p>允许无限次选择 0 后，任何合法序列都可插入任意多个 0 而不改变金额，方案数不再有限。方程还会出现 dp[s] 依赖自身，普通有限次扫描无法代表题意。必须限制次数或拒绝这类输入，不能只改变遍历方向。</p></dd></div></dl></div>
 <label class="learned"><input type="checkbox" data-progress="12-03">我能独立实现，并解释正确性与边界</label></section><section class="lesson" id="s4"><div class="lesson-heading"><span class="lesson-number">12.04</span><h2>序列 DP：最长公共子序列与编辑距离</h2></div>
-<h3>知识与适用场景</h3><p>两个字符串的相对进度需要两个下标。LCS 的 dp[i][j] 表示两个前缀的最长公共子序列长度；子序列允许跳过字符，子串必须连续，转移不同。</p><div class="invariant"><span>推导 / 不变量</span><p>若最后字符相同，LCS 可由 dp[i-1][j-1]+1 得到；否则舍弃其中一侧末字符，取 max(dp[i-1][j],dp[i][j-1])。编辑距离则把三种删除、插入、替换成本取最小。</p></div>
+<h3>知识与适用场景</h3><p>两个字符串的相对进度需要两个下标。LCS 的 dp[i][j] 表示两个前缀的最长公共子序列长度；子序列允许跳过字符，子串必须连续，转移不同。</p><div class="deep-block" id="s4-before-1"><h3>4.1 用前缀长度作坐标，空串才有自然位置</h3><p>LCS 的 f[i][j] 表示 a 的前 i 个字节与 b 的前 j 个字节的最长公共子序列长度，下标 i、j 不是当前字符下标，末字符分别是 a[i−1]、b[j−1]。空前缀 f[0][j] 和 f[i][0] 均为 0。</p><p>末字符相等时，可以把它们配为公共序列的最后一项，接在两个短前缀的最优解后；存在包含这对末字符的最优解，所以得到 f[i−1][j−1]+1。末字符不等时，它们不能同时作为匹配末项，至少舍弃一侧，取上方与左方最大值。子串要求连续，字符不等时应把“以这两个位置结尾的长度”置 0，而不是延续 max。</p></div><div class="deep-block" id="s4-before-2"><h3>4.2 LCS 表格：a=abc、b=ac</h3><p>从右下角回溯：c 匹配，走左上；b 与 a 不匹配，走向保留同最优值的上方；a 匹配。记录顺序是 c、a，需要反转为 ac。</p><p class="table-hint">窄屏下可左右滑动表格，查看完整内容。</p><div class="study-table" tabindex="0" role="region" aria-label="4.2 LCS 表格：a=abc、b=ac"><table><thead><tr><th scope="col">a 的前缀</th><th scope="col">空串</th><th scope="col">a</th><th scope="col">ac</th></tr></thead><tbody><tr><td>空串</td><td>0</td><td>0</td><td>0</td></tr><tr><td>a</td><td>0</td><td>1</td><td>1</td></tr><tr><td>ab</td><td>0</td><td>1</td><td>1</td></tr><tr><td>abc</td><td>0</td><td>1</td><td>2</td></tr></tbody></table></div></div><div class="deep-block" id="s4-before-3"><h3>4.3 编辑距离的三条边，分别代表什么动作？</h3><p>令 d[i][j] 为将 a 的前 i 个字符变为 b 的前 j 个字符的最少编辑次数。删掉 a 的末字符来自 d[i−1][j]+1；在 a 的末尾插入 b 的末字符来自 d[i][j−1]+1；替换末字符来自 d[i−1][j−1]+1。末字符相同则直接用左上角，不付费。</p><p>空串变成长度 j 的串必须插入 j 次，因此第一行是 0..m；长度 i 的串变为空串必须删除 i 次，第一列是 0..n。压缩一行时，dp[j] 尚是旧上方，dp[j−1] 已是新左方，旧左上必须额外保存，不能读被覆盖后的 dp[j−1]。</p></div><div class="deep-block" id="s4-before-4"><h3>4.4 严格 LIS：tails 不是最终子序列</h3><p>O(n²) LIS 定义 f[i] 为以 i 结尾的严格递增长度，转移枚举 j&lt;i 且 a[j]&lt;a[i]。O(n log n) 的 tails 是按长度保留最小末值的支配优化：同长度末值越小，越容易接后续元素。严格递增找第一个 ≥x 的位置；非递减则找第一个 &gt;x 的位置。</p><p class="table-hint">窄屏下可左右滑动表格，查看完整内容。</p><div class="study-table" tabindex="0" role="region" aria-label="4.4 严格 LIS：tails 不是最终子序列"><table><thead><tr><th scope="col">处理值</th><th scope="col">各长度的最小结尾 tails</th><th scope="col">含义</th></tr></thead><tbody><tr><td>3</td><td>[3]</td><td>长度 1 的最好结尾是 3</td></tr><tr><td>5</td><td>[3,5]</td><td>可扩展为长度 2</td></tr><tr><td>6</td><td>[3,5,6]</td><td>可扩展为长度 3</td></tr><tr><td>2</td><td>[2,5,6]</td><td>仅改进长度 1 的未来扩展能力</td></tr><tr><td>4</td><td>[2,4,6]</td><td>长度 3 仍存在，但 2、4、6 在原序列中不是这个顺序</td></tr></tbody></table></div></div><div class="invariant"><span>推导 / 不变量</span><p>若最后字符相同，LCS 可由 dp[i-1][j-1]+1 得到；否则舍弃其中一侧末字符，取 max(dp[i-1][j],dp[i][j-1])。编辑距离则把三种删除、插入、替换成本取最小。</p></div>
 <h3>手推一个例子</h3><p>&quot;abcde&quot; 与 &quot;ace&quot; 的 LCS 是 &quot;ace&quot;，长度 3。若要求公共子串，就不能跨过 b、d，答案不再是 3。</p><div class="codebox"><div class="codebar"><span>C++17</span><div><a href="examples/04.cpp" download>下载 .cpp</a><button type="button" class="copy">复制代码</button></div></div><pre tabindex="0" aria-label="C++17 代码"><code><span class="keyword">int</span> longestCommonSubsequence(<span class="keyword">const</span> string&amp; a,<span class="keyword">const</span> string&amp; b) {
     <span class="keyword">int</span> n=(<span class="keyword">int</span>)a.size(),m=(<span class="keyword">int</span>)b.size();
     vector&lt;vector&lt;<span class="keyword">int</span>&gt;&gt; dp(n+<span class="number">1</span>,vector&lt;<span class="keyword">int</span>&gt;(m+<span class="number">1</span>,<span class="number">0</span>));
@@ -81,9 +177,60 @@
     <span class="keyword">return</span> dp[n][m];
 }</code></pre></div>
 <dl class="analysis-grid"><div><dt>复杂度</dt><dd>时间 O(nm)，空间 O(nm)，只求长度时可滚动优化到 O(m)。字符串按字节比较。</dd></div><div><dt>易错点与边界</dt><dd>状态下标是前缀长度，访问字符时需要减 1。编辑距离初始化 dp[i][0]=i、dp[0][j]=j，不能全部置零。</dd></div></dl>
-<div class="practice"><h3>经典考点与练习</h3><p>练习：LeetCode 1143 最长公共子序列、72 编辑距离、300 最长递增子序列。</p><details><summary>面试官可能继续问什么？</summary><p>如何从 DP 表回溯一条 LCS？最长递增子序列的 O(n²) 状态怎么定义？</p><p class="muted">先用自己的话回答，再回到本节的前提、不变量和边界检查论证。</p></details></div>
+<div class="deep-block" id="s4-after-1"><h3>4.5 恢复一条 LCS：保留二维表与回溯规则</h3><p>相等长度的分支优先向上，只保证得到一条最长公共子序列，不保证字典序最小。不应将输出与唯一字符串硬比，应检查它是两个输入的子序列且长度最优。时间 O(nm+n+m)，空间 O(nm)，输出另计。</p><div class="codebox"><div class="codebar"><span>C++17</span><div><a href="examples/detail-lcs-path.cpp" download>下载 .cpp</a><button type="button" class="copy">复制代码</button></div></div><pre tabindex="0" aria-label="C++17 代码"><code>string oneLCS(<span class="keyword">const</span> string&amp; a, <span class="keyword">const</span> string&amp; b) {
+    <span class="keyword">int</span> n = (<span class="keyword">int</span>)a.size(), m = (<span class="keyword">int</span>)b.size();
+    vector&lt;vector&lt;<span class="keyword">int</span>&gt;&gt; dp(n+<span class="number">1</span>,vector&lt;<span class="keyword">int</span>&gt;(m+<span class="number">1</span>));
+    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">1</span>; i &lt;= n; ++i)
+        <span class="keyword">for</span> (<span class="keyword">int</span> j = <span class="number">1</span>; j &lt;= m; ++j)
+            <span class="keyword">if</span> (a[i-<span class="number">1</span>] == b[j-<span class="number">1</span>]) dp[i][j] = dp[i-<span class="number">1</span>][j-<span class="number">1</span>]+<span class="number">1</span>;
+            <span class="keyword">else</span> dp[i][j] = max(dp[i-<span class="number">1</span>][j],dp[i][j-<span class="number">1</span>]);
+    string result;
+    <span class="keyword">int</span> i = n, j = m;
+    <span class="keyword">while</span> (i &gt; <span class="number">0</span> &amp;&amp; j &gt; <span class="number">0</span>) {
+        <span class="keyword">if</span> (a[i-<span class="number">1</span>] == b[j-<span class="number">1</span>]) { result.push_back(a[i-<span class="number">1</span>]); --i; --j; }
+        <span class="keyword">else</span> <span class="keyword">if</span> (dp[i-<span class="number">1</span>][j] &gt;= dp[i][j-<span class="number">1</span>]) --i;
+        <span class="keyword">else</span> --j;
+    }
+    reverse(result.begin(),result.end());
+    <span class="keyword">return</span> result;
+}</code></pre></div></div><div class="deep-block" id="s4-after-2"><h3>4.6 一维编辑距离：保存旧左上角</h3><p>仅支持单位成本的插入、删除、替换，不含交换相邻字符。时间 O(nm+n+m)，辅助空间 O(min(n,m))。若插入和删除费用不同，问题可能不对称，不能为了省空间直接交换字符串。这个接口只返回距离，不返回操作序列。</p><div class="codebox"><div class="codebar"><span>C++17</span><div><a href="examples/detail-edit-distance.cpp" download>下载 .cpp</a><button type="button" class="copy">复制代码</button></div></div><pre tabindex="0" aria-label="C++17 代码"><code><span class="keyword">int</span> editDistanceRolling(<span class="keyword">const</span> string&amp; source, <span class="keyword">const</span> string&amp; target) {
+    <span class="comment">// 让列是短串。单位插删改的距离对称，所以可交换两串。</span>
+    <span class="keyword">const</span> string* a = &amp;source;
+    <span class="keyword">const</span> string* b = &amp;target;
+    <span class="keyword">if</span> (a-&gt;size() &lt; b-&gt;size()) swap(a,b);
+    <span class="keyword">int</span> n = (<span class="keyword">int</span>)a-&gt;size(), m = (<span class="keyword">int</span>)b-&gt;size();
+    vector&lt;<span class="keyword">int</span>&gt; dp(m+<span class="number">1</span>);
+    iota(dp.begin(),dp.end(),<span class="number">0</span>);
+    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">1</span>; i &lt;= n; ++i) {
+        <span class="keyword">int</span> diagonal = dp[<span class="number">0</span>];
+        dp[<span class="number">0</span>] = i;
+        <span class="keyword">for</span> (<span class="keyword">int</span> j = <span class="number">1</span>; j &lt;= m; ++j) {
+            <span class="keyword">int</span> above = dp[j];
+            <span class="keyword">if</span> ((*a)[i-<span class="number">1</span>] == (*b)[j-<span class="number">1</span>]) dp[j] = diagonal;
+            <span class="keyword">else</span> dp[j] = <span class="number">1</span>+min({above,dp[j-<span class="number">1</span>],diagonal});
+            diagonal = above;
+        }
+    }
+    <span class="keyword">return</span> dp[m];
+}</code></pre></div></div><div class="deep-block" id="s4-after-3"><h3>4.7 严格 LIS 的下标方案：二分之外保存前驱</h3><p>parent[i] 记录处理 i 当时的真实前驱下标，后续 tails 被替换不会改写它，所以恢复出的下标严格递增、数值严格递增。空数组返回空方案，相同值不会增加严格 LIS 长度。时间 O(n log(n+1))，空间 O(n)。不承诺下标或数值序列的字典序最小。</p><div class="codebox"><div class="codebar"><span>C++17</span><div><a href="examples/detail-lis-path.cpp" download>下载 .cpp</a><button type="button" class="copy">复制代码</button></div></div><pre tabindex="0" aria-label="C++17 代码"><code>vector&lt;<span class="keyword">int</span>&gt; strictLISIndices(<span class="keyword">const</span> vector&lt;<span class="keyword">int</span>&gt;&amp; a) {
+    vector&lt;<span class="keyword">int</span>&gt; tails, indexAtLength, parent(a.size(),-<span class="number">1</span>);
+    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; (<span class="keyword">int</span>)a.size(); ++i) {
+        <span class="keyword">int</span> pos = (<span class="keyword">int</span>)(lower_bound(tails.begin(),tails.end(),a[i])-tails.begin());
+        <span class="keyword">if</span> (pos &gt; <span class="number">0</span>) parent[i] = indexAtLength[pos-<span class="number">1</span>];
+        <span class="keyword">if</span> (pos == (<span class="keyword">int</span>)tails.size()) {
+            tails.push_back(a[i]); indexAtLength.push_back(i);
+        } <span class="keyword">else</span> {
+            tails[pos] = a[i]; indexAtLength[pos] = i;
+        }
+    }
+    vector&lt;<span class="keyword">int</span>&gt; result;
+    <span class="keyword">if</span> (tails.empty()) <span class="keyword">return</span> result;
+    <span class="keyword">for</span> (<span class="keyword">int</span> i = indexAtLength.back(); i != -<span class="number">1</span>; i = parent[i]) result.push_back(i);
+    reverse(result.begin(),result.end());
+    <span class="keyword">return</span> result;
+}</code></pre></div></div><div class="practice"><h3>经典考点与练习</h3><p>练习：LeetCode 1143 最长公共子序列、72 编辑距离、300 最长递增子序列。</p><h3>面试追问：关键点完整解答</h3><dl class="answer-list"><div><dt>LCS 与最长公共子串的转移区别在哪里？</dt><dd><p>LCS 可跳过字符，不匹配时取上、左状态最大值。公共子串必须连续，若定义以 i、j 结尾的长度，不匹配时必须归零，匹配时才从左上加一；最后取所有状态最大值，而不一定右下角。</p></dd></div><div><dt>一维 LCS 或编辑距离为什么需要 diagonal？</dt><dd><p>内层从左往右时，dp[j−1] 已是当前行，旧的 f[i−1][j−1] 已被覆盖。先把旧 dp[j] 保存为 above，完成当前格后再令 diagonal=above，就能给下一格提供正确的旧左上值。</p></dd></div><div><dt>一行 DP 能直接恢复完整 LCS 吗？</dt><dd><p>通常不能直接按原表回溯，因为旧行已丢失。保留二维表是最清楚的基础方法；更省空间的恢复可以用分治等专门方法，需要额外推导，不能声称长度压缩后父路径自动仍然存在。</p></dd></div><div><dt>为什么严格 LIS 用 lower_bound，非递减用 upper_bound？</dt><dd><p>严格递增不允许等值延长，因此 x 应替换第一个 ≥x 的结尾；非递减允许等值接在末尾，所以跳过等值，找第一个 &gt;x 的位置。数组 [2,2,2] 的严格 LIS 长度 1，非递减长度 3。</p></dd></div><div><dt>tails 能否直接作为一条 LIS 输出？</dt><dd><p>不能。不同长度位置可能来自不同历史时刻，[3,5,6,2,4] 最后的 tails=[2,4,6] 并不是原数组子序列。需要记录每个原始元素的前驱与各长度对应的末元素下标，再回溯。</p></dd></div><div><dt>编辑距离把第一行第一列都设 0 会怎样？</dt><dd><p>它会把从空串插入任意字符、或删除任意前缀当作免费操作，系统性低估代价。状态是前缀之间的转换成本，空边界的答案就是长度，不是无信息所以填零。</p></dd></div></dl></div>
 <label class="learned"><input type="checkbox" data-progress="12-04">我能独立实现，并解释正确性与边界</label></section><section class="lesson" id="s5"><div class="lesson-heading"><span class="lesson-number">12.05</span><h2>区间 DP：由短区间构造长区间</h2></div>
-<h3>知识与适用场景</h3><p>区间 DP 的状态通常是闭区间 [l,r] 上的答案，依赖更短区间。最长回文子序列：两端相同可配对，不同则至少丢掉一端。</p><div class="invariant"><span>推导 / 不变量</span><p>dp[l][r] 在相同端点时等于内部答案+2，否则取 dp[l+1][r] 与 dp[l][r-1] 的最大值。按长度递增填表，确保内部和两个短区间已计算。</p></div>
+<h3>知识与适用场景</h3><p>区间 DP 的状态通常是闭区间 [l,r] 上的答案，依赖更短区间。最长回文子序列：两端相同可配对，不同则至少丢掉一端。</p><div class="deep-block" id="s5-before-1"><h3>5.1 区间遍历顺序是依赖关系的线性展开</h3><p>最长回文子序列的 f[l][r] 表示闭区间内可删除字符后保留的最大回文长度。两端相同可配对，取内部最优加 2；两端不同，至少丢掉一端，取 f[l+1][r] 与 f[l][r−1] 的最大值。</p><p>所需区间均严格更短，因此长度从 1 到 n 是合法顺序；也可让 l 逆序、r 正序。若 l 从小到大、r 从小到大，f[l+1][r] 所在下一行还没算，读到零值也不会报错，却会产生错误结果。</p></div><div class="deep-block" id="s5-before-2"><h3>5.2 回文子序列、回文子串、区间分割别混用</h3><p class="table-hint">窄屏下可左右滑动表格，查看完整内容。</p><div class="study-table" tabindex="0" role="region" aria-label="5.2 回文子序列、回文子串、区间分割别混用"><table><thead><tr><th scope="col">问题</th><th scope="col">状态含义</th><th scope="col">转移要点</th><th scope="col">答案</th></tr></thead><tbody><tr><td>最长回文子序列</td><td>区间内可跳过字符的最优长度</td><td>相等端点+内部，否则丢一端</td><td>f[0][n−1]</td></tr><tr><td>最长回文子串</td><td>整个区间是否回文</td><td>端点相等且内部整体为回文</td><td>所有 true 区间里最长者</td></tr><tr><td>二元相邻合并</td><td>整段合成一堆的最小成本</td><td>枚举最后两堆分割点</td><td>整段状态</td></tr><tr><td>戳气球</td><td>两端保留时，清空开区间的最大收益</td><td>枚举最后被戳的 k</td><td>加虚拟边界后的整段</td></tr></tbody></table></div></div><div class="deep-block" id="s5-before-3"><h3>5.3 戳气球为什么选最后一步，而不是第一步？</h3><p>先戳 k 会让它左右两边新相邻，后面的收益相互耦合，难以形成两个独立的固定区间。反过来，设 k 是开区间 (l,r) 最后戳的气球，那么在它被戳之前 l、k、r 都保留，左右子问题的边界固定，彼此独立。</p><p>转移 f[l][r]=max(f[l][k]+f[k][r]+value[l]·value[k]·value[r])。l、r 是还未戳的边界，不属于子问题要清空的集合；两端补值 1，原数组全部位于 (0,n+1)。相邻边界之间没有气球，初值 0。这里“最后”只是分类方法，实际执行可以先做左右子区间，再戳 k。</p></div><div class="invariant"><span>推导 / 不变量</span><p>dp[l][r] 在相同端点时等于内部答案+2，否则取 dp[l+1][r] 与 dp[l][r-1] 的最大值。按长度递增填表，确保内部和两个短区间已计算。</p></div>
 <h3>手推一个例子</h3><p>&quot;bbbab&quot; 中区间两端都是 b，把它们配对并求内部 &quot;bba&quot; 的答案，可得到长度 4 的 &quot;bbbb&quot;。</p><div class="codebox"><div class="codebar"><span>C++17</span><div><a href="examples/05.cpp" download>下载 .cpp</a><button type="button" class="copy">复制代码</button></div></div><pre tabindex="0" aria-label="C++17 代码"><code><span class="keyword">int</span> longestPalindromeSubseq(<span class="keyword">const</span> string&amp; s) {
     <span class="keyword">int</span> n=(<span class="keyword">int</span>)s.size();
     <span class="keyword">if</span>(n==<span class="number">0</span>) <span class="keyword">return</span> <span class="number">0</span>;
@@ -98,9 +245,41 @@
     <span class="keyword">return</span> dp[<span class="number">0</span>][n-<span class="number">1</span>];
 }</code></pre></div>
 <dl class="analysis-grid"><div><dt>复杂度</dt><dd>时间 O(n²)，空间 O(n²)。</dd></div><div><dt>易错点与边界</dt><dd>最长回文子串要求内部整个区间是回文；最长回文子序列允许删除字符，不能混用状态。戳气球应考虑区间最后戳哪一个，固定边界后子问题才独立。</dd></div></dl>
-<div class="practice"><h3>经典考点与练习</h3><p>练习：LeetCode 516 最长回文子序列、5 最长回文子串、312 戳气球。</p><details><summary>面试官可能继续问什么？</summary><p>为什么直接按 l 从小到大、r 从小到大可能用到未计算状态？</p><p class="muted">先用自己的话回答，再回到本节的前提、不变量和边界检查论证。</p></details></div>
+<div class="deep-block" id="s5-after-1"><h3>5.4 最长回文子串：与子序列并排比较</h3><p>长度 1、2 单独通过短路逻辑处理，不读取不存在的内部区间。同最大长度返回较早起点的子串。时间、空间 O(n²)，返回字符串还要复制 O(答案长度)。中心扩展可将辅助空间降至 O(1)，这里保留表格是为了明确与子序列 DP 的差异。</p><div class="codebox"><div class="codebar"><span>C++17</span><div><a href="examples/detail-palindrome-substring.cpp" download>下载 .cpp</a><button type="button" class="copy">复制代码</button></div></div><pre tabindex="0" aria-label="C++17 代码"><code>string longestPalindromeSubstringDP(<span class="keyword">const</span> string&amp; s) {
+    <span class="keyword">int</span> n = (<span class="keyword">int</span>)s.size();
+    <span class="keyword">if</span> (!n) <span class="keyword">return</span> <span class="string">&quot;&quot;</span>;
+    vector&lt;vector&lt;<span class="keyword">char</span>&gt;&gt; palindrome(n,vector&lt;<span class="keyword">char</span>&gt;(n,<span class="keyword">false</span>));
+    <span class="keyword">int</span> start = <span class="number">0</span>, bestLength = <span class="number">1</span>;
+    <span class="keyword">for</span> (<span class="keyword">int</span> len = <span class="number">1</span>; len &lt;= n; ++len)
+        <span class="keyword">for</span> (<span class="keyword">int</span> l = <span class="number">0</span>; l+len &lt;= n; ++l) {
+            <span class="keyword">int</span> r = l+len-<span class="number">1</span>;
+            palindrome[l][r] = s[l] == s[r] &amp;&amp;
+                (len &lt;= <span class="number">2</span> || palindrome[l+<span class="number">1</span>][r-<span class="number">1</span>]);
+            <span class="keyword">if</span> (palindrome[l][r] &amp;&amp; len &gt; bestLength) {
+                start = l; bestLength = len;
+            }
+        }
+    <span class="keyword">return</span> s.substr(start,bestLength);
+}</code></pre></div></div><div class="deep-block" id="s5-after-2"><h3>5.5 戳气球：开区间 DP 与安全乘法</h3><p>教学范围 n≤300、0≤值≤1000，总收益不超过 n·1000³，long long 足够，且乘法一开始就在 long long 上计算。空数组返回 0，零值合法。时间 O(n³)、空间 O(n²)。枚举的是最后一个气球，不是最后一个切分位置的费用求和模板。</p><div class="codebox"><div class="codebar"><span>C++17</span><div><a href="examples/detail-burst-balloons.cpp" download>下载 .cpp</a><button type="button" class="copy">复制代码</button></div></div><pre tabindex="0" aria-label="C++17 代码"><code><span class="keyword">long</span> <span class="keyword">long</span> burstBalloonsDP(<span class="keyword">const</span> vector&lt;<span class="keyword">int</span>&gt;&amp; nums) {
+    <span class="keyword">if</span> (nums.size() &gt; <span class="number">300</span>) <span class="keyword">throw</span> invalid_argument(<span class="string">&quot;teaching size limit&quot;</span>);
+    vector&lt;<span class="keyword">long</span> <span class="keyword">long</span>&gt; a{<span class="number">1</span>};
+    <span class="keyword">for</span> (<span class="keyword">int</span> x : nums) {
+        <span class="keyword">if</span> (x &lt; <span class="number">0</span> || x &gt; <span class="number">1000</span>) <span class="keyword">throw</span> invalid_argument(<span class="string">&quot;balloon value&quot;</span>);
+        a.push_back(x);
+    }
+    a.push_back(<span class="number">1</span>);
+    <span class="keyword">int</span> n = (<span class="keyword">int</span>)a.size();
+    vector&lt;vector&lt;<span class="keyword">long</span> <span class="keyword">long</span>&gt;&gt; dp(n,vector&lt;<span class="keyword">long</span> <span class="keyword">long</span>&gt;(n));
+    <span class="keyword">for</span> (<span class="keyword">int</span> gap = <span class="number">2</span>; gap &lt; n; ++gap)
+        <span class="keyword">for</span> (<span class="keyword">int</span> l = <span class="number">0</span>; l+gap &lt; n; ++l) {
+            <span class="keyword">int</span> r = l+gap;
+            <span class="keyword">for</span> (<span class="keyword">int</span> k = l+<span class="number">1</span>; k &lt; r; ++k)
+                dp[l][r] = max(dp[l][r],dp[l][k]+dp[k][r]+a[l]*a[k]*a[r]);
+        }
+    <span class="keyword">return</span> dp[<span class="number">0</span>][n-<span class="number">1</span>];
+}</code></pre></div></div><div class="practice"><h3>经典考点与练习</h3><p>练习：LeetCode 516 最长回文子序列、5 最长回文子串、312 戳气球。</p><h3>面试追问：关键点完整解答</h3><dl class="answer-list"><div><dt>为什么区间长度递增能保证所有依赖已计算？</dt><dd><p>去掉一个端点、两个端点，或按内部 k 分开，得到的区间都更短。只要初始最短区间已定义，逐长度增加就是对依赖图的一种拓扑顺序。若转移仍依赖同长度或更长区间，不能未经证明套这种顺序。</p></dd></div><div><dt>最长回文子序列两端不同，为什么只需丢一端？</dt><dd><p>一个回文子序列若同时保留两端，它们将成为首尾，必须相等。两端不同就不可能同时选，最优方案至少属于“丢左端”或“丢右端”中的一类。两类重叠不影响求 max，但若改为计数就必须处理重复。</p></dd></div><div><dt>把子串状态换成子序列状态，会产生什么假答案？</dt><dd><p>子序列可以跳过中间元素，子串不能。例如 bbbab 的最长回文子序列是 bbbb，长度 4，但它不是连续片段；最长回文子串只有长度 3。判断整个区间是否回文时必须保证内部整个区间也回文。</p></dd></div><div><dt>戳气球的虚拟边界为什么是 1？</dt><dd><p>原题边缘外侧相当于不存在的邻居，乘积计算使用 1。补 1 后可以统一处理边缘与内部情况，避免每个状态重新判断越界。虚拟边界永远不戳，答案是清空它们之间的开区间。</p></dd></div><div><dt>为什么第一步容易耦合，最后一步能独立？</dt><dd><p>先删内部气球会改变左右两侧未来的相邻关系，它们不再独立；确定最后戳 k 时，k 在左右子问题整个执行期间都存在，充当固定边界。这个思想也用于矩阵链等区间决策：寻找能固定子问题边界的最后动作。</p></dd></div><div><dt>区间 DP 的计数能否直接把 max 改成加法？</dt><dd><p>不一定。求最优值允许不同转移覆盖同一候选，因为重复取 max 无害；计数要求转移分类互斥或显式去重。回文子序列计数尤其要区分不同下标方案与不同字符串内容，状态和重叠修正需要重新推导。</p></dd></div></dl></div>
 <label class="learned"><input type="checkbox" data-progress="12-05">我能独立实现，并解释正确性与边界</label></section><section class="lesson" id="s6"><div class="lesson-heading"><span class="lesson-number">12.06</span><h2>树形与状态机 DP：把限制写进状态</h2></div>
-<h3>知识与适用场景</h3><p>树上打家劫舍中相邻父子不能同时选。一个节点需返回两个值：不选它的最优值 skip、选它的最优值 take。只返回一个最优值会丢失父节点决策所需的信息。</p><div class="invariant"><span>推导 / 不变量</span><p>选当前节点时，两个孩子都必须不选；不选当前节点时，每个孩子可以独立取选或不选的最大值。后序顺序恰好保证孩子状态先完成。</p></div>
+<h3>知识与适用场景</h3><p>树上打家劫舍中相邻父子不能同时选。一个节点需返回两个值：不选它的最优值 skip、选它的最优值 take。只返回一个最优值会丢失父节点决策所需的信息。</p><div class="deep-block" id="s6-before-1"><h3>6.1 树形 DP 的返回值，是提供给父节点的决策接口</h3><p>父子不能同时选时，父节点需要知道孩子“不选”的最优值，而不只是孩子任意选择时的最大值。因此每个节点保留 skip、take 两个条件答案。选当前节点时只能加孩子 skip；不选当前节点时，每个孩子可独立取 max(skip,take)。</p><p>对树，不同孩子的子树没有共享节点或跨子树约束，才能独立相加。把这个递推直接用在有环图、共享孩子的 DAG 上，可能重复计算同一节点收益或漏掉跨边冲突。后序顺序只是计算顺序，子问题独立才是转移成立的原因。</p></div><div class="deep-block" id="s6-before-2"><h3>6.2 约束如何变成状态维度</h3><p class="table-hint">窄屏下可左右滑动表格，查看完整内容。</p><div class="study-table" tabindex="0" role="region" aria-label="6.2 约束如何变成状态维度"><table><thead><tr><th scope="col">模型</th><th scope="col">必须区分的状态</th><th scope="col">允许的转移</th><th scope="col">少一个维度的后果</th></tr></thead><tbody><tr><td>树上独立集</td><td>本节点选 / 不选</td><td>选则孩子不选</td><td>父子可能同时入选</td></tr><tr><td>股票最多 K 次</td><td>额度 t、空仓 / 持股</td><td>开仓消耗一个交易额度</td><td>无限次结果超过次数限制</td></tr><tr><td>股票冷冻</td><td>持股 / 今天刚卖 / 可买空仓</td><td>昨天刚卖不能今天买</td><td>卖后立即买得到非法利润</td></tr><tr><td>任务分配</td><td>已分配任务集合 mask</td><td>给下一个工人选未用任务</td><td>相同数量却不同剩余任务被混合</td></tr></tbody></table></div></div><div class="deep-block" id="s6-before-3"><h3>6.3 状态压缩保存的是集合身份，不只是数量</h3><p>任务分配中工人顺序固定为 0..n−1。mask 表示已经分配出去的任务集合，popcount(mask) 就是已经处理的工人数，所以无需再独立存一个工人维度。转移把任一未分配任务 j 交给下一个工人，并把 j 的位设为 1。</p><p>同样已经分配两项任务，{0,1} 与 {1,2} 的剩余选择不同，不能只按数量合并。n=18 时已有 262144 个集合，复杂度 O(n·2^n)；n=30 则超过十亿状态，不能因为掩码装得进整数就认为 DP 能运行。</p></div><div class="deep-block" id="s6-before-4"><h3>6.4 两人工分配手推：cost=[[9,2],[3,7]]</h3><p>负成本不妨碍本 DP，因为每次都会多设置一个位，依赖图无环；不需要像 Dijkstra 那样要求边权非负。</p><p class="table-hint">窄屏下可左右滑动表格，查看完整内容。</p><div class="study-table" tabindex="0" role="region" aria-label="6.4 两人工分配手推：cost=[[9,2],[3,7]]"><table><thead><tr><th scope="col">mask（任务 1、0 两位）</th><th scope="col">已处理工人数</th><th scope="col">最优成本</th><th scope="col">来源</th></tr></thead><tbody><tr><td>00</td><td>0</td><td>0</td><td>空分配</td></tr><tr><td>01</td><td>1</td><td>9</td><td>工人 0 选任务 0</td></tr><tr><td>10</td><td>1</td><td>2</td><td>工人 0 选任务 1</td></tr><tr><td>11</td><td>2</td><td>min(9+7,2+3)=5</td><td>工人 0→1，工人 1→0</td></tr></tbody></table></div></div><div class="invariant"><span>推导 / 不变量</span><p>选当前节点时，两个孩子都必须不选；不选当前节点时，每个孩子可以独立取选或不选的最大值。后序顺序恰好保证孩子状态先完成。</p></div>
 <h3>手推一个例子</h3><p>根 3，孩子 2、3，孙辈 3、1：选择根和两个孙辈可得 7；仅比较孩子局部最大值而不区分是否选取，会错误连接相邻节点。</p><div class="codebox"><div class="codebar"><span>C++17</span><div><a href="examples/06.cpp" download>下载 .cpp</a><button type="button" class="copy">复制代码</button></div></div><pre tabindex="0" aria-label="C++17 代码"><code><span class="keyword">struct</span> TreeNode {
     <span class="keyword">int</span> val; TreeNode *left=<span class="keyword">nullptr</span>,*right=<span class="keyword">nullptr</span>;
     <span class="keyword">explicit</span> TreeNode(<span class="keyword">int</span> v):val(v){}
@@ -118,5 +297,423 @@ pair&lt;<span class="keyword">long</span> <span class="keyword">long</span>,<spa
     <span class="keyword">return</span> max(skip,take);
 }</code></pre></div>
 <dl class="analysis-grid"><div><dt>复杂度</dt><dd>时间 O(n)，递归空间 O(h)。</dd></div><div><dt>易错点与边界</dt><dd>股票 DP 同理：用持有/未持有、剩余交易次数等状态表达约束。更新多个状态时先保存上一轮值，避免未经证明的本轮互相依赖。</dd></div></dl>
-<div class="practice"><h3>经典考点与练习</h3><p>练习：LeetCode 337 打家劫舍 III、309 最佳买卖股票时机含冷冻期、714 买卖股票的最佳时机含手续费。</p><details><summary>面试官可能继续问什么？</summary><p>为什么只返回 max(skip,take) 不够？有冷冻期时股票 DP 需要增加什么状态？</p><p class="muted">先用自己的话回答，再回到本节的前提、不变量和边界检查论证。</p></details></div>
-<label class="learned"><input type="checkbox" data-progress="12-06">我能独立实现，并解释正确性与边界</label></section><nav class="chapter-pager" aria-label="相邻章节"><a href="../11-贪心/index.html"><small>上一章</small>← 贪心</a><a href="../13-并查集与高级数据结构/index.html"><small>下一章</small>并查集与高级数据结构 →</a></nav><footer>秋招算法学习讲义 · C++17<br>例题编号供检索；难度与覆盖范围按学习顺序组织。</footer></main><aside class="toc" aria-label="本页目录"><p class="rail-label">本章小节</p><a href="#s1"><span>01</span>线性 DP：以当前位置结尾</a><a href="#s2"><span>02</span>0/1 背包：容量倒序的原因</a><a href="#s3"><span>03</span>完全背包与计数顺序</a><a href="#s4"><span>04</span>序列 DP：最长公共子序列与编辑距离</a><a href="#s5"><span>05</span>区间 DP：由短区间构造长区间</a><a href="#s6"><span>06</span>树形与状态机 DP：把限制写进状态</a></aside></div><div class="toast" role="status" aria-live="polite"></div></body></html>
+<div class="deep-block" id="s6-after-1"><h3>6.5 显式后序树形 DP：避免深链递归栈</h3><p>输入必须是无环、无共享子节点的二叉树，指针在调用期间有效；函数不负责释放节点，也不改变树。允许空选，负值不强迫选。平均时间 O(n)，unordered_map 极端冲突可能退化；表与显式栈总空间 O(n)。它用堆上存储代替递归调用栈，不意味着常数空间。</p><div class="codebox"><div class="codebar"><span>C++17</span><div><a href="examples/detail-tree-rob-iterative.cpp" download>下载 .cpp</a><button type="button" class="copy">复制代码</button></div></div><pre tabindex="0" aria-label="C++17 代码"><code><span class="keyword">struct</span> RobNode {
+    <span class="keyword">int</span> value;
+    RobNode *left = <span class="keyword">nullptr</span>, *right = <span class="keyword">nullptr</span>;
+    <span class="keyword">explicit</span> RobNode(<span class="keyword">int</span> v): value(v) {}
+};
+<span class="keyword">long</span> <span class="keyword">long</span> robTreeIterative(RobNode* root) {
+    <span class="keyword">if</span> (!root) <span class="keyword">return</span> <span class="number">0</span>;
+    unordered_map&lt;RobNode*,pair&lt;<span class="keyword">long</span> <span class="keyword">long</span>,<span class="keyword">long</span> <span class="keyword">long</span>&gt;&gt; state;
+    vector&lt;pair&lt;RobNode*,<span class="keyword">bool</span>&gt;&gt; stack{{root,<span class="keyword">false</span>}};
+    <span class="keyword">while</span> (!stack.empty()) {
+        <span class="keyword">auto</span> [node,expanded] = stack.back(); stack.pop_back();
+        <span class="keyword">if</span> (!expanded) {
+            stack.push_back({node,<span class="keyword">true</span>});
+            <span class="keyword">if</span> (node-&gt;right) stack.push_back({node-&gt;right,<span class="keyword">false</span>});
+            <span class="keyword">if</span> (node-&gt;left) stack.push_back({node-&gt;left,<span class="keyword">false</span>});
+        } <span class="keyword">else</span> {
+            <span class="keyword">auto</span> left = node-&gt;left ? state.at(node-&gt;left) : make_pair(<span class="number">0LL</span>,<span class="number">0LL</span>);
+            <span class="keyword">auto</span> right = node-&gt;right ? state.at(node-&gt;right) : make_pair(<span class="number">0LL</span>,<span class="number">0LL</span>);
+            <span class="keyword">long</span> <span class="keyword">long</span> skip = max(left.first,left.second)+max(right.first,right.second);
+            <span class="keyword">long</span> <span class="keyword">long</span> take = node-&gt;value+left.first+right.first;
+            state[node] = {skip,take};
+        }
+    }
+    <span class="keyword">auto</span> [skip,take] = state.at(root);
+    <span class="keyword">return</span> max(skip,take);
+}</code></pre></div></div><div class="deep-block" id="s6-after-2"><h3>6.6 最多 K 次交易：按额度保存两种持仓状态</h3><p>cash[t] 是至多 t 笔完整交易后的空仓最优；hold[t] 是已完成至多 t−1 笔、并正在第 t 笔额度内持股的最优余额。初始化所有 cash[t]=0 表示可以少交易，不代表已经免费做完 t 笔。旧行快照避免同日串联动作。一般时间 O(nK)、空间 O(K)；K≥floor(n/2) 时次数限制不再约束无费用模型，改用 O(n)、O(1) 的正差累加。</p><div class="codebox"><div class="codebar"><span>C++17</span><div><a href="examples/detail-stock-k.cpp" download>下载 .cpp</a><button type="button" class="copy">复制代码</button></div></div><pre tabindex="0" aria-label="C++17 代码"><code><span class="keyword">long</span> <span class="keyword">long</span> stockAtMostK(<span class="keyword">const</span> vector&lt;<span class="keyword">int</span>&gt;&amp; prices, <span class="keyword">int</span> k) {
+    <span class="keyword">if</span> (k &lt; <span class="number">0</span>) <span class="keyword">throw</span> invalid_argument(<span class="string">&quot;k&quot;</span>);
+    <span class="keyword">for</span> (<span class="keyword">int</span> p : prices) <span class="keyword">if</span> (p &lt; <span class="number">0</span>) <span class="keyword">throw</span> invalid_argument(<span class="string">&quot;price&quot;</span>);
+    <span class="keyword">int</span> n = (<span class="keyword">int</span>)prices.size();
+    <span class="keyword">if</span> (k &gt;= n/<span class="number">2</span>) {
+        <span class="keyword">long</span> <span class="keyword">long</span> answer = <span class="number">0</span>;
+        <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">1</span>; i &lt; n; ++i)
+            answer += max(<span class="number">0LL</span>,(<span class="keyword">long</span> <span class="keyword">long</span>)prices[i]-prices[i-<span class="number">1</span>]);
+        <span class="keyword">return</span> answer;
+    }
+    <span class="keyword">const</span> <span class="keyword">long</span> <span class="keyword">long</span> NEG = LLONG_MIN/<span class="number">4</span>;
+    vector&lt;<span class="keyword">long</span> <span class="keyword">long</span>&gt; cash(k+<span class="number">1</span>,<span class="number">0</span>), hold(k+<span class="number">1</span>,NEG);
+    <span class="keyword">for</span> (<span class="keyword">int</span> p : prices) {
+        <span class="keyword">auto</span> oldCash = cash, oldHold = hold;
+        <span class="keyword">for</span> (<span class="keyword">int</span> t = <span class="number">1</span>; t &lt;= k; ++t) {
+            hold[t] = max(oldHold[t],oldCash[t-<span class="number">1</span>]-p);
+            cash[t] = oldCash[t];
+            <span class="keyword">if</span> (oldHold[t] != NEG) cash[t] = max(cash[t],oldHold[t]+p);
+        }
+    }
+    <span class="keyword">return</span> cash[k];
+}</code></pre></div></div><div class="deep-block" id="s6-after-3"><h3>6.7 状态压缩任务分配与方案恢复</h3><p>cost[i][j] 表示工人 i 做任务 j 的成本，一人一项且每项恰分配一次，允许负成本。返回总成本和每个工人对应的任务编号。空矩阵返回 0 与空方案。每次新增位使 next&gt;mask，整数升序扫描符合依赖顺序；全表状态不再被后续阶段覆盖，故恢复链稳定。时间 O(n·2^n)，空间 O(2^n)。</p><div class="codebox"><div class="codebar"><span>C++17</span><div><a href="examples/detail-assignment-mask.cpp" download>下载 .cpp</a><button type="button" class="copy">复制代码</button></div></div><pre tabindex="0" aria-label="C++17 代码"><code>pair&lt;<span class="keyword">long</span> <span class="keyword">long</span>,vector&lt;<span class="keyword">int</span>&gt;&gt; minimumAssignment(<span class="keyword">const</span> vector&lt;vector&lt;<span class="keyword">int</span>&gt;&gt;&amp; cost) {
+    <span class="keyword">int</span> n = (<span class="keyword">int</span>)cost.size();
+    <span class="keyword">if</span> (n &gt; <span class="number">18</span>) <span class="keyword">throw</span> invalid_argument(<span class="string">&quot;n &lt;= 18 required&quot;</span>);
+    <span class="keyword">for</span> (<span class="keyword">const</span> <span class="keyword">auto</span>&amp; row : cost) {
+        <span class="keyword">if</span> ((<span class="keyword">int</span>)row.size() != n) <span class="keyword">throw</span> invalid_argument(<span class="string">&quot;square matrix&quot;</span>);
+        <span class="keyword">for</span> (<span class="keyword">int</span> x : row) <span class="keyword">if</span> (x &lt; -<span class="number">1000000000</span> || x &gt; <span class="number">1000000000</span>)
+            <span class="keyword">throw</span> invalid_argument(<span class="string">&quot;cost&quot;</span>);
+    }
+    <span class="keyword">int</span> total = <span class="number">1</span> &lt;&lt; n;
+    <span class="keyword">const</span> <span class="keyword">long</span> <span class="keyword">long</span> INF = LLONG_MAX/<span class="number">4</span>;
+    vector&lt;<span class="keyword">long</span> <span class="keyword">long</span>&gt; dp(total,INF);
+    vector&lt;<span class="keyword">int</span>&gt; chosen(total,-<span class="number">1</span>);
+    dp[<span class="number">0</span>] = <span class="number">0</span>;
+    <span class="keyword">for</span> (<span class="keyword">int</span> mask = <span class="number">0</span>; mask &lt; total; ++mask) {
+        <span class="keyword">int</span> worker = <span class="number">0</span>;
+        <span class="keyword">for</span> (<span class="keyword">int</span> bits = mask; bits; bits &amp;= bits-<span class="number">1</span>) ++worker;
+        <span class="keyword">if</span> (worker == n || dp[mask] == INF) continue;
+        <span class="keyword">for</span> (<span class="keyword">int</span> task = <span class="number">0</span>; task &lt; n; ++task) <span class="keyword">if</span> (!(mask &amp; (<span class="number">1</span> &lt;&lt; task))) {
+            <span class="keyword">int</span> next = mask | (<span class="number">1</span> &lt;&lt; task);
+            <span class="keyword">long</span> <span class="keyword">long</span> candidate = dp[mask]+cost[worker][task];
+            <span class="keyword">if</span> (candidate &lt; dp[next]) { dp[next] = candidate; chosen[next] = task; }
+        }
+    }
+    vector&lt;<span class="keyword">int</span>&gt; assignment(n);
+    <span class="keyword">int</span> mask = total-<span class="number">1</span>;
+    <span class="keyword">for</span> (<span class="keyword">int</span> worker = n-<span class="number">1</span>; worker &gt;= <span class="number">0</span>; --worker) {
+        <span class="keyword">int</span> task = chosen[mask];
+        assignment[worker] = task; mask ^= <span class="number">1</span> &lt;&lt; task;
+    }
+    <span class="keyword">return</span> {dp.back(),assignment};
+}</code></pre></div></div><div class="practice"><h3>经典考点与练习</h3><p>练习：LeetCode 337 打家劫舍 III、309 最佳买卖股票时机含冷冻期、714 买卖股票的最佳时机含手续费。</p><h3>面试追问：关键点完整解答</h3><dl class="answer-list"><div><dt>树上为何不能只返回 max(skip,take)？</dt><dd><p>父节点如果选择自己，就必须知道孩子不选时的答案。一个无条件最大值可能来自选孩子，将其相加会同时选择相邻节点。把边界条件作为状态维度，是向父节点提供足够信息。</p></dd></div><div><dt>递归树 DP 和显式后序的复杂度有什么不同？</dt><dd><p>两者都计算每个节点一次。基础递归只需调用栈 O(h)；本显式版本保存全部节点状态，额外空间 O(n)，避免了深链的系统栈风险但增加存储。哈希表查找是平均常数，不能无条件称最坏 O(n)。</p></dd></div><div><dt>股票 cash[t] 初始为 0 为什么不是把不可达当可达？</dt><dd><p>这里的 t 是至多交易额度，不是恰好完成次数。尚未交易、空仓余额 0 对每个额度都合法；持股仍不可达。如果 t 定义成恰好完成次数，初值和转移必须另改，不能沿用所有 cash 都为 0。</p></dd></div><div><dt>K 很大时为什么可退化成无限次交易？</dt><dd><p>在每天最多一个动作、先买后卖的无费用模型中，每笔非空交易至少占买卖两天，至多 floor(n/2) 笔。额度达到这个上限就不再限制合法策略。存在手续费、冷冻期时虽然也有次数上限，但最终最优值不能直接用正差累加。</p></dd></div><div><dt>状态压缩为什么能省掉工人编号？</dt><dd><p>工人固定按顺序各分配一项，mask 中 1 的个数就是已分配工人数，下一工人编号由 mask 唯一确定。这是有依据地删除冗余维度；若工人顺序也可跳过或每人分配多项，就不能直接采用相同状态。</p></dd></div><div><dt>单词拆分也属于 DP 吗，状态需要保存整条切分路径吗？</dt><dd><p>只问能否拆分时，令 reachable[i] 表示前 i 个字符可由词典组成，枚举最后一个词对应的切分 j，检查 reachable[j] 与 s[j:i] 是否在词典。未来只依赖当前位置，无需保存整条历史；要输出所有切分时，才需保留前驱并面对可能指数级的输出量。</p></dd></div></dl></div>
+<label class="learned"><input type="checkbox" data-progress="12-06">我能独立实现，并解释正确性与边界</label></section><section class="chapter-review" id="chapter-review"><p class="eyebrow">PRACTICE / 把本章方法用起来</p><h2>综合例题与章末自测</h2><div class="deep-block" id="review-1"><h3>练习路线：按状态与依赖，不按题目名字背模板</h3><p class="table-hint">窄屏下可左右滑动表格，查看完整内容。</p><div class="study-table" tabindex="0" role="region" aria-label="练习路线：按状态与依赖，不按题目名字背模板"><table><thead><tr><th scope="col">主题</th><th scope="col">经典题</th><th scope="col">应能独立写出的状态定义</th><th scope="col">重点边界</th></tr></thead><tbody><tr><td>线性</td><td>53、198、213</td><td>以 i 结尾；前 i 项；首尾互斥</td><td>全负、空选、单点</td></tr><tr><td>0/1</td><td>416、494、1049</td><td>恰好目标和的可达性 / 数量</td><td>奇偶、零、重复实体、不可达</td></tr><tr><td>完全</td><td>322、518、377</td><td>最少枚数；组合；有序序列</td><td>零金额、重复币种、模数</td></tr><tr><td>序列</td><td>1143、72、300</td><td>两个前缀；编辑成本；按长度最小结尾</td><td>空串、重复值、方案恢复</td></tr><tr><td>区间</td><td>516、5、312</td><td>区间子序列；整段回文；开区间最后动作</td><td>长度 1/2、虚拟边界</td></tr><tr><td>树 / 状态机 / 集合</td><td>337、188；任务分配</td><td>条件返回值；额度与持仓；已选集合</td><td>深树、零额度、指数规模</td></tr></tbody></table></div></div><div class="deep-block" id="review-2"><h3>复盘要求：把状态写成一句完整中文</h3><p>每题先写状态句子，再把边界代入。例如 dp[0][j] 是把空串变成 j 个字符，当然要 j 次插入；dp[0] 是金额 0 的方案数，当然是一个空方案。若自己无法解释某个格子的含义，就不要急着压缩成几个变量。</p><p>调试时优先找最小反例：一件物品容量两倍暴露 0/1 方向错误；[2,2] 暴露 LIS 严格性错误；全负数组暴露空选错误；[5,−100,4] 暴露结尾状态混淆。小范围暴力是参照，不替代理论证明。</p></div><div class="deep-block" id="review-3"><h3>章末自测：四个跨模型问题</h3><dl class="answer-list"><div><dt>最优子结构与重叠子问题分别起什么作用？</dt><dd><p>最优子结构使最优解能由恰当条件下的子问题最优解组合而来；重叠子问题使缓存与复用有价值。若子问题之间还共享未记录的约束，直接相加可能不合法；必须先扩充状态。没有大量重叠的递归也可以做递推，但未必能因缓存获得显著加速。</p></dd></div><div><dt>怎样判断某个状态维度能不能删？</dt><dd><p>如果两段历史被映射到同一状态，它们的后续合法选择与后续代价规则应相同；或者能证明其中一个始终支配另一个。LIS 同长度较小结尾支配较大结尾，可以只留最小者；不同持仓状态未来动作不同，不能直接只保留余额最大者。</p></dd></div><div><dt>DP 计数取模后等于 0，为什么不代表无解？</dt><dd><p>真实计数可能正好是模数的倍数。比如 [1,2] 凑 2 的组合有 2 种，模 2 后为 0，但明显可达。需要可达性时另存布尔值，不要把模数结果当作 visited 或 reachable。</p></dd></div><div><dt>最优值正确，恢复方案为何仍可能错？</dt><dd><p>恢复依赖保存的决策是否属于同一历史状态。滚动背包可能覆盖前驱所代表的物品层；tails 本身也不是一条实际 LIS。验证方案应同时检查下标顺序、约束、总代价和最优值，不能只核对长度。</p></dd></div></dl></div><div class="deep-block" id="review-4"><h3>综合测试：最优值、恢复方案与状态边界</h3><p>此入口引用同目录 14 份补充实现与 6 份基础模板。请保留完整 examples 目录，只编译 detail-dp-tests.cpp，不要把被 include 的 cpp 再次参与链接。可执行 g++ -std=c++17 -O2 -Wall -Wextra detail-dp-tests.cpp -o dp-tests，Windows 随后运行 .\dp-tests.exe。不要定义 NDEBUG，否则 assert 不执行。</p><p>测试提供 100 轮固定种子小输入：子数组与子集枚举、硬币 BFS、组合次数枚举、有序序列递归、子序列枚举、编辑距离递归参照、戳气球顺序穷举、树上独立集枚举、股票动作搜索和任务全排列；同时验证恢复方案的合法性、平局规则及代价。另有不可达、零金额、重复值、负收益、取模为零、非法输入与 5000 节点深链用例。</p><p>当前环境未发现 C++ 编译器，本测试源码尚未编译运行。HTML 与下载一致性检查只说明页面和源文件同步，不能替代 C++ 编译或算法测试。</p><div class="codebox"><div class="codebar"><span>C++17</span><div><a href="examples/detail-dp-tests.cpp" download>下载 .cpp</a><button type="button" class="copy">复制代码</button></div></div><pre tabindex="0" aria-label="C++17 代码"><code>#include <span class="string">&quot;detail-max-subarray-range.cpp&quot;</span>
+#include <span class="string">&quot;detail-rob-circle.cpp&quot;</span>
+#include <span class="string">&quot;detail-knapsack-exact.cpp&quot;</span>
+#include <span class="string">&quot;detail-equal-partition.cpp&quot;</span>
+#include <span class="string">&quot;detail-min-coins-path.cpp&quot;</span>
+#include <span class="string">&quot;detail-coin-counts.cpp&quot;</span>
+#include <span class="string">&quot;detail-lcs-path.cpp&quot;</span>
+#include <span class="string">&quot;detail-edit-distance.cpp&quot;</span>
+#include <span class="string">&quot;detail-lis-path.cpp&quot;</span>
+#include <span class="string">&quot;detail-palindrome-substring.cpp&quot;</span>
+#include <span class="string">&quot;detail-burst-balloons.cpp&quot;</span>
+#include <span class="string">&quot;detail-tree-rob-iterative.cpp&quot;</span>
+#include <span class="string">&quot;detail-stock-k.cpp&quot;</span>
+#include <span class="string">&quot;detail-assignment-mask.cpp&quot;</span>
+#include <span class="string">&quot;01.cpp&quot;</span>
+#include <span class="string">&quot;02.cpp&quot;</span>
+#include <span class="string">&quot;03.cpp&quot;</span>
+#include <span class="string">&quot;04.cpp&quot;</span>
+#include <span class="string">&quot;05.cpp&quot;</span>
+#include <span class="string">&quot;06.cpp&quot;</span>
+
+<span class="keyword">bool</span> isSubsequenceOf(<span class="keyword">const</span> string&amp; small, <span class="keyword">const</span> string&amp; large) {
+    size_t i = <span class="number">0</span>;
+    <span class="keyword">for</span> (<span class="keyword">char</span> c : large) <span class="keyword">if</span> (i &lt; small.size() &amp;&amp; small[i] == c) ++i;
+    <span class="keyword">return</span> i == small.size();
+}
+<span class="keyword">bool</span> isPalindromeText(<span class="keyword">const</span> string&amp; s) {
+    string reversed(s.rbegin(),s.rend());
+    <span class="keyword">return</span> s == reversed;
+}
+string maskString(<span class="keyword">const</span> string&amp; s, <span class="keyword">int</span> mask) {
+    string result;
+    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; (<span class="keyword">int</span>)s.size(); ++i)
+        <span class="keyword">if</span> (mask &amp; (<span class="number">1</span> &lt;&lt; i)) result.push_back(s[i]);
+    <span class="keyword">return</span> result;
+}
+BestSubarray bruteSubarray(<span class="keyword">const</span> vector&lt;<span class="keyword">int</span>&gt;&amp; a) {
+    BestSubarray best{LLONG_MIN,<span class="number">0</span>,<span class="number">0</span>};
+    <span class="keyword">for</span> (<span class="keyword">int</span> l = <span class="number">0</span>; l &lt; (<span class="keyword">int</span>)a.size(); ++l) {
+        <span class="keyword">long</span> <span class="keyword">long</span> sum = <span class="number">0</span>;
+        <span class="keyword">for</span> (<span class="keyword">int</span> r = l; r &lt; (<span class="keyword">int</span>)a.size(); ++r) {
+            sum += a[r];
+            <span class="keyword">if</span> (sum &gt; best.sum) best = {sum,l,r};
+        }
+    }
+    <span class="keyword">return</span> best; <span class="comment">// l、r 升序枚举，严格改进自然保持相同平局规则</span>
+}
+<span class="keyword">long</span> <span class="keyword">long</span> bruteRobCircle(<span class="keyword">const</span> vector&lt;<span class="keyword">int</span>&gt;&amp; a) {
+    <span class="keyword">int</span> n = (<span class="keyword">int</span>)a.size();
+    <span class="keyword">long</span> <span class="keyword">long</span> best = <span class="number">0</span>;
+    <span class="keyword">for</span> (<span class="keyword">int</span> mask = <span class="number">0</span>; mask &lt; (<span class="number">1</span> &lt;&lt; n); ++mask) {
+        <span class="keyword">bool</span> ok = <span class="keyword">true</span>; <span class="keyword">long</span> <span class="keyword">long</span> sum = <span class="number">0</span>;
+        <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; n; ++i) <span class="keyword">if</span> (mask &amp; (<span class="number">1</span> &lt;&lt; i)) {
+            sum += a[i];
+            <span class="keyword">if</span> (n &gt; <span class="number">1</span> &amp;&amp; (mask &amp; (<span class="number">1</span> &lt;&lt; ((i+<span class="number">1</span>)%n)))) ok = <span class="keyword">false</span>;
+        }
+        <span class="keyword">if</span> (ok) best = max(best,sum);
+    }
+    <span class="keyword">return</span> best;
+}
+pair&lt;optional&lt;<span class="keyword">long</span> <span class="keyword">long</span>&gt;,<span class="keyword">long</span> <span class="keyword">long</span>&gt; bruteKnapsack(
+    <span class="keyword">const</span> vector&lt;<span class="keyword">int</span>&gt;&amp; w, <span class="keyword">const</span> vector&lt;<span class="keyword">int</span>&gt;&amp; v, <span class="keyword">int</span> capacity) {
+    optional&lt;<span class="keyword">long</span> <span class="keyword">long</span>&gt; exact; <span class="keyword">long</span> <span class="keyword">long</span> atMost = <span class="number">0</span>;
+    <span class="keyword">for</span> (<span class="keyword">int</span> mask = <span class="number">0</span>; mask &lt; (<span class="number">1</span> &lt;&lt; w.size()); ++mask) {
+        <span class="keyword">int</span> weight = <span class="number">0</span>; <span class="keyword">long</span> <span class="keyword">long</span> value = <span class="number">0</span>;
+        <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; (<span class="keyword">int</span>)w.size(); ++i) <span class="keyword">if</span> (mask &amp; (<span class="number">1</span> &lt;&lt; i)) {
+            weight += w[i]; value += v[i];
+        }
+        <span class="keyword">if</span> (weight == capacity &amp;&amp; (!exact || value &gt; *exact)) exact = value;
+        <span class="keyword">if</span> (weight &lt;= capacity) atMost = max(atMost,value);
+    }
+    <span class="keyword">return</span> {exact,atMost};
+}
+<span class="keyword">bool</span> brutePartition(<span class="keyword">const</span> vector&lt;<span class="keyword">int</span>&gt;&amp; a) {
+    <span class="keyword">int</span> total = accumulate(a.begin(),a.end(),<span class="number">0</span>);
+    <span class="keyword">for</span> (<span class="keyword">int</span> mask = <span class="number">0</span>; mask &lt; (<span class="number">1</span> &lt;&lt; a.size()); ++mask) {
+        <span class="keyword">int</span> sum = <span class="number">0</span>;
+        <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; (<span class="keyword">int</span>)a.size(); ++i)
+            <span class="keyword">if</span> (mask &amp; (<span class="number">1</span> &lt;&lt; i)) sum += a[i];
+        <span class="keyword">if</span> (<span class="number">2</span>*sum == total) <span class="keyword">return</span> <span class="keyword">true</span>;
+    }
+    <span class="keyword">return</span> <span class="keyword">false</span>;
+}
+<span class="keyword">long</span> <span class="keyword">long</span> bruteCoinCombos(<span class="keyword">const</span> vector&lt;<span class="keyword">int</span>&gt;&amp; coins, <span class="keyword">int</span> index, <span class="keyword">int</span> remaining) {
+    <span class="keyword">if</span> (index == (<span class="keyword">int</span>)coins.size()) <span class="keyword">return</span> remaining == <span class="number">0</span> ? <span class="number">1LL</span> : <span class="number">0LL</span>;
+    <span class="keyword">long</span> <span class="keyword">long</span> ways = <span class="number">0</span>;
+    <span class="keyword">for</span> (<span class="keyword">int</span> count = <span class="number">0</span>; count*coins[index] &lt;= remaining; ++count)
+        ways += bruteCoinCombos(coins,index+<span class="number">1</span>,remaining-count*coins[index]);
+    <span class="keyword">return</span> ways;
+}
+<span class="keyword">long</span> <span class="keyword">long</span> bruteCoinOrdered(<span class="keyword">const</span> vector&lt;<span class="keyword">int</span>&gt;&amp; coins, <span class="keyword">int</span> remaining) {
+    <span class="keyword">if</span> (!remaining) <span class="keyword">return</span> <span class="number">1</span>;
+    <span class="keyword">long</span> <span class="keyword">long</span> ways = <span class="number">0</span>;
+    <span class="keyword">for</span> (<span class="keyword">int</span> c : coins) <span class="keyword">if</span> (c &lt;= remaining) ways += bruteCoinOrdered(coins,remaining-c);
+    <span class="keyword">return</span> ways;
+}
+<span class="keyword">int</span> coinBFS(<span class="keyword">const</span> vector&lt;<span class="keyword">int</span>&gt;&amp; coins, <span class="keyword">int</span> amount) {
+    vector&lt;<span class="keyword">int</span>&gt; distance(amount+<span class="number">1</span>,-<span class="number">1</span>);
+    queue&lt;<span class="keyword">int</span>&gt; q; q.push(<span class="number">0</span>); distance[<span class="number">0</span>] = <span class="number">0</span>;
+    <span class="keyword">while</span> (!q.empty()) {
+        <span class="keyword">int</span> sum = q.front(); q.pop();
+        <span class="keyword">for</span> (<span class="keyword">int</span> c : coins) <span class="keyword">if</span> (sum+c &lt;= amount &amp;&amp; distance[sum+c] == -<span class="number">1</span>) {
+            distance[sum+c] = distance[sum]+<span class="number">1</span>; q.push(sum+c);
+        }
+    }
+    <span class="keyword">return</span> distance[amount];
+}
+<span class="keyword">int</span> bruteLCS(<span class="keyword">const</span> string&amp; a, <span class="keyword">const</span> string&amp; b) {
+    <span class="keyword">int</span> best = <span class="number">0</span>;
+    <span class="keyword">for</span> (<span class="keyword">int</span> mask = <span class="number">0</span>; mask &lt; (<span class="number">1</span> &lt;&lt; a.size()); ++mask) {
+        string candidate = maskString(a,mask);
+        <span class="keyword">if</span> (isSubsequenceOf(candidate,b)) best = max(best,(<span class="keyword">int</span>)candidate.size());
+    }
+    <span class="keyword">return</span> best;
+}
+<span class="keyword">int</span> recursiveEdit(<span class="keyword">const</span> string&amp; a, <span class="keyword">const</span> string&amp; b, <span class="keyword">int</span> i, <span class="keyword">int</span> j) {
+    <span class="keyword">if</span> (i == (<span class="keyword">int</span>)a.size()) <span class="keyword">return</span> (<span class="keyword">int</span>)b.size()-j;
+    <span class="keyword">if</span> (j == (<span class="keyword">int</span>)b.size()) <span class="keyword">return</span> (<span class="keyword">int</span>)a.size()-i;
+    <span class="keyword">if</span> (a[i] == b[j]) <span class="keyword">return</span> recursiveEdit(a,b,i+<span class="number">1</span>,j+<span class="number">1</span>);
+    <span class="keyword">return</span> <span class="number">1</span>+min({recursiveEdit(a,b,i+<span class="number">1</span>,j),recursiveEdit(a,b,i,j+<span class="number">1</span>),
+                  recursiveEdit(a,b,i+<span class="number">1</span>,j+<span class="number">1</span>)});
+}
+<span class="keyword">int</span> bruteLIS(<span class="keyword">const</span> vector&lt;<span class="keyword">int</span>&gt;&amp; a) {
+    <span class="keyword">int</span> best = <span class="number">0</span>;
+    <span class="keyword">for</span> (<span class="keyword">int</span> mask = <span class="number">0</span>; mask &lt; (<span class="number">1</span> &lt;&lt; a.size()); ++mask) {
+        <span class="keyword">bool</span> ok = <span class="keyword">true</span>; <span class="keyword">long</span> <span class="keyword">long</span> prev = LLONG_MIN; <span class="keyword">int</span> length = <span class="number">0</span>;
+        <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; (<span class="keyword">int</span>)a.size(); ++i) <span class="keyword">if</span> (mask &amp; (<span class="number">1</span> &lt;&lt; i)) {
+            <span class="keyword">if</span> (a[i] &lt;= prev) ok = <span class="keyword">false</span>;
+            prev = a[i]; ++length;
+        }
+        <span class="keyword">if</span> (ok) best = max(best,length);
+    }
+    <span class="keyword">return</span> best;
+}
+<span class="keyword">int</span> brutePalindromeSubseq(<span class="keyword">const</span> string&amp; s) {
+    <span class="keyword">int</span> best = <span class="number">0</span>;
+    <span class="keyword">for</span> (<span class="keyword">int</span> mask = <span class="number">0</span>; mask &lt; (<span class="number">1</span> &lt;&lt; s.size()); ++mask) {
+        string candidate = maskString(s,mask);
+        <span class="keyword">if</span> (isPalindromeText(candidate)) best = max(best,(<span class="keyword">int</span>)candidate.size());
+    }
+    <span class="keyword">return</span> best;
+}
+string brutePalindromeSubstring(<span class="keyword">const</span> string&amp; s) {
+    string best;
+    <span class="keyword">for</span> (<span class="keyword">int</span> l = <span class="number">0</span>; l &lt; (<span class="keyword">int</span>)s.size(); ++l)
+        <span class="keyword">for</span> (<span class="keyword">int</span> len = <span class="number">1</span>; l+len &lt;= (<span class="keyword">int</span>)s.size(); ++len) {
+            string candidate = s.substr(l,len);
+            <span class="keyword">if</span> (isPalindromeText(candidate) &amp;&amp; candidate.size() &gt; best.size()) best = candidate;
+        }
+    <span class="keyword">return</span> best;
+}
+<span class="keyword">long</span> <span class="keyword">long</span> bruteBurst(vector&lt;<span class="keyword">int</span>&gt; a) {
+    <span class="keyword">long</span> <span class="keyword">long</span> best = <span class="number">0</span>;
+    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; (<span class="keyword">int</span>)a.size(); ++i) {
+        <span class="keyword">long</span> <span class="keyword">long</span> gain = (i == <span class="number">0</span> ? <span class="number">1LL</span> : a[i-<span class="number">1</span>])*a[i]*
+                         (i+<span class="number">1</span> == (<span class="keyword">int</span>)a.size() ? <span class="number">1LL</span> : a[i+<span class="number">1</span>]);
+        <span class="keyword">auto</span> next = a; next.erase(next.begin()+i);
+        best = max(best,gain+bruteBurst(next));
+    }
+    <span class="keyword">return</span> best;
+}
+<span class="keyword">long</span> <span class="keyword">long</span> bruteTreeRob(<span class="keyword">const</span> vector&lt;<span class="keyword">int</span>&gt;&amp; value, <span class="keyword">const</span> vector&lt;<span class="keyword">int</span>&gt;&amp; parent) {
+    <span class="keyword">int</span> n = (<span class="keyword">int</span>)value.size(); <span class="keyword">long</span> <span class="keyword">long</span> best = <span class="number">0</span>;
+    <span class="keyword">for</span> (<span class="keyword">int</span> mask = <span class="number">0</span>; mask &lt; (<span class="number">1</span> &lt;&lt; n); ++mask) {
+        <span class="keyword">bool</span> ok = <span class="keyword">true</span>; <span class="keyword">long</span> <span class="keyword">long</span> sum = <span class="number">0</span>;
+        <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; n; ++i) <span class="keyword">if</span> (mask &amp; (<span class="number">1</span> &lt;&lt; i)) {
+            sum += value[i];
+            <span class="keyword">if</span> (parent[i] &gt;= <span class="number">0</span> &amp;&amp; (mask &amp; (<span class="number">1</span> &lt;&lt; parent[i]))) ok = <span class="keyword">false</span>;
+        }
+        <span class="keyword">if</span> (ok) best = max(best,sum);
+    }
+    <span class="keyword">return</span> best;
+}
+<span class="keyword">long</span> <span class="keyword">long</span> bruteStock(<span class="keyword">const</span> vector&lt;<span class="keyword">int</span>&gt;&amp; p, <span class="keyword">int</span> k) {
+    <span class="keyword">const</span> <span class="keyword">long</span> <span class="keyword">long</span> NEG = LLONG_MIN/<span class="number">4</span>;
+    function&lt;<span class="keyword">long</span> <span class="keyword">long</span>(<span class="keyword">int</span>,<span class="keyword">bool</span>,<span class="keyword">int</span>)&gt; dfs = [&amp;](<span class="keyword">int</span> day,<span class="keyword">bool</span> holding,<span class="keyword">int</span> sold) {
+        <span class="keyword">if</span> (day == (<span class="keyword">int</span>)p.size()) <span class="keyword">return</span> holding ? NEG : <span class="number">0LL</span>;
+        <span class="keyword">long</span> <span class="keyword">long</span> best = dfs(day+<span class="number">1</span>,holding,sold);
+        <span class="keyword">if</span> (holding &amp;&amp; sold &lt; k)
+            best = max(best,(<span class="keyword">long</span> <span class="keyword">long</span>)p[day]+dfs(day+<span class="number">1</span>,<span class="keyword">false</span>,sold+<span class="number">1</span>));
+        <span class="keyword">if</span> (!holding &amp;&amp; sold &lt; k) {
+            <span class="keyword">long</span> <span class="keyword">long</span> future = dfs(day+<span class="number">1</span>,<span class="keyword">true</span>,sold);
+            <span class="keyword">if</span> (future != NEG) best = max(best,future-p[day]);
+        }
+        <span class="keyword">return</span> best;
+    };
+    <span class="keyword">return</span> dfs(<span class="number">0</span>,<span class="keyword">false</span>,<span class="number">0</span>);
+}
+<span class="keyword">long</span> <span class="keyword">long</span> bruteAssignment(<span class="keyword">const</span> vector&lt;vector&lt;<span class="keyword">int</span>&gt;&gt;&amp; cost) {
+    vector&lt;<span class="keyword">int</span>&gt; order(cost.size()); iota(order.begin(),order.end(),<span class="number">0</span>);
+    <span class="keyword">long</span> <span class="keyword">long</span> best = LLONG_MAX;
+    do {
+        <span class="keyword">long</span> <span class="keyword">long</span> sum = <span class="number">0</span>;
+        <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; (<span class="keyword">int</span>)cost.size(); ++i) sum += cost[i][order[i]];
+        best = min(best,sum);
+    } <span class="keyword">while</span> (next_permutation(order.begin(),order.end()));
+    <span class="keyword">return</span> best;
+}
+template&lt;<span class="keyword">class</span> F&gt; <span class="keyword">void</span> expectInvalid(F action) {
+    <span class="keyword">bool</span> thrown = <span class="keyword">false</span>;
+    try { action(); } catch (<span class="keyword">const</span> invalid_argument&amp;) { thrown = <span class="keyword">true</span>; }
+    assert(thrown);
+}
+<span class="keyword">int</span> main() {
+    <span class="keyword">auto</span> negative = maxSubarrayRange({-<span class="number">5</span>,-<span class="number">2</span>,-<span class="number">7</span>});
+    assert(negative.sum == -<span class="number">2</span> &amp;&amp; negative.left == <span class="number">1</span> &amp;&amp; negative.right == <span class="number">1</span>);
+    <span class="keyword">auto</span> separated = maxSubarrayRange({<span class="number">5</span>,-<span class="number">100</span>,<span class="number">4</span>});
+    assert(separated.sum == <span class="number">5</span>);
+    <span class="keyword">auto</span> tie = maxSubarrayRange({<span class="number">0</span>,<span class="number">0</span>});
+    assert(tie.left == <span class="number">0</span> &amp;&amp; tie.right == <span class="number">0</span>);
+    assert(robCircle({}) == <span class="number">0</span> &amp;&amp; robCircle({-<span class="number">1</span>}) == <span class="number">0</span>);
+    assert(robCircle({<span class="number">2</span>,<span class="number">3</span>,<span class="number">2</span>}) == <span class="number">3</span>);
+    assert(knapsackExact({<span class="number">2</span>},{-<span class="number">3</span>},<span class="number">2</span>) == optional&lt;<span class="keyword">long</span> <span class="keyword">long</span>&gt;(-<span class="number">3</span>));
+    assert(!knapsackExact({<span class="number">2</span>},{<span class="number">3</span>},<span class="number">3</span>));
+    assert(knapsackExact({}, {},<span class="number">0</span>) == optional&lt;<span class="keyword">long</span> <span class="keyword">long</span>&gt;(<span class="number">0</span>));
+    assert(knapsack01({<span class="number">2</span>},{<span class="number">3</span>},<span class="number">4</span>) == <span class="number">3</span>);
+    assert(equalPartition({}) &amp;&amp; equalPartition({<span class="number">0</span>,<span class="number">0</span>}));
+    assert(!equalPartition({<span class="number">1</span>,<span class="number">2</span>,<span class="number">5</span>}));
+    assert(minimumCoinsPath({<span class="number">1</span>,<span class="number">3</span>,<span class="number">4</span>},<span class="number">6</span>)-&gt;size() == <span class="number">2</span>);
+    assert(!minimumCoinsPath({<span class="number">2</span>},<span class="number">3</span>));
+    <span class="keyword">auto</span> emptyCoins = minimumCoinsPath({},<span class="number">0</span>); assert(emptyCoins &amp;&amp; emptyCoins-&gt;empty());
+    <span class="keyword">auto</span> counts = coinCountsMod({<span class="number">1</span>,<span class="number">1</span>,<span class="number">2</span>},<span class="number">3</span>);
+    assert(counts.first == <span class="number">2</span> &amp;&amp; counts.second == <span class="number">3</span>);
+    assert(coinCountsMod({<span class="number">1</span>,<span class="number">2</span>},<span class="number">2</span>,<span class="number">2</span>).first == <span class="number">0</span>); <span class="comment">// 可达，但模数结果为零</span>
+    assert(oneLCS(<span class="string">&quot;abcde&quot;</span>,<span class="string">&quot;ace&quot;</span>) == <span class="string">&quot;ace&quot;</span>);
+    assert(editDistanceRolling(<span class="string">&quot;&quot;</span>,<span class="string">&quot;abc&quot;</span>) == <span class="number">3</span>);
+    assert(editDistanceRolling(<span class="string">&quot;horse&quot;</span>,<span class="string">&quot;ros&quot;</span>) == <span class="number">3</span>);
+    assert(strictLISIndices({<span class="number">2</span>,<span class="number">2</span>,<span class="number">2</span>}).size() == <span class="number">1</span>);
+    assert(longestPalindromeSubseq(<span class="string">&quot;bbbab&quot;</span>) == <span class="number">4</span>);
+    assert(longestPalindromeSubstringDP(<span class="string">&quot;bbbab&quot;</span>) == <span class="string">&quot;bbb&quot;</span>);
+    assert(burstBalloonsDP({<span class="number">3</span>,<span class="number">1</span>,<span class="number">5</span>,<span class="number">8</span>}) == <span class="number">167</span> &amp;&amp; burstBalloonsDP({}) == <span class="number">0</span>);
+    assert(robTreeIterative(<span class="keyword">nullptr</span>) == <span class="number">0</span>);
+    assert(stockAtMostK({<span class="number">3</span>,<span class="number">2</span>,<span class="number">6</span>,<span class="number">5</span>,<span class="number">0</span>,<span class="number">3</span>},<span class="number">2</span>) == <span class="number">7</span>);
+    assert(stockAtMostK({<span class="number">1</span>,<span class="number">3</span>,<span class="number">2</span>,<span class="number">4</span>},<span class="number">0</span>) == <span class="number">0</span>);
+    assert(stockAtMostK({<span class="number">0</span>,INT_MAX,<span class="number">0</span>,INT_MAX},<span class="number">2</span>) == <span class="number">2LL</span>*INT_MAX);
+    assert(minimumAssignment({{<span class="number">9</span>,<span class="number">2</span>},{<span class="number">3</span>,<span class="number">7</span>}}).first == <span class="number">5</span>);
+    <span class="keyword">auto</span> noTasks = minimumAssignment({}); assert(noTasks.first == <span class="number">0</span> &amp;&amp; noTasks.second.empty());
+    expectInvalid([] { maxSubarrayRange({}); });
+    expectInvalid([] { knapsackExact({<span class="number">0</span>},{<span class="number">1</span>},<span class="number">2</span>); });
+    expectInvalid([] { equalPartition({-<span class="number">1</span>,<span class="number">1</span>}); });
+    expectInvalid([] { minimumCoinsPath({<span class="number">0</span>},<span class="number">2</span>); });
+    expectInvalid([] { coinCountsMod({<span class="number">1</span>},<span class="number">2</span>,<span class="number">1</span>); });
+    expectInvalid([] { burstBalloonsDP({<span class="number">1001</span>}); });
+    expectInvalid([] { stockAtMostK({<span class="number">1</span>},-<span class="number">1</span>); });
+    expectInvalid([] { minimumAssignment({{<span class="number">1</span>,<span class="number">2</span>}}); });
+
+    mt19937 rng(<span class="number">20260921</span>);
+    <span class="keyword">for</span> (<span class="keyword">int</span> trial = <span class="number">0</span>; trial &lt; <span class="number">100</span>; ++trial) {
+        <span class="keyword">int</span> n = (<span class="keyword">int</span>)(rng()%<span class="number">8</span>);
+        vector&lt;<span class="keyword">int</span>&gt; a(n); <span class="keyword">for</span> (<span class="keyword">int</span>&amp; x : a) x = (<span class="keyword">int</span>)(rng()%<span class="number">11</span>)-<span class="number">5</span>;
+        <span class="keyword">if</span> (n) {
+            <span class="keyword">auto</span> got = maxSubarrayRange(a), want = bruteSubarray(a);
+            assert(got.sum == want.sum &amp;&amp; got.left == want.left &amp;&amp; got.right == want.right);
+            assert(maxSubArray(a) == want.sum);
+        }
+        assert(robCircle(a) == bruteRobCircle(a));
+        vector&lt;<span class="keyword">int</span>&gt; weight(n), value(n), nonnegative(n);
+        <span class="keyword">for</span> (<span class="keyword">int</span>&amp; x : weight) x = <span class="number">1</span>+(<span class="keyword">int</span>)(rng()%<span class="number">4</span>);
+        <span class="keyword">for</span> (<span class="keyword">int</span>&amp; x : value) x = (<span class="keyword">int</span>)(rng()%<span class="number">13</span>)-<span class="number">6</span>;
+        <span class="keyword">for</span> (<span class="keyword">int</span>&amp; x : nonnegative) x = (<span class="keyword">int</span>)(rng()%<span class="number">5</span>);
+        <span class="keyword">int</span> capacity = (<span class="keyword">int</span>)(rng()%<span class="number">10</span>);
+        <span class="keyword">auto</span> bag = bruteKnapsack(weight,value,capacity);
+        assert(knapsackExact(weight,value,capacity) == bag.first);
+        assert(knapsack01(weight,value,capacity) == bag.second);
+        assert(equalPartition(nonnegative) == brutePartition(nonnegative));
+
+        vector&lt;<span class="keyword">int</span>&gt; coins;
+        <span class="keyword">for</span> (<span class="keyword">int</span> c = <span class="number">1</span>; c &lt;= <span class="number">4</span>; ++c) <span class="keyword">if</span> (rng()%<span class="number">2</span>) coins.push_back(c);
+        <span class="keyword">int</span> amount = (<span class="keyword">int</span>)(rng()%<span class="number">9</span>);
+        <span class="keyword">auto</span> ways = coinCountsMod(coins,amount,<span class="number">7</span>);
+        assert(ways.first == bruteCoinCombos(coins,<span class="number">0</span>,amount)%<span class="number">7</span>);
+        assert(ways.second == bruteCoinOrdered(coins,amount)%<span class="number">7</span>);
+        assert(coinCombinations(coins,amount) == bruteCoinCombos(coins,<span class="number">0</span>,amount));
+        <span class="keyword">int</span> shortest = coinBFS(coins,amount);
+        <span class="keyword">auto</span> path = minimumCoinsPath(coins,amount);
+        assert(path.has_value() == (shortest != -<span class="number">1</span>));
+        <span class="keyword">if</span> (path) {
+            assert((<span class="keyword">int</span>)path-&gt;size() == shortest);
+            assert(accumulate(path-&gt;begin(),path-&gt;end(),<span class="number">0</span>) == amount);
+            <span class="keyword">for</span> (<span class="keyword">int</span> c : *path) assert(find(coins.begin(),coins.end(),c) != coins.end());
+        }
+
+        string s,t;
+        <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; n; ++i) s.push_back(<span class="keyword">char</span>(&#x27;a&#x27;+rng()%<span class="number">3</span>));
+        <span class="keyword">int</span> m = (<span class="keyword">int</span>)(rng()%<span class="number">6</span>);
+        <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; m; ++i) t.push_back(<span class="keyword">char</span>(&#x27;a&#x27;+rng()%<span class="number">3</span>));
+        <span class="keyword">auto</span> common = oneLCS(s,t);
+        assert(isSubsequenceOf(common,s) &amp;&amp; isSubsequenceOf(common,t));
+        assert((<span class="keyword">int</span>)common.size() == bruteLCS(s,t));
+        assert(longestCommonSubsequence(s,t) == (<span class="keyword">int</span>)common.size());
+        assert(editDistanceRolling(s,t) == recursiveEdit(s,t,<span class="number">0</span>,<span class="number">0</span>));
+        assert(editDistanceRolling(s,t) == editDistanceRolling(t,s));
+        <span class="keyword">auto</span> lis = strictLISIndices(a);
+        assert((<span class="keyword">int</span>)lis.size() == bruteLIS(a));
+        <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; (<span class="keyword">int</span>)lis.size(); ++i) {
+            assert(lis[i] &gt;= <span class="number">0</span> &amp;&amp; lis[i] &lt; n);
+            <span class="keyword">if</span> (i) assert(lis[i-<span class="number">1</span>] &lt; lis[i] &amp;&amp; a[lis[i-<span class="number">1</span>]] &lt; a[lis[i]]);
+        }
+        assert(longestPalindromeSubseq(s) == brutePalindromeSubseq(s));
+        assert(longestPalindromeSubstringDP(s) == brutePalindromeSubstring(s));
+        vector&lt;<span class="keyword">int</span>&gt; balloons(rng()%<span class="number">6</span>);
+        <span class="keyword">for</span> (<span class="keyword">int</span>&amp; x : balloons) x = (<span class="keyword">int</span>)(rng()%<span class="number">5</span>);
+        assert(burstBalloonsDP(balloons) == bruteBurst(balloons));
+
+        vector&lt;RobNode&gt; nodes; vector&lt;TreeNode&gt; basicNodes;
+        nodes.reserve(n); basicNodes.reserve(n);
+        vector&lt;<span class="keyword">int</span>&gt; parent(n,-<span class="number">1</span>);
+        <span class="keyword">for</span> (<span class="keyword">int</span> x : a) { nodes.emplace_back(x); basicNodes.emplace_back(x); }
+        <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">1</span>; i &lt; n; ++i) {
+            parent[i] = (i-<span class="number">1</span>)/<span class="number">2</span>;
+            <span class="keyword">if</span> (i%<span class="number">2</span>) {
+                nodes[parent[i]].left = &amp;nodes[i];
+                basicNodes[parent[i]].left = &amp;basicNodes[i];
+            } <span class="keyword">else</span> {
+                nodes[parent[i]].right = &amp;nodes[i];
+                basicNodes[parent[i]].right = &amp;basicNodes[i];
+            }
+        }
+        <span class="keyword">long</span> <span class="keyword">long</span> treeBest = bruteTreeRob(a,parent);
+        assert(robTreeIterative(n ? &amp;nodes[<span class="number">0</span>] : <span class="keyword">nullptr</span>) == treeBest);
+        assert(robTree(n ? &amp;basicNodes[<span class="number">0</span>] : <span class="keyword">nullptr</span>) == treeBest);
+        <span class="keyword">int</span> k = (<span class="keyword">int</span>)(rng()%<span class="number">4</span>);
+        assert(stockAtMostK(nonnegative,k) == bruteStock(nonnegative,k));
+        <span class="keyword">int</span> jobs = (<span class="keyword">int</span>)(rng()%<span class="number">7</span>);
+        vector&lt;vector&lt;<span class="keyword">int</span>&gt;&gt; cost(jobs,vector&lt;<span class="keyword">int</span>&gt;(jobs));
+        <span class="keyword">for</span> (<span class="keyword">auto</span>&amp; row : cost) <span class="keyword">for</span> (<span class="keyword">int</span>&amp; x : row) x = (<span class="keyword">int</span>)(rng()%<span class="number">15</span>)-<span class="number">7</span>;
+        <span class="keyword">auto</span> assignment = minimumAssignment(cost);
+        assert(assignment.first == bruteAssignment(cost));
+        assert((<span class="keyword">int</span>)assignment.second.size() == jobs);
+        vector&lt;<span class="keyword">char</span>&gt; used(jobs,<span class="keyword">false</span>); <span class="keyword">long</span> <span class="keyword">long</span> actual = <span class="number">0</span>;
+        <span class="keyword">for</span> (<span class="keyword">int</span> worker = <span class="number">0</span>; worker &lt; jobs; ++worker) {
+            <span class="keyword">int</span> task = assignment.second[worker];
+            assert(task &gt;= <span class="number">0</span> &amp;&amp; task &lt; jobs &amp;&amp; !used[task]);
+            used[task] = <span class="keyword">true</span>; actual += cost[worker][task];
+        }
+        assert(actual == assignment.first);
+    }
+    vector&lt;RobNode&gt; chain; chain.reserve(<span class="number">5000</span>);
+    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; <span class="number">5000</span>; ++i) chain.emplace_back(<span class="number">1</span>);
+    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">1</span>; i &lt; <span class="number">5000</span>; ++i) chain[i-<span class="number">1</span>].right = &amp;chain[i];
+    assert(robTreeIterative(&amp;chain[<span class="number">0</span>]) == <span class="number">2500</span>);
+    cout &lt;&lt; <span class="string">&quot;dynamic programming checks passed\n&quot;</span>;
+}</code></pre></div></div></section><nav class="chapter-pager" aria-label="相邻章节"><a href="../11-贪心/index.html"><small>上一章</small>← 贪心</a><a href="../13-并查集与高级数据结构/index.html"><small>下一章</small>并查集与高级数据结构 →</a></nav><footer>秋招算法学习讲义 · C++17<br>例题编号供检索；难度与覆盖范围按学习顺序组织。</footer></main><aside class="toc" aria-label="本页目录"><p class="rail-label">本章小节</p><a href="#s1"><span>01</span>线性 DP：以当前位置结尾</a><a href="#s2"><span>02</span>0/1 背包：容量倒序的原因</a><a href="#s3"><span>03</span>完全背包与计数顺序</a><a href="#s4"><span>04</span>序列 DP：最长公共子序列与编辑距离</a><a href="#s5"><span>05</span>区间 DP：由短区间构造长区间</a><a href="#s6"><span>06</span>树形与状态机 DP：把限制写进状态</a><a href="#chapter-review"><span>练</span>综合例题与自测答案</a></aside></div><div class="toast" role="status" aria-live="polite"></div></body></html>

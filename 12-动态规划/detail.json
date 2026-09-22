@@ -1,0 +1,1057 @@
+{
+  "intro": [
+    {
+      "type": "text",
+      "title": "从递归到 DP：把重复的子问题合并，而不是背一组公式",
+      "paragraphs": [
+        "先写出暴力决策：当前能做哪些选择，每个选择之后还剩什么问题。如果不同决策历史会到达同一个未来问题，就可以用状态合并它们。关键是这些历史必须拥有相同的后续合法动作与同样的目标含义；省略持仓、剩余容量或父节点选择等信息，会把本来不同的问题错误合并。",
+        "把每个状态看成一个节点，转移依赖看成边。普通递推 DP 实际是在依赖图上按拓扑顺序计算。记忆化搜索按需访问这张图，遇到已有结果就返回；递推显式安排顺序。记忆化并不自动消除递归深度，也不解决带循环依赖的状态设计。"
+      ]
+    },
+    {
+      "type": "table",
+      "title": "五步法落到纸上：每一行代码都应有对应含义",
+      "columns": [
+        "步骤",
+        "必须回答的问题",
+        "常见错误"
+      ],
+      "rows": [
+        [
+          "状态",
+          "范围是什么？必须以谁结尾？是恰好还是至多？",
+          "把以 i 结尾与前 i 项最优混用"
+        ],
+        [
+          "转移",
+          "按最后一步或选 / 不选划分，是否穷尽且不漏？",
+          "不同含义的状态直接取 max"
+        ],
+        [
+          "初值",
+          "空问题有几种方案？不可达如何表示？",
+          "所有格子都初始化为 0"
+        ],
+        [
+          "顺序",
+          "前驱属于上一层还是本层？",
+          "压缩后读取已覆盖的数据"
+        ],
+        [
+          "答案",
+          "是最后一格、整行最大值，还是根的多个状态？",
+          "直接 return dp.back()"
+        ],
+        [
+          "验证",
+          "能否还原方案？最小反例与暴力参照是什么？",
+          "只看样例输出，不检查合法性"
+        ]
+      ],
+      "paragraphs": []
+    },
+    {
+      "type": "text",
+      "title": "复杂度从状态数与转移成本算起",
+      "paragraphs": [
+        "DP 的时间通常是可访问状态数乘每个状态的转移工作量，加上预处理、复制和恢复答案的成本。0/1 背包 O(nC) 依赖容量的数值 C，属于伪多项式，不是关于 C 的二进制输入长度的多项式。区间 DP 若每格枚举一个分割点，通常是 O(n³)，不是看到二维数组就写 O(n²)。",
+        "先写清二维或多维状态，再考虑压缩。滚动数组减少保存的层数，却不减少理论状态数；压缩最优值后可能丢失方案恢复所需的信息。字符串示例按字节比较，若按 Unicode 字符操作应先解码。各规模须可用 int 表示并满足内存约束；计数示例明确采用模数，不能把取模结果当作是否可达的判据。"
+      ]
+    }
+  ],
+  "sections": {
+    "1": {
+      "before": [
+        {
+          "type": "text",
+          "title": "1.1 必须以 i 结尾，与前 i 项全局最优是两个问题",
+          "paragraphs": [
+            "end[i] 表示必须以 a[i] 结尾的非空连续子数组最大和。它要么只取 a[i]，要么接在一个以 i−1 结尾的最优段后面。只有这两类情况，因而 end[i]=max(a[i],end[i−1]+a[i])。best[i] 才是前缀全局最优，等于 max(best[i−1],end[i])。",
+            "不能用 best[i−1]+a[i] 代替连续延伸：a=[5,−100,4] 时，前缀最优仍是 5，但 5 与 4 不相邻，直接相加虚构出了不存在的和 9。要求非空时，全负数组必须返回其中最大的负数，不能用 0 作为答案初值。"
+          ]
+        },
+        {
+          "type": "table",
+          "title": "1.2 手推状态与答案：两条变量各司其职",
+          "columns": [
+            "i / 元素",
+            "以这里结尾的最优和",
+            "前缀全局最优",
+            "决策"
+          ],
+          "rows": [
+            [
+              "0 / −2",
+              "−2",
+              "−2",
+              "非空，用首元素初始化"
+            ],
+            [
+              "1 / 1",
+              "1",
+              "1",
+              "重新开始"
+            ],
+            [
+              "2 / −3",
+              "−2",
+              "1",
+              "延续到 −3，但不是全局最优"
+            ],
+            [
+              "3 / 4",
+              "4",
+              "4",
+              "丢弃此前负前缀"
+            ],
+            [
+              "4 / −1",
+              "3",
+              "4",
+              "局部下降不代表立刻放弃"
+            ],
+            [
+              "5 / 2；6 / 1",
+              "5；6",
+              "5；6",
+              "最终最优段 [3,6]，和 6"
+            ]
+          ],
+          "paragraphs": []
+        },
+        {
+          "type": "text",
+          "title": "1.3 打家劫舍：空方案是合法初态",
+          "paragraphs": [
+            "令 dp[i] 表示只考虑前 i 间房、相邻不能同时选的最大收益，允许一个都不选。最后一间不选则为 dp[i−1]，选则为 dp[i−2]+value[i−1]。dp[0]=0，dp[1]=max(0,value[0])；若示例允许负值，也应保留空方案。",
+            "环形房屋的首尾相邻。任何合法方案至少不选首或不选尾，所以分别求 [0,n−1) 与 [1,n) 两段线性最优后取 max。两类可以重叠，不影响求最大值；若是计数，直接相加就可能重复计数。n=1 必须单独处理。"
+          ]
+        }
+      ],
+      "after": [
+        {
+          "type": "code",
+          "title": "1.4 最大子数组和与下标：明确平局规则",
+          "file": "detail-max-subarray-range.cpp",
+          "code": "struct BestSubarray { long long sum; int left, right; };\nBestSubarray maxSubarrayRange(const vector<int>& a) {\n    if (a.empty()) throw invalid_argument(\"nonempty array required\");\n    long long ending = a[0];\n    int start = 0;\n    BestSubarray best{a[0],0,0};\n    for (int i = 1; i < (int)a.size(); ++i) {\n        if (ending < 0) { ending = a[i]; start = i; }\n        else ending += a[i]; // 等于 0 时延续，保留较早左端点\n        if (ending > best.sum ||\n            (ending == best.sum && (start < best.left ||\n             (start == best.left && i < best.right)))) {\n            best = {ending,start,i};\n        }\n    }\n    return best;\n}",
+          "paragraphs": [
+            "返回闭区间 [left,right]。同最大和时选左端点更小的，再选右端点更小的。状态保存当前段的起点，不只保存全局答案起点。时间 O(n)、额外空间 O(1)，不会修改输入。"
+          ]
+        },
+        {
+          "type": "code",
+          "title": "1.5 环形打家劫舍：拆成两个允许空选的线性问题",
+          "file": "detail-rob-circle.cpp",
+          "code": "long long robLinearRange(const vector<int>& value, int left, int right) {\n    // 半开区间 [left,right)，调用者保证下标合法\n    long long prev2 = 0, prev1 = 0;\n    for (int i = left; i < right; ++i) {\n        long long current = max(prev1,prev2+value[i]);\n        prev2 = prev1; prev1 = current;\n    }\n    return prev1;\n}\nlong long robCircle(const vector<int>& value) {\n    int n = (int)value.size();\n    if (!n) return 0;\n    if (n == 1) return max(0LL,(long long)value[0]);\n    return max(robLinearRange(value,0,n-1),robLinearRange(value,1,n));\n}",
+          "paragraphs": [
+            "允许负房值但可不选；空数组和全负数组返回 0。两个线性扫描总时间 O(n)、额外空间 O(1)。没有复制子数组，也没有错误地同时选首尾。"
+          ]
+        },
+        {
+          "type": "text",
+          "title": "1.6 记忆化如何从同一个状态定义产生",
+          "paragraphs": [
+            "线性劫舍也能写成 f(i)=max(f(i+1),value[i]+f(i+2))，边界 i≥n 返回 0。缓存键为 i，因为 value 固定且剩余问题只由起点决定。用 seen 数组区分未计算与已经算出 0，不能把 memo[i]==0 当成未算标记，否则全零输入会反复计算。",
+            "这个递归版本仍可能有 O(n) 深度。滚动递推只依赖前两项，用 O(1) 辅助空间且没有深调用栈；记忆化的优势是自然表达状态并跳过不用访问的部分，而不是天然更省空间。"
+          ]
+        }
+      ],
+      "answers": [
+        {
+          "question": "为什么不能只维护全局 best 来转移最大子数组？",
+          "answer": [
+            "best 可能在很早以前结束，不满足紧邻当前元素的连接条件。需要单独维护以当前位置结尾的 endHere，连接合法后再更新全局 best。状态中的“结尾”不是修饰语，而是决定转移是否合法的约束。"
+          ]
+        },
+        {
+          "question": "最大子数组全负时为什么不返回 0？",
+          "answer": [
+            "题目要求非空。[-5,−2] 的答案是 −2，空数组不是候选。若题意明确允许空选，才可让 0 参与竞争；不要把打家劫舍允许不选的初始化搬到非空子数组题。"
+          ]
+        },
+        {
+          "question": "返回左右下标时，何时更新当前起点？",
+          "answer": [
+            "当旧 ending<0 时，从当前元素重新开始，起点改为 i。旧 ending==0 时延续与重启的和相同；本实现为保留更早左端点选择延续。只有当前候选按约定优于全局答案时，才同步更新答案的两个端点。"
+          ]
+        },
+        {
+          "question": "环形劫舍为什么不直接算线性答案，再删掉较小的首尾？",
+          "answer": [
+            "线性方案一旦选了首尾，删掉其中一个后，它的邻居可能应该重新入选，仅删一个不能重新优化。正确做法是按至少不选首或不选尾划分所有合法方案，两种限制下分别完整求最优。"
+          ]
+        },
+        {
+          "question": "缓存值为 0 为什么不能代表未计算？",
+          "answer": [
+            "0 常是合法答案，例如空问题、全负允许不选或全部为零。把它当未计算会破坏每个状态只算一次的复杂度保证。可以另设 seen，或使用不会与合法结果冲突的显式标记。"
+          ]
+        },
+        {
+          "question": "滚动变量更新为何要先保存 current？",
+          "answer": [
+            "新 dp[i] 依赖旧 dp[i−1] 与旧 dp[i−2]。如果先覆盖 prev2 或 prev1，再计算另一个变量，就可能读到本轮值。先用旧值求 current，再整体移动窗口，才能保持状态含义。"
+          ]
+        }
+      ]
+    },
+    "2": {
+      "before": [
+        {
+          "type": "text",
+          "title": "2.1 先写二维状态，才看得见一维覆盖了什么",
+          "paragraphs": [
+            "令 f[i][c] 表示只用前 i 件物品、总重量不超过 c 的最大价值。第 i 件不选，来源是 f[i−1][c]；选，来源是 f[i−1][c−w]+v。两项都来自上一行，这正是每件最多用一次的约束。",
+            "压缩为 dp[c] 后，倒序更新 c，使更小的 c−w 尚未被本件物品改写，读到的仍是上一行。对于完全背包，选本件后还能继续选它，来源反而应是当前行 f[i][c−w]，因此正序更新。方向不是口诀，而是数据依赖。"
+          ]
+        },
+        {
+          "type": "table",
+          "title": "2.2 单件 w=2、v=3，容量 4 的更新对照",
+          "columns": [
+            "方向",
+            "先更新的位置",
+            "更新 dp[4] 时读什么",
+            "结论"
+          ],
+          "rows": [
+            [
+              "正序（错误的 0/1）",
+              "dp[2]=3",
+              "读到本轮 dp[2]=3，再加 3",
+              "得到 6，重复用了唯一物品"
+            ],
+            [
+              "倒序（正确的 0/1）",
+              "先 dp[4]，再 dp[3]，最后 dp[2]",
+              "读到旧 dp[2]=0",
+              "得到 3，每件仅一次"
+            ],
+            [
+              "二维上一行读取",
+              "任意容量顺序均可",
+              "明确读 f[i−1][2]",
+              "没有覆盖问题"
+            ],
+            [
+              "完全背包正序",
+              "dp[2]=3 后继续 dp[4]",
+              "允许读取本轮值",
+              "重复使用合法，6 正确"
+            ]
+          ],
+          "paragraphs": []
+        },
+        {
+          "type": "table",
+          "title": "2.3 初值必须由容量语义决定",
+          "columns": [
+            "状态含义",
+            "dp[0]",
+            "其余状态",
+            "最终答案"
+          ],
+          "rows": [
+            [
+              "总重不超过 c，允许不选，最大价值",
+              "0",
+              "0，因为空方案合法",
+              "dp[C]"
+            ],
+            [
+              "总重恰好 c，最大价值",
+              "0",
+              "不可达，不是 0",
+              "dp[C]，可能无解"
+            ],
+            [
+              "总重恰好 c，是否可达",
+              "true",
+              "false",
+              "reachable[C]"
+            ],
+            [
+              "总重恰好 c，计数",
+              "1，空选择一种",
+              "0",
+              "ways[C]"
+            ],
+            [
+              "恰好金额 c，最少物品数",
+              "0",
+              "INF",
+              "不可达时另返回失败"
+            ]
+          ],
+          "paragraphs": []
+        },
+        {
+          "type": "text",
+          "title": "2.4 分割等和子集与目标和的代数入口",
+          "paragraphs": [
+            "非负数组总和 S 若为奇数，不可能分成两个相同整数和。否则问题等价于选一部分下标使和为 S/2，使用布尔 0/1 背包倒序更新。相同数值的不同下标仍是不同物品，不应随手去重；零值不影响可达性。",
+            "目标和中，给非负数分配正负号，令被赋正号部分总和为 P，则 P−(S−P)=target，得到 P=(S+target)/2。先检查 |target|≤S 与奇偶性，再转成计数 0/1 背包。零值的正负号是两个不同选择，会使每个可达方案数翻倍，不能为了方便删掉零。"
+          ]
+        }
+      ],
+      "after": [
+        {
+          "type": "code",
+          "title": "2.5 恰好装满的 0/1 背包：显式表达不可达",
+          "file": "detail-knapsack-exact.cpp",
+          "code": "optional<long long> knapsackExact(const vector<int>& weight,\n                                  const vector<int>& value, int capacity) {\n    if (capacity < 0 || capacity > 200000 || weight.size() != value.size())\n        throw invalid_argument(\"capacity/length\");\n    vector<optional<long long>> dp(capacity+1);\n    dp[0] = 0;\n    for (int i = 0; i < (int)weight.size(); ++i) {\n        if (weight[i] <= 0) throw invalid_argument(\"positive weight\");\n        for (int c = capacity; c >= weight[i]; --c) {\n            if (!dp[c-weight[i]]) continue;\n            long long candidate = *dp[c-weight[i]]+value[i];\n            if (!dp[c] || candidate > *dp[c]) dp[c] = candidate;\n        }\n    }\n    return dp[capacity];\n}",
+          "paragraphs": [
+            "正重量，价值可为负；容量上限 200000 用于控制教学示例资源。恰好装满可能必须接受负收益，例如重量 2、价值 −3、容量 2 的答案是 −3，不是 0。optional 区分无解与任意有限值。由于选中件数至多为容量，int 价值累加在 long long 内安全。时间 O(nC)，空间 O(C)。"
+          ]
+        },
+        {
+          "type": "code",
+          "title": "2.6 布尔背包：分割等和子集",
+          "file": "detail-equal-partition.cpp",
+          "code": "bool equalPartition(const vector<int>& a) {\n    long long sum = 0;\n    for (int x : a) {\n        if (x < 0) throw invalid_argument(\"nonnegative values\");\n        sum += x;\n    }\n    if (sum % 2) return false;\n    if (sum/2 > 200000) throw invalid_argument(\"teaching target limit\");\n    int target = (int)(sum/2);\n    vector<char> reachable(target+1,false); reachable[0] = true;\n    for (int x : a)\n        for (int c = target; c >= x; --c)\n            if (reachable[c-x]) reachable[c] = true;\n    return reachable[target];\n}",
+          "paragraphs": [
+            "采用允许空子集的定义，因此空数组和全零数组返回 true。题目若要求两组都非空，需按题意增加条件或状态。零重量布尔物品只会保持已有可达值，不会造成无限循环；本循环 c 为有符号 int。时间 O(n·S)，空间 O(S)，这里 S 表示目标和而非输入位数。"
+          ]
+        }
+      ],
+      "answers": [
+        {
+          "question": "恰好装满为何不能把所有 dp 初始化为 0？",
+          "answer": [
+            "这会把本来凑不出的容量当成零价值的可行前驱。例如只有重量 2 的物品，容量 3 会从虚假的 dp[1]=0 转移出一个假答案。只让 dp[0] 可达，其余显式标不可达，才能保证所有转移有合法来源。"
+          ]
+        },
+        {
+          "question": "二维 0/1 背包是否也必须倒序容量？",
+          "answer": [
+            "不必须，只要它始终读取上一行 f[i−1]，当前行的计算顺序可以正序。倒序是将两行压缩到同一数组后，为避免覆盖上一行小容量状态才需要的技巧。"
+          ]
+        },
+        {
+          "question": "零重量物品该如何处理？",
+          "answer": [
+            "本章价值型背包接口要求正重量，拒绝零重以统一数值与循环契约。若允许 0/1 零重物品，可专门处理每件至多一次；完全背包若有零重正价值物品，最优值无上界。布尔子集中的零不会改变可达性，计数中却会倍增方案，不能混为一谈。"
+          ]
+        },
+        {
+          "question": "为什么背包 O(nC) 不一定适合大输入？",
+          "answer": [
+            "C=10^9 即使只有几十件物品，数组和循环也不可接受。输入只需约 30 位表达容量，但 DP 按数值铺开。可结合物品数、价值总和考虑按价值 DP、折半枚举或其他结构，不应看到 O(nC) 就默认可运行。"
+          ]
+        },
+        {
+          "question": "一维背包能否只放一个 parent[c] 就可靠恢复物品？",
+          "answer": [
+            "容易出错：记录的前驱容量在后续物品中可能被覆盖，回溯时拿到的是另一时刻的方案，甚至重复使用同一件。需要保留分层决策、不可变路径节点，或用重新计算等经过证明的方法；本节接口只承诺最优值，不伪造恢复链。"
+          ]
+        },
+        {
+          "question": "总和为偶数是否意味着一定能等分？",
+          "answer": [
+            "不是，仅是必要条件。[1,2,5] 总和 8，但无法选出和为 4 的子集。奇数可立即失败，偶数仍须检查目标容量是否真的可达。"
+          ]
+        }
+      ]
+    },
+    "3": {
+      "before": [
+        {
+          "type": "text",
+          "title": "3.1 完全背包正序，是允许同一物品再次成为前驱",
+          "paragraphs": [
+            "最少硬币数 minCoins[s] 表示恰好凑成金额 s 的最少枚数。对最后一枚硬币 c，有 minCoins[s]=min(minCoins[s−c]+1)。币值为正时，前驱金额严格更小，可以按金额递增计算，且不可达前驱不参与转移。",
+            "计数问题要进一步问：选择顺序算不算不同？币种外层是在限定可用币种集合，金额外层是在为序列追加最后一枚。两种循环只是交换两行代码，却改变了状态含义和枚举对象。"
+          ]
+        },
+        {
+          "type": "table",
+          "title": "3.2 币种 [1,2]、金额 3：组合数的逐币种状态",
+          "columns": [
+            "处理阶段",
+            "dp[0]",
+            "dp[1]",
+            "dp[2]",
+            "dp[3]"
+          ],
+          "rows": [
+            [
+              "初始，只能选空集",
+              "1",
+              "0",
+              "0",
+              "0"
+            ],
+            [
+              "处理币种 1 后",
+              "1",
+              "1",
+              "1",
+              "1"
+            ],
+            [
+              "处理币种 2 后",
+              "1",
+              "1",
+              "2",
+              "2"
+            ],
+            [
+              "组合解释",
+              "空选择",
+              "{1}",
+              "{1,1} 或 {2}",
+              "{1,1,1} 或 {1,2}"
+            ]
+          ],
+          "paragraphs": []
+        },
+        {
+          "type": "table",
+          "title": "3.3 同样的加法，不同的计数对象",
+          "columns": [
+            "模型",
+            "外层 / 内层",
+            "dp[0]",
+            "[1,2] 凑 3"
+          ],
+          "rows": [
+            [
+              "硬币组合，顺序不重要",
+              "币种 / 金额正序",
+              "1",
+              "2"
+            ],
+            [
+              "有序序列，顺序重要",
+              "金额正序 / 所有币种",
+              "1",
+              "3：[1,1,1]、[1,2]、[2,1]"
+            ],
+            [
+              "每个物品仅一次的子集计数",
+              "物品 / 容量倒序",
+              "1",
+              "取决于提供了几个实体物品"
+            ],
+            [
+              "最少硬币数",
+              "金额 / 币种，取 min",
+              "0",
+              "2 枚，不是 2 种"
+            ]
+          ],
+          "paragraphs": []
+        },
+        {
+          "type": "text",
+          "title": "3.4 零、负币值和重复币种都不是无害输入",
+          "paragraphs": [
+            "无限使用零币值会使同一金额对应无限多长度不同的序列，也会产生同状态依赖；负币值可能让金额上下游来回跳，普通从小到大的递推不再成立。本章无限硬币接口只接受正整数。",
+            "补充示例把相同面值视为同一币种，会排序去重。例如 [1,1,2] 与 [1,2] 结果相同。如果题目把同面值但不同标签视为不同选择，就应保留标签并重新明确方案定义；基础组合模板则要求调用者提供互异币种。"
+          ]
+        }
+      ],
+      "after": [
+        {
+          "type": "code",
+          "title": "3.5 最少硬币及一种实际组成方案",
+          "file": "detail-min-coins-path.cpp",
+          "code": "optional<vector<int>> minimumCoinsPath(vector<int> coins, int amount) {\n    if (amount < 0 || amount > 200000) throw invalid_argument(\"amount\");\n    for (int c : coins) if (c <= 0) throw invalid_argument(\"positive coin\");\n    sort(coins.begin(),coins.end());\n    coins.erase(unique(coins.begin(),coins.end()),coins.end());\n    const int INF = amount+1;\n    vector<int> dp(amount+1,INF), last(amount+1,-1);\n    dp[0] = 0;\n    for (int s = 1; s <= amount; ++s)\n        for (int c : coins) {\n            if (c > s) break;\n            if (dp[s-c] != INF && dp[s-c]+1 < dp[s]) {\n                dp[s] = dp[s-c]+1; last[s] = c;\n            }\n        }\n    if (dp[amount] == INF) return nullopt;\n    vector<int> chosen;\n    for (int s = amount; s > 0; s -= last[s]) chosen.push_back(last[s]);\n    return chosen;\n}",
+          "paragraphs": [
+            "amount=0 返回有值的空向量，表示无需硬币；凑不出返回 nullopt。last[s] 指向更小金额且该状态已经计算完，不像按物品滚动的 0/1 背包会被后续层修改。时间 O(k log k+kA)，空间 O(k+A)，含币种副本；相等成本不覆盖前驱，仅承诺一种最优方案。"
+          ]
+        },
+        {
+          "type": "code",
+          "title": "3.6 组合与有序序列计数：显式模数与币种去重",
+          "file": "detail-coin-counts.cpp",
+          "code": "pair<long long,long long> coinCountsMod(vector<int> coins, int amount,\n                                         int mod = 1000000007) {\n    if (amount < 0 || amount > 200000 || mod < 2 || mod > 1000000007)\n        throw invalid_argument(\"amount/mod\");\n    for (int c : coins) if (c <= 0) throw invalid_argument(\"positive coin\");\n    sort(coins.begin(),coins.end());\n    coins.erase(unique(coins.begin(),coins.end()),coins.end());\n    vector<long long> combos(amount+1), ordered(amount+1);\n    combos[0] = ordered[0] = 1;\n    for (int c : coins)\n        for (int s = c; s <= amount; ++s)\n            combos[s] = (combos[s]+combos[s-c])%mod;\n    for (int s = 1; s <= amount; ++s)\n        for (int c : coins) {\n            if (c > s) break;\n            ordered[s] = (ordered[s]+ordered[s-c])%mod;\n        }\n    return {combos[amount],ordered[amount]};\n}",
+          "paragraphs": [
+            "返回 {无序组合数 mod M, 有序序列数 mod M}。每次加法立即取模，操作数已小于 M，long long 足够。结果 0 可能是方案数恰为模数的倍数，不代表无解；可达性需要布尔状态或其他独立判断。时间 O(k log k+kA)，空间 O(k+A)。"
+          ]
+        }
+      ],
+      "answers": [
+        {
+          "question": "dp[0]=1 为什么不是凭空多出一个方案？",
+          "answer": [
+            "构成金额 0 有一种空选择。它充当递推的乘法单位：例如第一枚币 c 使 dp[c] 加上 dp[0]，恰好产生只用这一枚的方案。若初始全零，所有加法状态永远为零。最少枚数中 dp[0]=0 是成本定义，不能与计数混淆。"
+          ]
+        },
+        {
+          "question": "为什么金额外层会计入 [1,2] 与 [2,1] 两种？",
+          "answer": [
+            "在金额 s 时遍历 c，相当于按最后一枚分类。s=3 的 c=1 接在序列 [2] 后得到 [2,1]；c=2 接在 [1] 后得到 [1,2]。最后元素不同是互不重叠的分类，正适合有序序列。"
+          ]
+        },
+        {
+          "question": "为什么币种外层不会重复构造同一组合？",
+          "answer": [
+            "处理第 i 种币后，只允许用前 i 种币，且按固定币种顺序扩展。任意多重集合都由每个币种使用次数唯一确定，不会再以反过来的币种顺序构造第二次。这个理由依赖相同币种没有被重复列为两个类型。"
+          ]
+        },
+        {
+          "question": "重复面值应该总是去重吗？",
+          "answer": [
+            "不总是。无限面额模型通常去重，因为相同面额不是不同选择；0/1 背包里的两个同重量物品可能是可各用一次的独立实体，去重会改变问题。先明确物品身份与方案判等规则，再决定。"
+          ]
+        },
+        {
+          "question": "最少硬币是不是每次拿最大面额即可？",
+          "answer": [
+            "任意币制不成立。面额 [1,3,4]、金额 6，先拿 4 需要再拿两个 1，共 3 枚；两个 3 只需 2 枚。DP 保留各剩余金额的最优值，不依赖特殊币制性质。"
+          ]
+        },
+        {
+          "question": "有序计数中的零值为什么特别危险？",
+          "answer": [
+            "允许无限次选择 0 后，任何合法序列都可插入任意多个 0 而不改变金额，方案数不再有限。方程还会出现 dp[s] 依赖自身，普通有限次扫描无法代表题意。必须限制次数或拒绝这类输入，不能只改变遍历方向。"
+          ]
+        }
+      ]
+    },
+    "4": {
+      "before": [
+        {
+          "type": "text",
+          "title": "4.1 用前缀长度作坐标，空串才有自然位置",
+          "paragraphs": [
+            "LCS 的 f[i][j] 表示 a 的前 i 个字节与 b 的前 j 个字节的最长公共子序列长度，下标 i、j 不是当前字符下标，末字符分别是 a[i−1]、b[j−1]。空前缀 f[0][j] 和 f[i][0] 均为 0。",
+            "末字符相等时，可以把它们配为公共序列的最后一项，接在两个短前缀的最优解后；存在包含这对末字符的最优解，所以得到 f[i−1][j−1]+1。末字符不等时，它们不能同时作为匹配末项，至少舍弃一侧，取上方与左方最大值。子串要求连续，字符不等时应把“以这两个位置结尾的长度”置 0，而不是延续 max。"
+          ]
+        },
+        {
+          "type": "table",
+          "title": "4.2 LCS 表格：a=abc、b=ac",
+          "columns": [
+            "a 的前缀",
+            "空串",
+            "a",
+            "ac"
+          ],
+          "rows": [
+            [
+              "空串",
+              "0",
+              "0",
+              "0"
+            ],
+            [
+              "a",
+              "0",
+              "1",
+              "1"
+            ],
+            [
+              "ab",
+              "0",
+              "1",
+              "1"
+            ],
+            [
+              "abc",
+              "0",
+              "1",
+              "2"
+            ]
+          ],
+          "paragraphs": [
+            "从右下角回溯：c 匹配，走左上；b 与 a 不匹配，走向保留同最优值的上方；a 匹配。记录顺序是 c、a，需要反转为 ac。"
+          ]
+        },
+        {
+          "type": "text",
+          "title": "4.3 编辑距离的三条边，分别代表什么动作？",
+          "paragraphs": [
+            "令 d[i][j] 为将 a 的前 i 个字符变为 b 的前 j 个字符的最少编辑次数。删掉 a 的末字符来自 d[i−1][j]+1；在 a 的末尾插入 b 的末字符来自 d[i][j−1]+1；替换末字符来自 d[i−1][j−1]+1。末字符相同则直接用左上角，不付费。",
+            "空串变成长度 j 的串必须插入 j 次，因此第一行是 0..m；长度 i 的串变为空串必须删除 i 次，第一列是 0..n。压缩一行时，dp[j] 尚是旧上方，dp[j−1] 已是新左方，旧左上必须额外保存，不能读被覆盖后的 dp[j−1]。"
+          ]
+        },
+        {
+          "type": "table",
+          "title": "4.4 严格 LIS：tails 不是最终子序列",
+          "columns": [
+            "处理值",
+            "各长度的最小结尾 tails",
+            "含义"
+          ],
+          "rows": [
+            [
+              "3",
+              "[3]",
+              "长度 1 的最好结尾是 3"
+            ],
+            [
+              "5",
+              "[3,5]",
+              "可扩展为长度 2"
+            ],
+            [
+              "6",
+              "[3,5,6]",
+              "可扩展为长度 3"
+            ],
+            [
+              "2",
+              "[2,5,6]",
+              "仅改进长度 1 的未来扩展能力"
+            ],
+            [
+              "4",
+              "[2,4,6]",
+              "长度 3 仍存在，但 2、4、6 在原序列中不是这个顺序"
+            ]
+          ],
+          "paragraphs": [
+            "O(n²) LIS 定义 f[i] 为以 i 结尾的严格递增长度，转移枚举 j<i 且 a[j]<a[i]。O(n log n) 的 tails 是按长度保留最小末值的支配优化：同长度末值越小，越容易接后续元素。严格递增找第一个 ≥x 的位置；非递减则找第一个 >x 的位置。"
+          ]
+        }
+      ],
+      "after": [
+        {
+          "type": "code",
+          "title": "4.5 恢复一条 LCS：保留二维表与回溯规则",
+          "file": "detail-lcs-path.cpp",
+          "code": "string oneLCS(const string& a, const string& b) {\n    int n = (int)a.size(), m = (int)b.size();\n    vector<vector<int>> dp(n+1,vector<int>(m+1));\n    for (int i = 1; i <= n; ++i)\n        for (int j = 1; j <= m; ++j)\n            if (a[i-1] == b[j-1]) dp[i][j] = dp[i-1][j-1]+1;\n            else dp[i][j] = max(dp[i-1][j],dp[i][j-1]);\n    string result;\n    int i = n, j = m;\n    while (i > 0 && j > 0) {\n        if (a[i-1] == b[j-1]) { result.push_back(a[i-1]); --i; --j; }\n        else if (dp[i-1][j] >= dp[i][j-1]) --i;\n        else --j;\n    }\n    reverse(result.begin(),result.end());\n    return result;\n}",
+          "paragraphs": [
+            "相等长度的分支优先向上，只保证得到一条最长公共子序列，不保证字典序最小。不应将输出与唯一字符串硬比，应检查它是两个输入的子序列且长度最优。时间 O(nm+n+m)，空间 O(nm)，输出另计。"
+          ]
+        },
+        {
+          "type": "code",
+          "title": "4.6 一维编辑距离：保存旧左上角",
+          "file": "detail-edit-distance.cpp",
+          "code": "int editDistanceRolling(const string& source, const string& target) {\n    // 让列是短串。单位插删改的距离对称，所以可交换两串。\n    const string* a = &source;\n    const string* b = &target;\n    if (a->size() < b->size()) swap(a,b);\n    int n = (int)a->size(), m = (int)b->size();\n    vector<int> dp(m+1);\n    iota(dp.begin(),dp.end(),0);\n    for (int i = 1; i <= n; ++i) {\n        int diagonal = dp[0];\n        dp[0] = i;\n        for (int j = 1; j <= m; ++j) {\n            int above = dp[j];\n            if ((*a)[i-1] == (*b)[j-1]) dp[j] = diagonal;\n            else dp[j] = 1+min({above,dp[j-1],diagonal});\n            diagonal = above;\n        }\n    }\n    return dp[m];\n}",
+          "paragraphs": [
+            "仅支持单位成本的插入、删除、替换，不含交换相邻字符。时间 O(nm+n+m)，辅助空间 O(min(n,m))。若插入和删除费用不同，问题可能不对称，不能为了省空间直接交换字符串。这个接口只返回距离，不返回操作序列。"
+          ]
+        },
+        {
+          "type": "code",
+          "title": "4.7 严格 LIS 的下标方案：二分之外保存前驱",
+          "file": "detail-lis-path.cpp",
+          "code": "vector<int> strictLISIndices(const vector<int>& a) {\n    vector<int> tails, indexAtLength, parent(a.size(),-1);\n    for (int i = 0; i < (int)a.size(); ++i) {\n        int pos = (int)(lower_bound(tails.begin(),tails.end(),a[i])-tails.begin());\n        if (pos > 0) parent[i] = indexAtLength[pos-1];\n        if (pos == (int)tails.size()) {\n            tails.push_back(a[i]); indexAtLength.push_back(i);\n        } else {\n            tails[pos] = a[i]; indexAtLength[pos] = i;\n        }\n    }\n    vector<int> result;\n    if (tails.empty()) return result;\n    for (int i = indexAtLength.back(); i != -1; i = parent[i]) result.push_back(i);\n    reverse(result.begin(),result.end());\n    return result;\n}",
+          "paragraphs": [
+            "parent[i] 记录处理 i 当时的真实前驱下标，后续 tails 被替换不会改写它，所以恢复出的下标严格递增、数值严格递增。空数组返回空方案，相同值不会增加严格 LIS 长度。时间 O(n log(n+1))，空间 O(n)。不承诺下标或数值序列的字典序最小。"
+          ]
+        }
+      ],
+      "answers": [
+        {
+          "question": "LCS 与最长公共子串的转移区别在哪里？",
+          "answer": [
+            "LCS 可跳过字符，不匹配时取上、左状态最大值。公共子串必须连续，若定义以 i、j 结尾的长度，不匹配时必须归零，匹配时才从左上加一；最后取所有状态最大值，而不一定右下角。"
+          ]
+        },
+        {
+          "question": "一维 LCS 或编辑距离为什么需要 diagonal？",
+          "answer": [
+            "内层从左往右时，dp[j−1] 已是当前行，旧的 f[i−1][j−1] 已被覆盖。先把旧 dp[j] 保存为 above，完成当前格后再令 diagonal=above，就能给下一格提供正确的旧左上值。"
+          ]
+        },
+        {
+          "question": "一行 DP 能直接恢复完整 LCS 吗？",
+          "answer": [
+            "通常不能直接按原表回溯，因为旧行已丢失。保留二维表是最清楚的基础方法；更省空间的恢复可以用分治等专门方法，需要额外推导，不能声称长度压缩后父路径自动仍然存在。"
+          ]
+        },
+        {
+          "question": "为什么严格 LIS 用 lower_bound，非递减用 upper_bound？",
+          "answer": [
+            "严格递增不允许等值延长，因此 x 应替换第一个 ≥x 的结尾；非递减允许等值接在末尾，所以跳过等值，找第一个 >x 的位置。数组 [2,2,2] 的严格 LIS 长度 1，非递减长度 3。"
+          ]
+        },
+        {
+          "question": "tails 能否直接作为一条 LIS 输出？",
+          "answer": [
+            "不能。不同长度位置可能来自不同历史时刻，[3,5,6,2,4] 最后的 tails=[2,4,6] 并不是原数组子序列。需要记录每个原始元素的前驱与各长度对应的末元素下标，再回溯。"
+          ]
+        },
+        {
+          "question": "编辑距离把第一行第一列都设 0 会怎样？",
+          "answer": [
+            "它会把从空串插入任意字符、或删除任意前缀当作免费操作，系统性低估代价。状态是前缀之间的转换成本，空边界的答案就是长度，不是无信息所以填零。"
+          ]
+        }
+      ]
+    },
+    "5": {
+      "before": [
+        {
+          "type": "text",
+          "title": "5.1 区间遍历顺序是依赖关系的线性展开",
+          "paragraphs": [
+            "最长回文子序列的 f[l][r] 表示闭区间内可删除字符后保留的最大回文长度。两端相同可配对，取内部最优加 2；两端不同，至少丢掉一端，取 f[l+1][r] 与 f[l][r−1] 的最大值。",
+            "所需区间均严格更短，因此长度从 1 到 n 是合法顺序；也可让 l 逆序、r 正序。若 l 从小到大、r 从小到大，f[l+1][r] 所在下一行还没算，读到零值也不会报错，却会产生错误结果。"
+          ]
+        },
+        {
+          "type": "table",
+          "title": "5.2 回文子序列、回文子串、区间分割别混用",
+          "columns": [
+            "问题",
+            "状态含义",
+            "转移要点",
+            "答案"
+          ],
+          "rows": [
+            [
+              "最长回文子序列",
+              "区间内可跳过字符的最优长度",
+              "相等端点+内部，否则丢一端",
+              "f[0][n−1]"
+            ],
+            [
+              "最长回文子串",
+              "整个区间是否回文",
+              "端点相等且内部整体为回文",
+              "所有 true 区间里最长者"
+            ],
+            [
+              "二元相邻合并",
+              "整段合成一堆的最小成本",
+              "枚举最后两堆分割点",
+              "整段状态"
+            ],
+            [
+              "戳气球",
+              "两端保留时，清空开区间的最大收益",
+              "枚举最后被戳的 k",
+              "加虚拟边界后的整段"
+            ]
+          ],
+          "paragraphs": []
+        },
+        {
+          "type": "text",
+          "title": "5.3 戳气球为什么选最后一步，而不是第一步？",
+          "paragraphs": [
+            "先戳 k 会让它左右两边新相邻，后面的收益相互耦合，难以形成两个独立的固定区间。反过来，设 k 是开区间 (l,r) 最后戳的气球，那么在它被戳之前 l、k、r 都保留，左右子问题的边界固定，彼此独立。",
+            "转移 f[l][r]=max(f[l][k]+f[k][r]+value[l]·value[k]·value[r])。l、r 是还未戳的边界，不属于子问题要清空的集合；两端补值 1，原数组全部位于 (0,n+1)。相邻边界之间没有气球，初值 0。这里“最后”只是分类方法，实际执行可以先做左右子区间，再戳 k。"
+          ]
+        }
+      ],
+      "after": [
+        {
+          "type": "code",
+          "title": "5.4 最长回文子串：与子序列并排比较",
+          "file": "detail-palindrome-substring.cpp",
+          "code": "string longestPalindromeSubstringDP(const string& s) {\n    int n = (int)s.size();\n    if (!n) return \"\";\n    vector<vector<char>> palindrome(n,vector<char>(n,false));\n    int start = 0, bestLength = 1;\n    for (int len = 1; len <= n; ++len)\n        for (int l = 0; l+len <= n; ++l) {\n            int r = l+len-1;\n            palindrome[l][r] = s[l] == s[r] &&\n                (len <= 2 || palindrome[l+1][r-1]);\n            if (palindrome[l][r] && len > bestLength) {\n                start = l; bestLength = len;\n            }\n        }\n    return s.substr(start,bestLength);\n}",
+          "paragraphs": [
+            "长度 1、2 单独通过短路逻辑处理，不读取不存在的内部区间。同最大长度返回较早起点的子串。时间、空间 O(n²)，返回字符串还要复制 O(答案长度)。中心扩展可将辅助空间降至 O(1)，这里保留表格是为了明确与子序列 DP 的差异。"
+          ]
+        },
+        {
+          "type": "code",
+          "title": "5.5 戳气球：开区间 DP 与安全乘法",
+          "file": "detail-burst-balloons.cpp",
+          "code": "long long burstBalloonsDP(const vector<int>& nums) {\n    if (nums.size() > 300) throw invalid_argument(\"teaching size limit\");\n    vector<long long> a{1};\n    for (int x : nums) {\n        if (x < 0 || x > 1000) throw invalid_argument(\"balloon value\");\n        a.push_back(x);\n    }\n    a.push_back(1);\n    int n = (int)a.size();\n    vector<vector<long long>> dp(n,vector<long long>(n));\n    for (int gap = 2; gap < n; ++gap)\n        for (int l = 0; l+gap < n; ++l) {\n            int r = l+gap;\n            for (int k = l+1; k < r; ++k)\n                dp[l][r] = max(dp[l][r],dp[l][k]+dp[k][r]+a[l]*a[k]*a[r]);\n        }\n    return dp[0][n-1];\n}",
+          "paragraphs": [
+            "教学范围 n≤300、0≤值≤1000，总收益不超过 n·1000³，long long 足够，且乘法一开始就在 long long 上计算。空数组返回 0，零值合法。时间 O(n³)、空间 O(n²)。枚举的是最后一个气球，不是最后一个切分位置的费用求和模板。"
+          ]
+        }
+      ],
+      "answers": [
+        {
+          "question": "为什么区间长度递增能保证所有依赖已计算？",
+          "answer": [
+            "去掉一个端点、两个端点，或按内部 k 分开，得到的区间都更短。只要初始最短区间已定义，逐长度增加就是对依赖图的一种拓扑顺序。若转移仍依赖同长度或更长区间，不能未经证明套这种顺序。"
+          ]
+        },
+        {
+          "question": "最长回文子序列两端不同，为什么只需丢一端？",
+          "answer": [
+            "一个回文子序列若同时保留两端，它们将成为首尾，必须相等。两端不同就不可能同时选，最优方案至少属于“丢左端”或“丢右端”中的一类。两类重叠不影响求 max，但若改为计数就必须处理重复。"
+          ]
+        },
+        {
+          "question": "把子串状态换成子序列状态，会产生什么假答案？",
+          "answer": [
+            "子序列可以跳过中间元素，子串不能。例如 bbbab 的最长回文子序列是 bbbb，长度 4，但它不是连续片段；最长回文子串只有长度 3。判断整个区间是否回文时必须保证内部整个区间也回文。"
+          ]
+        },
+        {
+          "question": "戳气球的虚拟边界为什么是 1？",
+          "answer": [
+            "原题边缘外侧相当于不存在的邻居，乘积计算使用 1。补 1 后可以统一处理边缘与内部情况，避免每个状态重新判断越界。虚拟边界永远不戳，答案是清空它们之间的开区间。"
+          ]
+        },
+        {
+          "question": "为什么第一步容易耦合，最后一步能独立？",
+          "answer": [
+            "先删内部气球会改变左右两侧未来的相邻关系，它们不再独立；确定最后戳 k 时，k 在左右子问题整个执行期间都存在，充当固定边界。这个思想也用于矩阵链等区间决策：寻找能固定子问题边界的最后动作。"
+          ]
+        },
+        {
+          "question": "区间 DP 的计数能否直接把 max 改成加法？",
+          "answer": [
+            "不一定。求最优值允许不同转移覆盖同一候选，因为重复取 max 无害；计数要求转移分类互斥或显式去重。回文子序列计数尤其要区分不同下标方案与不同字符串内容，状态和重叠修正需要重新推导。"
+          ]
+        }
+      ]
+    },
+    "6": {
+      "before": [
+        {
+          "type": "text",
+          "title": "6.1 树形 DP 的返回值，是提供给父节点的决策接口",
+          "paragraphs": [
+            "父子不能同时选时，父节点需要知道孩子“不选”的最优值，而不只是孩子任意选择时的最大值。因此每个节点保留 skip、take 两个条件答案。选当前节点时只能加孩子 skip；不选当前节点时，每个孩子可独立取 max(skip,take)。",
+            "对树，不同孩子的子树没有共享节点或跨子树约束，才能独立相加。把这个递推直接用在有环图、共享孩子的 DAG 上，可能重复计算同一节点收益或漏掉跨边冲突。后序顺序只是计算顺序，子问题独立才是转移成立的原因。"
+          ]
+        },
+        {
+          "type": "table",
+          "title": "6.2 约束如何变成状态维度",
+          "columns": [
+            "模型",
+            "必须区分的状态",
+            "允许的转移",
+            "少一个维度的后果"
+          ],
+          "rows": [
+            [
+              "树上独立集",
+              "本节点选 / 不选",
+              "选则孩子不选",
+              "父子可能同时入选"
+            ],
+            [
+              "股票最多 K 次",
+              "额度 t、空仓 / 持股",
+              "开仓消耗一个交易额度",
+              "无限次结果超过次数限制"
+            ],
+            [
+              "股票冷冻",
+              "持股 / 今天刚卖 / 可买空仓",
+              "昨天刚卖不能今天买",
+              "卖后立即买得到非法利润"
+            ],
+            [
+              "任务分配",
+              "已分配任务集合 mask",
+              "给下一个工人选未用任务",
+              "相同数量却不同剩余任务被混合"
+            ]
+          ],
+          "paragraphs": []
+        },
+        {
+          "type": "text",
+          "title": "6.3 状态压缩保存的是集合身份，不只是数量",
+          "paragraphs": [
+            "任务分配中工人顺序固定为 0..n−1。mask 表示已经分配出去的任务集合，popcount(mask) 就是已经处理的工人数，所以无需再独立存一个工人维度。转移把任一未分配任务 j 交给下一个工人，并把 j 的位设为 1。",
+            "同样已经分配两项任务，{0,1} 与 {1,2} 的剩余选择不同，不能只按数量合并。n=18 时已有 262144 个集合，复杂度 O(n·2^n)；n=30 则超过十亿状态，不能因为掩码装得进整数就认为 DP 能运行。"
+          ]
+        },
+        {
+          "type": "table",
+          "title": "6.4 两人工分配手推：cost=[[9,2],[3,7]]",
+          "columns": [
+            "mask（任务 1、0 两位）",
+            "已处理工人数",
+            "最优成本",
+            "来源"
+          ],
+          "rows": [
+            [
+              "00",
+              "0",
+              "0",
+              "空分配"
+            ],
+            [
+              "01",
+              "1",
+              "9",
+              "工人 0 选任务 0"
+            ],
+            [
+              "10",
+              "1",
+              "2",
+              "工人 0 选任务 1"
+            ],
+            [
+              "11",
+              "2",
+              "min(9+7,2+3)=5",
+              "工人 0→1，工人 1→0"
+            ]
+          ],
+          "paragraphs": [
+            "负成本不妨碍本 DP，因为每次都会多设置一个位，依赖图无环；不需要像 Dijkstra 那样要求边权非负。"
+          ]
+        }
+      ],
+      "after": [
+        {
+          "type": "code",
+          "title": "6.5 显式后序树形 DP：避免深链递归栈",
+          "file": "detail-tree-rob-iterative.cpp",
+          "code": "struct RobNode {\n    int value;\n    RobNode *left = nullptr, *right = nullptr;\n    explicit RobNode(int v): value(v) {}\n};\nlong long robTreeIterative(RobNode* root) {\n    if (!root) return 0;\n    unordered_map<RobNode*,pair<long long,long long>> state;\n    vector<pair<RobNode*,bool>> stack{{root,false}};\n    while (!stack.empty()) {\n        auto [node,expanded] = stack.back(); stack.pop_back();\n        if (!expanded) {\n            stack.push_back({node,true});\n            if (node->right) stack.push_back({node->right,false});\n            if (node->left) stack.push_back({node->left,false});\n        } else {\n            auto left = node->left ? state.at(node->left) : make_pair(0LL,0LL);\n            auto right = node->right ? state.at(node->right) : make_pair(0LL,0LL);\n            long long skip = max(left.first,left.second)+max(right.first,right.second);\n            long long take = node->value+left.first+right.first;\n            state[node] = {skip,take};\n        }\n    }\n    auto [skip,take] = state.at(root);\n    return max(skip,take);\n}",
+          "paragraphs": [
+            "输入必须是无环、无共享子节点的二叉树，指针在调用期间有效；函数不负责释放节点，也不改变树。允许空选，负值不强迫选。平均时间 O(n)，unordered_map 极端冲突可能退化；表与显式栈总空间 O(n)。它用堆上存储代替递归调用栈，不意味着常数空间。"
+          ]
+        },
+        {
+          "type": "code",
+          "title": "6.6 最多 K 次交易：按额度保存两种持仓状态",
+          "file": "detail-stock-k.cpp",
+          "code": "long long stockAtMostK(const vector<int>& prices, int k) {\n    if (k < 0) throw invalid_argument(\"k\");\n    for (int p : prices) if (p < 0) throw invalid_argument(\"price\");\n    int n = (int)prices.size();\n    if (k >= n/2) {\n        long long answer = 0;\n        for (int i = 1; i < n; ++i)\n            answer += max(0LL,(long long)prices[i]-prices[i-1]);\n        return answer;\n    }\n    const long long NEG = LLONG_MIN/4;\n    vector<long long> cash(k+1,0), hold(k+1,NEG);\n    for (int p : prices) {\n        auto oldCash = cash, oldHold = hold;\n        for (int t = 1; t <= k; ++t) {\n            hold[t] = max(oldHold[t],oldCash[t-1]-p);\n            cash[t] = oldCash[t];\n            if (oldHold[t] != NEG) cash[t] = max(cash[t],oldHold[t]+p);\n        }\n    }\n    return cash[k];\n}",
+          "paragraphs": [
+            "cash[t] 是至多 t 笔完整交易后的空仓最优；hold[t] 是已完成至多 t−1 笔、并正在第 t 笔额度内持股的最优余额。初始化所有 cash[t]=0 表示可以少交易，不代表已经免费做完 t 笔。旧行快照避免同日串联动作。一般时间 O(nK)、空间 O(K)；K≥floor(n/2) 时次数限制不再约束无费用模型，改用 O(n)、O(1) 的正差累加。"
+          ]
+        },
+        {
+          "type": "code",
+          "title": "6.7 状态压缩任务分配与方案恢复",
+          "file": "detail-assignment-mask.cpp",
+          "code": "pair<long long,vector<int>> minimumAssignment(const vector<vector<int>>& cost) {\n    int n = (int)cost.size();\n    if (n > 18) throw invalid_argument(\"n <= 18 required\");\n    for (const auto& row : cost) {\n        if ((int)row.size() != n) throw invalid_argument(\"square matrix\");\n        for (int x : row) if (x < -1000000000 || x > 1000000000)\n            throw invalid_argument(\"cost\");\n    }\n    int total = 1 << n;\n    const long long INF = LLONG_MAX/4;\n    vector<long long> dp(total,INF);\n    vector<int> chosen(total,-1);\n    dp[0] = 0;\n    for (int mask = 0; mask < total; ++mask) {\n        int worker = 0;\n        for (int bits = mask; bits; bits &= bits-1) ++worker;\n        if (worker == n || dp[mask] == INF) continue;\n        for (int task = 0; task < n; ++task) if (!(mask & (1 << task))) {\n            int next = mask | (1 << task);\n            long long candidate = dp[mask]+cost[worker][task];\n            if (candidate < dp[next]) { dp[next] = candidate; chosen[next] = task; }\n        }\n    }\n    vector<int> assignment(n);\n    int mask = total-1;\n    for (int worker = n-1; worker >= 0; --worker) {\n        int task = chosen[mask];\n        assignment[worker] = task; mask ^= 1 << task;\n    }\n    return {dp.back(),assignment};\n}",
+          "paragraphs": [
+            "cost[i][j] 表示工人 i 做任务 j 的成本，一人一项且每项恰分配一次，允许负成本。返回总成本和每个工人对应的任务编号。空矩阵返回 0 与空方案。每次新增位使 next>mask，整数升序扫描符合依赖顺序；全表状态不再被后续阶段覆盖，故恢复链稳定。时间 O(n·2^n)，空间 O(2^n)。"
+          ]
+        }
+      ],
+      "answers": [
+        {
+          "question": "树上为何不能只返回 max(skip,take)？",
+          "answer": [
+            "父节点如果选择自己，就必须知道孩子不选时的答案。一个无条件最大值可能来自选孩子，将其相加会同时选择相邻节点。把边界条件作为状态维度，是向父节点提供足够信息。"
+          ]
+        },
+        {
+          "question": "递归树 DP 和显式后序的复杂度有什么不同？",
+          "answer": [
+            "两者都计算每个节点一次。基础递归只需调用栈 O(h)；本显式版本保存全部节点状态，额外空间 O(n)，避免了深链的系统栈风险但增加存储。哈希表查找是平均常数，不能无条件称最坏 O(n)。"
+          ]
+        },
+        {
+          "question": "股票 cash[t] 初始为 0 为什么不是把不可达当可达？",
+          "answer": [
+            "这里的 t 是至多交易额度，不是恰好完成次数。尚未交易、空仓余额 0 对每个额度都合法；持股仍不可达。如果 t 定义成恰好完成次数，初值和转移必须另改，不能沿用所有 cash 都为 0。"
+          ]
+        },
+        {
+          "question": "K 很大时为什么可退化成无限次交易？",
+          "answer": [
+            "在每天最多一个动作、先买后卖的无费用模型中，每笔非空交易至少占买卖两天，至多 floor(n/2) 笔。额度达到这个上限就不再限制合法策略。存在手续费、冷冻期时虽然也有次数上限，但最终最优值不能直接用正差累加。"
+          ]
+        },
+        {
+          "question": "状态压缩为什么能省掉工人编号？",
+          "answer": [
+            "工人固定按顺序各分配一项，mask 中 1 的个数就是已分配工人数，下一工人编号由 mask 唯一确定。这是有依据地删除冗余维度；若工人顺序也可跳过或每人分配多项，就不能直接采用相同状态。"
+          ]
+        },
+        {
+          "question": "单词拆分也属于 DP 吗，状态需要保存整条切分路径吗？",
+          "answer": [
+            "只问能否拆分时，令 reachable[i] 表示前 i 个字符可由词典组成，枚举最后一个词对应的切分 j，检查 reachable[j] 与 s[j:i] 是否在词典。未来只依赖当前位置，无需保存整条历史；要输出所有切分时，才需保留前驱并面对可能指数级的输出量。"
+          ]
+        }
+      ]
+    }
+  },
+  "outro": [
+    {
+      "type": "table",
+      "title": "练习路线：按状态与依赖，不按题目名字背模板",
+      "columns": [
+        "主题",
+        "经典题",
+        "应能独立写出的状态定义",
+        "重点边界"
+      ],
+      "rows": [
+        [
+          "线性",
+          "53、198、213",
+          "以 i 结尾；前 i 项；首尾互斥",
+          "全负、空选、单点"
+        ],
+        [
+          "0/1",
+          "416、494、1049",
+          "恰好目标和的可达性 / 数量",
+          "奇偶、零、重复实体、不可达"
+        ],
+        [
+          "完全",
+          "322、518、377",
+          "最少枚数；组合；有序序列",
+          "零金额、重复币种、模数"
+        ],
+        [
+          "序列",
+          "1143、72、300",
+          "两个前缀；编辑成本；按长度最小结尾",
+          "空串、重复值、方案恢复"
+        ],
+        [
+          "区间",
+          "516、5、312",
+          "区间子序列；整段回文；开区间最后动作",
+          "长度 1/2、虚拟边界"
+        ],
+        [
+          "树 / 状态机 / 集合",
+          "337、188；任务分配",
+          "条件返回值；额度与持仓；已选集合",
+          "深树、零额度、指数规模"
+        ]
+      ],
+      "paragraphs": []
+    },
+    {
+      "type": "text",
+      "title": "复盘要求：把状态写成一句完整中文",
+      "paragraphs": [
+        "每题先写状态句子，再把边界代入。例如 dp[0][j] 是把空串变成 j 个字符，当然要 j 次插入；dp[0] 是金额 0 的方案数，当然是一个空方案。若自己无法解释某个格子的含义，就不要急着压缩成几个变量。",
+        "调试时优先找最小反例：一件物品容量两倍暴露 0/1 方向错误；[2,2] 暴露 LIS 严格性错误；全负数组暴露空选错误；[5,−100,4] 暴露结尾状态混淆。小范围暴力是参照，不替代理论证明。"
+      ]
+    },
+    {
+      "type": "qa",
+      "title": "章末自测：四个跨模型问题",
+      "items": [
+        {
+          "question": "最优子结构与重叠子问题分别起什么作用？",
+          "answer": [
+            "最优子结构使最优解能由恰当条件下的子问题最优解组合而来；重叠子问题使缓存与复用有价值。若子问题之间还共享未记录的约束，直接相加可能不合法；必须先扩充状态。没有大量重叠的递归也可以做递推，但未必能因缓存获得显著加速。"
+          ]
+        },
+        {
+          "question": "怎样判断某个状态维度能不能删？",
+          "answer": [
+            "如果两段历史被映射到同一状态，它们的后续合法选择与后续代价规则应相同；或者能证明其中一个始终支配另一个。LIS 同长度较小结尾支配较大结尾，可以只留最小者；不同持仓状态未来动作不同，不能直接只保留余额最大者。"
+          ]
+        },
+        {
+          "question": "DP 计数取模后等于 0，为什么不代表无解？",
+          "answer": [
+            "真实计数可能正好是模数的倍数。比如 [1,2] 凑 2 的组合有 2 种，模 2 后为 0，但明显可达。需要可达性时另存布尔值，不要把模数结果当作 visited 或 reachable。"
+          ]
+        },
+        {
+          "question": "最优值正确，恢复方案为何仍可能错？",
+          "answer": [
+            "恢复依赖保存的决策是否属于同一历史状态。滚动背包可能覆盖前驱所代表的物品层；tails 本身也不是一条实际 LIS。验证方案应同时检查下标顺序、约束、总代价和最优值，不能只核对长度。"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "code",
+      "title": "综合测试：最优值、恢复方案与状态边界",
+      "file": "detail-dp-tests.cpp",
+      "code": "#include \"detail-max-subarray-range.cpp\"\n#include \"detail-rob-circle.cpp\"\n#include \"detail-knapsack-exact.cpp\"\n#include \"detail-equal-partition.cpp\"\n#include \"detail-min-coins-path.cpp\"\n#include \"detail-coin-counts.cpp\"\n#include \"detail-lcs-path.cpp\"\n#include \"detail-edit-distance.cpp\"\n#include \"detail-lis-path.cpp\"\n#include \"detail-palindrome-substring.cpp\"\n#include \"detail-burst-balloons.cpp\"\n#include \"detail-tree-rob-iterative.cpp\"\n#include \"detail-stock-k.cpp\"\n#include \"detail-assignment-mask.cpp\"\n#include \"01.cpp\"\n#include \"02.cpp\"\n#include \"03.cpp\"\n#include \"04.cpp\"\n#include \"05.cpp\"\n#include \"06.cpp\"\n\nbool isSubsequenceOf(const string& small, const string& large) {\n    size_t i = 0;\n    for (char c : large) if (i < small.size() && small[i] == c) ++i;\n    return i == small.size();\n}\nbool isPalindromeText(const string& s) {\n    string reversed(s.rbegin(),s.rend());\n    return s == reversed;\n}\nstring maskString(const string& s, int mask) {\n    string result;\n    for (int i = 0; i < (int)s.size(); ++i)\n        if (mask & (1 << i)) result.push_back(s[i]);\n    return result;\n}\nBestSubarray bruteSubarray(const vector<int>& a) {\n    BestSubarray best{LLONG_MIN,0,0};\n    for (int l = 0; l < (int)a.size(); ++l) {\n        long long sum = 0;\n        for (int r = l; r < (int)a.size(); ++r) {\n            sum += a[r];\n            if (sum > best.sum) best = {sum,l,r};\n        }\n    }\n    return best; // l、r 升序枚举，严格改进自然保持相同平局规则\n}\nlong long bruteRobCircle(const vector<int>& a) {\n    int n = (int)a.size();\n    long long best = 0;\n    for (int mask = 0; mask < (1 << n); ++mask) {\n        bool ok = true; long long sum = 0;\n        for (int i = 0; i < n; ++i) if (mask & (1 << i)) {\n            sum += a[i];\n            if (n > 1 && (mask & (1 << ((i+1)%n)))) ok = false;\n        }\n        if (ok) best = max(best,sum);\n    }\n    return best;\n}\npair<optional<long long>,long long> bruteKnapsack(\n    const vector<int>& w, const vector<int>& v, int capacity) {\n    optional<long long> exact; long long atMost = 0;\n    for (int mask = 0; mask < (1 << w.size()); ++mask) {\n        int weight = 0; long long value = 0;\n        for (int i = 0; i < (int)w.size(); ++i) if (mask & (1 << i)) {\n            weight += w[i]; value += v[i];\n        }\n        if (weight == capacity && (!exact || value > *exact)) exact = value;\n        if (weight <= capacity) atMost = max(atMost,value);\n    }\n    return {exact,atMost};\n}\nbool brutePartition(const vector<int>& a) {\n    int total = accumulate(a.begin(),a.end(),0);\n    for (int mask = 0; mask < (1 << a.size()); ++mask) {\n        int sum = 0;\n        for (int i = 0; i < (int)a.size(); ++i)\n            if (mask & (1 << i)) sum += a[i];\n        if (2*sum == total) return true;\n    }\n    return false;\n}\nlong long bruteCoinCombos(const vector<int>& coins, int index, int remaining) {\n    if (index == (int)coins.size()) return remaining == 0 ? 1LL : 0LL;\n    long long ways = 0;\n    for (int count = 0; count*coins[index] <= remaining; ++count)\n        ways += bruteCoinCombos(coins,index+1,remaining-count*coins[index]);\n    return ways;\n}\nlong long bruteCoinOrdered(const vector<int>& coins, int remaining) {\n    if (!remaining) return 1;\n    long long ways = 0;\n    for (int c : coins) if (c <= remaining) ways += bruteCoinOrdered(coins,remaining-c);\n    return ways;\n}\nint coinBFS(const vector<int>& coins, int amount) {\n    vector<int> distance(amount+1,-1);\n    queue<int> q; q.push(0); distance[0] = 0;\n    while (!q.empty()) {\n        int sum = q.front(); q.pop();\n        for (int c : coins) if (sum+c <= amount && distance[sum+c] == -1) {\n            distance[sum+c] = distance[sum]+1; q.push(sum+c);\n        }\n    }\n    return distance[amount];\n}\nint bruteLCS(const string& a, const string& b) {\n    int best = 0;\n    for (int mask = 0; mask < (1 << a.size()); ++mask) {\n        string candidate = maskString(a,mask);\n        if (isSubsequenceOf(candidate,b)) best = max(best,(int)candidate.size());\n    }\n    return best;\n}\nint recursiveEdit(const string& a, const string& b, int i, int j) {\n    if (i == (int)a.size()) return (int)b.size()-j;\n    if (j == (int)b.size()) return (int)a.size()-i;\n    if (a[i] == b[j]) return recursiveEdit(a,b,i+1,j+1);\n    return 1+min({recursiveEdit(a,b,i+1,j),recursiveEdit(a,b,i,j+1),\n                  recursiveEdit(a,b,i+1,j+1)});\n}\nint bruteLIS(const vector<int>& a) {\n    int best = 0;\n    for (int mask = 0; mask < (1 << a.size()); ++mask) {\n        bool ok = true; long long prev = LLONG_MIN; int length = 0;\n        for (int i = 0; i < (int)a.size(); ++i) if (mask & (1 << i)) {\n            if (a[i] <= prev) ok = false;\n            prev = a[i]; ++length;\n        }\n        if (ok) best = max(best,length);\n    }\n    return best;\n}\nint brutePalindromeSubseq(const string& s) {\n    int best = 0;\n    for (int mask = 0; mask < (1 << s.size()); ++mask) {\n        string candidate = maskString(s,mask);\n        if (isPalindromeText(candidate)) best = max(best,(int)candidate.size());\n    }\n    return best;\n}\nstring brutePalindromeSubstring(const string& s) {\n    string best;\n    for (int l = 0; l < (int)s.size(); ++l)\n        for (int len = 1; l+len <= (int)s.size(); ++len) {\n            string candidate = s.substr(l,len);\n            if (isPalindromeText(candidate) && candidate.size() > best.size()) best = candidate;\n        }\n    return best;\n}\nlong long bruteBurst(vector<int> a) {\n    long long best = 0;\n    for (int i = 0; i < (int)a.size(); ++i) {\n        long long gain = (i == 0 ? 1LL : a[i-1])*a[i]*\n                         (i+1 == (int)a.size() ? 1LL : a[i+1]);\n        auto next = a; next.erase(next.begin()+i);\n        best = max(best,gain+bruteBurst(next));\n    }\n    return best;\n}\nlong long bruteTreeRob(const vector<int>& value, const vector<int>& parent) {\n    int n = (int)value.size(); long long best = 0;\n    for (int mask = 0; mask < (1 << n); ++mask) {\n        bool ok = true; long long sum = 0;\n        for (int i = 0; i < n; ++i) if (mask & (1 << i)) {\n            sum += value[i];\n            if (parent[i] >= 0 && (mask & (1 << parent[i]))) ok = false;\n        }\n        if (ok) best = max(best,sum);\n    }\n    return best;\n}\nlong long bruteStock(const vector<int>& p, int k) {\n    const long long NEG = LLONG_MIN/4;\n    function<long long(int,bool,int)> dfs = [&](int day,bool holding,int sold) {\n        if (day == (int)p.size()) return holding ? NEG : 0LL;\n        long long best = dfs(day+1,holding,sold);\n        if (holding && sold < k)\n            best = max(best,(long long)p[day]+dfs(day+1,false,sold+1));\n        if (!holding && sold < k) {\n            long long future = dfs(day+1,true,sold);\n            if (future != NEG) best = max(best,future-p[day]);\n        }\n        return best;\n    };\n    return dfs(0,false,0);\n}\nlong long bruteAssignment(const vector<vector<int>>& cost) {\n    vector<int> order(cost.size()); iota(order.begin(),order.end(),0);\n    long long best = LLONG_MAX;\n    do {\n        long long sum = 0;\n        for (int i = 0; i < (int)cost.size(); ++i) sum += cost[i][order[i]];\n        best = min(best,sum);\n    } while (next_permutation(order.begin(),order.end()));\n    return best;\n}\ntemplate<class F> void expectInvalid(F action) {\n    bool thrown = false;\n    try { action(); } catch (const invalid_argument&) { thrown = true; }\n    assert(thrown);\n}\nint main() {\n    auto negative = maxSubarrayRange({-5,-2,-7});\n    assert(negative.sum == -2 && negative.left == 1 && negative.right == 1);\n    auto separated = maxSubarrayRange({5,-100,4});\n    assert(separated.sum == 5);\n    auto tie = maxSubarrayRange({0,0});\n    assert(tie.left == 0 && tie.right == 0);\n    assert(robCircle({}) == 0 && robCircle({-1}) == 0);\n    assert(robCircle({2,3,2}) == 3);\n    assert(knapsackExact({2},{-3},2) == optional<long long>(-3));\n    assert(!knapsackExact({2},{3},3));\n    assert(knapsackExact({}, {},0) == optional<long long>(0));\n    assert(knapsack01({2},{3},4) == 3);\n    assert(equalPartition({}) && equalPartition({0,0}));\n    assert(!equalPartition({1,2,5}));\n    assert(minimumCoinsPath({1,3,4},6)->size() == 2);\n    assert(!minimumCoinsPath({2},3));\n    auto emptyCoins = minimumCoinsPath({},0); assert(emptyCoins && emptyCoins->empty());\n    auto counts = coinCountsMod({1,1,2},3);\n    assert(counts.first == 2 && counts.second == 3);\n    assert(coinCountsMod({1,2},2,2).first == 0); // 可达，但模数结果为零\n    assert(oneLCS(\"abcde\",\"ace\") == \"ace\");\n    assert(editDistanceRolling(\"\",\"abc\") == 3);\n    assert(editDistanceRolling(\"horse\",\"ros\") == 3);\n    assert(strictLISIndices({2,2,2}).size() == 1);\n    assert(longestPalindromeSubseq(\"bbbab\") == 4);\n    assert(longestPalindromeSubstringDP(\"bbbab\") == \"bbb\");\n    assert(burstBalloonsDP({3,1,5,8}) == 167 && burstBalloonsDP({}) == 0);\n    assert(robTreeIterative(nullptr) == 0);\n    assert(stockAtMostK({3,2,6,5,0,3},2) == 7);\n    assert(stockAtMostK({1,3,2,4},0) == 0);\n    assert(stockAtMostK({0,INT_MAX,0,INT_MAX},2) == 2LL*INT_MAX);\n    assert(minimumAssignment({{9,2},{3,7}}).first == 5);\n    auto noTasks = minimumAssignment({}); assert(noTasks.first == 0 && noTasks.second.empty());\n    expectInvalid([] { maxSubarrayRange({}); });\n    expectInvalid([] { knapsackExact({0},{1},2); });\n    expectInvalid([] { equalPartition({-1,1}); });\n    expectInvalid([] { minimumCoinsPath({0},2); });\n    expectInvalid([] { coinCountsMod({1},2,1); });\n    expectInvalid([] { burstBalloonsDP({1001}); });\n    expectInvalid([] { stockAtMostK({1},-1); });\n    expectInvalid([] { minimumAssignment({{1,2}}); });\n\n    mt19937 rng(20260921);\n    for (int trial = 0; trial < 100; ++trial) {\n        int n = (int)(rng()%8);\n        vector<int> a(n); for (int& x : a) x = (int)(rng()%11)-5;\n        if (n) {\n            auto got = maxSubarrayRange(a), want = bruteSubarray(a);\n            assert(got.sum == want.sum && got.left == want.left && got.right == want.right);\n            assert(maxSubArray(a) == want.sum);\n        }\n        assert(robCircle(a) == bruteRobCircle(a));\n        vector<int> weight(n), value(n), nonnegative(n);\n        for (int& x : weight) x = 1+(int)(rng()%4);\n        for (int& x : value) x = (int)(rng()%13)-6;\n        for (int& x : nonnegative) x = (int)(rng()%5);\n        int capacity = (int)(rng()%10);\n        auto bag = bruteKnapsack(weight,value,capacity);\n        assert(knapsackExact(weight,value,capacity) == bag.first);\n        assert(knapsack01(weight,value,capacity) == bag.second);\n        assert(equalPartition(nonnegative) == brutePartition(nonnegative));\n\n        vector<int> coins;\n        for (int c = 1; c <= 4; ++c) if (rng()%2) coins.push_back(c);\n        int amount = (int)(rng()%9);\n        auto ways = coinCountsMod(coins,amount,7);\n        assert(ways.first == bruteCoinCombos(coins,0,amount)%7);\n        assert(ways.second == bruteCoinOrdered(coins,amount)%7);\n        assert(coinCombinations(coins,amount) == bruteCoinCombos(coins,0,amount));\n        int shortest = coinBFS(coins,amount);\n        auto path = minimumCoinsPath(coins,amount);\n        assert(path.has_value() == (shortest != -1));\n        if (path) {\n            assert((int)path->size() == shortest);\n            assert(accumulate(path->begin(),path->end(),0) == amount);\n            for (int c : *path) assert(find(coins.begin(),coins.end(),c) != coins.end());\n        }\n\n        string s,t;\n        for (int i = 0; i < n; ++i) s.push_back(char('a'+rng()%3));\n        int m = (int)(rng()%6);\n        for (int i = 0; i < m; ++i) t.push_back(char('a'+rng()%3));\n        auto common = oneLCS(s,t);\n        assert(isSubsequenceOf(common,s) && isSubsequenceOf(common,t));\n        assert((int)common.size() == bruteLCS(s,t));\n        assert(longestCommonSubsequence(s,t) == (int)common.size());\n        assert(editDistanceRolling(s,t) == recursiveEdit(s,t,0,0));\n        assert(editDistanceRolling(s,t) == editDistanceRolling(t,s));\n        auto lis = strictLISIndices(a);\n        assert((int)lis.size() == bruteLIS(a));\n        for (int i = 0; i < (int)lis.size(); ++i) {\n            assert(lis[i] >= 0 && lis[i] < n);\n            if (i) assert(lis[i-1] < lis[i] && a[lis[i-1]] < a[lis[i]]);\n        }\n        assert(longestPalindromeSubseq(s) == brutePalindromeSubseq(s));\n        assert(longestPalindromeSubstringDP(s) == brutePalindromeSubstring(s));\n        vector<int> balloons(rng()%6);\n        for (int& x : balloons) x = (int)(rng()%5);\n        assert(burstBalloonsDP(balloons) == bruteBurst(balloons));\n\n        vector<RobNode> nodes; vector<TreeNode> basicNodes;\n        nodes.reserve(n); basicNodes.reserve(n);\n        vector<int> parent(n,-1);\n        for (int x : a) { nodes.emplace_back(x); basicNodes.emplace_back(x); }\n        for (int i = 1; i < n; ++i) {\n            parent[i] = (i-1)/2;\n            if (i%2) {\n                nodes[parent[i]].left = &nodes[i];\n                basicNodes[parent[i]].left = &basicNodes[i];\n            } else {\n                nodes[parent[i]].right = &nodes[i];\n                basicNodes[parent[i]].right = &basicNodes[i];\n            }\n        }\n        long long treeBest = bruteTreeRob(a,parent);\n        assert(robTreeIterative(n ? &nodes[0] : nullptr) == treeBest);\n        assert(robTree(n ? &basicNodes[0] : nullptr) == treeBest);\n        int k = (int)(rng()%4);\n        assert(stockAtMostK(nonnegative,k) == bruteStock(nonnegative,k));\n        int jobs = (int)(rng()%7);\n        vector<vector<int>> cost(jobs,vector<int>(jobs));\n        for (auto& row : cost) for (int& x : row) x = (int)(rng()%15)-7;\n        auto assignment = minimumAssignment(cost);\n        assert(assignment.first == bruteAssignment(cost));\n        assert((int)assignment.second.size() == jobs);\n        vector<char> used(jobs,false); long long actual = 0;\n        for (int worker = 0; worker < jobs; ++worker) {\n            int task = assignment.second[worker];\n            assert(task >= 0 && task < jobs && !used[task]);\n            used[task] = true; actual += cost[worker][task];\n        }\n        assert(actual == assignment.first);\n    }\n    vector<RobNode> chain; chain.reserve(5000);\n    for (int i = 0; i < 5000; ++i) chain.emplace_back(1);\n    for (int i = 1; i < 5000; ++i) chain[i-1].right = &chain[i];\n    assert(robTreeIterative(&chain[0]) == 2500);\n    cout << \"dynamic programming checks passed\\n\";\n}",
+      "paragraphs": [
+        "此入口引用同目录 14 份补充实现与 6 份基础模板。请保留完整 examples 目录，只编译 detail-dp-tests.cpp，不要把被 include 的 cpp 再次参与链接。可执行 g++ -std=c++17 -O2 -Wall -Wextra detail-dp-tests.cpp -o dp-tests，Windows 随后运行 .\\dp-tests.exe。不要定义 NDEBUG，否则 assert 不执行。",
+        "测试提供 100 轮固定种子小输入：子数组与子集枚举、硬币 BFS、组合次数枚举、有序序列递归、子序列枚举、编辑距离递归参照、戳气球顺序穷举、树上独立集枚举、股票动作搜索和任务全排列；同时验证恢复方案的合法性、平局规则及代价。另有不可达、零金额、重复值、负收益、取模为零、非法输入与 5000 节点深链用例。",
+        "当前环境未发现 C++ 编译器，本测试源码尚未编译运行。HTML 与下载一致性检查只说明页面和源文件同步，不能替代 C++ 编译或算法测试。"
+      ]
+    }
+  ]
+}
