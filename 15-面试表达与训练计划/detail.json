@@ -1,0 +1,876 @@
+{
+  "intro": [
+    {
+      "type": "text",
+      "title": "本章目标：让解题过程可以被观察、验证和复现",
+      "paragraphs": [
+        "面试不是把背过的答案默写一遍。面试官需要看到：你理解了什么问题，为什么排除其他方案，代码怎样维护这个结论，错误出现时怎样定位。即使最后没有写出最优解，一个正确的基线、明确的瓶颈和可验证的推进过程，也比未经论证的模板更有信息量。",
+        "本章沿用四个主节：完整交付、测试与反例、C++ 工程语义、训练与复盘。时间分配和自评分是训练工具，不是各公司的统一录用标准；根据岗位、题目难度和面试官要求调整。示例均为 C++17，新增测试程序显式检查失败，不依赖 assert 是否开启。"
+      ]
+    },
+    {
+      "type": "table",
+      "title": "从前十四章带到面试桌上的四份证据",
+      "columns": [
+        "能力",
+        "现场应交付什么",
+        "自查方式",
+        "典型误区"
+      ],
+      "rows": [
+        [
+          "建模",
+          "输入输出契约与约束",
+          "能否说清无解、重复、原下标",
+          "把题名当完整需求"
+        ],
+        [
+          "推导",
+          "基线、优化依据与不变量",
+          "能否解释一次状态更新为何安全",
+          "只说这是双指针模板"
+        ],
+        [
+          "实现",
+          "能执行的代码与边界策略",
+          "接口、数值范围、状态生命周期一致",
+          "思路对就忽略溢出"
+        ],
+        [
+          "验证",
+          "确定用例、反例、复杂度",
+          "失败能复现，成本不漏预处理",
+          "随机跑过即认为已证明"
+        ]
+      ]
+    }
+  ],
+  "sections": {
+    "1": {
+      "before": [
+        {
+          "type": "text",
+          "title": "15.1.1 先把题意翻译成函数契约",
+          "paragraphs": [
+            "按影响算法选择的顺序提问：输入是否有序、数据量多大、值是否可负、能否修改输入、返回下标还是值、要任意解还是全部解。再问边界：空输入是否合法、没有答案怎样返回、多个答案是否有优先级、下标从 0 还是 1 开始。不要机械地问与当前题无关的问题。",
+            "例如“两数之和”至少有三种不同任务：有序数组返回任意位置对、无序数组返回原位置对、返回全部不同值对。第一种可用相向双指针；第二种常用哈希；第三种要规定去重，答案量也要计入成本。若要求全部位置对，n 个相同数字就可能产生 n(n−1)/2 个结果。"
+          ]
+        },
+        {
+          "type": "table",
+          "title": "15.1.2 一场 40 分钟模拟的阶段产物",
+          "columns": [
+            "参考时间",
+            "动作",
+            "结束时应留下的证据",
+            "落后时怎样收敛"
+          ],
+          "rows": [
+            [
+              "0–3 分钟",
+              "确认契约、手推样例",
+              "输入前提、输出格式、无解约定",
+              "优先问会改变算法的问题"
+            ],
+            [
+              "3–10 分钟",
+              "暴力到优化、正确性说明",
+              "瓶颈、结构选择、不变量",
+              "先交付正确基线并说明代价"
+            ],
+            [
+              "10–30 分钟",
+              "编码并核对状态更新",
+              "可读函数、初始化、终止条件",
+              "砍掉无关抽象，保留必要边界"
+            ],
+            [
+              "30–36 分钟",
+              "正常、边界、针对性测试",
+              "逐行变量轨迹和预期输出",
+              "先测最可能推翻核心假设的输入"
+            ],
+            [
+              "36–40 分钟",
+              "复杂度、追问、总结",
+              "预处理与输出成本、适用限制",
+              "明确未解决的问题，不装作完成"
+            ]
+          ]
+        },
+        {
+          "type": "text",
+          "title": "15.1.3 可复用的口述示范：不是逐字符读代码",
+          "paragraphs": [
+            "开场：“我确认一下，数组已按非降序排列，返回两个不同位置的 0 下标，任意一组即可，无解返回 {-1,-1}，且不能修改输入，对吗？”题设已明确的部分直接复述，不必重复索要确认。",
+            "推导：“枚举所有下标对是 O(n²)。排序给了单调性：如果 a[l]+a[r] 小于目标，那么固定 l，任何不超过 r 的右端都不能补足目标，因此可以丢弃 l。大于目标时同理丢弃 r。未被排除的答案始终位于 [l,r]，所以不会漏解。”",
+            "编码时只同步关键决策：“l<r 保证不重复用同一位置；先转成 long long 再相加；失败路径统一返回约定的哨兵。”结束时用 [1,2,4,8]、目标 6 手推：9 太大删右，5 太小删左，6 命中。最后报 O(n) 时间、O(1) 额外空间。"
+          ]
+        }
+      ],
+      "after": [
+        {
+          "type": "table",
+          "title": "15.1.4 追问改变一个条件，方案怎样改变",
+          "columns": [
+            "变化",
+            "方案",
+            "正确性要补什么",
+            "成本"
+          ],
+          "rows": [
+            [
+              "无序且保留原下标",
+              "查补数后再写哈希",
+              "表里只放当前位置之前的元素",
+              "平均 O(n) 时间、O(n) 空间"
+            ],
+            [
+              "允许排序但要原下标",
+              "排序 (值,原位置)",
+              "返回保存的位置，不是排序后的下标",
+              "O(n log n) 时间、O(n) 附加存储"
+            ],
+            [
+              "全部不同值对",
+              "排序、双指针、跳过同值",
+              "同一值对只输出一次",
+              "排序 O(n log n)，扫描 O(n)，输出 O(k)"
+            ],
+            [
+              "全部不同位置对",
+              "按值保存位置列表并枚举",
+              "重复元素的不同位置不能合并",
+              "至少 Ω(k)，k 可达 O(n²)"
+            ]
+          ]
+        },
+        {
+          "type": "code",
+          "title": "15.1.5 无序两数之和：查找必须在插入之前",
+          "file": "detail-two-sum-original.cpp",
+          "paragraphs": [
+            "返回 optional 避免把合法下标与失败混淆。先查询再插入保证两个位置不同；try_emplace 保留每个值第一次出现的位置，但整体仅承诺任意解，不承诺全局字典序最小。先判断目标能否由两个 int 相加得到，避免极端 long long 目标在求补数时溢出。哈希平均 O(n)、最坏 O(n²)，额外空间 O(n)。"
+          ],
+          "code": "optional<pair<size_t,size_t>> twoSumOriginal(const vector<int>& a, long long target) {\n    if (target < 2LL * INT_MIN || target > 2LL * INT_MAX) return nullopt;\n    unordered_map<long long,size_t> seen;\n    for (size_t i = 0; i < a.size(); ++i) {\n        const long long need = target - static_cast<long long>(a[i]);\n        auto it = seen.find(need);\n        if (it != seen.end()) return pair<size_t,size_t>{it->second, i};\n        seen.try_emplace(a[i], i);\n    }\n    return nullopt;\n}"
+        },
+        {
+          "type": "code",
+          "title": "15.1.6 全部不同值对：重复值与重复位置不是一回事",
+          "file": "detail-unique-pairs.cpp",
+          "paragraphs": [
+            "参数按值接收，明确付出 O(n) 拷贝以保护调用者输入。例 [1,1,2,2,3,3]、目标 4 返回 (1,3)、(2,2)；(2,2) 需要确实存在两个 2。命中后同时跳过两端相同值，只消除重复值对。总时间 O(n log n)，包含输入副本与结果的空间 O(n+k)。"
+          ],
+          "code": "vector<pair<int,int>> uniqueValuePairs(vector<int> a, long long target) {\n    vector<pair<int,int>> result;\n    if (a.size() < 2) return result;\n    sort(a.begin(), a.end());\n    size_t l = 0, r = a.size() - 1;\n    while (l < r) {\n        long long sum = static_cast<long long>(a[l]) + a[r];\n        if (sum < target) ++l;\n        else if (sum > target) --r;\n        else {\n            const int left = a[l], right = a[r];\n            result.emplace_back(left, right);\n            while (l < r && a[l] == left) ++l;\n            while (l < r && a[r] == right) --r;\n        }\n    }\n    return result;\n}"
+        }
+      ],
+      "answers": [
+        {
+          "question": "1. 一上来知道最优解，还要完整写一遍暴力吗？",
+          "answer": [
+            "不必把暴力代码也写完。用一句话交代可行基线、复杂度和瓶颈，再解释如何消除重复工作即可。例如从枚举两数对的 O(n²)，推到用哈希记录历史值的平均 O(n)。",
+            "如果最优方案仍不确定，正确基线可以成为可交付结果和测试参照；先和面试官确认是否希望继续优化。不要为展示套路而浪费大半时间。"
+          ]
+        },
+        {
+          "question": "2. 双指针移动为什么不是凭感觉？",
+          "answer": [
+            "证明的是整批候选的排除。sum<target 时，对于当前左端 l，所有 j≤r 都满足 a[l]+a[j]≤a[l]+a[r]<target，所以包含 l 的候选都不可能成功。sum>target 时对右端做对称论证。",
+            "这里依赖非降序。无序数组没有该关系，直接移动指针可能删掉真正答案；重复值不破坏非降序，因此不影响任意解版本的证明。"
+          ]
+        },
+        {
+          "question": "3. 面试官不回答某个边界约定怎么办？",
+          "answer": [
+            "明确提出一个合理假设并保持一致，例如“下面按允许无解处理，用 optional 表示失败；如果平台要求固定返回值，我只调整接口”。不要一边假设必有解、一边留下不确定返回路径。",
+            "区分题目保证与代码主动校验。有序性如果由题设保证，就不必再花 O(n) 检查；若是在设计通用接口，则应讨论校验责任和代价。"
+          ]
+        },
+        {
+          "question": "4. 卡住时怎么说，既不沉默也不说无效话？",
+          "answer": [
+            "按“已经确定的事实—具体障碍—下一个实验”表达。例如：“暴力是 O(n²)，瓶颈是重复统计区间和；负数使窗口不单调，我准备改写成两个前缀和之差，检查能否哈希计数。”",
+            "约两三分钟没有进展时，可以请求一个方向提示，或与面试官商量先落地基线。收到提示后说明它改变了哪个假设，不要假装此前已经想到。"
+          ]
+        },
+        {
+          "question": "5. 讲复杂度要包括哪些隐藏成本？",
+          "answer": [
+            "包括排序和建图等预处理、每次操作本身的真实成本、递归栈以及结果输出量。字符串比较不是无条件 O(1)，传值复制 vector 也不是零成本。",
+            "分别报告辅助空间和输出空间，并说明哈希平均复杂度或 vector 扩容的均摊复杂度。两指针扫描 O(n) 并不意味着前面带排序的完整算法是 O(n)。"
+          ]
+        },
+        {
+          "question": "6. 思路、代码和最终结论怎样保持一致？",
+          "answer": [
+            "在编码前给变量写语义，例如 seen 只含严格早于 i 的位置。每段更新都对应这条语义；如果改成先插入再查询，就会在 [3]、目标 6 上重复使用同一位置。",
+            "收尾重复契约、核心证明、测试结果和限制。若只完成了基线，明确说基线正确但规模限制下可能超时，不把未验证的优化说成已经交付。"
+          ]
+        }
+      ]
+    },
+    "2": {
+      "before": [
+        {
+          "type": "text",
+          "title": "15.2.1 先写预期结果，再运行测试",
+          "paragraphs": [
+            "测试不只是“能否执行到结束”。先依据题意写出预期，再运行并比较。把失败输入缩到尽量短：删除不影响失败的元素、缩小数值、去掉无关边，直到能说明究竟哪条假设错了。所谓最小反例需要说明最小的维度；只做单元素删除得到的是局部不可再删，不一定是全局最小。",
+            "确定性回归负责守住已知错误；暴力差分负责在小规模自动找新错误；性质测试负责检查解是否合法；证明负责解释所有合法输入。四者互补，不能互相冒名替代。"
+          ]
+        },
+        {
+          "type": "table",
+          "title": "15.2.2 测试矩阵：每个输入都应瞄准一个风险",
+          "columns": [
+            "风险类别",
+            "具体输入",
+            "预期或性质",
+            "能暴露什么"
+          ],
+          "rows": [
+            [
+              "空与最小结构",
+              "空数组、单元素、单节点",
+              "遵守异常或无解约定",
+              "size()-1 下溢、空解引用"
+            ],
+            [
+              "重复与同一元素",
+              "[3] / [3,3]，目标 6",
+              "前者无解，后者有解",
+              "先插入再查、错误去重"
+            ],
+            [
+              "初始化",
+              "最大子数组 [-5,-2,-9]",
+              "-2，而不是 0",
+              "把必须非空误作可为空"
+            ],
+            [
+              "端点与不变量",
+              "[2] 中查 2；[2,2] 中查 2",
+              "边界 [0,1) / [0,2)",
+              "二分闭开区间混用"
+            ],
+            [
+              "数值极端",
+              "[INT_MAX,INT_MAX] 的求和",
+              "4294967294",
+              "先 int 相加再转型"
+            ],
+            [
+              "算法前提",
+              "[4,-2,1]，和为 3 的区间",
+              "整个数组是合法答案",
+              "正数窗口套到含负数输入"
+            ]
+          ]
+        },
+        {
+          "type": "table",
+          "title": "15.2.3 测试方法各自能证明到哪里",
+          "columns": [
+            "方法",
+            "怎样做",
+            "可发现的问题",
+            "不能推出的结论"
+          ],
+          "rows": [
+            [
+              "确定性回归",
+              "固定输入与人工核对的结果",
+              "边界、历史缺陷",
+              "其他输入一定正确"
+            ],
+            [
+              "小规模差分",
+              "快算法对独立暴力参照",
+              "状态更新和去重偏差",
+              "两者相同就绝对正确"
+            ],
+            [
+              "性质检查",
+              "答案下标、和值、顺序合法",
+              "多解答案被错误地逐项比较",
+              "合法解一定最优或完整"
+            ],
+            [
+              "变形测试",
+              "改变输入但保留可推导关系",
+              "额外覆盖结构错误",
+              "任意变形都保持答案"
+            ],
+            [
+              "Sanitizer",
+              "带检测编译并运行用例",
+              "部分越界、悬空引用、溢出",
+              "运行未报错就无逻辑错误"
+            ]
+          ]
+        },
+        {
+          "type": "text",
+          "title": "15.2.4 差分测试的参照实现必须足够独立",
+          "paragraphs": [
+            "最大子数组的优化实现使用“以当前位置结尾”的状态；参照实现直接枚举左右端点并累加，避免两份代码复制同一个错误递推。随机数组保持短，值域覆盖负数、零和正数；固定 seed，同时在失败时输出完整输入、期望与实际值。",
+            "同一 seed 在同一实现环境中便于重现，但 uniform_int_distribution 的映射细节不要求各标准库完全相同，因此跨机器复现优先使用打印出来的数组。先跑手写边界，再随机测试，发现第一处失败就返回非零退出码。"
+          ]
+        }
+      ],
+      "after": [
+        {
+          "type": "code",
+          "title": "15.2.5 可直接运行：最大子数组差分、边界与变形测试",
+          "file": "detail-differential-tests.cpp",
+          "paragraphs": [
+            "本程序限制数组长度不超过 100000、元素为 int，任意区间和都能放入 long long；空数组主动抛异常。随机部分生成 2000 组长度 1–12 的小数组，O(R·m²) 时间、O(m) 额外空间。反转保留所有连续区间的和值，乘正数 2 保留最优区间的大小关系；乘负数没有该性质。测试不是完整证明，源码需编译运行后才产生测试结果。"
+          ],
+          "code": "long long fastMax(const vector<int>& a) {\n    if (a.empty() || a.size() > 100000) throw invalid_argument(\"size\");\n    long long ending = a[0], best = a[0];\n    for (size_t i = 1; i < a.size(); ++i) {\n        ending = max(static_cast<long long>(a[i]), ending + a[i]);\n        best = max(best, ending);\n    }\n    return best;\n}\nlong long slowMax(const vector<int>& a) {\n    if (a.empty() || a.size() > 100000) throw invalid_argument(\"size\");\n    long long best = LLONG_MIN;\n    for (size_t l = 0; l < a.size(); ++l) {\n        long long sum = 0;\n        for (size_t r = l; r < a.size(); ++r) {\n            sum += a[r];\n            best = max(best, sum);\n        }\n    }\n    return best;\n}\nbool checkMax(const vector<int>& a, long long expected) {\n    long long actual = fastMax(a);\n    if (actual == expected) return true;\n    cerr << \"input:\";\n    for (int x : a) cerr << ' ' << x;\n    cerr << \" expected=\" << expected << \" actual=\" << actual << '\\n';\n    return false;\n}\nint main() {\n    if (!checkMax({-5,-2,-9}, -2) || !checkMax({0}, 0) ||\n        !checkMax({4,-1,2,1}, 6) ||\n        !checkMax({INT_MAX,INT_MAX}, 2LL * INT_MAX) ||\n        !checkMax({INT_MIN}, INT_MIN)) return 1;\n    bool rejected = false;\n    try { (void)fastMax({}); } catch (const invalid_argument&) { rejected = true; }\n    if (!rejected) { cerr << \"empty input accepted\\n\"; return 1; }\n    mt19937 rng(20260922);\n    uniform_int_distribution<int> length(1,12), value(-20,20);\n    for (int round = 0; round < 2000; ++round) {\n        vector<int> a(static_cast<size_t>(length(rng)));\n        for (int& x : a) x = value(rng);\n        const long long expected = slowMax(a);\n        if (!checkMax(a, expected)) return 1;\n        reverse(a.begin(), a.end());\n        if (!checkMax(a, expected)) return 1;\n        for (int& x : a) x *= 2; // small generated values, no int overflow\n        if (!checkMax(a, 2 * expected)) return 1;\n    }\n    cout << \"boundary and 2000 differential rounds passed\\n\";\n}"
+        },
+        {
+          "type": "text",
+          "title": "15.2.6 从失败到修复：一条可复现的调试链",
+          "paragraphs": [
+            "错误版本把 best 初始化成 0，输入 [-5,-2,-9] 输出 0。先缩到 [-2] 仍失败，定位到“允许空子数组”的错误语义；修正为首元素初始化，而不是在结尾临时判断全负。把 [-2] 和原输入永久加入回归集，再跑差分。",
+            "二分死循环则记录每次 l、r、mid：若 l=0、r=1、mid=0 后执行 l=mid，区间没有变小。修复要回到区间定义，不能盲目在某条分支加 1。链表问题画出节点身份和 next，不要仅比较节点值。"
+          ]
+        }
+      ],
+      "answers": [
+        {
+          "question": "7. 为何随机测试通过一万次仍不能当正确性证明？",
+          "answer": [
+            "随机输入只覆盖有限样本，罕见边界可能根本没生成，例如全部相等、整数极值、深链、恰好越界的端点。生成器还有自己的分布偏差。",
+            "证明必须解释所有合法状态的初始化、保持和终止；随机测试用于寻找反例。若两份实现共享错误初始化，它们可能一致地错，所以还需人工已知答案。"
+          ]
+        },
+        {
+          "question": "8. 多解问题应该怎样做差分？",
+          "answer": [
+            "两数之和返回任意位置对时，先用暴力判断解是否存在，再检查快算法给出的两个下标不同、范围合法、和值正确。不应强制它返回暴力发现的第一对。",
+            "要求全部不同值对时，应把双方按统一顺序规范化再比较，并单独检查重复；优化问题还需比较目标值。路径题则检查起终点、每条边合法及总代价，不能只检查路径长度。"
+          ]
+        },
+        {
+          "question": "9. assert 与真正的测试失败检查有什么区别？",
+          "answer": [
+            "定义 NDEBUG 后，assert 的表达式不再执行。因此不要把 erase、pop 或其他必要状态更新藏在 assert 中，也不能让正式回归是否生效取决于构建选项。",
+            "本章新增测试使用 if 判断并返回非零，或抛 runtime_error 后捕获报告；它们在 Release 模式仍执行。基础示例中的 assert 适合局部演示，但要了解关闭机制。"
+          ]
+        },
+        {
+          "question": "10. 怎样主动构造能打破贪心或窗口的反例？",
+          "answer": [
+            "先把算法隐含假设写成一句话，再针对它改输入。例如正数窗口假设加入元素不会减小区间和；引入负数 [4,-2,1] 后，超过 3 就删掉 4 会错过总和为 3 的整个区间。",
+            "贪心“优先最大面额”可用硬币 [1,3,4]、金额 6：4+1+1 需要 3 枚，而 3+3 只需 2 枚。反例必须满足原题全部条件，否则并没有否定原算法。"
+          ]
+        },
+        {
+          "question": "11. 编译器警告和 Sanitizer 能查出算法错吗？",
+          "answer": [
+            "警告可以提示可疑转换、未使用变量等；AddressSanitizer 和 UndefinedBehaviorSanitizer 能在实际执行路径上捕捉部分内存错误和未定义行为。它们通常不知道题目预期答案，所以不能代替断言、差分和证明。",
+            "本地具备 GCC/Clang 及对应运行库时，可尝试 g++ -std=c++17 -O1 -g -Wall -Wextra -Wconversion -fsanitize=address,undefined detail-differential-tests.cpp -o check；并非所有 Windows 工具链都支持这些选项。先编译成功，再执行程序检查退出码。"
+          ]
+        },
+        {
+          "question": "12. 失败用例很多时先修哪一个？",
+          "answer": [
+            "先保留第一份可复现输入，明确是答案不符、崩溃还是超时。通常优先修内存越界与未定义行为，因为它们会污染后续观测；再定位契约、状态和逻辑错误。",
+            "每次只修一个已解释的原因，重跑原失败和全量回归；不要同时改初始化、边界和更新顺序后只看样例通过，否则无法知道修复依据，也容易引入新错误。"
+          ]
+        }
+      ]
+    },
+    "3": {
+      "before": [
+        {
+          "type": "text",
+          "title": "15.3.1 先对齐 C++ 语义，再追求代码短",
+          "paragraphs": [
+            "整数提升发生在表达式计算前还是后，决定有没有溢出。long long s = a+b 若 a、b 都是 int，仍然先做 int 加法；应写 1LL*a+b 或 static_cast<long long>(a)+b。accumulate 的初始值决定累计类型，求大和用 0LL。long long 也不是无限大，必须依据 n 与值域估计最大累计量。",
+            "size() 返回无符号类型。空 vector 的 size()-1 会先发生无符号下溢；本章边界二分用 [0,size()) 和 size_t 避免 -1 哨兵。若使用 int 下标，先明确输入长度不超过 INT_MAX。"
+          ]
+        },
+        {
+          "type": "table",
+          "title": "15.3.2 容器语义与失效规则速查",
+          "columns": [
+            "操作",
+            "真实语义",
+            "危险写法",
+            "正确习惯"
+          ],
+          "rows": [
+            [
+              "vector.reserve(k)",
+              "只改容量，不增加元素",
+              "reserve 后直接访问 v[0]",
+              "push_back 或 resize 后再按下标访问"
+            ],
+            [
+              "vector.push_back",
+              "扩容时全部迭代器、引用、指针失效",
+              "持有元素引用后继续插入",
+              "重取引用，或保存索引并核对 size"
+            ],
+            [
+              "vector.erase",
+              "删除位置及其后迭代器失效",
+              "erase 后继续 ++ 旧迭代器",
+              "it = v.erase(it)"
+            ],
+            [
+              "unordered_map 插入",
+              "rehash 会使迭代器失效",
+              "保存迭代器再大量插入后使用",
+              "插入后重新 find；元素引用不因 rehash 失效"
+            ],
+            [
+              "unordered_map operator[]",
+              "缺键时插入默认值",
+              "只想查询却悄悄改变表",
+              "find 查存在性，at 用于应已存在的键"
+            ],
+            [
+              "lambda 引用捕获",
+              "不延长被引用对象寿命",
+              "返回捕获局部变量引用的 lambda",
+              "需要独立持有状态时按值捕获"
+            ]
+          ]
+        },
+        {
+          "type": "table",
+          "title": "15.3.3 比较器与数值操作的经典追问",
+          "columns": [
+            "主题",
+            "合法条件",
+            "最短解释",
+            "典型反例"
+          ],
+          "rows": [
+            [
+              "sort 比较器",
+              "严格弱序",
+              "comp(x,x) 必为 false，顺序及等价关系满足传递性",
+              "用 <= 比较相等元素"
+            ],
+            [
+              "次关键字",
+              "主关键字相等再比较",
+              "同分按名字升序；再按唯一 id 确定顺序",
+              "只看主键却声称结果完全确定"
+            ],
+            [
+              "priority_queue 比较器",
+              "comp(a,b) 真表示 a 优先级低于 b",
+              "greater<int> 得到最小堆",
+              "照搬 sort 的直觉解释堆顶"
+            ],
+            [
+              "稳定排序",
+              "比较等价的元素保留原相对次序",
+              "等价指双向 comp 都为 false",
+              "以为 stable_sort 会自动按名字排序"
+            ],
+            [
+              "比较整数",
+              "直接 < 或 >",
+              "不要通过 a-b 的符号比较",
+              "INT_MAX - INT_MIN 溢出"
+            ],
+            [
+              "求和与乘法",
+              "先提升且证明范围",
+              "0LL、1LL 只能避免 int 阶段溢出",
+              "超过 long long 后仍宣称安全"
+            ]
+          ]
+        }
+      ],
+      "after": [
+        {
+          "type": "code",
+          "title": "15.3.4 不混用边界：手写 lower_bound 与 upper_bound",
+          "file": "detail-search-bounds.cpp",
+          "paragraphs": [
+            "前提是数组非降序。lower 的已排除左侧都 <x，右侧都 ≥x；upper 则改为左侧 ≤x、右侧 >x。搜索区间 [l,r) 每次严格缩小。返回值允许等于 size()，代表不存在对应位置，不能直接解引用。equalRange 返回 [first,last)，出现次数为 last-first；时间 O(log(n+1))，额外空间 O(1)。"
+          ],
+          "code": "size_t firstAtLeast(const vector<int>& a, int x) {\n    size_t l = 0, r = a.size();\n    while (l < r) {\n        size_t mid = l + (r - l) / 2;\n        if (a[mid] < x) l = mid + 1;\n        else r = mid;\n    }\n    return l;\n}\nsize_t firstGreater(const vector<int>& a, int x) {\n    size_t l = 0, r = a.size();\n    while (l < r) {\n        size_t mid = l + (r - l) / 2;\n        if (a[mid] <= x) l = mid + 1;\n        else r = mid;\n    }\n    return l;\n}\npair<size_t,size_t> equalRange(const vector<int>& a, int x) {\n    return {firstAtLeast(a, x), firstGreater(a, x)};\n}"
+        },
+        {
+          "type": "code",
+          "title": "15.3.5 同一份优先级规则：排序和堆的方向恰好相反",
+          "file": "detail-ranking.cpp",
+          "paragraphs": [
+          "定义“更好”为分数更高、同分名字更小、再同名 id 更小；id 约定唯一，使不同记录顺序确定。Better 用于 sort 时把更好的放前面；堆比较器要在 a 比 b 更差时返回 true，故调用 Better(b,a)。返回前 K 个按排名排序的记录，使用完整堆，令 k=min(K,n)，逐次入堆加弹出的比较次数为 O((n+k) log(n+1))。若名字长度上界为 L，每次比较或字符串复制还可能花 O(L+1)，存储字符串的空间上界为 O((n+k)(L+1))。若要 O(n log(k+1)) 次比较，应另设计只保留 K 个的最差元素堆，不能把本示例说成大小 K 堆。"
+          ],
+          "code": "struct RankedCandidate { string name; int score; int id; };\nstruct BetterCandidate {\n    bool operator()(const RankedCandidate& a, const RankedCandidate& b) const {\n        if (a.score != b.score) return a.score > b.score;\n        if (a.name != b.name) return a.name < b.name;\n        return a.id < b.id;\n    }\n};\nstruct LowerPriority {\n    bool operator()(const RankedCandidate& a, const RankedCandidate& b) const {\n        return BetterCandidate{}(b, a);\n    }\n};\nvector<RankedCandidate> bestCandidates(const vector<RankedCandidate>& a, size_t k) {\n    priority_queue<RankedCandidate, vector<RankedCandidate>, LowerPriority> pq;\n    for (const auto& item : a) pq.push(item);\n    vector<RankedCandidate> result;\n    while (!pq.empty() && result.size() < k) {\n        result.push_back(pq.top());\n        pq.pop();\n    }\n    return result;\n}"
+        },
+        {
+          "type": "code",
+          "title": "15.3.6 ACM 输入模式：让约束和错误处理可见",
+          "file": "detail-stdin-sum.cpp",
+          "paragraphs": [
+            "本例协议为先输入 n，再输入 n 个 int，0≤n≤1000000；多余 token 不属于本程序处理范围。读入前检查 n，避免负数变成巨大 size_t；逐个验证提取成功。和值绝对值最多约 2.15×10¹⁵，long long 足够。流式计算 O(n) 时间、O(1) 额外空间；输出只含答案，诊断发到 cerr。平台提供函数签名时不要额外写 main，也不要修改平台返回类型。"
+          ],
+          "code": "int main() {\n    ios::sync_with_stdio(false);\n    cin.tie(nullptr);\n    long long n;\n    if (!(cin >> n) || n < 0 || n > 1000000) {\n        cerr << \"invalid n\\n\";\n        return 1;\n    }\n    long long total = 0;\n    for (long long i = 0; i < n; ++i) {\n        int value;\n        if (!(cin >> value)) {\n            cerr << \"missing or invalid integer\\n\";\n            return 1;\n        }\n        total += value;\n    }\n    cout << total << '\\n';\n}"
+        }
+      ],
+      "answers": [
+        {
+          "question": "13. 严格弱序是否只要求相等时返回 false？",
+          "answer": [
+            "不是。还需要严格关系的传递性，以及“互不小于”所定义的等价关系的传递性等条件。仅检查 comp(x,x)==false 不足以保证合法；剪刀石头布式循环关系就有问题。",
+            "多关键字逐层比较可构造字典序。排序过程中不能随意改变外部状态让同一对元素的比较结果变化；测试有限三元组能发现缺陷，但不能取代比较器设计上的证明。"
+          ]
+        },
+        {
+          "question": "14. sort 与 stable_sort 该怎样选择？",
+          "answer": [
+            "若只按分数比较，又希望同分保持原输入顺序，使用 stable_sort。若需求是同分按名字排序，应在比较器里明确名字键；稳定性并不会自动添加次关键字。",
+            "sort 通常是首选，其 C++17 比较次数保证为 O(n log n)。stable_sort 在可用额外内存充足时 O(n log n) 次比较，否则标准允许 O(n log² n)；额外内存策略与实现有关。字符串比较还需乘上实际比较代价。"
+          ]
+        },
+        {
+          "question": "15. 引用捕获和引用传参分别解决什么问题？",
+          "answer": [
+            "const vector<int>& 参数避免拷贝并表达只读访问，前提是调用期间对象仍存活。lambda 的 [&] 则保存对外部对象的引用，不会延长其生命周期；返回这样的闭包可能留下悬空引用。",
+            "值捕获通常持有副本，但捕获一个裸指针只是复制指针，也不等于拥有对象。不要把“用了 const”或“按值捕获”误当作所有生命周期问题的通用保证。"
+          ]
+        },
+        {
+          "question": "16. vector 和 unordered_map 插入后还能使用旧迭代器吗？",
+          "answer": [
+            "vector 扩容会使所有元素迭代器、指针与引用失效；未扩容的尾插通常保留原元素引用和迭代器，但旧 end 失效。erase 使被删位置及之后的迭代器失效。",
+            "unordered_map rehash 使迭代器失效，但不会使未删除元素的引用和指针失效；erase 会使被删元素的引用失效。算法中最稳妥的做法是避免跨可能失效的操作持有迭代器，操作后按键重新 find。"
+          ]
+        },
+        {
+          "question": "17. 为什么 lower_bound 的 end 不是错误结果？",
+          "answer": [
+            "当全部元素都小于目标时，第一个不小于目标的位置就是尾后位置。空数组同样返回 begin==end。调用方应先判断位置是否小于 size，再检查该位置值是否等于目标。",
+            "查某值范围时，用 upper_bound-lower_bound 计算次数，而不是把 upper_bound 指向的元素当成最后一个相等元素。半开区间能自然表示不存在时的空范围。"
+          ]
+        },
+        {
+          "question": "18. 面试编码哪些简写最容易出问题？",
+          "answer": [
+            "priority_queue::pop 返回 void，取值要先 top 再 pop；auto x 在范围循环中复制，修改原元素要 auto&；memset 不是任意数值填充，初始化一般用容器构造或 fill。",
+            "n×m、前缀和、距离加边权都要估计范围，INF 加法先检查可达。getline 接在 operator>> 后可能读到残余换行；确认输入格式后再处理，不能无条件丢弃可能有效的空行。"
+          ]
+        }
+      ]
+    },
+    "4": {
+      "before": [
+        {
+          "type": "text",
+          "title": "15.4.1 用诊断结果调整训练，而不是平均分配题量",
+          "paragraphs": [
+            "开始前选三道不同类别的基础题：二分边界、树层序、最大子数组，遮住题型提示各做一次。记录首次想到可行方案的时间、编码时间、错误次数、是否依赖提示。不会不变量则回原章节补概念；能讲不会写则空白默写；能写但常错则重点做边界和测试；只在分类题单里会做则改为混合抽题。",
+            "每天两小时和每周题量都只是容量预算。基础薄弱时宁可做一题并写清复盘，也不要强行追赶三题；工作日只有一小时时，可用 10 分钟复习、30 分钟独立解题、20 分钟修复与测试。保留休息和补漏窗口。"
+          ]
+        },
+        {
+          "type": "table",
+          "title": "15.4.2 可执行的四周日程与周末验收",
+          "columns": [
+            "周次",
+            "前五天主题",
+            "第六天",
+            "第七天与通过条件"
+          ],
+          "rows": [
+            [
+              "第 1 周",
+              "D1 复杂度/数组；D2 字符串/窗口；D3 链表；D4 栈队列/哈希；D5 二分",
+              "混合基础题与 40 分钟模拟",
+              "复盘或休息；能无提示写边界并解释区间"
+            ],
+            [
+              "第 2 周",
+              "D1 树递归；D2 BFS/BST；D3 堆；D4 回溯；D5 图搜索/拓扑",
+              "混合树图题，复习第 1 周失败点",
+              "能先定义递归返回值、visited 语义再编码"
+            ],
+            [
+              "第 3 周",
+              "D1 贪心证明；D2 线性 DP；D3 背包；D4 序列 DP；D5 综合变式",
+              "一场 45–60 分钟模拟与对照测试",
+              "能讲状态、转移、初始值、遍历顺序和反例"
+            ],
+            [
+              "第 4 周",
+              "D1 LRU/设计；D2 区间/Top K；D3 岗位相关进阶；D4 混合抽题；D5 薄弱项",
+              "最终模拟，不预告题型",
+              "回看最常见三类错误；未达标项保留到后续复习"
+            ]
+          ]
+        },
+        {
+          "type": "text",
+          "title": "15.4.3 间隔复习和错题闭环的实际做法",
+          "paragraphs": [
+            "以首次学习当天为 D0，默认 D1、D3、D7 安排不看笔记重写；这些是相对学习日的间隔，不是每月固定日期。复习失败就降低题目难度、重建证明，并从本次修复日重新安排，不机械地打勾。成功后延长间隔，并做一次改变条件的迁移题。",
+            "错题记录至少包含：原约束、独立尝试时间、是否看提示、错误分类、最短失败输入、被破坏的不变量、修复理由、回归用例、下一次复习日。例如“LC34；[2,2] 查 2；把 upper_bound 当成最后相等位置；改成返回 [first,last)；加入不存在、单个和重复三组测试”。",
+            "连续两次独立重写只能说明这道题较熟。真正的掌握还要在不提示题型时识别，解释为什么不选另一算法，并完成至少一道变式；刚看完题解立即复现仅算修复，不算独立完成。"
+          ]
+        },
+        {
+          "type": "table",
+          "title": "15.4.4 十项自评：每项 0–2 分，用行为而非感觉评分",
+          "columns": [
+            "维度",
+            "0 分",
+            "1 分",
+            "2 分"
+          ],
+          "rows": [
+            [
+              "题意",
+              "误解输出或约束",
+              "提醒后补齐",
+              "主动明确关键契约"
+            ],
+            [
+              "推导",
+              "直接套错模板",
+              "提示后得到方案",
+              "独立讲基线及优化依据"
+            ],
+            [
+              "正确性",
+              "无法说明",
+              "只会复述流程",
+              "能解释不变量/递推与终止"
+            ],
+            [
+              "代码",
+              "主体不成立",
+              "修补后可行",
+              "结构清晰且与设计一致"
+            ],
+            [
+              "边界",
+              "漏关键边界",
+              "提醒后想到",
+              "主动处理空、重复、数值边界"
+            ],
+            [
+              "测试",
+              "不测或只运行",
+              "能测普通样例",
+              "预期明确且有针对性反例"
+            ],
+            [
+              "复杂度",
+              "明显错误",
+              "漏一项后修正",
+              "计入预处理、栈、输出和平均条件"
+            ],
+            [
+              "沟通",
+              "长时间沉默",
+              "被动回答",
+              "关键决策与障碍同步清晰"
+            ],
+            [
+              "纠错",
+              "盲目改代码",
+              "提示后定位",
+              "能复现、解释并加回归"
+            ],
+            [
+              "完成度",
+              "无可交付结果",
+              "有基线或部分结果",
+              "在约定时间交付并说明限制"
+            ]
+          ]
+        }
+      ],
+      "after": [
+        {
+          "type": "text",
+          "title": "15.4.5 跨章节模拟题：允许负数的目标和子数组计数",
+          "paragraphs": [
+            "题目契约：给定长度不超过 100000 的 int 数组和 long long 目标 k，统计非空连续子数组和等于 k 的个数，不修改输入；空数组返回 0。不要在题目标题里先写“前缀和 + 哈希”，先独立识别。",
+            "从枚举 l、r 的 O(n²) 出发，令前缀和 P[0]=0、P[j] 为前 j 个元素之和，则区间 [i,j) 合法当且仅当 P[i]=P[j]-k。扫描 j 时，哈希表保存所有 i<j 的前缀频次；先查询再加入 P[j]，避免在 k=0 时把空区间算进去。多个相同前缀代表多个不同起点，不能用集合代替计数。",
+            "用 [1,-1,1]、k=1 手推：初始 freq[0]=1；读第一个 1 查询 0 得 1，答案 1；读 -1 查询 -1 得 0；读最后一个 1 查询 0 得 2，答案 3。再测 []→0、[0,0,0] 且 k=0→6。全零长度 n 的答案 n(n+1)/2，计数类型必须足够大。"
+          ]
+        },
+        {
+          "type": "code",
+          "title": "15.4.6 综合实现：前缀频次、不变量与数值契约",
+          "file": "detail-prefix-count.cpp",
+          "paragraphs": [
+            "长度上限使前缀和绝对值至多 100000×2147483648；若 k 超出可实现的子数组和范围可直接返回 0，剩余的 prefix-k 也安全。平均 O(n) 时间、最坏 O(n²) 哈希时间，O(n) 空间。长度校验属于本示例的接口约定，不代表所有同类题都应限制为这个值。"
+          ],
+          "code": "long long countTargetSubarrays(const vector<int>& a, long long k) {\n    if (a.size() > 100000) throw invalid_argument(\"n exceeds contract\");\n    const long long n = static_cast<long long>(a.size());\n    if (k < n * static_cast<long long>(INT_MIN) ||\n        k > n * static_cast<long long>(INT_MAX)) return 0;\n    unordered_map<long long,long long> frequency;\n    frequency[0] = 1;\n    long long prefix = 0, result = 0;\n    for (int x : a) {\n        prefix += x;\n        auto it = frequency.find(prefix - k);\n        if (it != frequency.end()) result += it->second;\n        ++frequency[prefix];\n    }\n    return result;\n}"
+        }
+      ],
+      "answers": [
+        {
+          "question": "19. 题量和速度哪个更能说明掌握？",
+          "answer": [
+            "两者都只是间接指标。优先记录不看提示的成功率、首次方案是否正确、同类错误是否复发、延迟重做能否完成，以及变式迁移情况。为了赶时间跳过测试，可能只是把错误藏到面试里。",
+            "10 分钟模板、20 分钟编码等目标只用于自我比较，不能跨难度强行衡量。困难题推进出正确子问题也有价值，复盘要记录真实提示与未完成部分。"
+          ]
+        },
+        {
+          "question": "20. 看了题解之后怎样避免“我会了”的错觉？",
+          "answer": [
+            "先关掉题解，用自己的话重建契约、不变量和复杂度，再从空文件实现并测边界；这一步仍标记为“借助题解修复”。隔天不看笔记重写，通过后再做一个条件不同的变式。",
+            "如果只能记住代码位置而说不出某次移动为什么安全，就回到手推和反例。不要把连续重复同一段代码的短期记忆当成检索和迁移能力。"
+          ]
+        },
+        {
+          "question": "21. 复习时间不够时哪些题优先？",
+          "answer": [
+            "优先高频基础且反复失败的模式，如二分边界、链表连接、树递归定义、前缀计数和背包方向。已稳定掌握的题延长间隔，陌生高级结构按岗位需求选择，不挤掉基本正确性训练。",
+            "把错误分成识别、证明、实现、测试、表达五类，针对最常见的一类安排专项，而不是每次从第一章重新刷一遍。面试前两天以已学内容回归、模拟和休息为主。"
+          ]
+        },
+        {
+          "question": "22. 自评 18 分就能认为一定通过面试吗？",
+          "answer": [
+            "不能。这里的 20 分表是训练仪表，不是招聘公司的评分制度，分数还受自评宽严影响。应保存录像或代码、失败输入和完成时间，用相同标准观察趋势。",
+            "总分也不能掩盖关键缺陷：若输出错误、依赖未声明前提或存在越界，即使表达很好，也应优先修正正确性。可以请同学按同一行为标准复评。"
+          ]
+        },
+        {
+          "question": "23. 综合计数题为什么不能用普通滑动窗口？",
+          "answer": [
+            "题目允许负数，扩大窗口可能让和变小，收缩也可能让和变大，因此没有正数窗口的单调性。前缀和差等式不依赖元素正负，适用范围更广。",
+            "本题求数量而非最长长度，哈希存频次；若改为最长长度，通常存最早出现位置；若改为最短长度，状态选择还要重新推导，不能只换返回变量。"
+          ]
+        },
+        {
+          "question": "24. 一次模拟结束后，下一步具体做什么？",
+          "answer": [
+            "先用 5 分钟记事实：是否独立、在哪一分钟卡住、哪个输入失败；再挑一个影响最大的原因写修复与回归。下一次训练设一个可观察目标，例如“编码前先声明 [l,r)；结束前主动测试重复值”，而不是“更认真”。",
+            "每周汇总前三类重复错误。若同类错误连续出现，减少新题并做两三道同模式的不同变式；目标是让错误不再复发，不是让错题笔记越来越厚。"
+          ]
+        }
+      ]
+    }
+  },
+  "outro": [
+    {
+      "type": "table",
+      "title": "毕业模拟：从前十四章混合抽题，而不是提前知道模板",
+      "columns": [
+        "练习组",
+        "可检索的经典题",
+        "必须口述的关键点",
+        "升级追问"
+      ],
+      "rows": [
+        [
+          "基础检索",
+          "LC 1、34、209、560",
+          "原下标、边界、窗口单调性、前缀状态",
+          "允许负数或改为计数会怎样"
+        ],
+        [
+          "结构与状态",
+          "LC 206、142、102、236",
+          "节点身份、快慢指针、层次、递归返回含义",
+          "目标不存在或禁止修改结构"
+        ],
+        [
+          "排序与堆",
+          "LC 215、347、23、295",
+          "静态与在线、比较器、平局、维护不变量",
+          "数据流和内存限制"
+        ],
+        [
+          "搜索与图",
+          "LC 46、200、207、743",
+          "撤销状态、visited、判环、非负权",
+          "输出具体方案或含负权"
+        ],
+        [
+          "优化与设计",
+          "LC 55、322、1143、146",
+          "贪心证明、DP 状态、恢复答案、跨结构一致性",
+          "构造反例、解释更新顺序"
+        ]
+      ]
+    },
+    {
+      "type": "text",
+      "title": "章末测试如何运行：源码下载、独立编译与验证范围",
+      "paragraphs": [
+        "本章新增 8 份 C++：5 份函数/类型示例、1 份 ACM 输入程序、1 份差分程序和 1 份综合回归入口。回归入口通过同目录 include 引入 5 份函数示例，只编译入口文件，不要同时把所有 .cpp 链接在一起；ACM 和差分程序各有 main，应分别编译运行。",
+        "在本章 examples 目录、具备 C++17 编译器时执行：g++ -std=c++17 -Wall -Wextra detail-interview-tests.cpp -o interview-check，然后运行生成程序；Windows PowerShell 可用 .\\interview-check.exe。差分程序同理单独编译 detail-differential-tests.cpp。输入程序的正常样例为“3 1 -2 4”，输出 3；“0”输出 0；“-1”或“2 1”应失败退出。",
+        "下列回归包含固定边界、排序/堆结果对照、比较器有限三元组性质、二分与标准库对照、两数之和答案合法性、全部值对的枚举参照、前缀计数暴力差分。没有实际运行时，只能说提供了测试源码，不能把代码中的 passed 文本当作已经通过的结果。"
+      ]
+    },
+    {
+      "type": "code",
+      "title": "综合回归入口：任意解比合法性，全集比规范化结果",
+      "file": "detail-interview-tests.cpp",
+      "code": "#include \"detail-two-sum-original.cpp\"\n#include \"detail-unique-pairs.cpp\"\n#include \"detail-search-bounds.cpp\"\n#include \"detail-ranking.cpp\"\n#include \"detail-prefix-count.cpp\"\nvoid requireCheck(bool ok, const string& name) {\n    if (!ok) throw runtime_error(name);\n}\nlong long slowCount(const vector<int>& a, long long target) {\n    long long result = 0;\n    for (size_t l = 0; l < a.size(); ++l) {\n        long long sum = 0;\n        for (size_t r = l; r < a.size(); ++r) {\n            sum += a[r];\n            if (sum == target) ++result;\n        }\n    }\n    return result;\n}\nvoid checkArray(const vector<int>& a, long long target) {\n    vector<pair<int,int>> expected;\n    for (size_t i = 0; i < a.size(); ++i)\n        for (size_t j = i + 1; j < a.size(); ++j)\n            if (static_cast<long long>(a[i]) + a[j] == target)\n                expected.emplace_back(min(a[i], a[j]), max(a[i], a[j]));\n    sort(expected.begin(), expected.end());\n    expected.erase(unique(expected.begin(), expected.end()), expected.end());\n    auto found = twoSumOriginal(a, target);\n    requireCheck(found.has_value() == !expected.empty(), \"two-sum existence\");\n    if (found) {\n        auto [i,j] = *found;\n        requireCheck(i < a.size() && j < a.size() && i != j, \"indices\");\n        requireCheck(static_cast<long long>(a[i]) + a[j] == target, \"sum\");\n    }\n    requireCheck(uniqueValuePairs(a, target) == expected, \"unique pairs\");\n    requireCheck(countTargetSubarrays(a, target) == slowCount(a, target), \"prefix count\");\n    vector<int> ordered = a;\n    sort(ordered.begin(), ordered.end());\n    for (int x : {INT_MIN, -5, 0, 5, INT_MAX}) {\n        auto [l,r] = equalRange(ordered, x);\n        requireCheck(l == static_cast<size_t>(lower_bound(ordered.begin(), ordered.end(), x) - ordered.begin()), \"lower\");\n        requireCheck(r == static_cast<size_t>(upper_bound(ordered.begin(), ordered.end(), x) - ordered.begin()), \"upper\");\n    }\n}\nint main() {\n    vector<int> current;\n    long long currentTarget = 0;\n    try {\n        vector<vector<int>> fixed = {{}, {3}, {3,3}, {0,0,0}, {1,-1,1},\n            {INT_MIN,INT_MAX}, {INT_MAX,INT_MAX}, {INT_MIN,INT_MIN}};\n        vector<long long> targets = {0,1,6,2LL*INT_MAX,2LL*INT_MIN,LLONG_MIN,LLONG_MAX};\n        for (const auto& a : fixed) for (long long k : targets) {\n            current = a; currentTarget = k; checkArray(a, k);\n        }\n        requireCheck(countTargetSubarrays(vector<int>(100000,0),0) == 5000050000LL, \"64-bit count\");\n        bool rejected = false;\n        try { (void)countTargetSubarrays(vector<int>(100001),0); }\n        catch (const invalid_argument&) { rejected = true; }\n        requireCheck(rejected, \"length contract\");\n        vector<RankedCandidate> candidates = {{\"Bob\",90,1},{\"Alice\",90,2},\n            {\"Alice\",90,0},{\"Z\",INT_MIN,3},{\"A\",INT_MAX,4}};\n        BetterCandidate comp;\n        auto equivalent = [&](const auto& a, const auto& b) { return !comp(a,b) && !comp(b,a); };\n        for (const auto& a : candidates) {\n            requireCheck(!comp(a,a), \"irreflexive\");\n            for (const auto& b : candidates) for (const auto& c : candidates) {\n                requireCheck(!(comp(a,b) && comp(b,a)), \"asymmetric\");\n                if (comp(a,b) && comp(b,c)) requireCheck(comp(a,c), \"transitive\");\n                if (equivalent(a,b) && equivalent(b,c)) requireCheck(equivalent(a,c), \"equivalence\");\n            }\n        }\n        auto ordered = candidates;\n        sort(ordered.begin(), ordered.end(), comp);\n        requireCheck(ordered.front().id == 4 && ordered[1].id == 0 && ordered[2].id == 2, \"ranking keys\");\n        for (size_t k = 0; k <= candidates.size()+1; ++k) {\n            auto result = bestCandidates(candidates,k);\n            requireCheck(result.size() == min(k,candidates.size()), \"top-k size\");\n            for (size_t i = 0; i < result.size(); ++i)\n                requireCheck(result[i].id == ordered[i].id, \"heap order\");\n        }\n        requireCheck(bestCandidates({},3).empty(), \"empty heap\");\n        mt19937 rng(20260922);\n        uniform_int_distribution<int> length(0,10), value(-5,5), target(-15,15);\n        for (int round = 0; round < 1000; ++round) {\n            current.assign(static_cast<size_t>(length(rng)),0);\n            for (int& x : current) x = value(rng);\n            currentTarget = target(rng);\n            checkArray(current,currentTarget);\n        }\n        cout << \"boundary, comparator and 1000 differential rounds passed\\n\";\n    } catch (const exception& e) {\n        cerr << \"FAILED: \" << e.what() << \"; last array case:\";\n        for (int x : current) cerr << ' ' << x;\n        cerr << \" target=\" << currentTarget << '\\n';\n        return 1;\n    }\n}"
+    },
+    {
+      "type": "qa",
+      "title": "章末自测：先遮住答案，完成推导再核对",
+      "items": [
+        {
+          "question": "25. 两数之和哈希先插入后查询，在 [3]、目标 6 上会发生什么？",
+          "answer": [
+            "插入 seen[3]=0 后查询补数 3 会命中自己，错误返回同一位置两次。先查再插入维持表里只有更早位置的不变量；[3,3] 时第二个元素查询会合法命中第一个。"
+          ]
+        },
+        {
+          "question": "26. 数组 [2,2,2] 中 lower_bound(2) 与 upper_bound(2) 各是什么？",
+          "answer": [
+            "按 0 下标分别是 0 和 3，所以相等范围为 [0,3)，数量 3。upper_bound 是第一个严格大于 2 的位置，不是最后一个 2 的位置；返回 size() 合法但不可解引用。"
+          ]
+        },
+        {
+          "question": "27. [0,0,0] 中目标为 0 的非空子数组为何是 6 个？",
+          "answer": [
+            "每个连续区间都满足，长度 1、2、3 分别有 3、2、1 个，共 6。前缀频次从 {0:1} 开始，三次查询分别贡献 1、2、3。若先增加当前前缀次数再查，每轮多算一个空区间，得到错误的 9。"
+          ]
+        },
+        {
+          "question": "28. 为什么测试最大子数组时“给每个元素加 1，答案也加 1”不成立？",
+          "answer": [
+            "一个长度 L 的区间会增加 L，而不同候选长度不同，最优区间也可能改变。例如 [-2,-2] 的答案是 -2，加 1 后 [-1,-1] 的答案为 -1 看似成立，但 [1,1] 的答案 2 变成 4，并不是 3。合法变形必须先证明答案关系。",
+            "反转保留连续区间的和值集合；对所有元素乘同一正数 c，所有区间和都乘 c，因此答案也乘 c，前提是数值不溢出且仍保持相同非空约定。"
+          ]
+        },
+        {
+          "question": "29. greater<int> 为什么使 priority_queue 的堆顶最小？",
+          "answer": [
+            "堆的比较器返回 true 表示第一个参数优先级低于第二个。greater(a,b) 在 a>b 时为真，表示较大的数优先级更低，所以最小元素到堆顶。sort 的比较器语义是“谁排在前面”，不能不加解释地混用两种口述。"
+          ]
+        },
+        {
+          "question": "30. reserve(10) 后 size() 是 0，写 v[0]=1 为什么不对？",
+          "answer": [
+            "reserve 只预留存储容量，并未创建可按下标访问的元素。operator[] 要求下标小于 size()；容量足够也不能访问不存在的元素。用 push_back(1) 添加，或 resize(10) 后再赋值。"
+          ]
+        },
+        {
+          "question": "31. 还有五分钟，最优解未完成，怎样交付？",
+          "answer": [
+            "主动说明已完成与未完成部分。如果已有正确基线，展示其输出、测试及复杂度，并明确在最大规模可能超时；如果只是局部实现，指出缺失逻辑和下一步方案。",
+            "不要把剩余时间全用于无依据地改代码。优先消除编译和边界错误、解释验证过的结论，并询问面试官希望看优化方向还是现有实现的测试。"
+          ]
+        },
+        {
+          "question": "32. 学完十五章之后，下一周应该做什么？",
+          "answer": [
+            "先做两次不预告题型的完整模拟，用十项行为表和具体失败用例定位前三个薄弱点。每个薄弱点各选一题基础、一题变式，完成独立实现、口述证明和回归测试。",
+            "把成功但依赖提示的题留在复习队列，按相对 D1、D3、D7 重测。若基础已稳定，再按岗位补图论、DP 或高级结构；不必为了“全部学完”而停止复习，也不必从头无差别重刷。"
+          ]
+        }
+      ]
+    }
+  ]
+}
