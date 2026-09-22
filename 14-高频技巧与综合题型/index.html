@@ -3,7 +3,7 @@
 <meta name="description" content="秋招算法手撕学习讲义：知识推导、经典考点、C++17 示例与面试训练。">
 <title>高频技巧与综合题型 · 算法手撕讲义</title><link rel="stylesheet" href="../assets/style.css"><script src="../assets/app.js" defer></script></head>
 <body><a class="skip" href="#main">跳到正文</a><header class="topbar"><a class="brand" href="../index.html"><span class="brand-mark">a[i]</span><span>算法手撕讲义<small>秋招学习工作区 / C++17</small></span></a><button type="button" class="nav-toggle" aria-expanded="false" aria-controls="chapter-nav">章节目录</button><a class="home-link" href="../index.html">全部章节 ↗</a></header>
-<div class="layout"><aside class="sidebar" id="chapter-nav" aria-label="章节导航"><p class="rail-label">LEARNING PATH · 学习路径</p><nav><a class="chapter-link"  href="../01-复杂度与解题方法/index.html"><span>01</span>复杂度与解题方法</a><a class="chapter-link"  href="../02-数组字符串与矩阵/index.html"><span>02</span>数组、字符串与矩阵</a><a class="chapter-link"  href="../03-链表/index.html"><span>03</span>链表</a><a class="chapter-link"  href="../04-栈队列与单调结构/index.html"><span>04</span>栈、队列与单调结构</a><a class="chapter-link"  href="../05-哈希集合与位运算/index.html"><span>05</span>哈希、集合与位运算</a><a class="chapter-link"  href="../06-排序与二分查找/index.html"><span>06</span>排序与二分查找</a><a class="chapter-link"  href="../07-树与二叉搜索树/index.html"><span>07</span>树与二叉搜索树</a><a class="chapter-link"  href="../08-堆与优先队列/index.html"><span>08</span>堆与优先队列</a><a class="chapter-link"  href="../09-递归回溯与分治/index.html"><span>09</span>递归、回溯与分治</a><a class="chapter-link"  href="../10-图论/index.html"><span>10</span>图论</a><a class="chapter-link"  href="../11-贪心/index.html"><span>11</span>贪心</a><a class="chapter-link"  href="../12-动态规划/index.html"><span>12</span>动态规划</a><a class="chapter-link"  href="../13-并查集与高级数据结构/index.html"><span>13</span>并查集与高级数据结构</a><a class="chapter-link active" aria-current=page href="../14-高频技巧与综合题型/index.html"><span>14</span>高频技巧与综合题型</a><a class="chapter-link"  href="../15-面试表达与训练计划/index.html"><span>15</span>面试表达与训练计划</a></nav><div class="sidebar-note">读懂不变量，独立写代码。<br>共 15 章 · 63 个小节<br>无需联网，浏览器直接打开。</div></aside><main id="main"><header class="chapter-header"><p class="eyebrow">CHAPTER 14 / 15</p><h1>高频技巧与综合题型</h1><p class="lead">综合题往往不是新算法，而是让多个结构共同维持一个不变量。先拆分操作及其复杂度要求，再决定哪些信息存在哪里。</p><div class="chapter-meta"><span>4 个小节</span><span>C++17 示例</span><a href="README.md">原始知识摘要 ↗</a></div></header><div class="reading-guide"><strong>本章怎么学</strong><p>先读原理与不变量，遮住代码手推例子，再独立实现。最后用面试追问检查理解，按练习条目做变式。</p></div><details class="environment"><summary>代码使用说明与通用头文件</summary><p>示例统一采用 C++17。页面展示核心函数或类，下载的 .cpp 已包含以下头文件，可独立编译。不同小节可能重用类型名，应分别编译；含 main 的示例可直接运行，其余需自行补充调用与测试。复制按钮复制当前代码块。</p><div class="codebox"><div class="codebar"><span>C++17</span><div><button type="button" class="copy">复制代码</button></div></div><pre tabindex="0" aria-label="C++17 代码"><code>#include &lt;algorithm&gt;
+<div class="layout"><aside class="sidebar" id="chapter-nav" aria-label="章节导航"><p class="rail-label">LEARNING PATH · 学习路径</p><nav><a class="chapter-link"  href="../01-复杂度与解题方法/index.html"><span>01</span>复杂度与解题方法</a><a class="chapter-link"  href="../02-数组字符串与矩阵/index.html"><span>02</span>数组、字符串与矩阵</a><a class="chapter-link"  href="../03-链表/index.html"><span>03</span>链表</a><a class="chapter-link"  href="../04-栈队列与单调结构/index.html"><span>04</span>栈、队列与单调结构</a><a class="chapter-link"  href="../05-哈希集合与位运算/index.html"><span>05</span>哈希、集合与位运算</a><a class="chapter-link"  href="../06-排序与二分查找/index.html"><span>06</span>排序与二分查找</a><a class="chapter-link"  href="../07-树与二叉搜索树/index.html"><span>07</span>树与二叉搜索树</a><a class="chapter-link"  href="../08-堆与优先队列/index.html"><span>08</span>堆与优先队列</a><a class="chapter-link"  href="../09-递归回溯与分治/index.html"><span>09</span>递归、回溯与分治</a><a class="chapter-link"  href="../10-图论/index.html"><span>10</span>图论</a><a class="chapter-link"  href="../11-贪心/index.html"><span>11</span>贪心</a><a class="chapter-link"  href="../12-动态规划/index.html"><span>12</span>动态规划</a><a class="chapter-link"  href="../13-并查集与高级数据结构/index.html"><span>13</span>并查集与高级数据结构</a><a class="chapter-link active" aria-current=page href="../14-高频技巧与综合题型/index.html"><span>14</span>高频技巧与综合题型</a><a class="chapter-link"  href="../15-面试表达与训练计划/index.html"><span>15</span>面试表达与训练计划</a></nav><div class="sidebar-note">读懂不变量，独立写代码。<br>共 15 章 · 63 个小节<br>无需联网，浏览器直接打开。</div></aside><main id="main"><header class="chapter-header"><p class="eyebrow">CHAPTER 14 / 15</p><h1>高频技巧与综合题型</h1><p class="lead">综合题往往不是新算法，而是让多个结构共同维持一个不变量。先拆分操作及其复杂度要求，再决定哪些信息存在哪里。</p><div class="chapter-meta"><span>4 个小节</span><span>C++17 示例</span><a href="README.md">原始知识摘要 ↗</a></div></header><div class="reading-guide"><strong>本章怎么学</strong><p>先读原理与不变量，遮住代码手推例子，再独立实现。最后用面试追问检查理解，按练习条目做变式。</p></div><div class="deep-intro"><div class="deep-block" id="guide-1"><h3>综合题的核心：把需求拆成操作，再写跨结构不变量</h3><p>前面章节已经有单独的链表、堆、哈希、树和 DP。综合题增加的难点通常不是某个新模板，而是一次操作要同步改动多个结构。先列 get、put、erase、随机取样、区间查询等接口，再决定分别由哪个结构承担，最后检查它们是否描述同一份逻辑数据。</p><p>本章沿用 4 个主节，补充缓存策略、频率 Top K、扫描线结果恢复、随机多重集合、在线抽样和安全数学操作。每个示例明确失败返回、端点、平局规则和数值范围；不把算法题里的平均复杂度承诺扩展成生产系统的线程安全、持久化或异常事务保证。</p></div><div class="deep-block" id="guide-2"><h3>先问需求，再选结构：同一个关键词不对应唯一算法</h3><p class="table-hint">窄屏下可左右滑动表格，查看完整内容。</p><div class="study-table" tabindex="0" role="region" aria-label="先问需求，再选结构：同一个关键词不对应唯一算法"><table><thead><tr><th scope="col">题目要求</th><th scope="col">关键分歧</th><th scope="col">可选工具</th><th scope="col">不能省略的条件</th></tr></thead><tbody><tr><td>第 K 大 / Top K</td><td>静态还是在线，是否需要排序结果</td><td>快选、大小 K 堆、桶</td><td>K 范围、重复值与平局</td></tr><tr><td>缓存淘汰</td><td>最近用过还是累计频率高</td><td>LRU 或 LFU</td><td>命中、更新是否算访问</td></tr><tr><td>区间</td><td>覆盖范围、并发数、具体分配</td><td>合并、扫描线、堆</td><td>闭合端点与空区间</td></tr><tr><td>随机</td><td>不同值等概率，还是元素实例等概率</td><td>集合 / 多重集合，数组索引</td><td>概率空间与重复值</td></tr><tr><td>数据流抽样</td><td>是否知道总长度，是否可回看</td><td>蓄水池抽样</td><td>每个历史位置均等被保留</td></tr><tr><td>模运算</td><td>求余、乘法、除法</td><td>规范化、乘法防溢出、逆元</td><td>模数合法且逆元存在</td></tr></tbody></table></div></div><div class="deep-block" id="guide-3"><h3>复杂度和边界约定</h3><p>哈希查找说的是平均复杂度，vector 追加说的是均摊复杂度，两者不是每次最坏常数。缓存示例禁用拷贝，防止映射里的链表迭代器指向旧对象；线程同步和分配失败回滚不在教学接口承诺范围内。</p><p>时间区间统一说明闭合方式；随机示例用 mt19937 与均匀整数分布，支持固定种子复现测试，不适合密码学安全场景。数学补充代码区分有符号输入与无符号幅值，显式处理最小负数、模数 1、不可逆与结果溢出。</p></div></div><nav class="chapter-outline" aria-label="本章阅读路线"><strong>直接跳到</strong><a href="#s1">01 LRU 缓存：哈希 + 双向链表</a><a href="#s2">02 扫描线：并发数量与端点规则</a><a href="#s3">03 随机集合：交换末尾删除</a><a href="#s4">04 欧几里得、筛法与数值边界</a><a href="#chapter-review">综合例题与自测答案</a></nav><details class="environment"><summary>代码使用说明与通用头文件</summary><p>示例统一采用 C++17。页面展示核心函数或类，下载的 .cpp 已包含以下头文件，可独立编译。不同小节可能重用类型名，应分别编译；含 main 的示例可直接运行，其余需自行补充调用与测试。复制按钮复制当前代码块。</p><div class="codebox"><div class="codebar"><span>C++17</span><div><button type="button" class="copy">复制代码</button></div></div><pre tabindex="0" aria-label="C++17 代码"><code>#include &lt;algorithm&gt;
 #include &lt;array&gt;
 #include &lt;cassert&gt;
 #include &lt;climits&gt;
@@ -27,7 +27,7 @@
 #include &lt;vector&gt;
 <span class="keyword">using</span> <span class="keyword">namespace</span> std;
 </code></pre></div><p>检查单个示例：<code>g++ -std=c++17 -Wall -Wextra -c sample.cpp</code>。这只检查编译；验证结果还需要调用函数并覆盖边界输入。代码按题目约束编写，各节明确其适用前提。</p></details><section class="lesson" id="s1"><div class="lesson-heading"><span class="lesson-number">14.01</span><h2>LRU 缓存：哈希 + 双向链表</h2></div>
-<h3>知识与适用场景</h3><p>LRU 淘汰最久未使用的键。哈希提供按键 O(1) 定位，双向链表提供 O(1) 移动和删除。约定链表头为最近使用，尾为最久未使用。</p><div class="invariant"><span>推导 / 不变量</span><p>get 命中时把节点移到头；put 已存在时更新并移到头；新键插入后超容量则删除尾部，同时移除哈希项。两个结构必须始终保存相同键集合。</p></div>
+<h3>知识与适用场景</h3><p>LRU 淘汰最久未使用的键。哈希提供按键 O(1) 定位，双向链表提供 O(1) 移动和删除。约定链表头为最近使用，尾为最久未使用。</p><div class="deep-block" id="s1-before-1"><h3>1.1 LRU 的不变量不只是“有一个哈希表和一个链表”</h3><p>链表从前到后按最近使用到最久未使用排序，表中每个 key 恰好指向链表里同 key 的唯一节点，两个结构键集合相同，节点数不超过容量。get 命中改变新旧顺序，未命中不改变；put 已有键修改值并刷新顺序，而不是增加一个重复节点。</p><p>splice 移动同一 list 中的节点不会让该节点迭代器失效，所以无需重新建立映射。删除则会使该节点迭代器失效，必须同步删映射。list 不能 O(1) 按 key 定位，哈希不能直接得到最久未使用者，两者缺一不可。</p></div><div class="deep-block" id="s1-before-2"><h3>1.2 容量 2 的状态推演</h3><p class="table-hint">窄屏下可左右滑动表格，查看完整内容。</p><div class="study-table" tabindex="0" role="region" aria-label="1.2 容量 2 的状态推演"><table><thead><tr><th scope="col">操作</th><th scope="col">返回 / 淘汰</th><th scope="col">链表顺序（新→旧）</th><th scope="col">检查点</th></tr></thead><tbody><tr><td>put(1,10)；put(2,20)</td><td>—</td><td>2、1</td><td>两个结构均有两个键</td></tr><tr><td>get(1)</td><td>10</td><td>1、2</td><td>读命中也刷新</td></tr><tr><td>put(1,11)</td><td>—</td><td>1、2</td><td>不创建第二个键 1</td></tr><tr><td>put(3,30)</td><td>淘汰 2</td><td>3、1</td><td>链表与哈希同步移除 2</td></tr><tr><td>缩容到 1</td><td>淘汰 1</td><td>3</td><td>按旧顺序连续淘汰</td></tr><tr><td>容量为 0 后 put</td><td>不保存</td><td>空</td><td>不是负容量或无限容量</td></tr></tbody></table></div></div><div class="deep-block" id="s1-before-3"><h3>1.3 LFU 的平局规则决定第二层结构</h3><p>LFU 优先淘汰使用频率最小的键，同频率时再淘汰最久未使用者。因此维护 key→节点信息、frequency→按最近程度排列的键链表，以及 minFrequency。访问一个键要从旧频率桶移除，插入频率+1 桶的头部。</p><p>本章约定新键频率为 1，get 命中和 put 更新现有键都算一次访问。若最小频率桶因提升一个键而变空，最小频率可升为旧值+1，因为刚移动的键保证新桶存在。这个结论依赖没有任意 erase 或缩容；增加那些接口时不能照抄 minFrequency++。</p></div><div class="deep-block" id="s1-before-4"><h3>1.4 Top K 方法对照：结果是否有序也是需求</h3><p>频率 Top K 还需要维护 U 个不同值的精确计数，并不是总空间只有 O(K)。若结果要求频率降序、同频数值升序，比较器必须同时表达两条规则。</p><p class="table-hint">窄屏下可左右滑动表格，查看完整内容。</p><div class="study-table" tabindex="0" role="region" aria-label="1.4 Top K 方法对照：结果是否有序也是需求"><table><thead><tr><th scope="col">方法</th><th scope="col">时间</th><th scope="col">额外空间</th><th scope="col">适用条件 / 限制</th></tr></thead><tbody><tr><td>全部排序</td><td>O(n log n)</td><td>依实现</td><td>需要全部有序，最直观</td></tr><tr><td>快速选择</td><td>平均 O(n)，最坏可能 O(n²)</td><td>依实现</td><td>静态、可改动；选出集合未必有序</td></tr><tr><td>大小 K 的堆</td><td>O(n log(K+1))</td><td>O(K)</td><td>可逐项处理，堆顶应是保留集合中最差者</td></tr><tr><td>频率桶</td><td>计数后 O(n+U) 量级</td><td>O(n+U)</td><td>桶范围受限，平局排序会增加成本</td></tr><tr><td>多路有序归并</td><td>取 K 项 O(K log M)</td><td>O(M)</td><td>数据已分成 M 路有序序列</td></tr></tbody></table></div></div><div class="invariant"><span>推导 / 不变量</span><p>get 命中时把节点移到头；put 已存在时更新并移到头；新键插入后超容量则删除尾部，同时移除哈希项。两个结构必须始终保存相同键集合。</p></div>
 <h3>手推一个例子</h3><p>容量 2：put(1)、put(2)、get(1) 后顺序为 1、2；put(3) 淘汰 2，保留 3、1。</p><div class="codebox"><div class="codebar"><span>C++17</span><div><a href="examples/01.cpp" download>下载 .cpp</a><button type="button" class="copy">复制代码</button></div></div><pre tabindex="0" aria-label="C++17 代码"><code><span class="keyword">class</span> LRUCache {
     size_t cap;
     list&lt;pair&lt;<span class="keyword">int</span>,<span class="keyword">int</span>&gt;&gt; order;
@@ -59,9 +59,120 @@
     }
 };</code></pre></div>
 <dl class="analysis-grid"><div><dt>复杂度</dt><dd>哈希平均每次操作 O(1)，空间 O(capacity)；哈希极端情况可能退化。</dd></div><div><dt>易错点与边界</dt><dd>list::splice 移动节点不会使该节点迭代器失效。不能用 vector 存位置并期待中间删除 O(1)。示例禁止拷贝，避免哈希迭代器仍指向旧链表。</dd></div></dl>
-<div class="practice"><h3>经典考点与练习</h3><p>练习：LeetCode 146 LRU 缓存、460 LFU 缓存。</p><details><summary>面试官可能继续问什么？</summary><p>若值可能为 -1，接口如何区分不存在？LFU 还需要维护什么信息？</p><p class="muted">先用自己的话回答，再回到本节的前提、不变量和边界检查论证。</p></details></div>
+<div class="deep-block" id="s1-after-1"><h3>1.5 optional LRU：区分未命中与值为 −1，并支持删除和缩容</h3><p>get / put / erase 平均 O(1)，resize 淘汰 e 个键时 O(e)，空间 O(capacity)。负容量抛异常；与基础模板把负容量折成 0 的约定不同。optional&lt;int&gt;{−1} 是命中合法值，不等于 nullopt。</p><div class="codebox"><div class="codebar"><span>C++17</span><div><a href="examples/detail-lru-optional.cpp" download>下载 .cpp</a><button type="button" class="copy">复制代码</button></div></div><pre tabindex="0" aria-label="C++17 代码"><code><span class="keyword">class</span> OptionalLRU {
+    size_t capacity;
+    list&lt;pair&lt;<span class="keyword">int</span>,<span class="keyword">int</span>&gt;&gt; order;
+    unordered_map&lt;<span class="keyword">int</span>,list&lt;pair&lt;<span class="keyword">int</span>,<span class="keyword">int</span>&gt;&gt;::iterator&gt; position;
+    <span class="keyword">void</span> trim() {
+        <span class="keyword">while</span> (order.size() &gt; capacity) {
+            position.erase(order.back().first); order.pop_back();
+        }
+    }
+<span class="keyword">public</span>:
+    <span class="keyword">explicit</span> OptionalLRU(<span class="keyword">int</span> cap) {
+        <span class="keyword">if</span> (cap &lt; <span class="number">0</span>) <span class="keyword">throw</span> invalid_argument(<span class="string">&quot;capacity&quot;</span>);
+        capacity = (size_t)cap;
+    }
+    OptionalLRU(<span class="keyword">const</span> OptionalLRU&amp;) = delete;
+    OptionalLRU&amp; operator=(<span class="keyword">const</span> OptionalLRU&amp;) = delete;
+    optional&lt;<span class="keyword">int</span>&gt; get(<span class="keyword">int</span> key) {
+        <span class="keyword">auto</span> it = position.find(key);
+        <span class="keyword">if</span> (it == position.end()) <span class="keyword">return</span> nullopt;
+        order.splice(order.begin(),order,it-&gt;second);
+        <span class="keyword">return</span> it-&gt;second-&gt;second;
+    }
+    <span class="keyword">void</span> put(<span class="keyword">int</span> key, <span class="keyword">int</span> value) {
+        <span class="keyword">auto</span> it = position.find(key);
+        <span class="keyword">if</span> (it != position.end()) {
+            it-&gt;second-&gt;second = value;
+            order.splice(order.begin(),order,it-&gt;second); <span class="keyword">return</span>;
+        }
+        <span class="keyword">if</span> (!capacity) <span class="keyword">return</span>;
+        order.emplace_front(key,value); position[key] = order.begin(); trim();
+    }
+    <span class="keyword">bool</span> erase(<span class="keyword">int</span> key) {
+        <span class="keyword">auto</span> it = position.find(key);
+        <span class="keyword">if</span> (it == position.end()) <span class="keyword">return</span> <span class="keyword">false</span>;
+        order.erase(it-&gt;second); position.erase(it); <span class="keyword">return</span> <span class="keyword">true</span>;
+    }
+    <span class="keyword">void</span> resize(<span class="keyword">int</span> cap) {
+        <span class="keyword">if</span> (cap &lt; <span class="number">0</span>) <span class="keyword">throw</span> invalid_argument(<span class="string">&quot;capacity&quot;</span>);
+        capacity = (size_t)cap; trim();
+    }
+    size_t size() <span class="keyword">const</span> { <span class="keyword">return</span> order.size(); }
+};</code></pre></div></div><div class="deep-block" id="s1-after-2"><h3>1.6 LFU：频率桶里的 LRU 平局淘汰</h3><p>每次操作只移动一个节点、查询少量哈希项，平均 O(1)，空间 O(capacity)。空桶及时删除，桶数不会随历史访问次数无限增长。频率使用 uint64_t，并在增长溢出前抛错。本教学版无 erase/resize；不支持并发操作，也不提供内存分配失败时的强异常保证。</p><div class="codebox"><div class="codebar"><span>C++17</span><div><a href="examples/detail-lfu-cache.cpp" download>下载 .cpp</a><button type="button" class="copy">复制代码</button></div></div><pre tabindex="0" aria-label="C++17 代码"><code><span class="keyword">class</span> LFUCacheExample {
+    <span class="keyword">struct</span> Entry { <span class="keyword">int</span> value; uint64_t frequency; list&lt;<span class="keyword">int</span>&gt;::iterator where; };
+    size_t capacity;
+    uint64_t minimum = <span class="number">0</span>;
+    unordered_map&lt;<span class="keyword">int</span>,Entry&gt; entries;
+    unordered_map&lt;uint64_t,list&lt;<span class="keyword">int</span>&gt;&gt; buckets;
+    <span class="keyword">void</span> touch(<span class="keyword">int</span> key) {
+        <span class="keyword">auto</span>&amp; entry = entries.at(key);
+        uint64_t old = entry.frequency;
+        <span class="keyword">if</span> (old == UINT64_MAX) <span class="keyword">throw</span> overflow_error(<span class="string">&quot;frequency&quot;</span>);
+        <span class="keyword">auto</span> bucket = buckets.find(old);
+        bucket-&gt;second.erase(entry.where);
+        <span class="keyword">if</span> (bucket-&gt;second.empty()) {
+            buckets.erase(bucket);
+            <span class="keyword">if</span> (minimum == old) minimum = old+<span class="number">1</span>;
+        }
+        entry.frequency = old+<span class="number">1</span>;
+        <span class="keyword">auto</span>&amp; target = buckets[old+<span class="number">1</span>];
+        target.push_front(key); entry.where = target.begin();
+    }
+<span class="keyword">public</span>:
+    <span class="keyword">explicit</span> LFUCacheExample(<span class="keyword">int</span> cap) {
+        <span class="keyword">if</span> (cap &lt; <span class="number">0</span>) <span class="keyword">throw</span> invalid_argument(<span class="string">&quot;capacity&quot;</span>);
+        capacity = (size_t)cap;
+    }
+    LFUCacheExample(<span class="keyword">const</span> LFUCacheExample&amp;) = delete;
+    LFUCacheExample&amp; operator=(<span class="keyword">const</span> LFUCacheExample&amp;) = delete;
+    optional&lt;<span class="keyword">int</span>&gt; get(<span class="keyword">int</span> key) {
+        <span class="keyword">auto</span> it = entries.find(key);
+        <span class="keyword">if</span> (it == entries.end()) <span class="keyword">return</span> nullopt;
+        <span class="keyword">int</span> result = it-&gt;second.value; touch(key); <span class="keyword">return</span> result;
+    }
+    <span class="keyword">void</span> put(<span class="keyword">int</span> key, <span class="keyword">int</span> value) {
+        <span class="keyword">auto</span> it = entries.find(key);
+        <span class="keyword">if</span> (it != entries.end()) {
+            touch(key); entries.at(key).value = value; <span class="keyword">return</span>;
+        }
+        <span class="keyword">if</span> (!capacity) <span class="keyword">return</span>;
+        <span class="keyword">if</span> (entries.size() == capacity) {
+            <span class="keyword">auto</span> bucket = buckets.find(minimum);
+            <span class="keyword">int</span> victim = bucket-&gt;second.back();
+            bucket-&gt;second.pop_back(); entries.erase(victim);
+            <span class="keyword">if</span> (bucket-&gt;second.empty()) buckets.erase(bucket);
+        }
+        <span class="keyword">auto</span>&amp; bucket = buckets[<span class="number">1</span>]; bucket.push_front(key);
+        entries.emplace(key,Entry{value,<span class="number">1</span>,bucket.begin()}); minimum = <span class="number">1</span>;
+    }
+    size_t size() <span class="keyword">const</span> { <span class="keyword">return</span> entries.size(); }
+};</code></pre></div></div><div class="deep-block" id="s1-after-3"><h3>1.7 高频 Top K：固定平局规则，让堆顶始终最差</h3><p>返回频率降序、同频数值升序的 K 个不同值。priority_queue 的比较器表示 x 比 y 更靠后；把“更好”关系放进去，堆顶就是最差候选，超容量淘汰它。U 为不同值数，时间平均 O(n+U log(K+1)+K log(K+1))，空间 O(U+K)，并非 O(K) 总内存。</p><div class="codebox"><div class="codebar"><span>C++17</span><div><a href="examples/detail-topk-frequency.cpp" download>下载 .cpp</a><button type="button" class="copy">复制代码</button></div></div><pre tabindex="0" aria-label="C++17 代码"><code>vector&lt;<span class="keyword">int</span>&gt; topKFrequentStable(<span class="keyword">const</span> vector&lt;<span class="keyword">int</span>&gt;&amp; a, <span class="keyword">int</span> k) {
+    <span class="keyword">if</span> (k &lt; <span class="number">0</span>) <span class="keyword">throw</span> invalid_argument(<span class="string">&quot;k&quot;</span>);
+    unordered_map&lt;<span class="keyword">int</span>,<span class="keyword">long</span> <span class="keyword">long</span>&gt; count;
+    <span class="keyword">for</span> (<span class="keyword">int</span> x : a) ++count[x];
+    <span class="keyword">if</span> ((size_t)k &gt; count.size()) <span class="keyword">throw</span> invalid_argument(<span class="string">&quot;k exceeds distinct count&quot;</span>);
+    <span class="keyword">if</span> (!k) <span class="keyword">return</span> {};
+    <span class="keyword">using</span> Candidate = pair&lt;<span class="keyword">long</span> <span class="keyword">long</span>,<span class="keyword">int</span>&gt;; <span class="comment">// 频次、数值</span>
+    <span class="keyword">auto</span> better = [](<span class="keyword">const</span> Candidate&amp; x, <span class="keyword">const</span> Candidate&amp; y) {
+        <span class="keyword">if</span> (x.first != y.first) <span class="keyword">return</span> x.first &gt; y.first;
+        <span class="keyword">return</span> x.second &lt; y.second;
+    };
+    priority_queue&lt;Candidate,vector&lt;Candidate&gt;,decltype(better)&gt; heap(better);
+    <span class="keyword">for</span> (<span class="keyword">auto</span> [value,frequency] : count) {
+        heap.push({frequency,value});
+        <span class="keyword">if</span> ((<span class="keyword">int</span>)heap.size() &gt; k) heap.pop();
+    }
+    vector&lt;Candidate&gt; kept;
+    <span class="keyword">while</span> (!heap.empty()) { kept.push_back(heap.top()); heap.pop(); }
+    sort(kept.begin(),kept.end(),better);
+    vector&lt;<span class="keyword">int</span>&gt; answer;
+    <span class="keyword">for</span> (<span class="keyword">auto</span> [frequency,value] : kept) answer.push_back(value);
+    <span class="keyword">return</span> answer;
+}</code></pre></div></div><div class="practice"><h3>经典考点与练习</h3><p>练习：LeetCode 146 LRU 缓存、460 LFU 缓存。</p><h3>面试追问：关键点完整解答</h3><dl class="answer-list"><div><dt>get 为什么也要改链表？</dt><dd><p>LRU 的最近使用包括读取命中。若只在写入时刷新，得到的是接近写入顺序的策略，不再是题目定义的 LRU。get 未命中则不产生节点，也不改变现有键顺序。</p></dd></div><div><dt>链表换成 vector 会怎样？</dt><dd><p>vector 随机访问快，但将中间节点移到最前面通常要移动 O(n) 元素，保存的下标也要随之修正。双向链表支持已知节点 O(1) 摘除与插入；哈希负责让“已知节点”这一步也平均 O(1)。</p></dd></div><div><dt>为什么缓存对象禁用默认拷贝？</dt><dd><p>链表会被复制成新节点，但默认复制的哈希值仍是旧链表的迭代器。副本操作可能访问或移动原对象节点，破坏所有权。要么禁用拷贝，要么自定义拷贝后重新建立指向新链表的映射。</p></dd></div><div><dt>LFU 为什么还需要每个频率桶里的顺序？</dt><dd><p>只知道频率无法解决同频淘汰。例如两个键都访问过两次，要根据哪个更久没用来选择。每个桶维护最近到最旧顺序，淘汰最小频率桶的尾部，两个优先级才完整。</p></dd></div><div><dt>LFU 最小频率何时能直接加一？</dt><dd><p>当一次 touch 把某键从最小频率 f 桶移到 f+1，且 f 桶恰好变空时，刚移动的键保证 f+1 桶非空，因此 minimum=f+1 合法。任意删除最小桶最后一项时没有这个保证，可能需要跳到更远的频率。</p></dd></div><div><dt>精确在线高频 Top K 能否只保存 K 个计数？</dt><dd><p>一般不能。当前不在前 K 的值可能在未来大量出现，如果此前频率已丢失，就无法精确比较。普通方案要为所有不同值保留计数；Misra-Gries 等节省内存的方法是有条件的候选或近似方案，常需第二遍验证，不等价于精确全流排名。</p></dd></div><div><dt>快选得到前 K 项后，为何还可能要排序？</dt><dd><p>快选仅保证分区与秩条件，候选内部并不有序。若接口只要集合，可以不排序；若要求按大小、频次或特定平局规则输出，还需对选中的 K 项排序，计入 O(K log K)。</p></dd></div></dl></div>
 <label class="learned"><input type="checkbox" data-progress="14-01">我能独立实现，并解释正确性与边界</label></section><section class="lesson" id="s2"><div class="lesson-heading"><span class="lesson-number">14.02</span><h2>扫描线：并发数量与端点规则</h2></div>
-<h3>知识与适用场景</h3><p>把区间开始转成 +1 事件，结束转成 -1 事件，排序后维护活跃数量。重点不在求和，而在同一时间发生的事件谁先处理。</p><div class="invariant"><span>推导 / 不变量</span><p>会议采用 [start,end) 时，某会议结束的瞬间可以开始下一场，故相同时间先处理 -1，再处理 +1。闭区间且端点重叠时需要反过来。</p></div>
+<h3>知识与适用场景</h3><p>把区间开始转成 +1 事件，结束转成 -1 事件，排序后维护活跃数量。重点不在求和，而在同一时间发生的事件谁先处理。</p><div class="deep-block" id="s2-before-1"><h3>2.1 扫描的对象是相邻事件坐标之间的一整段</h3><p>对半开区间 [l,r)，在 l 加一、在 r 减一。同坐标所有事件合并处理后，active 表示从当前坐标 t 到下一不同坐标 next 的整段并发量，不是只在 t 这个孤立点成立。记录峰值时间段时，应把这个状态与 [t,next) 关联。</p><p>基础模板逐事件按 (time,delta) 排序，相同时间先结束再开始，适合求半开区间最大值。补充版本按坐标分组，用净变化更新，避免把同一时刻的中间处理状态误当作真实时间段。没有下一坐标时无需记录一段无穷区间。</p></div><div class="deep-block" id="s2-before-2"><h3>2.2 半开区间、闭区间与离散时刻</h3><p class="table-hint">窄屏下可左右滑动表格，查看完整内容。</p><div class="study-table" tabindex="0" role="region" aria-label="2.2 半开区间、闭区间与离散时刻"><table><thead><tr><th scope="col">语义</th><th scope="col">相等端点</th><th scope="col">事件处理</th><th scope="col">零长度</th></tr></thead><tbody><tr><td>连续 [l,r)</td><td>上一场结束可接下一场</td><td>同坐标先结束或按净变化分组</td><td>[t,t) 为空，忽略</td></tr><tr><td>连续闭区间 [l,r]</td><td>端点相等也相交</td><td>求点峰值要先进入再退出</td><td>[t,t] 是单点，不为空</td></tr><tr><td>整数格点 [l,r]</td><td>两个端点都计入</td><td>可在 r+1 退出，但要防溢出</td><td>单点贡献一次</td></tr><tr><td>带权载客 [l,r)</td><td>下车后可立刻上车</td><td>同点先下后上或净变化</td><td>起终同点不占用路段</td></tr></tbody></table></div></div><div class="deep-block" id="s2-before-3"><h3>2.3 [0,10)、[5,10)、[10,15) 的分组状态</h3><p class="table-hint">窄屏下可左右滑动表格，查看完整内容。</p><div class="study-table" tabindex="0" role="region" aria-label="2.3 [0,10)、[5,10)、[10,15) 的分组状态"><table><thead><tr><th scope="col">坐标</th><th scope="col">进入 / 离开净变化</th><th scope="col">处理后 active</th><th scope="col">对应时间段</th></tr></thead><tbody><tr><td>0</td><td>+1</td><td>1</td><td>[0,5)</td></tr><tr><td>5</td><td>+1</td><td>2</td><td>[5,10)，峰值段</td></tr><tr><td>10</td><td>−2+1=−1</td><td>1</td><td>[10,15)，不是 3</td></tr><tr><td>15</td><td>−1</td><td>0</td><td>没有后继事件，不记录</td></tr></tbody></table></div></div><div class="deep-block" id="s2-before-4"><h3>2.4 最小会议室数等于最大同时占用量</h3><p>任何时刻同时开会的 k 场必须占 k 个不同房间，因此峰值并发是房间数下界。按开始时间处理，把所有 end≤start 的房间释放；有空房就复用，没空房才开新房。每次开新房时，现有房间都被正在进行的会议占用，说明确实达到新的并发下界。</p><p>这给出了达到下界的分配方案，故算法最优。若只要数量可用扫描线；需要具体房间编号时，用结束时间堆和空闲编号堆，结果会更直接。只弹一个空闲房间的某些计数实现也能成立，但其堆语义不同，不能拿它声称保存所有当前活跃会议。</p></div><div class="invariant"><span>推导 / 不变量</span><p>会议采用 [start,end) 时，某会议结束的瞬间可以开始下一场，故相同时间先处理 -1，再处理 +1。闭区间且端点重叠时需要反过来。</p></div>
 <h3>手推一个例子</h3><p>[0,10)、[5,10)、[10,15) 最大并发为 2；时间 10 应先释放两个房间，再安排新会议，而不是算成 3。</p><div class="codebox"><div class="codebar"><span>C++17</span><div><a href="examples/02.cpp" download>下载 .cpp</a><button type="button" class="copy">复制代码</button></div></div><pre tabindex="0" aria-label="C++17 代码"><code><span class="keyword">int</span> minMeetingRooms(<span class="keyword">const</span> vector&lt;pair&lt;<span class="keyword">int</span>,<span class="keyword">int</span>&gt;&gt;&amp; meetings){
     vector&lt;pair&lt;<span class="keyword">int</span>,<span class="keyword">int</span>&gt;&gt; events;
     <span class="keyword">for</span>(<span class="keyword">auto</span> [l,r]:meetings){
@@ -79,9 +190,80 @@
     <span class="keyword">return</span> best;
 }</code></pre></div>
 <dl class="analysis-grid"><div><dt>复杂度</dt><dd>时间 O(n log n)，事件空间 O(n)。</dd></div><div><dt>易错点与边界</dt><dd>区间合并求覆盖范围、扫描线求并发数、贪心调度求不冲突数量，是三个不同目标。零长度区间应根据语义单独处理。</dd></div></dl>
-<div class="practice"><h3>经典考点与练习</h3><p>练习：LeetCode 253 会议室 II、1094 拼车、56 合并区间。</p><details><summary>面试官可能继续问什么？</summary><p>若要返回所有最大并发时间段，需要在处理时间点分组时记录哪些信息？</p><p class="muted">先用自己的话回答，再回到本节的前提、不变量和边界检查论证。</p></details></div>
+<div class="deep-block" id="s2-after-1"><h3>2.5 返回所有最大并发时间段</h3><p>返回最大并发数与所有达到该峰值的最大连续半开段；相邻峰值段会合并。全部为空时返回 count=0、spans 为空，不把没有会议的整条时间轴当峰值答案。重复区间按不同会议计数。时间 O(n log n)，空间 O(n)。</p><div class="codebox"><div class="codebar"><span>C++17</span><div><a href="examples/detail-peak-intervals.cpp" download>下载 .cpp</a><button type="button" class="copy">复制代码</button></div></div><pre tabindex="0" aria-label="C++17 代码"><code><span class="keyword">struct</span> PeakConcurrency {
+    <span class="keyword">int</span> count = <span class="number">0</span>;
+    vector&lt;pair&lt;<span class="keyword">int</span>,<span class="keyword">int</span>&gt;&gt; spans;
+};
+PeakConcurrency peakConcurrency(<span class="keyword">const</span> vector&lt;pair&lt;<span class="keyword">int</span>,<span class="keyword">int</span>&gt;&gt;&amp; intervals) {
+    vector&lt;pair&lt;<span class="keyword">int</span>,<span class="keyword">int</span>&gt;&gt; events;
+    <span class="keyword">for</span> (<span class="keyword">auto</span> [l,r] : intervals) {
+        <span class="keyword">if</span> (l &gt; r) <span class="keyword">throw</span> invalid_argument(<span class="string">&quot;interval&quot;</span>);
+        <span class="keyword">if</span> (l == r) continue;
+        events.push_back({l,<span class="number">1</span>}); events.push_back({r,-<span class="number">1</span>});
+    }
+    sort(events.begin(),events.end());
+    PeakConcurrency result; <span class="keyword">int</span> active = <span class="number">0</span>;
+    size_t i = <span class="number">0</span>;
+    <span class="keyword">while</span> (i &lt; events.size()) {
+        <span class="keyword">int</span> time = events[i].first;
+        <span class="keyword">while</span> (i &lt; events.size() &amp;&amp; events[i].first == time) active += events[i++].second;
+        <span class="keyword">if</span> (i == events.size()) break;
+        <span class="keyword">int</span> next = events[i].first;
+        <span class="keyword">if</span> (active &gt; result.count) { result.count = active; result.spans.clear(); }
+        <span class="keyword">if</span> (active &gt; <span class="number">0</span> &amp;&amp; active == result.count) {
+            <span class="keyword">if</span> (!result.spans.empty() &amp;&amp; result.spans.back().second == time)
+                result.spans.back().second = next;
+            <span class="keyword">else</span> result.spans.push_back({time,next});
+        }
+    }
+    <span class="keyword">return</span> result;
+}</code></pre></div></div><div class="deep-block" id="s2-after-2"><h3>2.6 最优会议室分配：保留每条输入对应的编号</h3><p>零长度会议不占房，编号为 −1；非空会议房号从 0 开始。空闲时优先复用最小编号，保证确定性，但不是对原输入编号序列做全局字典序优化。输入不被修改。时间 O(n log n)，空间 O(n)。</p><div class="codebox"><div class="codebar"><span>C++17</span><div><a href="examples/detail-room-assignment.cpp" download>下载 .cpp</a><button type="button" class="copy">复制代码</button></div></div><pre tabindex="0" aria-label="C++17 代码"><code><span class="keyword">struct</span> RoomAssignment {
+    <span class="keyword">int</span> rooms = <span class="number">0</span>;
+    vector&lt;<span class="keyword">int</span>&gt; roomForMeeting;
+};
+RoomAssignment assignMeetingRooms(<span class="keyword">const</span> vector&lt;pair&lt;<span class="keyword">int</span>,<span class="keyword">int</span>&gt;&gt;&amp; meetings) {
+    vector&lt;tuple&lt;<span class="keyword">int</span>,<span class="keyword">int</span>,<span class="keyword">int</span>&gt;&gt; ordered;
+    RoomAssignment result; result.roomForMeeting.assign(meetings.size(),-<span class="number">1</span>);
+    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; (<span class="keyword">int</span>)meetings.size(); ++i) {
+        <span class="keyword">auto</span> [l,r] = meetings[i];
+        <span class="keyword">if</span> (l &gt; r) <span class="keyword">throw</span> invalid_argument(<span class="string">&quot;interval&quot;</span>);
+        <span class="keyword">if</span> (l &lt; r) ordered.push_back({l,r,i});
+    }
+    sort(ordered.begin(),ordered.end());
+    <span class="keyword">using</span> Busy = pair&lt;<span class="keyword">int</span>,<span class="keyword">int</span>&gt;; <span class="comment">// 结束时刻、房间号</span>
+    priority_queue&lt;Busy,vector&lt;Busy&gt;,greater&lt;Busy&gt;&gt; busy;
+    priority_queue&lt;<span class="keyword">int</span>,vector&lt;<span class="keyword">int</span>&gt;,greater&lt;<span class="keyword">int</span>&gt;&gt; freeRooms;
+    <span class="keyword">for</span> (<span class="keyword">auto</span> [start,end,id] : ordered) {
+        <span class="keyword">while</span> (!busy.empty() &amp;&amp; busy.top().first &lt;= start) {
+            freeRooms.push(busy.top().second); busy.pop();
+        }
+        <span class="keyword">int</span> room;
+        <span class="keyword">if</span> (freeRooms.empty()) room = result.rooms++;
+        <span class="keyword">else</span> { room = freeRooms.top(); freeRooms.pop(); }
+        result.roomForMeeting[id] = room; busy.push({end,room});
+    }
+    <span class="keyword">return</span> result;
+}</code></pre></div></div><div class="deep-block" id="s2-after-3"><h3>2.7 带权扫描线：拼车容量检查</h3><p>每条记录是 {人数,上车位置,下车位置}。同坐标先下后上等价于对之后路段计算净变化；判断的是人数之和，而非车辆或区间条数。n≤10^6 且人数为非负 int，累计量可安全放入 long long。时间 O(n log n)，空间 O(n)。</p><div class="codebox"><div class="codebar"><span>C++17</span><div><a href="examples/detail-car-pooling.cpp" download>下载 .cpp</a><button type="button" class="copy">复制代码</button></div></div><pre tabindex="0" aria-label="C++17 代码"><code><span class="keyword">bool</span> canCarPool(<span class="keyword">const</span> vector&lt;array&lt;<span class="keyword">int</span>,<span class="number">3</span>&gt;&gt;&amp; trips, <span class="keyword">long</span> <span class="keyword">long</span> capacity) {
+    <span class="keyword">if</span> (capacity &lt; <span class="number">0</span> || trips.size() &gt; <span class="number">1000000</span>) <span class="keyword">throw</span> invalid_argument(<span class="string">&quot;capacity/size&quot;</span>);
+    vector&lt;pair&lt;<span class="keyword">int</span>,<span class="keyword">long</span> <span class="keyword">long</span>&gt;&gt; events;
+    <span class="keyword">for</span> (<span class="keyword">auto</span> trip : trips) {
+        <span class="keyword">int</span> passengers = trip[<span class="number">0</span>], start = trip[<span class="number">1</span>], end = trip[<span class="number">2</span>];
+        <span class="keyword">if</span> (passengers &lt; <span class="number">0</span> || start &gt; end) <span class="keyword">throw</span> invalid_argument(<span class="string">&quot;trip&quot;</span>);
+        <span class="keyword">if</span> (start == end || passengers == <span class="number">0</span>) continue;
+        events.push_back({start,passengers});
+        events.push_back({end,-(<span class="keyword">long</span> <span class="keyword">long</span>)passengers});
+    }
+    sort(events.begin(),events.end());
+    <span class="keyword">long</span> <span class="keyword">long</span> active = <span class="number">0</span>; size_t i = <span class="number">0</span>;
+    <span class="keyword">while</span> (i &lt; events.size()) {
+        <span class="keyword">int</span> time = events[i].first;
+        <span class="keyword">while</span> (i &lt; events.size() &amp;&amp; events[i].first == time) active += events[i++].second;
+        <span class="keyword">if</span> (active &gt; capacity) <span class="keyword">return</span> <span class="keyword">false</span>;
+    }
+    <span class="keyword">return</span> <span class="keyword">true</span>;
+}</code></pre></div></div><div class="practice"><h3>经典考点与练习</h3><p>练习：LeetCode 253 会议室 II、1094 拼车、56 合并区间。</p><h3>面试追问：关键点完整解答</h3><dl class="answer-list"><div><dt>为什么同时间先 +1 再 −1 可能把会议室数算大？</dt><dd><p>半开区间的旧会议在终点已经结束，新会议在该点才开始，可以使用同一个房间。先加后减会产生并不存在的瞬时同时占用，例 [0,1)、[1,2) 本应只需 1 间。</p></dd></div><div><dt>按时间分组后，active 代表哪个时段？</dt><dd><p>它代表当前坐标处理完之后到下一个不同坐标之前的半开段。该段内部没有事件，状态不变。记录 [t,next) 而不是只记录事件点，才能正确返回全部峰值时间段。</p></dd></div><div><dt>闭区间求单点峰值，也能只算同坐标净变化吗？</dt><dd><p>不能直接照抄。闭区间 [0,1] 和 [1,2] 在点 1 同时存在，但净变化为零会掩盖这个瞬间峰值。要按进入、检查、离开等顺序单独处理点语义，或在整数格点模型下安全使用 r+1。</p></dd></div><div><dt>会议室方案如何验证，不必与标准编号完全一致？</dt><dd><p>检查非空会议都有合法房号，同一房号任意两场不重叠，房间总数等于最大并发下界。不同编号重命名通常仍合法；如果接口另有平局规则，再单独核对该规则。</p></dd></div><div><dt>扫描线求并发与合并区间能互相替代吗？</dt><dd><p>不能。合并只保留覆盖范围，会抹去重叠次数。例如两个相同区间合并后只有一段，但实际需要两间房。区间调度又是在选一个不冲突子集，目标与前两者都不同。</p></dd></div><div><dt>拼车题为什么不能只记录每个端点一次 +1 / −1？</dt><dd><p>每条行程的人数不同。两条各 10 人的行程与两条各 1 人的行程区间数相同，但容量需求完全不同。事件增量应是人数，累加用足够宽的整数。</p></dd></div><div><dt>离散化后能否用排名差当实际持续时间？</dt><dd><p>不能，排名只保留顺序。事件时间 1、100、101 变成 0、1、2 后，两段排名长度都为 1，真实长度却是 99 与 1。若计算忙碌时长或时间积分，必须用原坐标差，并先转宽整数再相减。</p></dd></div></dl></div>
 <label class="learned"><input type="checkbox" data-progress="14-02">我能独立实现，并解释正确性与边界</label></section><section class="lesson" id="s3"><div class="lesson-heading"><span class="lesson-number">14.03</span><h2>随机集合：交换末尾删除</h2></div>
-<h3>知识与适用场景</h3><p>数组支持随机下标访问，哈希支持按值定位。删除中间元素时用末尾元素填洞，再修正末尾元素的下标映射，即可避免线性搬移。</p><div class="invariant"><span>推导 / 不变量</span><p>维护 index[value] 等于该值在数组中的实际下标。删除 x 时先把最后值写到 x 的位置并更新映射，再 pop_back 和擦除 x。</p></div>
+<h3>知识与适用场景</h3><p>数组支持随机下标访问，哈希支持按值定位。删除中间元素时用末尾元素填洞，再修正末尾元素的下标映射，即可避免线性搬移。</p><div class="deep-block" id="s3-before-1"><h3>3.1 随机集合的两个 O(1) 能力来自不同结构</h3><p>vector 让随机下标读取成为常数操作，哈希映射让按值查找下标成为平均常数操作。删除中间值时，以末尾元素填洞，只修改一个位置映射，从而避免移动整段数组；代价是不能保持插入顺序。</p><p>如果允许重复值，一个值可能占多个下标，应映射到下标集合。均匀选择一个数组位置意味着每个实例等概率，所以出现两次的值比出现一次的值更容易被抽到。这不是每个不同数值等概率。</p></div><div class="deep-block" id="s3-before-2"><h3>3.2 重复值删除手推：最后一个值可能与待删值相同</h3><p class="table-hint">窄屏下可左右滑动表格，查看完整内容。</p><div class="study-table" tabindex="0" role="region" aria-label="3.2 重复值删除手推：最后一个值可能与待删值相同"><table><thead><tr><th scope="col">步骤</th><th scope="col">数组</th><th scope="col">下标集合</th><th scope="col">注意</th></tr></thead><tbody><tr><td>初始</td><td>[5,7,5]</td><td>5→{0,2}；7→{1}</td><td>随机抽到 5 的概率 2/3</td></tr><tr><td>删 7，位置 1</td><td>末尾 5 填到位置 1</td><td>先删 7 的 1，再把 5 的 2 改为 1</td><td>得到 [5,5]</td></tr><tr><td>删 5，假设选位置 0</td><td>末尾也是 5</td><td>删 0，删末尾 1，再加入新位置 0</td><td>同一个下标集合仍需一致</td></tr><tr><td>删最后一份 5</td><td>[]</td><td>移除空的 key→集合 项</td><td>随机查询应明确失败</td></tr></tbody></table></div></div><div class="deep-block" id="s3-before-3"><h3>3.3 四类随机问题的概率空间</h3><p class="table-hint">窄屏下可左右滑动表格，查看完整内容。</p><div class="study-table" tabindex="0" role="region" aria-label="3.3 四类随机问题的概率空间"><table><thead><tr><th scope="col">任务</th><th scope="col">随机对象</th><th scope="col">正确规则</th><th scope="col">常见错误</th></tr></thead><tbody><tr><td>随机集合</td><td>当前所有不同元素</td><td>数组下标均匀</td><td>rand()%n 可能有取模偏差</td></tr><tr><td>随机多重集合</td><td>当前所有元素实例</td><td>每个位置均匀</td><td>把不同值当均匀，忽视重复次数</td></tr><tr><td>Fisher–Yates 洗牌</td><td>全部排列</td><td>第 i 步只从未固定区间选伙伴</td><td>每次都与全数组随机位置交换</td></tr><tr><td>蓄水池抽样</td><td>流中所有历史位置的 K 子集</td><td>第 t 项以 K/t 概率进入</td><td>只在最初 K 项里随机，后续永不入样</td></tr></tbody></table></div></div><div class="deep-block" id="s3-before-4"><h3>3.4 Fisher–Yates 与蓄水池的证明切入点</h3><p>洗牌从后往前固定一个位置：剩 n 个候选时，每个以 1/n 概率放到最后；再在剩下 n−1 个里均匀决定下一位置。因此任意排列概率为 1/n!。关键是缩小选择范围，不是在每一步都从整个数组挑下标。</p><p>蓄水池先保留前 K 项。处理第 t 项时均匀取 j∈[0,t−1]，若 j&lt;K 就替换第 j 个样本。新项入样概率 K/t；旧项此前在样本中的概率 K/(t−1)，本轮存活概率 1−1/t，相乘仍为 K/t。完整子集均匀性还可归纳得到每个 K 子集概率 1/C(t,K)，不能仅凭相同边际概率就断言任意算法都对子集均匀。</p></div><div class="invariant"><span>推导 / 不变量</span><p>维护 index[value] 等于该值在数组中的实际下标。删除 x 时先把最后值写到 x 的位置并更新映射，再 pop_back 和擦除 x。</p></div>
 <h3>手推一个例子</h3><p>数组 [10,20,30] 删除 20：把 30 移到下标 1，数组变为 [10,30]，映射 index[30] 从 2 改为 1。</p><div class="codebox"><div class="codebar"><span>C++17</span><div><a href="examples/03.cpp" download>下载 .cpp</a><button type="button" class="copy">复制代码</button></div></div><pre tabindex="0" aria-label="C++17 代码"><code><span class="keyword">class</span> RandomizedSet {
     vector&lt;<span class="keyword">int</span>&gt; data;
     unordered_map&lt;<span class="keyword">int</span>,<span class="keyword">int</span>&gt; index;
@@ -105,9 +287,73 @@
     }
 };</code></pre></div>
 <dl class="analysis-grid"><div><dt>复杂度</dt><dd>插入、删除哈希平均 O(1)，数组追加为均摊 O(1)，随机读取 O(1)，空间 O(n)。</dd></div><div><dt>易错点与边界</dt><dd>直接 rand()%n 可能有取模偏差。删除末尾元素时也必须正确工作，不能先删映射再依赖它。</dd></div></dl>
-<div class="practice"><h3>经典考点与练习</h3><p>练习：LeetCode 380 O(1) 时间插入、删除和获取随机元素、381 允许重复版本。</p><details><summary>面试官可能继续问什么？</summary><p>若允许重复值，每个值应该映射到什么？如何支持均匀随机抽取所有元素实例？</p><p class="muted">先用自己的话回答，再回到本节的前提、不变量和边界检查论证。</p></details></div>
+<div class="deep-block" id="s3-after-1"><h3>3.5 允许重复的随机集合：每个实例均匀</h3><p>insert 返回插入前是否不存在这个值，但每次都会新增一份；eraseOne 删除任意一份。删除中不插入新的哈希键，避免保存的 map 迭代器被 rehash 影响；lastValue==x 的情况也按相同顺序修正集合。操作平均/均摊 O(1)，空间 O(实例总数)。固定种子便于复现，标准库分布实现差异可能使跨平台序列不同。</p><div class="codebox"><div class="codebar"><span>C++17</span><div><a href="examples/detail-randomized-multiset.cpp" download>下载 .cpp</a><button type="button" class="copy">复制代码</button></div></div><pre tabindex="0" aria-label="C++17 代码"><code><span class="keyword">class</span> RandomizedMultisetExample {
+    vector&lt;<span class="keyword">int</span>&gt; data;
+    unordered_map&lt;<span class="keyword">int</span>,unordered_set&lt;size_t&gt;&gt; positions;
+    mt19937 rng;
+<span class="keyword">public</span>:
+    <span class="keyword">explicit</span> RandomizedMultisetExample(uint32_t seed = 5489U): rng(seed) {}
+    <span class="keyword">bool</span> insert(<span class="keyword">int</span> x) {
+        <span class="keyword">auto</span>&amp; places = positions[x];
+        <span class="keyword">bool</span> newValue = places.empty();
+        places.insert(data.size()); data.push_back(x); <span class="keyword">return</span> newValue;
+    }
+    <span class="keyword">bool</span> eraseOne(<span class="keyword">int</span> x) {
+        <span class="keyword">auto</span> it = positions.find(x);
+        <span class="keyword">if</span> (it == positions.end()) <span class="keyword">return</span> <span class="keyword">false</span>;
+        size_t index = *it-&gt;second.begin(), lastIndex = data.size()-<span class="number">1</span>;
+        <span class="keyword">int</span> lastValue = data.back();
+        it-&gt;second.erase(index);
+        <span class="keyword">if</span> (index != lastIndex) {
+            data[index] = lastValue;
+            <span class="keyword">auto</span>&amp; lastPlaces = positions.at(lastValue);
+            lastPlaces.erase(lastIndex); lastPlaces.insert(index);
+        }
+        data.pop_back();
+        <span class="keyword">if</span> (it-&gt;second.empty()) positions.erase(it);
+        <span class="keyword">return</span> <span class="keyword">true</span>;
+    }
+    optional&lt;<span class="keyword">int</span>&gt; getRandom() {
+        <span class="keyword">if</span> (data.empty()) <span class="keyword">return</span> nullopt;
+        uniform_int_distribution&lt;size_t&gt; choose(<span class="number">0</span>,data.size()-<span class="number">1</span>);
+        <span class="keyword">return</span> data[choose(rng)];
+    }
+    size_t count(<span class="keyword">int</span> x) <span class="keyword">const</span> {
+        <span class="keyword">auto</span> it = positions.find(x);
+        <span class="keyword">return</span> it == positions.end() ? <span class="number">0</span> : it-&gt;second.size();
+    }
+    size_t size() <span class="keyword">const</span> { <span class="keyword">return</span> data.size(); }
+};</code></pre></div></div><div class="deep-block" id="s3-after-2"><h3>3.6 在线蓄水池：不知道最终长度也能保留 K 个样本</h3><p>当前流不足 K 项时保留全部；K=0 只计数、不存样本。重复值按流中的不同位置参与抽样；样本顺序不承诺原流顺序。offer 在通常固定宽随机抽取模型下为期望/均摊 O(1)，总存储 O(min(K,n))，snapshot 复制成本 O(样本数)。这不是滑动窗口抽样：很久以前的数据仍参与概率空间。</p><div class="codebox"><div class="codebar"><span>C++17</span><div><a href="examples/detail-reservoir.cpp" download>下载 .cpp</a><button type="button" class="copy">复制代码</button></div></div><pre tabindex="0" aria-label="C++17 代码"><code><span class="keyword">class</span> ReservoirSample {
+    size_t capacity;
+    uint64_t seen = <span class="number">0</span>;
+    vector&lt;<span class="keyword">int</span>&gt; samples;
+    mt19937 rng;
+<span class="keyword">public</span>:
+    ReservoirSample(<span class="keyword">int</span> k, uint32_t seed = 5489U): rng(seed) {
+        <span class="keyword">if</span> (k &lt; <span class="number">0</span>) <span class="keyword">throw</span> invalid_argument(<span class="string">&quot;k&quot;</span>);
+        capacity = (size_t)k;
+    }
+    <span class="keyword">void</span> offer(<span class="keyword">int</span> value) {
+        <span class="keyword">if</span> (seen == UINT64_MAX) <span class="keyword">throw</span> overflow_error(<span class="string">&quot;stream length&quot;</span>);
+        ++seen;
+        <span class="keyword">if</span> (samples.size() &lt; capacity) samples.push_back(value);
+        <span class="keyword">else</span> <span class="keyword">if</span> (capacity &gt; <span class="number">0</span>) {
+            uniform_int_distribution&lt;uint64_t&gt; choose(<span class="number">0</span>,seen-<span class="number">1</span>);
+            uint64_t index = choose(rng);
+            <span class="keyword">if</span> (index &lt; capacity) samples[(size_t)index] = value;
+        }
+    }
+    vector&lt;<span class="keyword">int</span>&gt; snapshot() <span class="keyword">const</span> { <span class="keyword">return</span> samples; }
+    uint64_t processed() <span class="keyword">const</span> { <span class="keyword">return</span> seen; }
+};</code></pre></div></div><div class="deep-block" id="s3-after-3"><h3>3.7 Fisher–Yates 原地洗牌</h3><p>空数组和单元素不消耗交换操作。每一步只在尚未固定的前缀里抽取下标，时间期望 O(n)、额外空间 O(1)（不计输入与生成器自身固定状态）。均匀分布证明建立在各步条件均匀抽取之上，mt19937 是可复现伪随机生成器，不是安全随机源。</p><div class="codebox"><div class="codebar"><span>C++17</span><div><a href="examples/detail-shuffle.cpp" download>下载 .cpp</a><button type="button" class="copy">复制代码</button></div></div><pre tabindex="0" aria-label="C++17 代码"><code><span class="keyword">void</span> fisherYatesShuffle(vector&lt;<span class="keyword">int</span>&gt;&amp; values, mt19937&amp; rng) {
+    <span class="keyword">for</span> (size_t remaining = values.size(); remaining &gt; <span class="number">1</span>; --remaining) {
+        uniform_int_distribution&lt;size_t&gt; choose(<span class="number">0</span>,remaining-<span class="number">1</span>);
+        size_t picked = choose(rng);
+        swap(values[remaining-<span class="number">1</span>],values[picked]);
+    }
+}</code></pre></div></div><div class="practice"><h3>经典考点与练习</h3><p>练习：LeetCode 380 O(1) 时间插入、删除和获取随机元素、381 允许重复版本。</p><h3>面试追问：关键点完整解答</h3><dl class="answer-list"><div><dt>删除时，若待删位置就是数组末尾还需要交换吗？</dt><dd><p>不需要填洞，但仍要从对应下标集合或映射删除该位置，再 pop_back。如果统一写交换，也要保证不会在删掉映射后再次误用它。补充实现用 index!=lastIndex 分支明确跳过多余搬移。</p></dd></div><div><dt>重复值映射到单一下标为什么不够？</dt><dd><p>同一个值可能存在多份。只记一个位置会丢失其他实例的位置，删除后无法定位剩余副本。下标集合能在平均 O(1) 取出一个位置，并在末尾填洞时同步更新。</p></dd></div><div><dt>为什么不建议使用 rand()%n？</dt><dd><p>如果随机源取值范围大小不是 n 的倍数，某些余数会比另一些多一次映射，产生偏差。uniform_int_distribution 按目标范围生成均匀整数，通常通过拒绝采样等方式避免这种取模偏差。</p></dd></div><div><dt>每次都从全数组随机换一个位置，为什么不是均匀洗牌？</dt><dd><p>以 n=3 为例，这种算法有 3³=27 条等概率选择路径，但共有 6 个排列，27 不能被 6 整除，因此不可能每个排列次数相等。Fisher–Yates 的路径数为 3·2·1，恰与排列数对应。</p></dd></div><div><dt>蓄水池为什么挑 [0,t−1]，而不是只挑 [0,K−1]？</dt><dd><p>只挑样本槽会让每个新项必定进入，并过度偏向最近数据。扩大到 t 个位置后，仅前 K 个下标触发替换，新项入样概率降为 K/t，才能与所有历史位置平衡。</p></dd></div><div><dt>固定种子是否意味着随机算法失去意义？</dt><dd><p>固定种子使同一实现的实验可复现，不改变算法应如何分配抽样范围；但生成的是确定性伪随机序列，不适合作为不可预测的安全机制。测试不应因为短样本频率不完全相等就判错，也不能因频率看起来接近就当作均匀性证明。</p></dd></div><div><dt>蓄水池能否直接维护最近一小时的均匀样本？</dt><dd><p>不能直接套。普通蓄水池从所有已处理位置抽样，不会自动剔除过期位置。时间窗口的样本需要额外的过期处理与重新加权设计，不能只删除样本中过期项后继续用总历史 seen 作为分母。</p></dd></div></dl></div>
 <label class="learned"><input type="checkbox" data-progress="14-03">我能独立实现，并解释正确性与边界</label></section><section class="lesson" id="s4"><div class="lesson-heading"><span class="lesson-number">14.04</span><h2>欧几里得、筛法与数值边界</h2></div>
-<h3>知识与适用场景</h3><p>数学题同样先找不变量：gcd(a,b)=gcd(b,a%b)，因为两对数拥有相同公因数。最小公倍数可由 a/gcd(a,b)*b 计算，先除后乘降低中间溢出风险。</p><div class="invariant"><span>推导 / 不变量</span><p>埃氏筛从每个未标记质数 p 的 p² 开始标记倍数，因为更小倍数已被更小质因子标记。循环条件使用 p&lt;=n/p 避免 p*p 在条件中溢出。</p></div>
+<h3>知识与适用场景</h3><p>数学题同样先找不变量：gcd(a,b)=gcd(b,a%b)，因为两对数拥有相同公因数。最小公倍数可由 a/gcd(a,b)*b 计算，先除后乘降低中间溢出风险。</p><div class="deep-block" id="s4-before-1"><h3>4.1 欧几里得算法与最小负数</h3><p>若 a=qb+r，则同时整除 a、b 的数也整除 b、r，反之亦然，因此两对数的公因子集合相同，gcd(a,b)=gcd(b,r)。持续取余直到余数为 0，剩下的非零数就是最大公约数；本章约定 gcd(0,0)=0。</p><p>对有符号整数先取幅值时要小心：LLONG_MIN 的绝对值是 2^63，无法放入 long long。abs(LLONG_MIN) 或直接 -LLONG_MIN 都可能溢出。补充接口把幅值保存在 uint64_t 中，负数先安全计算 −(x+1)，再加 1。</p></div><div class="deep-block" id="s4-before-2"><h3>4.2 数值技巧与它们不能保证的事</h3><p class="table-hint">窄屏下可左右滑动表格，查看完整内容。</p><div class="study-table" tabindex="0" role="region" aria-label="4.2 数值技巧与它们不能保证的事"><table><thead><tr><th scope="col">写法 / 场景</th><th scope="col">能解决什么</th><th scope="col">仍需检查</th></tr></thead><tbody><tr><td>a/gcd(a,b)*b</td><td>减少乘法中间数</td><td>最终乘积仍可能超范围</td></tr><tr><td>先转 long long 再相减 / 相乘</td><td>避免先在 int 中溢出</td><td>long long 自身也有上限</td></tr><tr><td>x%=m；若 x&lt;0 则 x+=m</td><td>规范化为 [0,m)</td><td>m 必须正，类型与范围需明确</td></tr><tr><td>(a*b)%m</td><td>数学上可化简</td><td>机器先算乘积，可能已经溢出</td></tr><tr><td>a/b 取模</td><td>普通整数除法</td><td>不等价于乘模逆元，逆元也未必存在</td></tr><tr><td>p&lt;=n/p</td><td>避免条件里的 p*p 溢出</td><td>p&gt;0；分配 n+1 空间仍要可行</td></tr></tbody></table></div></div><div class="deep-block" id="s4-before-3"><h3>4.3 模逆元存在条件</h3><p class="table-hint">窄屏下可左右滑动表格，查看完整内容。</p><div class="study-table" tabindex="0" role="region" aria-label="4.3 模逆元存在条件"><table><thead><tr><th scope="col">例子</th><th scope="col">gcd(a,m)</th><th scope="col">是否可逆</th><th scope="col">解释</th></tr></thead><tbody><tr><td>3 mod 7</td><td>1</td><td>可逆，逆元 5</td><td>3×5≡1 mod 7</td></tr><tr><td>2 mod 6</td><td>2</td><td>不可逆</td><td>2 的倍数模 6 不会等于 1</td></tr><tr><td>0 mod 7</td><td>7</td><td>不可逆</td><td>不能除以模数意义下的零</td></tr><tr><td>2 mod 9</td><td>1</td><td>可逆，逆元 5</td><td>模数不必是质数</td></tr><tr><td>a^(p−2) mod p</td><td>需 p 是质数且 a 不被 p 整除</td><td>满足前提才成立</td><td>不能对任意合数套费马公式</td></tr></tbody></table></div></div><div class="deep-block" id="s4-before-4"><h3>4.4 从 p² 起筛，与线性最小质因子筛</h3><p>埃氏筛对质数 p 从 p² 开始标记，因为 p·2 到 p·(p−1) 已含更小质因子，之前已被处理。复杂度是 O(n log log n)，不应把遍历所有倍数误写成 O(n²)。LeetCode 204 问的是严格小于 n 的质数个数，而基础 primesUpTo(n) 包含 n，需要转换边界。</p><p>若需要多次分解不同整数，可预处理每个数的最小质因子 spf。线性筛让每个合数只由它的最小质因子生成一次；分解 x 时不断取 p=spf[x] 并除去它，得到质因子和指数。它仍需 O(n) 空间，不能用来直接筛到 10^12。</p></div><div class="invariant"><span>推导 / 不变量</span><p>埃氏筛从每个未标记质数 p 的 p² 开始标记倍数，因为更小倍数已被更小质因子标记。循环条件使用 p&lt;=n/p 避免 p*p 在条件中溢出。</p></div>
 <h3>手推一个例子</h3><p>筛到 10：p=2 标记 4、6、8、10；p=3 从 9 开始标记，剩下 2、3、5、7 为质数。</p><div class="codebox"><div class="codebar"><span>C++17</span><div><a href="examples/04.cpp" download>下载 .cpp</a><button type="button" class="copy">复制代码</button></div></div><pre tabindex="0" aria-label="C++17 代码"><code>vector&lt;<span class="keyword">int</span>&gt; primesUpTo(<span class="keyword">int</span> n){
     <span class="keyword">if</span>(n&lt;<span class="number">2</span>) <span class="keyword">return</span> {};
     vector&lt;<span class="keyword">bool</span>&gt; prime(n+<span class="number">1</span>,<span class="keyword">true</span>);
@@ -125,5 +371,386 @@
     <span class="keyword">return</span> a;
 }</code></pre></div>
 <dl class="analysis-grid"><div><dt>复杂度</dt><dd>筛法时间 O(n log log n)、空间 O(n)；gcd 时间 O(log(min(a,b)+1))、空间 O(1)。</dd></div><div><dt>易错点与边界</dt><dd>模运算不能把除法直接改成除后取模，逆元需要满足存在条件。负数取模在 C++ 中可能为负，常用 (x%mod+mod)%mod 归一化。</dd></div></dl>
-<div class="practice"><h3>经典考点与练习</h3><p>练习：LeetCode 204 计数质数、50 Pow(x,n)、189 轮转数组中的 gcd 循环置换。</p><details><summary>面试官可能继续问什么？</summary><p>为什么从 p² 开始？若 a、b 的乘积仍超 long long，先除后乘是否一定足够？</p><p class="muted">先用自己的话回答，再回到本节的前提、不变量和边界检查论证。</p></details></div>
-<label class="learned"><input type="checkbox" data-progress="14-04">我能独立实现，并解释正确性与边界</label></section><nav class="chapter-pager" aria-label="相邻章节"><a href="../13-并查集与高级数据结构/index.html"><small>上一章</small>← 并查集与高级数据结构</a><a href="../15-面试表达与训练计划/index.html"><small>下一章</small>面试表达与训练计划 →</a></nav><footer>秋招算法学习讲义 · C++17<br>例题编号供检索；难度与覆盖范围按学习顺序组织。</footer></main><aside class="toc" aria-label="本页目录"><p class="rail-label">本章小节</p><a href="#s1"><span>01</span>LRU 缓存：哈希 + 双向链表</a><a href="#s2"><span>02</span>扫描线：并发数量与端点规则</a><a href="#s3"><span>03</span>随机集合：交换末尾删除</a><a href="#s4"><span>04</span>欧几里得、筛法与数值边界</a></aside></div><div class="toast" role="status" aria-live="polite"></div></body></html>
+<div class="deep-block" id="s4-after-1"><h3>4.5 有符号输入的 GCD / LCM：返回无符号幅值并检测溢出</h3><p>结果非负，LCM 有值 0 与因溢出返回 nullopt 是两回事。LCM 采用 uint64_t 返回范围，可表示 2^63 等超出有符号 long long 的合法幅值；不要再未经检查转换回 long long。欧几里得 O(log(min(|a|,|b|)+1))，额外空间 O(1)，零参数立即按约定处理。</p><div class="codebox"><div class="codebar"><span>C++17</span><div><a href="examples/detail-safe-gcd-lcm.cpp" download>下载 .cpp</a><button type="button" class="copy">复制代码</button></div></div><pre tabindex="0" aria-label="C++17 代码"><code>uint64_t integerMagnitude(<span class="keyword">long</span> <span class="keyword">long</span> x) {
+    <span class="keyword">return</span> x &lt; <span class="number">0</span> ? uint64_t(-(x+<span class="number">1</span>))+<span class="number">1</span> : uint64_t(x);
+}
+uint64_t gcdMagnitude(<span class="keyword">long</span> <span class="keyword">long</span> a, <span class="keyword">long</span> <span class="keyword">long</span> b) {
+    uint64_t x = integerMagnitude(a), y = integerMagnitude(b);
+    <span class="keyword">while</span> (y) { uint64_t r = x%y; x = y; y = r; }
+    <span class="keyword">return</span> x;
+}
+optional&lt;uint64_t&gt; lcmMagnitude(<span class="keyword">long</span> <span class="keyword">long</span> a, <span class="keyword">long</span> <span class="keyword">long</span> b) {
+    uint64_t x = integerMagnitude(a), y = integerMagnitude(b);
+    <span class="keyword">if</span> (x == <span class="number">0</span> || y == <span class="number">0</span>) <span class="keyword">return</span> uint64_t(<span class="number">0</span>);
+    uint64_t reduced = x/gcdMagnitude(a,b);
+    <span class="keyword">if</span> (reduced &gt; UINT64_MAX/y) <span class="keyword">return</span> nullopt;
+    <span class="keyword">return</span> reduced*y;
+}</code></pre></div></div><div class="deep-block" id="s4-after-2"><h3>4.6 不依赖 __int128 的模乘、模幂与小模数逆元</h3><p>模乘通过二进制拆分和安全加法避免 a*b 溢出，支持整个 uint64_t 模数范围。两数均小于 mod 时，若 a≥mod−b 就算 a−(mod−b)，否则 a+b 一定小于 mod 且不溢出。模乘 O(log(mod+1))，模幂 O(log(exponent+1)·log(mod+1))，不是把乘法当常数后的普通快速幂界。</p><p>powerMod 定义 exponent=0 时返回 1 mod m，因此本接口把 0^0 约定为 1 mod m；m=1 始终为 0，m=0 非法。逆元使用扩展欧几里得并限制模数≤10^9，使系数运算处在 long long 安全范围；gcd≠1 返回 nullopt，不假定模数为质数。</p><div class="codebox"><div class="codebar"><span>C++17</span><div><a href="examples/detail-modular-arithmetic.cpp" download>下载 .cpp</a><button type="button" class="copy">复制代码</button></div></div><pre tabindex="0" aria-label="C++17 代码"><code>uint64_t addReducedMod(uint64_t a, uint64_t b, uint64_t mod) {
+    <span class="comment">// 内部辅助：mod&gt;0，a&lt;mod，b&lt;mod</span>
+    <span class="keyword">return</span> a &gt;= mod-b ? a-(mod-b) : a+b;
+}
+uint64_t multiplyMod(uint64_t a, uint64_t b, uint64_t mod) {
+    <span class="keyword">if</span> (mod == <span class="number">0</span>) <span class="keyword">throw</span> invalid_argument(<span class="string">&quot;mod&quot;</span>);
+    a %= mod; b %= mod;
+    uint64_t answer = <span class="number">0</span>;
+    <span class="keyword">while</span> (b) {
+        <span class="keyword">if</span> (b&amp;1U) answer = addReducedMod(answer,a,mod);
+        b &gt;&gt;= <span class="number">1</span>;
+        a = addReducedMod(a,a,mod);
+    }
+    <span class="keyword">return</span> answer;
+}
+uint64_t powerMod(uint64_t base, uint64_t exponent, uint64_t mod) {
+    <span class="keyword">if</span> (mod == <span class="number">0</span>) <span class="keyword">throw</span> invalid_argument(<span class="string">&quot;mod&quot;</span>);
+    uint64_t answer = <span class="number">1</span>%mod;
+    base %= mod;
+    <span class="keyword">while</span> (exponent) {
+        <span class="keyword">if</span> (exponent&amp;1U) answer = multiplyMod(answer,base,mod);
+        exponent &gt;&gt;= <span class="number">1</span>;
+        base = multiplyMod(base,base,mod);
+    }
+    <span class="keyword">return</span> answer;
+}
+optional&lt;<span class="keyword">long</span> <span class="keyword">long</span>&gt; inverseModSmall(<span class="keyword">long</span> <span class="keyword">long</span> a, <span class="keyword">long</span> <span class="keyword">long</span> mod) {
+    <span class="keyword">if</span> (mod &lt; <span class="number">2</span> || mod &gt; <span class="number">1000000000</span>) <span class="keyword">throw</span> invalid_argument(<span class="string">&quot;2 &lt;= mod &lt;= 1e9&quot;</span>);
+    a %= mod; <span class="keyword">if</span> (a &lt; <span class="number">0</span>) a += mod;
+    <span class="keyword">long</span> <span class="keyword">long</span> oldR = mod, r = a, oldT = <span class="number">0</span>, t = <span class="number">1</span>;
+    <span class="keyword">while</span> (r) {
+        <span class="keyword">long</span> <span class="keyword">long</span> q = oldR/r;
+        <span class="keyword">long</span> <span class="keyword">long</span> nextR = oldR-q*r, nextT = oldT-q*t;
+        oldR = r; r = nextR; oldT = t; t = nextT;
+    }
+    <span class="keyword">if</span> (oldR != <span class="number">1</span>) <span class="keyword">return</span> nullopt;
+    oldT %= mod; <span class="keyword">if</span> (oldT &lt; <span class="number">0</span>) oldT += mod;
+    <span class="keyword">return</span> oldT;
+}</code></pre></div></div><div class="deep-block" id="s4-after-3"><h3>4.7 最小质因子表：多次分解整数</h3><p>预处理 O(n) 时间与空间。每次分解至多做 O(log x) 次除法，返回升序的 {质因子,指数}；1 的分解为空，0 的质因数分解未定义，拒绝调用。primes() 返回表内只读引用，仅在对象存活期间使用。本例上限 10^6 是资源约定，不是筛法理论上限。</p><div class="codebox"><div class="codebar"><span>C++17</span><div><a href="examples/detail-smallest-prime.cpp" download>下载 .cpp</a><button type="button" class="copy">复制代码</button></div></div><pre tabindex="0" aria-label="C++17 代码"><code><span class="keyword">class</span> SmallestPrimeTable {
+    <span class="keyword">int</span> limit;
+    vector&lt;<span class="keyword">int</span>&gt; spf, primeList;
+<span class="keyword">public</span>:
+    <span class="keyword">explicit</span> SmallestPrimeTable(<span class="keyword">int</span> n): limit(n) {
+        <span class="keyword">if</span> (n &lt; <span class="number">0</span> || n &gt; <span class="number">1000000</span>) <span class="keyword">throw</span> invalid_argument(<span class="string">&quot;sieve limit&quot;</span>);
+        spf.assign(n+<span class="number">1</span>,<span class="number">0</span>);
+        <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">2</span>; i &lt;= n; ++i) {
+            <span class="keyword">if</span> (spf[i] == <span class="number">0</span>) { spf[i] = i; primeList.push_back(i); }
+            <span class="keyword">for</span> (<span class="keyword">int</span> p : primeList) {
+                <span class="keyword">if</span> (p &gt; spf[i] || <span class="number">1LL</span>*p*i &gt; n) break;
+                spf[p*i] = p;
+            }
+        }
+    }
+    <span class="keyword">const</span> vector&lt;<span class="keyword">int</span>&gt;&amp; primes() <span class="keyword">const</span> { <span class="keyword">return</span> primeList; }
+    <span class="keyword">bool</span> isPrime(<span class="keyword">int</span> x) <span class="keyword">const</span> {
+        <span class="keyword">if</span> (x &lt; <span class="number">0</span> || x &gt; limit) <span class="keyword">throw</span> out_of_range(<span class="string">&quot;x&quot;</span>);
+        <span class="keyword">return</span> x &gt;= <span class="number">2</span> &amp;&amp; spf[x] == x;
+    }
+    vector&lt;pair&lt;<span class="keyword">int</span>,<span class="keyword">int</span>&gt;&gt; factorize(<span class="keyword">int</span> x) <span class="keyword">const</span> {
+        <span class="keyword">if</span> (x &lt; <span class="number">1</span> || x &gt; limit) <span class="keyword">throw</span> out_of_range(<span class="string">&quot;1 &lt;= x &lt;= limit&quot;</span>);
+        vector&lt;pair&lt;<span class="keyword">int</span>,<span class="keyword">int</span>&gt;&gt; factors;
+        <span class="keyword">while</span> (x &gt; <span class="number">1</span>) {
+            <span class="keyword">int</span> p = spf[x], exponent = <span class="number">0</span>;
+            <span class="keyword">while</span> (x%p == <span class="number">0</span>) { x /= p; ++exponent; }
+            factors.push_back({p,exponent});
+        }
+        <span class="keyword">return</span> factors;
+    }
+};</code></pre></div></div><div class="practice"><h3>经典考点与练习</h3><p>练习：LeetCode 204 计数质数、50 Pow(x,n)、189 轮转数组中的 gcd 循环置换。</p><h3>面试追问：关键点完整解答</h3><dl class="answer-list"><div><dt>先除后乘是否保证 LCM 不溢出？</dt><dd><p>不保证，只减少不必要的中间放大。互质的大数 a、b 的 LCM 仍是 a*b，可能超过输出类型。乘法前检查 reduced&gt;MAX/b，满足时返回失败；事后看乘积是否变小已无法避免有符号溢出的未定义行为。</p></dd></div><div><dt>为什么 abs(LLONG_MIN) 是陷阱？</dt><dd><p>有符号范围负侧比正侧多一个值，最小负数的绝对值无法放回同一有符号类型。先对 x+1 取负再转无符号并加一，能得到 2^63 而不执行溢出的有符号取负。</p></dd></div><div><dt>模意义下能不能直接约掉同一因子？</dt><dd><p>只有该因子与模数互质、具有逆元时才能作为可逆乘法约去。例如 2x≡2 mod 6 有 x≡1 或 4 两种剩余类，直接除以 2 写成 x≡1 mod 6 会丢解。解同余方程与普通整数除法不同。</p></dd></div><div><dt>费马小定理求逆元有什么前提？</dt><dd><p>模数 p 必须为质数，且 a mod p 非零，才有 a^(p−1)≡1，从而逆元为 a^(p−2)。对一般模数只要 gcd(a,m)=1 也可逆，但应使用扩展欧几里得等适用方法，不能擅自用 m−2 指数。</p></dd></div><div><dt>无符号溢出定义为回绕，为什么仍不能直接模乘？</dt><dd><p>回绕相当于先对 2^64 取模，再对 m 取模，通常不等于对原精确乘积直接模 m。行为有定义不代表结果符合数学目标。安全模乘避免丢失那些高位信息。</p></dd></div><div><dt>为什么埃氏筛从 p² 而不是 2p 开始？</dt><dd><p>2p、3p 等小于 p² 的倍数都含有小于 p 的质因子，已在更早的轮次被标记。从 p² 开始跳过重复工作，不会遗漏合数。判断 p²≤n 时可用 p≤n/p，实际标记起点先在宽类型计算。</p></dd></div><div><dt>筛法、试除和最小质因子表如何选择？</dt><dd><p>只判少数不大的整数可试除；需要区间内全部质数用筛法；同一上界内大量分解用最小质因子表。上界过大时内存会成为瓶颈，可能需要分段筛或更专门的数论算法，不能只看单次查询很快。</p></dd></div></dl></div>
+<label class="learned"><input type="checkbox" data-progress="14-04">我能独立实现，并解释正确性与边界</label></section><section class="chapter-review" id="chapter-review"><p class="eyebrow">PRACTICE / 把本章方法用起来</p><h2>综合例题与章末自测</h2><div class="deep-block" id="review-1"><h3>综合训练路线：先说清接口语义再编码</h3><p class="table-hint">窄屏下可左右滑动表格，查看完整内容。</p><div class="study-table" tabindex="0" role="region" aria-label="综合训练路线：先说清接口语义再编码"><table><thead><tr><th scope="col">方向</th><th scope="col">经典题 / 任务</th><th scope="col">不变量或证明</th><th scope="col">固定边界</th></tr></thead><tbody><tr><td>缓存与排名</td><td>146、460、347、215</td><td>映射与链表一致；桶内顺序；堆顶最差</td><td>容量 0、重复更新、同频平局</td></tr><tr><td>时间区间</td><td>253、1094、56</td><td>事件点之间状态恒定；分配达到并发下界</td><td>相等端点、零长度、重复区间</td></tr><tr><td>随机与数据流</td><td>380、381、384、382 / 蓄水池</td><td>位置等概率；后缀固定；历史样本平衡</td><td>空集、重复值、K=0、K&gt;流长</td></tr><tr><td>数论与安全</td><td>204、50、GCD/LCM、模逆元</td><td>公因子不变、位拆分、最小质因子</td><td>最小负数、模数 1、不可逆、溢出</td></tr></tbody></table></div></div><div class="deep-block" id="review-2"><h3>面试综合题的实现顺序</h3><p>先用自然语言列出每种操作要修改哪些字段，例如 LFU 命中需要动旧桶、新桶、key 节点与 minFrequency；再写一个慢但清楚的模型作为参照。正确性稳定后，再替换其中的热点查找与排序，而不是一开始同时调试所有结构。</p><p>对于随机题，分别验证结构正确与分布推导。样本必须来自当前集合、不能无故丢失实例；均匀性则来自算法证明，少量随机输出不构成统计结论。对于数值题，验证数学结果前也要确认机器中间运算没有越界。</p></div><div class="deep-block" id="review-3"><h3>章末自测：四个跨模型问题</h3><dl class="answer-list"><div><dt>平均 O(1) 的设计题为什么仍可能偶尔慢？</dt><dd><p>哈希碰撞与 rehash、vector 扩容、内存分配都可能使某次操作较慢。算法面试通常要求平均或均摊界，并非硬实时延迟。应准确说明复杂度类型，而不是把所有操作宣称为每次最坏常数。</p></dd></div><div><dt>怎样检查多个结构保存的同一份数据没有失配？</dt><dd><p>定义可遍历的不变量：缓存键集合一致且迭代器指向同 key；随机集合中每个位置在对应值的下标集合里且没有幽灵下标；分配方案中每条非空会议恰好有一个房号。测试中用小规模朴素模型逐操作比较，比仅看最后输出更容易定位错误。</p></dd></div><div><dt>数据流、在线与离线各意味着什么？</dt><dd><p>数据流强调逐项到达及可能受限的保存空间；在线要求当前答案不依赖未来输入；离线允许先拿到全部数据并排序或重排处理。大小 K 堆可以在线维护数值 Top K，但精确频率 Top K 的计数仍可能随不同值数增长；不能把“用了堆”直接等同于固定内存。</p></dd></div><div><dt>边界检查全部补齐，是否就能称为生产级组件？</dt><dd><p>不能。教学代码还可能缺少并发同步、崩溃恢复、容量治理、分配失败事务性和安全随机源。这里明确算法契约与测试范围；若要生产化，应按真实运行环境额外设计，而不是从面试复杂度结论直接推导可靠性。</p></dd></div></dl></div><div class="deep-block" id="review-4"><h3>综合测试：慢模型、方案性质与数值边界</h3><p>本入口引用同目录 12 份补充实现与 4 份基础模板。请保留完整 examples 目录，只编译 detail-combined-tests.cpp；命令为 g++ -std=c++17 -O2 -Wall -Wextra detail-combined-tests.cpp -o combined-tests，Windows 随后运行 .\combined-tests.exe。不要定义 NDEBUG，部分测试操作写在 assert 内。</p><p>包含 80 轮固定种子操作与输入：LRU/LFU 慢模型、频率排序参照、按路段重数验证扫描线、会议室方案合法性、随机多重集合词频与样本来源、抽样和洗牌的种子复现、小整数精确算术参照，以及 GCD/LCM、逆元、质因子重建的穷举检查。</p><p>另外枚举 n=3 洗牌的全部选择路径和 n=4、K=2 蓄水池的全部选择路径，核对理想均匀选择下的结果次数；这不是对实际伪随机生成器进行统计认证。当前环境未发现 C++ 编译器，源码尚未编译运行，浏览器检查不等于算法运行测试。</p><div class="codebox"><div class="codebar"><span>C++17</span><div><a href="examples/detail-combined-tests.cpp" download>下载 .cpp</a><button type="button" class="copy">复制代码</button></div></div><pre tabindex="0" aria-label="C++17 代码"><code>#include <span class="string">&quot;detail-lru-optional.cpp&quot;</span>
+#include <span class="string">&quot;detail-lfu-cache.cpp&quot;</span>
+#include <span class="string">&quot;detail-topk-frequency.cpp&quot;</span>
+#include <span class="string">&quot;detail-peak-intervals.cpp&quot;</span>
+#include <span class="string">&quot;detail-room-assignment.cpp&quot;</span>
+#include <span class="string">&quot;detail-car-pooling.cpp&quot;</span>
+#include <span class="string">&quot;detail-randomized-multiset.cpp&quot;</span>
+#include <span class="string">&quot;detail-reservoir.cpp&quot;</span>
+#include <span class="string">&quot;detail-shuffle.cpp&quot;</span>
+#include <span class="string">&quot;detail-safe-gcd-lcm.cpp&quot;</span>
+#include <span class="string">&quot;detail-modular-arithmetic.cpp&quot;</span>
+#include <span class="string">&quot;detail-smallest-prime.cpp&quot;</span>
+#include <span class="string">&quot;01.cpp&quot;</span>
+#include <span class="string">&quot;02.cpp&quot;</span>
+#include <span class="string">&quot;03.cpp&quot;</span>
+#include <span class="string">&quot;04.cpp&quot;</span>
+
+<span class="keyword">class</span> SlowLRU {
+    size_t capacity;
+    vector&lt;pair&lt;<span class="keyword">int</span>,<span class="keyword">int</span>&gt;&gt; data; <span class="comment">// 最近使用在前</span>
+<span class="keyword">public</span>:
+    <span class="keyword">explicit</span> SlowLRU(<span class="keyword">int</span> cap): capacity(cap) {}
+    optional&lt;<span class="keyword">int</span>&gt; get(<span class="keyword">int</span> key) {
+        <span class="keyword">for</span> (size_t i = <span class="number">0</span>; i &lt; data.size(); ++i) <span class="keyword">if</span> (data[i].first == key) {
+            <span class="keyword">auto</span> item = data[i]; data.erase(data.begin()+i); data.insert(data.begin(),item);
+            <span class="keyword">return</span> item.second;
+        }
+        <span class="keyword">return</span> nullopt;
+    }
+    <span class="keyword">void</span> put(<span class="keyword">int</span> key, <span class="keyword">int</span> value) {
+        erase(key);
+        <span class="keyword">if</span> (capacity) data.insert(data.begin(),{key,value});
+        <span class="keyword">if</span> (data.size() &gt; capacity) data.pop_back();
+    }
+    <span class="keyword">bool</span> erase(<span class="keyword">int</span> key) {
+        <span class="keyword">for</span> (size_t i = <span class="number">0</span>; i &lt; data.size(); ++i) <span class="keyword">if</span> (data[i].first == key) {
+            data.erase(data.begin()+i); <span class="keyword">return</span> <span class="keyword">true</span>;
+        }
+        <span class="keyword">return</span> <span class="keyword">false</span>;
+    }
+    <span class="keyword">void</span> resize(<span class="keyword">int</span> cap) { capacity = cap; <span class="keyword">if</span> (data.size() &gt; capacity) data.resize(capacity); }
+    size_t size() <span class="keyword">const</span> { <span class="keyword">return</span> data.size(); }
+};
+<span class="keyword">class</span> SlowLFU {
+    <span class="keyword">struct</span> Item { <span class="keyword">int</span> value, frequency, lastUse; };
+    <span class="keyword">int</span> capacity, clock = <span class="number">0</span>;
+    unordered_map&lt;<span class="keyword">int</span>,Item&gt; data;
+<span class="keyword">public</span>:
+    <span class="keyword">explicit</span> SlowLFU(<span class="keyword">int</span> cap): capacity(cap) {}
+    optional&lt;<span class="keyword">int</span>&gt; get(<span class="keyword">int</span> key) {
+        <span class="keyword">auto</span> it = data.find(key);
+        <span class="keyword">if</span> (it == data.end()) <span class="keyword">return</span> nullopt;
+        ++it-&gt;second.frequency; it-&gt;second.lastUse = ++clock; <span class="keyword">return</span> it-&gt;second.value;
+    }
+    <span class="keyword">void</span> put(<span class="keyword">int</span> key, <span class="keyword">int</span> value) {
+        <span class="keyword">auto</span> it = data.find(key);
+        <span class="keyword">if</span> (it != data.end()) {
+            it-&gt;second.value = value; ++it-&gt;second.frequency; it-&gt;second.lastUse = ++clock; <span class="keyword">return</span>;
+        }
+        <span class="keyword">if</span> (!capacity) <span class="keyword">return</span>;
+        <span class="keyword">if</span> ((<span class="keyword">int</span>)data.size() == capacity) {
+            <span class="keyword">auto</span> victim = data.begin();
+            <span class="keyword">for</span> (<span class="keyword">auto</span> candidate = data.begin(); candidate != data.end(); ++candidate)
+                <span class="keyword">if</span> (make_pair(candidate-&gt;second.frequency,candidate-&gt;second.lastUse) &lt;
+                    make_pair(victim-&gt;second.frequency,victim-&gt;second.lastUse)) victim = candidate;
+            data.erase(victim);
+        }
+        data[key] = {value,<span class="number">1</span>,++clock};
+    }
+    size_t size() <span class="keyword">const</span> { <span class="keyword">return</span> data.size(); }
+};
+PeakConcurrency brutePeak(<span class="keyword">const</span> vector&lt;pair&lt;<span class="keyword">int</span>,<span class="keyword">int</span>&gt;&gt;&amp; intervals) {
+    vector&lt;<span class="keyword">int</span>&gt; points;
+    <span class="keyword">for</span> (<span class="keyword">auto</span> [l,r] : intervals) <span class="keyword">if</span> (l &lt; r) { points.push_back(l); points.push_back(r); }
+    sort(points.begin(),points.end()); points.erase(unique(points.begin(),points.end()),points.end());
+    PeakConcurrency result;
+    <span class="keyword">for</span> (size_t i = <span class="number">1</span>; i &lt; points.size(); ++i) {
+        <span class="keyword">int</span> l = points[i-<span class="number">1</span>], r = points[i], active = <span class="number">0</span>;
+        <span class="keyword">for</span> (<span class="keyword">auto</span> interval : intervals) <span class="keyword">if</span> (interval.first &lt;= l &amp;&amp; l &lt; interval.second) ++active;
+        <span class="keyword">if</span> (active &gt; result.count) { result.count = active; result.spans.clear(); }
+        <span class="keyword">if</span> (active &gt; <span class="number">0</span> &amp;&amp; active == result.count) {
+            <span class="keyword">if</span> (!result.spans.empty() &amp;&amp; result.spans.back().second == l) result.spans.back().second = r;
+            <span class="keyword">else</span> result.spans.push_back({l,r});
+        }
+    }
+    <span class="keyword">return</span> result;
+}
+<span class="keyword">bool</span> bruteCarPool(<span class="keyword">const</span> vector&lt;array&lt;<span class="keyword">int</span>,<span class="number">3</span>&gt;&gt;&amp; trips, <span class="keyword">long</span> <span class="keyword">long</span> capacity) {
+    <span class="keyword">for</span> (<span class="keyword">auto</span> event : trips) {
+        <span class="keyword">int</span> position = event[<span class="number">1</span>]; <span class="keyword">long</span> <span class="keyword">long</span> passengers = <span class="number">0</span>;
+        <span class="keyword">for</span> (<span class="keyword">auto</span> trip : trips)
+            <span class="keyword">if</span> (trip[<span class="number">1</span>] &lt;= position &amp;&amp; position &lt; trip[<span class="number">2</span>]) passengers += trip[<span class="number">0</span>];
+        <span class="keyword">if</span> (passengers &gt; capacity) <span class="keyword">return</span> <span class="keyword">false</span>;
+    }
+    <span class="keyword">return</span> <span class="keyword">true</span>;
+}
+vector&lt;<span class="keyword">int</span>&gt; bruteTopK(<span class="keyword">const</span> vector&lt;<span class="keyword">int</span>&gt;&amp; a, <span class="keyword">int</span> k) {
+    unordered_map&lt;<span class="keyword">int</span>,<span class="keyword">int</span>&gt; counts;
+    <span class="keyword">for</span> (<span class="keyword">int</span> x : a) ++counts[x];
+    vector&lt;<span class="keyword">int</span>&gt; values; <span class="keyword">for</span> (<span class="keyword">auto</span> item : counts) values.push_back(item.first);
+    sort(values.begin(),values.end(),[&amp;](<span class="keyword">int</span> x,<span class="keyword">int</span> y) {
+        <span class="keyword">if</span> (counts[x] != counts[y]) <span class="keyword">return</span> counts[x] &gt; counts[y];
+        <span class="keyword">return</span> x &lt; y;
+    });
+    values.resize(k); <span class="keyword">return</span> values;
+}
+<span class="keyword">bool</span> trialPrime(<span class="keyword">int</span> x) {
+    <span class="keyword">if</span> (x &lt; <span class="number">2</span>) <span class="keyword">return</span> <span class="keyword">false</span>;
+    <span class="keyword">for</span> (<span class="keyword">int</span> divisor = <span class="number">2</span>; divisor &lt;= x/divisor; ++divisor)
+        <span class="keyword">if</span> (x%divisor == <span class="number">0</span>) <span class="keyword">return</span> <span class="keyword">false</span>;
+    <span class="keyword">return</span> <span class="keyword">true</span>;
+}
+template&lt;<span class="keyword">class</span> Exception, <span class="keyword">class</span> F&gt; <span class="keyword">void</span> expectException(F action) {
+    <span class="keyword">bool</span> caught = <span class="keyword">false</span>;
+    try { action(); } catch (<span class="keyword">const</span> Exception&amp;) { caught = <span class="keyword">true</span>; }
+    assert(caught);
+}
+<span class="keyword">int</span> main() {
+    OptionalLRU lru(<span class="number">2</span>); lru.put(<span class="number">1</span>,-<span class="number">1</span>); lru.put(<span class="number">2</span>,<span class="number">20</span>);
+    assert(lru.get(<span class="number">1</span>) == optional&lt;<span class="keyword">int</span>&gt;(-<span class="number">1</span>)); lru.put(<span class="number">3</span>,<span class="number">30</span>);
+    assert(!lru.get(<span class="number">2</span>)); lru.resize(<span class="number">0</span>); lru.put(<span class="number">4</span>,<span class="number">40</span>); assert(lru.size() == <span class="number">0</span>);
+    expectException&lt;invalid_argument&gt;([&amp;] { lru.resize(-<span class="number">1</span>); });
+    LFUCacheExample lfu(<span class="number">2</span>); lfu.put(<span class="number">1</span>,<span class="number">1</span>); lfu.put(<span class="number">2</span>,<span class="number">2</span>);
+    assert(lfu.get(<span class="number">1</span>) == optional&lt;<span class="keyword">int</span>&gt;(<span class="number">1</span>)); lfu.put(<span class="number">3</span>,<span class="number">3</span>);
+    assert(!lfu.get(<span class="number">2</span>)); assert(lfu.get(<span class="number">3</span>) == optional&lt;<span class="keyword">int</span>&gt;(<span class="number">3</span>));
+    lfu.put(<span class="number">4</span>,<span class="number">4</span>); assert(!lfu.get(<span class="number">1</span>)); <span class="comment">// 1、3 同频，1 更旧</span>
+    LFUCacheExample disabled(<span class="number">0</span>); disabled.put(<span class="number">1</span>,<span class="number">1</span>); assert(!disabled.get(<span class="number">1</span>));
+    LRUCache basicLRU(<span class="number">1</span>); basicLRU.put(<span class="number">1</span>,<span class="number">2</span>); basicLRU.put(<span class="number">3</span>,<span class="number">4</span>);
+    assert(basicLRU.get(<span class="number">1</span>) == -<span class="number">1</span> &amp;&amp; basicLRU.get(<span class="number">3</span>) == <span class="number">4</span>);
+    assert(topKFrequentStable({<span class="number">2</span>,<span class="number">1</span>,<span class="number">2</span>,<span class="number">1</span>,<span class="number">3</span>},<span class="number">2</span>) == vector&lt;<span class="keyword">int</span>&gt;({<span class="number">1</span>,<span class="number">2</span>}));
+    assert(topKFrequentStable({},<span class="number">0</span>).empty());
+    expectException&lt;invalid_argument&gt;([] { topKFrequentStable({<span class="number">1</span>},<span class="number">2</span>); });
+    <span class="keyword">auto</span> peak = peakConcurrency({{<span class="number">0</span>,<span class="number">10</span>},{<span class="number">5</span>,<span class="number">10</span>},{<span class="number">10</span>,<span class="number">15</span>}});
+    assert((peak.count == <span class="number">2</span> &amp;&amp; peak.spans == vector&lt;pair&lt;<span class="keyword">int</span>,<span class="keyword">int</span>&gt;&gt;({{<span class="number">5</span>,<span class="number">10</span>}})));
+    <span class="keyword">auto</span> continuous = peakConcurrency({{<span class="number">0</span>,<span class="number">1</span>},{<span class="number">1</span>,<span class="number">2</span>}});
+    assert((continuous.spans == vector&lt;pair&lt;<span class="keyword">int</span>,<span class="keyword">int</span>&gt;&gt;({{<span class="number">0</span>,<span class="number">2</span>}})));
+    assert(peakConcurrency({{<span class="number">2</span>,<span class="number">2</span>}}).spans.empty());
+    assert(assignMeetingRooms({{<span class="number">1</span>,<span class="number">1</span>}}).roomForMeeting == vector&lt;<span class="keyword">int</span>&gt;({-<span class="number">1</span>}));
+    assert(canCarPool({{<span class="number">2</span>,<span class="number">0</span>,<span class="number">5</span>},{<span class="number">2</span>,<span class="number">5</span>,<span class="number">10</span>}},<span class="number">2</span>));
+    expectException&lt;invalid_argument&gt;([] { peakConcurrency({{<span class="number">2</span>,<span class="number">1</span>}}); });
+    RandomizedMultisetExample multiset;
+    assert(!multiset.getRandom());
+    assert(multiset.insert(<span class="number">5</span>) &amp;&amp; !multiset.insert(<span class="number">5</span>) &amp;&amp; multiset.insert(<span class="number">7</span>));
+    assert(multiset.eraseOne(<span class="number">7</span>) &amp;&amp; multiset.eraseOne(<span class="number">5</span>) &amp;&amp; multiset.count(<span class="number">5</span>) == <span class="number">1</span>);
+    assert(multiset.getRandom() == optional&lt;<span class="keyword">int</span>&gt;(<span class="number">5</span>));
+    assert(multiset.eraseOne(<span class="number">5</span>) &amp;&amp; !multiset.eraseOne(<span class="number">5</span>) &amp;&amp; !multiset.getRandom());
+    RandomizedSet basicSet; assert(basicSet.insert(<span class="number">2</span>) &amp;&amp; !basicSet.insert(<span class="number">2</span>));
+    assert(basicSet.getRandom() == <span class="number">2</span> &amp;&amp; basicSet.remove(<span class="number">2</span>));
+    expectException&lt;out_of_range&gt;([&amp;] { basicSet.getRandom(); });
+    ReservoirSample zero(<span class="number">0</span>); zero.offer(<span class="number">1</span>); assert(zero.processed() == <span class="number">1</span> &amp;&amp; zero.snapshot().empty());
+    expectException&lt;invalid_argument&gt;([] { ReservoirSample invalid(-<span class="number">1</span>); });
+    assert(gcdMagnitude(<span class="number">0</span>,<span class="number">0</span>) == <span class="number">0</span> &amp;&amp; gcdMagnitude(-<span class="number">12</span>,<span class="number">18</span>) == <span class="number">6</span>);
+    assert(gcdMagnitude(LLONG_MIN,<span class="number">0</span>) == (uint64_t(<span class="number">1</span>) &lt;&lt; <span class="number">63</span>));
+    assert(lcmMagnitude(LLONG_MIN,<span class="number">1</span>) == optional&lt;uint64_t&gt;(uint64_t(<span class="number">1</span>) &lt;&lt; <span class="number">63</span>));
+    assert(lcmMagnitude(<span class="number">0</span>,LLONG_MIN) == optional&lt;uint64_t&gt;(<span class="number">0</span>));
+    assert(!lcmMagnitude(LLONG_MAX,LLONG_MAX-<span class="number">1</span>));
+    assert(multiplyMod(UINT64_MAX-<span class="number">1</span>,UINT64_MAX-<span class="number">1</span>,UINT64_MAX) == <span class="number">1</span>);
+    assert(multiplyMod(UINT64_MAX-<span class="number">2</span>,UINT64_MAX-<span class="number">3</span>,UINT64_MAX) == <span class="number">6</span>);
+    assert(powerMod(UINT64_MAX-<span class="number">1</span>,<span class="number">2</span>,UINT64_MAX) == <span class="number">1</span>);
+    assert(powerMod(<span class="number">0</span>,<span class="number">0</span>,<span class="number">7</span>) == <span class="number">1</span> &amp;&amp; powerMod(<span class="number">7</span>,<span class="number">0</span>,<span class="number">1</span>) == <span class="number">0</span>);
+    assert(inverseModSmall(<span class="number">3</span>,<span class="number">7</span>) == optional&lt;<span class="keyword">long</span> <span class="keyword">long</span>&gt;(<span class="number">5</span>));
+    assert(inverseModSmall(-<span class="number">2</span>,<span class="number">9</span>) == optional&lt;<span class="keyword">long</span> <span class="keyword">long</span>&gt;(<span class="number">4</span>));
+    assert(!inverseModSmall(<span class="number">2</span>,<span class="number">6</span>) &amp;&amp; !inverseModSmall(<span class="number">0</span>,<span class="number">7</span>));
+    expectException&lt;invalid_argument&gt;([] { multiplyMod(<span class="number">1</span>,<span class="number">2</span>,<span class="number">0</span>); });
+    expectException&lt;invalid_argument&gt;([] { inverseModSmall(<span class="number">1</span>,<span class="number">1</span>); });
+
+    <span class="comment">// 枚举抽取下标的选择路径，演示小规模均匀性，不是统计检验 PRNG。</span>
+    unordered_map&lt;string,<span class="keyword">int</span>&gt; permutations;
+    function&lt;<span class="keyword">void</span>(vector&lt;<span class="keyword">int</span>&gt;,<span class="keyword">int</span>)&gt; enumerateShuffle = [&amp;](vector&lt;<span class="keyword">int</span>&gt; a,<span class="keyword">int</span> remaining) {
+        <span class="keyword">if</span> (remaining &lt;= <span class="number">1</span>) {
+            string key; <span class="keyword">for</span> (<span class="keyword">int</span> x : a) key += to_string(x);
+            ++permutations[key]; <span class="keyword">return</span>;
+        }
+        <span class="keyword">for</span> (<span class="keyword">int</span> j = <span class="number">0</span>; j &lt; remaining; ++j) {
+            <span class="keyword">auto</span> next = a; swap(next[remaining-<span class="number">1</span>],next[j]);
+            enumerateShuffle(next,remaining-<span class="number">1</span>);
+        }
+    };
+    enumerateShuffle({<span class="number">0</span>,<span class="number">1</span>,<span class="number">2</span>},<span class="number">3</span>);
+    assert(permutations.size() == <span class="number">6</span>);
+    <span class="keyword">for</span> (<span class="keyword">auto</span> item : permutations) assert(item.second == <span class="number">1</span>);
+    vector&lt;<span class="keyword">int</span>&gt; subsetCounts(<span class="number">16</span>);
+    <span class="keyword">for</span> (<span class="keyword">int</span> j3 = <span class="number">0</span>; j3 &lt; <span class="number">3</span>; ++j3) <span class="keyword">for</span> (<span class="keyword">int</span> j4 = <span class="number">0</span>; j4 &lt; <span class="number">4</span>; ++j4) {
+        vector&lt;<span class="keyword">int</span>&gt; sample{<span class="number">0</span>,<span class="number">1</span>};
+        <span class="keyword">if</span> (j3 &lt; <span class="number">2</span>) sample[j3] = <span class="number">2</span>;
+        <span class="keyword">if</span> (j4 &lt; <span class="number">2</span>) sample[j4] = <span class="number">3</span>;
+        ++subsetCounts[(<span class="number">1</span> &lt;&lt; sample[<span class="number">0</span>]) | (<span class="number">1</span> &lt;&lt; sample[<span class="number">1</span>])];
+    }
+    <span class="keyword">for</span> (<span class="keyword">int</span> mask = <span class="number">0</span>; mask &lt; <span class="number">16</span>; ++mask) {
+        <span class="keyword">int</span> count = <span class="number">0</span>; <span class="keyword">for</span> (<span class="keyword">int</span> b = <span class="number">0</span>; b &lt; <span class="number">4</span>; ++b) count += (mask &gt;&gt; b)&amp;<span class="number">1</span>;
+        assert(subsetCounts[mask] == (count == <span class="number">2</span> ? <span class="number">2</span> : <span class="number">0</span>));
+    }
+
+    mt19937 rng(<span class="number">20260922</span>);
+    <span class="keyword">for</span> (<span class="keyword">int</span> trial = <span class="number">0</span>; trial &lt; <span class="number">80</span>; ++trial) {
+        <span class="keyword">int</span> cap = (<span class="keyword">int</span>)(rng()%<span class="number">5</span>);
+        OptionalLRU fastLRU(cap); SlowLRU slowLRU(cap);
+        LFUCacheExample fastLFU(cap); SlowLFU slowLFU(cap);
+        RandomizedMultisetExample randomBag((uint32_t)trial);
+        unordered_map&lt;<span class="keyword">int</span>,<span class="keyword">int</span>&gt; bag; <span class="keyword">int</span> bagSize = <span class="number">0</span>;
+        <span class="keyword">for</span> (<span class="keyword">int</span> step = <span class="number">0</span>; step &lt; <span class="number">60</span>; ++step) {
+            <span class="keyword">int</span> key = (<span class="keyword">int</span>)(rng()%<span class="number">7</span>)-<span class="number">3</span>, value = (<span class="keyword">int</span>)(rng()%<span class="number">11</span>)-<span class="number">5</span>;
+            switch (rng()%<span class="number">4</span>) {
+                case <span class="number">0</span>: fastLRU.put(key,value); slowLRU.put(key,value); break;
+                case <span class="number">1</span>: assert(fastLRU.get(key) == slowLRU.get(key)); break;
+                case <span class="number">2</span>: assert(fastLRU.erase(key) == slowLRU.erase(key)); break;
+                default: {
+                    <span class="keyword">int</span> nextCap = (<span class="keyword">int</span>)(rng()%<span class="number">5</span>); fastLRU.resize(nextCap); slowLRU.resize(nextCap);
+                }
+            }
+            assert(fastLRU.size() == slowLRU.size());
+            <span class="keyword">if</span> (rng()%<span class="number">2</span>) { fastLFU.put(key,value); slowLFU.put(key,value); }
+            <span class="keyword">else</span> assert(fastLFU.get(key) == slowLFU.get(key));
+            assert(fastLFU.size() == slowLFU.size());
+            <span class="comment">// 固定顺序读一遍：两侧同样刷新，以核对所有逻辑键。</span>
+            <span class="keyword">for</span> (<span class="keyword">int</span> probe = -<span class="number">3</span>; probe &lt;= <span class="number">3</span>; ++probe) {
+                assert(fastLRU.get(probe) == slowLRU.get(probe));
+                assert(fastLFU.get(probe) == slowLFU.get(probe));
+            }
+            <span class="keyword">if</span> (rng()%<span class="number">2</span>) { assert(randomBag.insert(key) == (bag[key] == <span class="number">0</span>)); ++bag[key]; ++bagSize; }
+            <span class="keyword">else</span> {
+                <span class="keyword">bool</span> exists = bag[key] &gt; <span class="number">0</span>; assert(randomBag.eraseOne(key) == exists);
+                <span class="keyword">if</span> (exists) { --bag[key]; --bagSize; }
+            }
+            assert(randomBag.size() == (size_t)bagSize);
+            <span class="keyword">for</span> (<span class="keyword">int</span> probe = -<span class="number">3</span>; probe &lt;= <span class="number">3</span>; ++probe) assert(randomBag.count(probe) == (size_t)bag[probe]);
+            <span class="keyword">auto</span> draw = randomBag.getRandom();
+            assert(draw.has_value() == (bagSize &gt; <span class="number">0</span>));
+            <span class="keyword">if</span> (draw) assert(bag[*draw] &gt; <span class="number">0</span>);
+        }
+        vector&lt;<span class="keyword">int</span>&gt; a(rng()%<span class="number">20</span>); <span class="keyword">for</span> (<span class="keyword">int</span>&amp; x : a) x = (<span class="keyword">int</span>)(rng()%<span class="number">7</span>)-<span class="number">3</span>;
+        <span class="keyword">int</span> distinct = (<span class="keyword">int</span>)unordered_set&lt;<span class="keyword">int</span>&gt;(a.begin(),a.end()).size();
+        <span class="keyword">for</span> (<span class="keyword">int</span> k = <span class="number">0</span>; k &lt;= distinct; ++k) assert(topKFrequentStable(a,k) == bruteTopK(a,k));
+        vector&lt;pair&lt;<span class="keyword">int</span>,<span class="keyword">int</span>&gt;&gt; intervals;
+        vector&lt;array&lt;<span class="keyword">int</span>,<span class="number">3</span>&gt;&gt; trips;
+        <span class="keyword">int</span> count = (<span class="keyword">int</span>)(rng()%<span class="number">9</span>);
+        <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; count; ++i) {
+            <span class="keyword">int</span> l = (<span class="keyword">int</span>)(rng()%<span class="number">9</span>)-<span class="number">4</span>, r = l+(<span class="keyword">int</span>)(rng()%<span class="number">5</span>);
+            intervals.push_back({l,r}); trips.push_back({(<span class="keyword">int</span>)(rng()%<span class="number">5</span>),l,r});
+        }
+        <span class="keyword">auto</span> fastPeak = peakConcurrency(intervals), slowPeak = brutePeak(intervals);
+        assert(fastPeak.count == slowPeak.count &amp;&amp; fastPeak.spans == slowPeak.spans);
+        assert(minMeetingRooms(intervals) == slowPeak.count);
+        <span class="keyword">auto</span> assigned = assignMeetingRooms(intervals);
+        assert(assigned.rooms == slowPeak.count &amp;&amp; assigned.roomForMeeting.size() == intervals.size());
+        <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; count; ++i) {
+            <span class="keyword">if</span> (intervals[i].first == intervals[i].second) assert(assigned.roomForMeeting[i] == -<span class="number">1</span>);
+            <span class="keyword">else</span> assert(assigned.roomForMeeting[i] &gt;= <span class="number">0</span> &amp;&amp; assigned.roomForMeeting[i] &lt; assigned.rooms);
+            <span class="keyword">for</span> (<span class="keyword">int</span> j = <span class="number">0</span>; j &lt; i; ++j)
+                <span class="keyword">if</span> (assigned.roomForMeeting[i] &gt;= <span class="number">0</span> &amp;&amp; assigned.roomForMeeting[i] == assigned.roomForMeeting[j])
+                    assert(intervals[i].second &lt;= intervals[j].first || intervals[j].second &lt;= intervals[i].first);
+        }
+        <span class="keyword">long</span> <span class="keyword">long</span> capacity = rng()%<span class="number">12</span>; assert(canCarPool(trips,capacity) == bruteCarPool(trips,capacity));
+        <span class="keyword">int</span> k = (<span class="keyword">int</span>)(rng()%<span class="number">25</span>);
+        ReservoirSample sample(k,(uint32_t)trial), replay(k,(uint32_t)trial);
+        <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; <span class="number">20</span>; ++i) { sample.offer(i); replay.offer(i); }
+        <span class="keyword">auto</span> selected = sample.snapshot();
+        assert(sample.processed() == <span class="number">20</span> &amp;&amp; selected == replay.snapshot());
+        assert(selected.size() == (size_t)min(k,<span class="number">20</span>));
+        unordered_set&lt;<span class="keyword">int</span>&gt; unique(selected.begin(),selected.end()); assert(unique.size() == selected.size());
+        <span class="keyword">for</span> (<span class="keyword">int</span> x : selected) assert(x &gt;= <span class="number">0</span> &amp;&amp; x &lt; <span class="number">20</span>);
+        <span class="keyword">auto</span> shuffled = a, duplicate = a;
+        mt19937 engine((uint32_t)trial), again((uint32_t)trial);
+        fisherYatesShuffle(shuffled,engine); fisherYatesShuffle(duplicate,again); assert(shuffled == duplicate);
+        sort(shuffled.begin(),shuffled.end()); sort(a.begin(),a.end()); assert(shuffled == a);
+        uint64_t x = rng()%<span class="number">1000000</span>, y = rng()%<span class="number">1000000</span>, mod = <span class="number">1</span>+rng()%<span class="number">1000</span>;
+        assert(multiplyMod(x,y,mod) == (x*y)%mod);
+        uint64_t exponent = rng()%<span class="number">13</span>, expectedPower = <span class="number">1</span>%mod;
+        <span class="keyword">for</span> (uint64_t i = <span class="number">0</span>; i &lt; exponent; ++i) expectedPower = expectedPower*(x%mod)%mod;
+        assert(powerMod(x,exponent,mod) == expectedPower);
+        uint64_t wide = (uint64_t(rng()) &lt;&lt; <span class="number">32</span>) | rng(), reduced = wide%UINT64_MAX;
+        assert(multiplyMod(wide,UINT64_MAX-<span class="number">1</span>,UINT64_MAX) == (reduced ? UINT64_MAX-reduced : <span class="number">0</span>));
+    }
+    <span class="keyword">for</span> (<span class="keyword">long</span> <span class="keyword">long</span> a = -<span class="number">30</span>; a &lt;= <span class="number">30</span>; ++a) <span class="keyword">for</span> (<span class="keyword">long</span> <span class="keyword">long</span> b = -<span class="number">30</span>; b &lt;= <span class="number">30</span>; ++b) {
+        assert(gcdMagnitude(a,b) == (uint64_t)gcd(a,b));
+        assert(lcmMagnitude(a,b) == optional&lt;uint64_t&gt;((uint64_t)lcm(a,b)));
+    }
+    <span class="keyword">for</span> (<span class="keyword">long</span> <span class="keyword">long</span> mod = <span class="number">2</span>; mod &lt;= <span class="number">35</span>; ++mod) <span class="keyword">for</span> (<span class="keyword">long</span> <span class="keyword">long</span> a = -<span class="number">35</span>; a &lt;= <span class="number">35</span>; ++a) {
+        optional&lt;<span class="keyword">long</span> <span class="keyword">long</span>&gt; expected;
+        <span class="keyword">long</span> <span class="keyword">long</span> normalized = (a%mod+mod)%mod;
+        <span class="keyword">for</span> (<span class="keyword">long</span> <span class="keyword">long</span> x = <span class="number">0</span>; x &lt; mod; ++x) <span class="keyword">if</span> (normalized*x%mod == <span class="number">1</span>) expected = x;
+        assert(inverseModSmall(a,mod) == expected);
+    }
+    <span class="keyword">for</span> (<span class="keyword">int</span> n = <span class="number">0</span>; n &lt;= <span class="number">120</span>; ++n) {
+        SmallestPrimeTable table(n);
+        assert(table.primes() == primesUpTo(n));
+        <span class="keyword">for</span> (<span class="keyword">int</span> x = <span class="number">0</span>; x &lt;= n; ++x) assert(table.isPrime(x) == trialPrime(x));
+        <span class="keyword">for</span> (<span class="keyword">int</span> x = <span class="number">1</span>; x &lt;= n; ++x) {
+            <span class="keyword">auto</span> factors = table.factorize(x); <span class="keyword">long</span> <span class="keyword">long</span> product = <span class="number">1</span>; <span class="keyword">int</span> previous = <span class="number">1</span>;
+            <span class="keyword">for</span> (<span class="keyword">auto</span> [p,e] : factors) {
+                assert(p &gt; previous &amp;&amp; trialPrime(p) &amp;&amp; e &gt; <span class="number">0</span>); previous = p;
+                <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; e; ++i) product *= p;
+            }
+            assert(product == x);
+        }
+    }
+    SmallestPrimeTable table(<span class="number">10</span>);
+    expectException&lt;out_of_range&gt;([&amp;] { table.factorize(<span class="number">0</span>); });
+    cout &lt;&lt; <span class="string">&quot;combined technique checks passed\n&quot;</span>;
+}</code></pre></div></div></section><nav class="chapter-pager" aria-label="相邻章节"><a href="../13-并查集与高级数据结构/index.html"><small>上一章</small>← 并查集与高级数据结构</a><a href="../15-面试表达与训练计划/index.html"><small>下一章</small>面试表达与训练计划 →</a></nav><footer>秋招算法学习讲义 · C++17<br>例题编号供检索；难度与覆盖范围按学习顺序组织。</footer></main><aside class="toc" aria-label="本页目录"><p class="rail-label">本章小节</p><a href="#s1"><span>01</span>LRU 缓存：哈希 + 双向链表</a><a href="#s2"><span>02</span>扫描线：并发数量与端点规则</a><a href="#s3"><span>03</span>随机集合：交换末尾删除</a><a href="#s4"><span>04</span>欧几里得、筛法与数值边界</a><a href="#chapter-review"><span>练</span>综合例题与自测答案</a></aside></div><div class="toast" role="status" aria-live="polite"></div></body></html>

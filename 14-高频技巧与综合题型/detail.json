@@ -1,0 +1,859 @@
+{
+  "intro": [
+    {
+      "type": "text",
+      "title": "综合题的核心：把需求拆成操作，再写跨结构不变量",
+      "paragraphs": [
+        "前面章节已经有单独的链表、堆、哈希、树和 DP。综合题增加的难点通常不是某个新模板，而是一次操作要同步改动多个结构。先列 get、put、erase、随机取样、区间查询等接口，再决定分别由哪个结构承担，最后检查它们是否描述同一份逻辑数据。",
+        "本章沿用 4 个主节，补充缓存策略、频率 Top K、扫描线结果恢复、随机多重集合、在线抽样和安全数学操作。每个示例明确失败返回、端点、平局规则和数值范围；不把算法题里的平均复杂度承诺扩展成生产系统的线程安全、持久化或异常事务保证。"
+      ]
+    },
+    {
+      "type": "table",
+      "title": "先问需求，再选结构：同一个关键词不对应唯一算法",
+      "columns": [
+        "题目要求",
+        "关键分歧",
+        "可选工具",
+        "不能省略的条件"
+      ],
+      "rows": [
+        [
+          "第 K 大 / Top K",
+          "静态还是在线，是否需要排序结果",
+          "快选、大小 K 堆、桶",
+          "K 范围、重复值与平局"
+        ],
+        [
+          "缓存淘汰",
+          "最近用过还是累计频率高",
+          "LRU 或 LFU",
+          "命中、更新是否算访问"
+        ],
+        [
+          "区间",
+          "覆盖范围、并发数、具体分配",
+          "合并、扫描线、堆",
+          "闭合端点与空区间"
+        ],
+        [
+          "随机",
+          "不同值等概率，还是元素实例等概率",
+          "集合 / 多重集合，数组索引",
+          "概率空间与重复值"
+        ],
+        [
+          "数据流抽样",
+          "是否知道总长度，是否可回看",
+          "蓄水池抽样",
+          "每个历史位置均等被保留"
+        ],
+        [
+          "模运算",
+          "求余、乘法、除法",
+          "规范化、乘法防溢出、逆元",
+          "模数合法且逆元存在"
+        ]
+      ],
+      "paragraphs": []
+    },
+    {
+      "type": "text",
+      "title": "复杂度和边界约定",
+      "paragraphs": [
+        "哈希查找说的是平均复杂度，vector 追加说的是均摊复杂度，两者不是每次最坏常数。缓存示例禁用拷贝，防止映射里的链表迭代器指向旧对象；线程同步和分配失败回滚不在教学接口承诺范围内。",
+        "时间区间统一说明闭合方式；随机示例用 mt19937 与均匀整数分布，支持固定种子复现测试，不适合密码学安全场景。数学补充代码区分有符号输入与无符号幅值，显式处理最小负数、模数 1、不可逆与结果溢出。"
+      ]
+    }
+  ],
+  "sections": {
+    "1": {
+      "before": [
+        {
+          "type": "text",
+          "title": "1.1 LRU 的不变量不只是“有一个哈希表和一个链表”",
+          "paragraphs": [
+            "链表从前到后按最近使用到最久未使用排序，表中每个 key 恰好指向链表里同 key 的唯一节点，两个结构键集合相同，节点数不超过容量。get 命中改变新旧顺序，未命中不改变；put 已有键修改值并刷新顺序，而不是增加一个重复节点。",
+            "splice 移动同一 list 中的节点不会让该节点迭代器失效，所以无需重新建立映射。删除则会使该节点迭代器失效，必须同步删映射。list 不能 O(1) 按 key 定位，哈希不能直接得到最久未使用者，两者缺一不可。"
+          ]
+        },
+        {
+          "type": "table",
+          "title": "1.2 容量 2 的状态推演",
+          "columns": [
+            "操作",
+            "返回 / 淘汰",
+            "链表顺序（新→旧）",
+            "检查点"
+          ],
+          "rows": [
+            [
+              "put(1,10)；put(2,20)",
+              "—",
+              "2、1",
+              "两个结构均有两个键"
+            ],
+            [
+              "get(1)",
+              "10",
+              "1、2",
+              "读命中也刷新"
+            ],
+            [
+              "put(1,11)",
+              "—",
+              "1、2",
+              "不创建第二个键 1"
+            ],
+            [
+              "put(3,30)",
+              "淘汰 2",
+              "3、1",
+              "链表与哈希同步移除 2"
+            ],
+            [
+              "缩容到 1",
+              "淘汰 1",
+              "3",
+              "按旧顺序连续淘汰"
+            ],
+            [
+              "容量为 0 后 put",
+              "不保存",
+              "空",
+              "不是负容量或无限容量"
+            ]
+          ],
+          "paragraphs": []
+        },
+        {
+          "type": "text",
+          "title": "1.3 LFU 的平局规则决定第二层结构",
+          "paragraphs": [
+            "LFU 优先淘汰使用频率最小的键，同频率时再淘汰最久未使用者。因此维护 key→节点信息、frequency→按最近程度排列的键链表，以及 minFrequency。访问一个键要从旧频率桶移除，插入频率+1 桶的头部。",
+            "本章约定新键频率为 1，get 命中和 put 更新现有键都算一次访问。若最小频率桶因提升一个键而变空，最小频率可升为旧值+1，因为刚移动的键保证新桶存在。这个结论依赖没有任意 erase 或缩容；增加那些接口时不能照抄 minFrequency++。"
+          ]
+        },
+        {
+          "type": "table",
+          "title": "1.4 Top K 方法对照：结果是否有序也是需求",
+          "columns": [
+            "方法",
+            "时间",
+            "额外空间",
+            "适用条件 / 限制"
+          ],
+          "rows": [
+            [
+              "全部排序",
+              "O(n log n)",
+              "依实现",
+              "需要全部有序，最直观"
+            ],
+            [
+              "快速选择",
+              "平均 O(n)，最坏可能 O(n²)",
+              "依实现",
+              "静态、可改动；选出集合未必有序"
+            ],
+            [
+              "大小 K 的堆",
+              "O(n log(K+1))",
+              "O(K)",
+              "可逐项处理，堆顶应是保留集合中最差者"
+            ],
+            [
+              "频率桶",
+              "计数后 O(n+U) 量级",
+              "O(n+U)",
+              "桶范围受限，平局排序会增加成本"
+            ],
+            [
+              "多路有序归并",
+              "取 K 项 O(K log M)",
+              "O(M)",
+              "数据已分成 M 路有序序列"
+            ]
+          ],
+          "paragraphs": [
+            "频率 Top K 还需要维护 U 个不同值的精确计数，并不是总空间只有 O(K)。若结果要求频率降序、同频数值升序，比较器必须同时表达两条规则。"
+          ]
+        }
+      ],
+      "after": [
+        {
+          "type": "code",
+          "title": "1.5 optional LRU：区分未命中与值为 −1，并支持删除和缩容",
+          "file": "detail-lru-optional.cpp",
+          "code": "class OptionalLRU {\n    size_t capacity;\n    list<pair<int,int>> order;\n    unordered_map<int,list<pair<int,int>>::iterator> position;\n    void trim() {\n        while (order.size() > capacity) {\n            position.erase(order.back().first); order.pop_back();\n        }\n    }\npublic:\n    explicit OptionalLRU(int cap) {\n        if (cap < 0) throw invalid_argument(\"capacity\");\n        capacity = (size_t)cap;\n    }\n    OptionalLRU(const OptionalLRU&) = delete;\n    OptionalLRU& operator=(const OptionalLRU&) = delete;\n    optional<int> get(int key) {\n        auto it = position.find(key);\n        if (it == position.end()) return nullopt;\n        order.splice(order.begin(),order,it->second);\n        return it->second->second;\n    }\n    void put(int key, int value) {\n        auto it = position.find(key);\n        if (it != position.end()) {\n            it->second->second = value;\n            order.splice(order.begin(),order,it->second); return;\n        }\n        if (!capacity) return;\n        order.emplace_front(key,value); position[key] = order.begin(); trim();\n    }\n    bool erase(int key) {\n        auto it = position.find(key);\n        if (it == position.end()) return false;\n        order.erase(it->second); position.erase(it); return true;\n    }\n    void resize(int cap) {\n        if (cap < 0) throw invalid_argument(\"capacity\");\n        capacity = (size_t)cap; trim();\n    }\n    size_t size() const { return order.size(); }\n};",
+          "paragraphs": [
+            "get / put / erase 平均 O(1)，resize 淘汰 e 个键时 O(e)，空间 O(capacity)。负容量抛异常；与基础模板把负容量折成 0 的约定不同。optional<int>{−1} 是命中合法值，不等于 nullopt。"
+          ]
+        },
+        {
+          "type": "code",
+          "title": "1.6 LFU：频率桶里的 LRU 平局淘汰",
+          "file": "detail-lfu-cache.cpp",
+          "code": "class LFUCacheExample {\n    struct Entry { int value; uint64_t frequency; list<int>::iterator where; };\n    size_t capacity;\n    uint64_t minimum = 0;\n    unordered_map<int,Entry> entries;\n    unordered_map<uint64_t,list<int>> buckets;\n    void touch(int key) {\n        auto& entry = entries.at(key);\n        uint64_t old = entry.frequency;\n        if (old == UINT64_MAX) throw overflow_error(\"frequency\");\n        auto bucket = buckets.find(old);\n        bucket->second.erase(entry.where);\n        if (bucket->second.empty()) {\n            buckets.erase(bucket);\n            if (minimum == old) minimum = old+1;\n        }\n        entry.frequency = old+1;\n        auto& target = buckets[old+1];\n        target.push_front(key); entry.where = target.begin();\n    }\npublic:\n    explicit LFUCacheExample(int cap) {\n        if (cap < 0) throw invalid_argument(\"capacity\");\n        capacity = (size_t)cap;\n    }\n    LFUCacheExample(const LFUCacheExample&) = delete;\n    LFUCacheExample& operator=(const LFUCacheExample&) = delete;\n    optional<int> get(int key) {\n        auto it = entries.find(key);\n        if (it == entries.end()) return nullopt;\n        int result = it->second.value; touch(key); return result;\n    }\n    void put(int key, int value) {\n        auto it = entries.find(key);\n        if (it != entries.end()) {\n            touch(key); entries.at(key).value = value; return;\n        }\n        if (!capacity) return;\n        if (entries.size() == capacity) {\n            auto bucket = buckets.find(minimum);\n            int victim = bucket->second.back();\n            bucket->second.pop_back(); entries.erase(victim);\n            if (bucket->second.empty()) buckets.erase(bucket);\n        }\n        auto& bucket = buckets[1]; bucket.push_front(key);\n        entries.emplace(key,Entry{value,1,bucket.begin()}); minimum = 1;\n    }\n    size_t size() const { return entries.size(); }\n};",
+          "paragraphs": [
+            "每次操作只移动一个节点、查询少量哈希项，平均 O(1)，空间 O(capacity)。空桶及时删除，桶数不会随历史访问次数无限增长。频率使用 uint64_t，并在增长溢出前抛错。本教学版无 erase/resize；不支持并发操作，也不提供内存分配失败时的强异常保证。"
+          ]
+        },
+        {
+          "type": "code",
+          "title": "1.7 高频 Top K：固定平局规则，让堆顶始终最差",
+          "file": "detail-topk-frequency.cpp",
+          "code": "vector<int> topKFrequentStable(const vector<int>& a, int k) {\n    if (k < 0) throw invalid_argument(\"k\");\n    unordered_map<int,long long> count;\n    for (int x : a) ++count[x];\n    if ((size_t)k > count.size()) throw invalid_argument(\"k exceeds distinct count\");\n    if (!k) return {};\n    using Candidate = pair<long long,int>; // 频次、数值\n    auto better = [](const Candidate& x, const Candidate& y) {\n        if (x.first != y.first) return x.first > y.first;\n        return x.second < y.second;\n    };\n    priority_queue<Candidate,vector<Candidate>,decltype(better)> heap(better);\n    for (auto [value,frequency] : count) {\n        heap.push({frequency,value});\n        if ((int)heap.size() > k) heap.pop();\n    }\n    vector<Candidate> kept;\n    while (!heap.empty()) { kept.push_back(heap.top()); heap.pop(); }\n    sort(kept.begin(),kept.end(),better);\n    vector<int> answer;\n    for (auto [frequency,value] : kept) answer.push_back(value);\n    return answer;\n}",
+          "paragraphs": [
+            "返回频率降序、同频数值升序的 K 个不同值。priority_queue 的比较器表示 x 比 y 更靠后；把“更好”关系放进去，堆顶就是最差候选，超容量淘汰它。U 为不同值数，时间平均 O(n+U log(K+1)+K log(K+1))，空间 O(U+K)，并非 O(K) 总内存。"
+          ]
+        }
+      ],
+      "answers": [
+        {
+          "question": "get 为什么也要改链表？",
+          "answer": [
+            "LRU 的最近使用包括读取命中。若只在写入时刷新，得到的是接近写入顺序的策略，不再是题目定义的 LRU。get 未命中则不产生节点，也不改变现有键顺序。"
+          ]
+        },
+        {
+          "question": "链表换成 vector 会怎样？",
+          "answer": [
+            "vector 随机访问快，但将中间节点移到最前面通常要移动 O(n) 元素，保存的下标也要随之修正。双向链表支持已知节点 O(1) 摘除与插入；哈希负责让“已知节点”这一步也平均 O(1)。"
+          ]
+        },
+        {
+          "question": "为什么缓存对象禁用默认拷贝？",
+          "answer": [
+            "链表会被复制成新节点，但默认复制的哈希值仍是旧链表的迭代器。副本操作可能访问或移动原对象节点，破坏所有权。要么禁用拷贝，要么自定义拷贝后重新建立指向新链表的映射。"
+          ]
+        },
+        {
+          "question": "LFU 为什么还需要每个频率桶里的顺序？",
+          "answer": [
+            "只知道频率无法解决同频淘汰。例如两个键都访问过两次，要根据哪个更久没用来选择。每个桶维护最近到最旧顺序，淘汰最小频率桶的尾部，两个优先级才完整。"
+          ]
+        },
+        {
+          "question": "LFU 最小频率何时能直接加一？",
+          "answer": [
+            "当一次 touch 把某键从最小频率 f 桶移到 f+1，且 f 桶恰好变空时，刚移动的键保证 f+1 桶非空，因此 minimum=f+1 合法。任意删除最小桶最后一项时没有这个保证，可能需要跳到更远的频率。"
+          ]
+        },
+        {
+          "question": "精确在线高频 Top K 能否只保存 K 个计数？",
+          "answer": [
+            "一般不能。当前不在前 K 的值可能在未来大量出现，如果此前频率已丢失，就无法精确比较。普通方案要为所有不同值保留计数；Misra-Gries 等节省内存的方法是有条件的候选或近似方案，常需第二遍验证，不等价于精确全流排名。"
+          ]
+        },
+        {
+          "question": "快选得到前 K 项后，为何还可能要排序？",
+          "answer": [
+            "快选仅保证分区与秩条件，候选内部并不有序。若接口只要集合，可以不排序；若要求按大小、频次或特定平局规则输出，还需对选中的 K 项排序，计入 O(K log K)。"
+          ]
+        }
+      ]
+    },
+    "2": {
+      "before": [
+        {
+          "type": "text",
+          "title": "2.1 扫描的对象是相邻事件坐标之间的一整段",
+          "paragraphs": [
+            "对半开区间 [l,r)，在 l 加一、在 r 减一。同坐标所有事件合并处理后，active 表示从当前坐标 t 到下一不同坐标 next 的整段并发量，不是只在 t 这个孤立点成立。记录峰值时间段时，应把这个状态与 [t,next) 关联。",
+            "基础模板逐事件按 (time,delta) 排序，相同时间先结束再开始，适合求半开区间最大值。补充版本按坐标分组，用净变化更新，避免把同一时刻的中间处理状态误当作真实时间段。没有下一坐标时无需记录一段无穷区间。"
+          ]
+        },
+        {
+          "type": "table",
+          "title": "2.2 半开区间、闭区间与离散时刻",
+          "columns": [
+            "语义",
+            "相等端点",
+            "事件处理",
+            "零长度"
+          ],
+          "rows": [
+            [
+              "连续 [l,r)",
+              "上一场结束可接下一场",
+              "同坐标先结束或按净变化分组",
+              "[t,t) 为空，忽略"
+            ],
+            [
+              "连续闭区间 [l,r]",
+              "端点相等也相交",
+              "求点峰值要先进入再退出",
+              "[t,t] 是单点，不为空"
+            ],
+            [
+              "整数格点 [l,r]",
+              "两个端点都计入",
+              "可在 r+1 退出，但要防溢出",
+              "单点贡献一次"
+            ],
+            [
+              "带权载客 [l,r)",
+              "下车后可立刻上车",
+              "同点先下后上或净变化",
+              "起终同点不占用路段"
+            ]
+          ],
+          "paragraphs": []
+        },
+        {
+          "type": "table",
+          "title": "2.3 [0,10)、[5,10)、[10,15) 的分组状态",
+          "columns": [
+            "坐标",
+            "进入 / 离开净变化",
+            "处理后 active",
+            "对应时间段"
+          ],
+          "rows": [
+            [
+              "0",
+              "+1",
+              "1",
+              "[0,5)"
+            ],
+            [
+              "5",
+              "+1",
+              "2",
+              "[5,10)，峰值段"
+            ],
+            [
+              "10",
+              "−2+1=−1",
+              "1",
+              "[10,15)，不是 3"
+            ],
+            [
+              "15",
+              "−1",
+              "0",
+              "没有后继事件，不记录"
+            ]
+          ],
+          "paragraphs": []
+        },
+        {
+          "type": "text",
+          "title": "2.4 最小会议室数等于最大同时占用量",
+          "paragraphs": [
+            "任何时刻同时开会的 k 场必须占 k 个不同房间，因此峰值并发是房间数下界。按开始时间处理，把所有 end≤start 的房间释放；有空房就复用，没空房才开新房。每次开新房时，现有房间都被正在进行的会议占用，说明确实达到新的并发下界。",
+            "这给出了达到下界的分配方案，故算法最优。若只要数量可用扫描线；需要具体房间编号时，用结束时间堆和空闲编号堆，结果会更直接。只弹一个空闲房间的某些计数实现也能成立，但其堆语义不同，不能拿它声称保存所有当前活跃会议。"
+          ]
+        }
+      ],
+      "after": [
+        {
+          "type": "code",
+          "title": "2.5 返回所有最大并发时间段",
+          "file": "detail-peak-intervals.cpp",
+          "code": "struct PeakConcurrency {\n    int count = 0;\n    vector<pair<int,int>> spans;\n};\nPeakConcurrency peakConcurrency(const vector<pair<int,int>>& intervals) {\n    vector<pair<int,int>> events;\n    for (auto [l,r] : intervals) {\n        if (l > r) throw invalid_argument(\"interval\");\n        if (l == r) continue;\n        events.push_back({l,1}); events.push_back({r,-1});\n    }\n    sort(events.begin(),events.end());\n    PeakConcurrency result; int active = 0;\n    size_t i = 0;\n    while (i < events.size()) {\n        int time = events[i].first;\n        while (i < events.size() && events[i].first == time) active += events[i++].second;\n        if (i == events.size()) break;\n        int next = events[i].first;\n        if (active > result.count) { result.count = active; result.spans.clear(); }\n        if (active > 0 && active == result.count) {\n            if (!result.spans.empty() && result.spans.back().second == time)\n                result.spans.back().second = next;\n            else result.spans.push_back({time,next});\n        }\n    }\n    return result;\n}",
+          "paragraphs": [
+            "返回最大并发数与所有达到该峰值的最大连续半开段；相邻峰值段会合并。全部为空时返回 count=0、spans 为空，不把没有会议的整条时间轴当峰值答案。重复区间按不同会议计数。时间 O(n log n)，空间 O(n)。"
+          ]
+        },
+        {
+          "type": "code",
+          "title": "2.6 最优会议室分配：保留每条输入对应的编号",
+          "file": "detail-room-assignment.cpp",
+          "code": "struct RoomAssignment {\n    int rooms = 0;\n    vector<int> roomForMeeting;\n};\nRoomAssignment assignMeetingRooms(const vector<pair<int,int>>& meetings) {\n    vector<tuple<int,int,int>> ordered;\n    RoomAssignment result; result.roomForMeeting.assign(meetings.size(),-1);\n    for (int i = 0; i < (int)meetings.size(); ++i) {\n        auto [l,r] = meetings[i];\n        if (l > r) throw invalid_argument(\"interval\");\n        if (l < r) ordered.push_back({l,r,i});\n    }\n    sort(ordered.begin(),ordered.end());\n    using Busy = pair<int,int>; // 结束时刻、房间号\n    priority_queue<Busy,vector<Busy>,greater<Busy>> busy;\n    priority_queue<int,vector<int>,greater<int>> freeRooms;\n    for (auto [start,end,id] : ordered) {\n        while (!busy.empty() && busy.top().first <= start) {\n            freeRooms.push(busy.top().second); busy.pop();\n        }\n        int room;\n        if (freeRooms.empty()) room = result.rooms++;\n        else { room = freeRooms.top(); freeRooms.pop(); }\n        result.roomForMeeting[id] = room; busy.push({end,room});\n    }\n    return result;\n}",
+          "paragraphs": [
+            "零长度会议不占房，编号为 −1；非空会议房号从 0 开始。空闲时优先复用最小编号，保证确定性，但不是对原输入编号序列做全局字典序优化。输入不被修改。时间 O(n log n)，空间 O(n)。"
+          ]
+        },
+        {
+          "type": "code",
+          "title": "2.7 带权扫描线：拼车容量检查",
+          "file": "detail-car-pooling.cpp",
+          "code": "bool canCarPool(const vector<array<int,3>>& trips, long long capacity) {\n    if (capacity < 0 || trips.size() > 1000000) throw invalid_argument(\"capacity/size\");\n    vector<pair<int,long long>> events;\n    for (auto trip : trips) {\n        int passengers = trip[0], start = trip[1], end = trip[2];\n        if (passengers < 0 || start > end) throw invalid_argument(\"trip\");\n        if (start == end || passengers == 0) continue;\n        events.push_back({start,passengers});\n        events.push_back({end,-(long long)passengers});\n    }\n    sort(events.begin(),events.end());\n    long long active = 0; size_t i = 0;\n    while (i < events.size()) {\n        int time = events[i].first;\n        while (i < events.size() && events[i].first == time) active += events[i++].second;\n        if (active > capacity) return false;\n    }\n    return true;\n}",
+          "paragraphs": [
+            "每条记录是 {人数,上车位置,下车位置}。同坐标先下后上等价于对之后路段计算净变化；判断的是人数之和，而非车辆或区间条数。n≤10^6 且人数为非负 int，累计量可安全放入 long long。时间 O(n log n)，空间 O(n)。"
+          ]
+        }
+      ],
+      "answers": [
+        {
+          "question": "为什么同时间先 +1 再 −1 可能把会议室数算大？",
+          "answer": [
+            "半开区间的旧会议在终点已经结束，新会议在该点才开始，可以使用同一个房间。先加后减会产生并不存在的瞬时同时占用，例 [0,1)、[1,2) 本应只需 1 间。"
+          ]
+        },
+        {
+          "question": "按时间分组后，active 代表哪个时段？",
+          "answer": [
+            "它代表当前坐标处理完之后到下一个不同坐标之前的半开段。该段内部没有事件，状态不变。记录 [t,next) 而不是只记录事件点，才能正确返回全部峰值时间段。"
+          ]
+        },
+        {
+          "question": "闭区间求单点峰值，也能只算同坐标净变化吗？",
+          "answer": [
+            "不能直接照抄。闭区间 [0,1] 和 [1,2] 在点 1 同时存在，但净变化为零会掩盖这个瞬间峰值。要按进入、检查、离开等顺序单独处理点语义，或在整数格点模型下安全使用 r+1。"
+          ]
+        },
+        {
+          "question": "会议室方案如何验证，不必与标准编号完全一致？",
+          "answer": [
+            "检查非空会议都有合法房号，同一房号任意两场不重叠，房间总数等于最大并发下界。不同编号重命名通常仍合法；如果接口另有平局规则，再单独核对该规则。"
+          ]
+        },
+        {
+          "question": "扫描线求并发与合并区间能互相替代吗？",
+          "answer": [
+            "不能。合并只保留覆盖范围，会抹去重叠次数。例如两个相同区间合并后只有一段，但实际需要两间房。区间调度又是在选一个不冲突子集，目标与前两者都不同。"
+          ]
+        },
+        {
+          "question": "拼车题为什么不能只记录每个端点一次 +1 / −1？",
+          "answer": [
+            "每条行程的人数不同。两条各 10 人的行程与两条各 1 人的行程区间数相同，但容量需求完全不同。事件增量应是人数，累加用足够宽的整数。"
+          ]
+        },
+        {
+          "question": "离散化后能否用排名差当实际持续时间？",
+          "answer": [
+            "不能，排名只保留顺序。事件时间 1、100、101 变成 0、1、2 后，两段排名长度都为 1，真实长度却是 99 与 1。若计算忙碌时长或时间积分，必须用原坐标差，并先转宽整数再相减。"
+          ]
+        }
+      ]
+    },
+    "3": {
+      "before": [
+        {
+          "type": "text",
+          "title": "3.1 随机集合的两个 O(1) 能力来自不同结构",
+          "paragraphs": [
+            "vector 让随机下标读取成为常数操作，哈希映射让按值查找下标成为平均常数操作。删除中间值时，以末尾元素填洞，只修改一个位置映射，从而避免移动整段数组；代价是不能保持插入顺序。",
+            "如果允许重复值，一个值可能占多个下标，应映射到下标集合。均匀选择一个数组位置意味着每个实例等概率，所以出现两次的值比出现一次的值更容易被抽到。这不是每个不同数值等概率。"
+          ]
+        },
+        {
+          "type": "table",
+          "title": "3.2 重复值删除手推：最后一个值可能与待删值相同",
+          "columns": [
+            "步骤",
+            "数组",
+            "下标集合",
+            "注意"
+          ],
+          "rows": [
+            [
+              "初始",
+              "[5,7,5]",
+              "5→{0,2}；7→{1}",
+              "随机抽到 5 的概率 2/3"
+            ],
+            [
+              "删 7，位置 1",
+              "末尾 5 填到位置 1",
+              "先删 7 的 1，再把 5 的 2 改为 1",
+              "得到 [5,5]"
+            ],
+            [
+              "删 5，假设选位置 0",
+              "末尾也是 5",
+              "删 0，删末尾 1，再加入新位置 0",
+              "同一个下标集合仍需一致"
+            ],
+            [
+              "删最后一份 5",
+              "[]",
+              "移除空的 key→集合 项",
+              "随机查询应明确失败"
+            ]
+          ],
+          "paragraphs": []
+        },
+        {
+          "type": "table",
+          "title": "3.3 四类随机问题的概率空间",
+          "columns": [
+            "任务",
+            "随机对象",
+            "正确规则",
+            "常见错误"
+          ],
+          "rows": [
+            [
+              "随机集合",
+              "当前所有不同元素",
+              "数组下标均匀",
+              "rand()%n 可能有取模偏差"
+            ],
+            [
+              "随机多重集合",
+              "当前所有元素实例",
+              "每个位置均匀",
+              "把不同值当均匀，忽视重复次数"
+            ],
+            [
+              "Fisher–Yates 洗牌",
+              "全部排列",
+              "第 i 步只从未固定区间选伙伴",
+              "每次都与全数组随机位置交换"
+            ],
+            [
+              "蓄水池抽样",
+              "流中所有历史位置的 K 子集",
+              "第 t 项以 K/t 概率进入",
+              "只在最初 K 项里随机，后续永不入样"
+            ]
+          ],
+          "paragraphs": []
+        },
+        {
+          "type": "text",
+          "title": "3.4 Fisher–Yates 与蓄水池的证明切入点",
+          "paragraphs": [
+            "洗牌从后往前固定一个位置：剩 n 个候选时，每个以 1/n 概率放到最后；再在剩下 n−1 个里均匀决定下一位置。因此任意排列概率为 1/n!。关键是缩小选择范围，不是在每一步都从整个数组挑下标。",
+            "蓄水池先保留前 K 项。处理第 t 项时均匀取 j∈[0,t−1]，若 j<K 就替换第 j 个样本。新项入样概率 K/t；旧项此前在样本中的概率 K/(t−1)，本轮存活概率 1−1/t，相乘仍为 K/t。完整子集均匀性还可归纳得到每个 K 子集概率 1/C(t,K)，不能仅凭相同边际概率就断言任意算法都对子集均匀。"
+          ]
+        }
+      ],
+      "after": [
+        {
+          "type": "code",
+          "title": "3.5 允许重复的随机集合：每个实例均匀",
+          "file": "detail-randomized-multiset.cpp",
+          "code": "class RandomizedMultisetExample {\n    vector<int> data;\n    unordered_map<int,unordered_set<size_t>> positions;\n    mt19937 rng;\npublic:\n    explicit RandomizedMultisetExample(uint32_t seed = 5489U): rng(seed) {}\n    bool insert(int x) {\n        auto& places = positions[x];\n        bool newValue = places.empty();\n        places.insert(data.size()); data.push_back(x); return newValue;\n    }\n    bool eraseOne(int x) {\n        auto it = positions.find(x);\n        if (it == positions.end()) return false;\n        size_t index = *it->second.begin(), lastIndex = data.size()-1;\n        int lastValue = data.back();\n        it->second.erase(index);\n        if (index != lastIndex) {\n            data[index] = lastValue;\n            auto& lastPlaces = positions.at(lastValue);\n            lastPlaces.erase(lastIndex); lastPlaces.insert(index);\n        }\n        data.pop_back();\n        if (it->second.empty()) positions.erase(it);\n        return true;\n    }\n    optional<int> getRandom() {\n        if (data.empty()) return nullopt;\n        uniform_int_distribution<size_t> choose(0,data.size()-1);\n        return data[choose(rng)];\n    }\n    size_t count(int x) const {\n        auto it = positions.find(x);\n        return it == positions.end() ? 0 : it->second.size();\n    }\n    size_t size() const { return data.size(); }\n};",
+          "paragraphs": [
+            "insert 返回插入前是否不存在这个值，但每次都会新增一份；eraseOne 删除任意一份。删除中不插入新的哈希键，避免保存的 map 迭代器被 rehash 影响；lastValue==x 的情况也按相同顺序修正集合。操作平均/均摊 O(1)，空间 O(实例总数)。固定种子便于复现，标准库分布实现差异可能使跨平台序列不同。"
+          ]
+        },
+        {
+          "type": "code",
+          "title": "3.6 在线蓄水池：不知道最终长度也能保留 K 个样本",
+          "file": "detail-reservoir.cpp",
+          "code": "class ReservoirSample {\n    size_t capacity;\n    uint64_t seen = 0;\n    vector<int> samples;\n    mt19937 rng;\npublic:\n    ReservoirSample(int k, uint32_t seed = 5489U): rng(seed) {\n        if (k < 0) throw invalid_argument(\"k\");\n        capacity = (size_t)k;\n    }\n    void offer(int value) {\n        if (seen == UINT64_MAX) throw overflow_error(\"stream length\");\n        ++seen;\n        if (samples.size() < capacity) samples.push_back(value);\n        else if (capacity > 0) {\n            uniform_int_distribution<uint64_t> choose(0,seen-1);\n            uint64_t index = choose(rng);\n            if (index < capacity) samples[(size_t)index] = value;\n        }\n    }\n    vector<int> snapshot() const { return samples; }\n    uint64_t processed() const { return seen; }\n};",
+          "paragraphs": [
+            "当前流不足 K 项时保留全部；K=0 只计数、不存样本。重复值按流中的不同位置参与抽样；样本顺序不承诺原流顺序。offer 在通常固定宽随机抽取模型下为期望/均摊 O(1)，总存储 O(min(K,n))，snapshot 复制成本 O(样本数)。这不是滑动窗口抽样：很久以前的数据仍参与概率空间。"
+          ]
+        },
+        {
+          "type": "code",
+          "title": "3.7 Fisher–Yates 原地洗牌",
+          "file": "detail-shuffle.cpp",
+          "code": "void fisherYatesShuffle(vector<int>& values, mt19937& rng) {\n    for (size_t remaining = values.size(); remaining > 1; --remaining) {\n        uniform_int_distribution<size_t> choose(0,remaining-1);\n        size_t picked = choose(rng);\n        swap(values[remaining-1],values[picked]);\n    }\n}",
+          "paragraphs": [
+            "空数组和单元素不消耗交换操作。每一步只在尚未固定的前缀里抽取下标，时间期望 O(n)、额外空间 O(1)（不计输入与生成器自身固定状态）。均匀分布证明建立在各步条件均匀抽取之上，mt19937 是可复现伪随机生成器，不是安全随机源。"
+          ]
+        }
+      ],
+      "answers": [
+        {
+          "question": "删除时，若待删位置就是数组末尾还需要交换吗？",
+          "answer": [
+            "不需要填洞，但仍要从对应下标集合或映射删除该位置，再 pop_back。如果统一写交换，也要保证不会在删掉映射后再次误用它。补充实现用 index!=lastIndex 分支明确跳过多余搬移。"
+          ]
+        },
+        {
+          "question": "重复值映射到单一下标为什么不够？",
+          "answer": [
+            "同一个值可能存在多份。只记一个位置会丢失其他实例的位置，删除后无法定位剩余副本。下标集合能在平均 O(1) 取出一个位置，并在末尾填洞时同步更新。"
+          ]
+        },
+        {
+          "question": "为什么不建议使用 rand()%n？",
+          "answer": [
+            "如果随机源取值范围大小不是 n 的倍数，某些余数会比另一些多一次映射，产生偏差。uniform_int_distribution 按目标范围生成均匀整数，通常通过拒绝采样等方式避免这种取模偏差。"
+          ]
+        },
+        {
+          "question": "每次都从全数组随机换一个位置，为什么不是均匀洗牌？",
+          "answer": [
+            "以 n=3 为例，这种算法有 3³=27 条等概率选择路径，但共有 6 个排列，27 不能被 6 整除，因此不可能每个排列次数相等。Fisher–Yates 的路径数为 3·2·1，恰与排列数对应。"
+          ]
+        },
+        {
+          "question": "蓄水池为什么挑 [0,t−1]，而不是只挑 [0,K−1]？",
+          "answer": [
+            "只挑样本槽会让每个新项必定进入，并过度偏向最近数据。扩大到 t 个位置后，仅前 K 个下标触发替换，新项入样概率降为 K/t，才能与所有历史位置平衡。"
+          ]
+        },
+        {
+          "question": "固定种子是否意味着随机算法失去意义？",
+          "answer": [
+            "固定种子使同一实现的实验可复现，不改变算法应如何分配抽样范围；但生成的是确定性伪随机序列，不适合作为不可预测的安全机制。测试不应因为短样本频率不完全相等就判错，也不能因频率看起来接近就当作均匀性证明。"
+          ]
+        },
+        {
+          "question": "蓄水池能否直接维护最近一小时的均匀样本？",
+          "answer": [
+            "不能直接套。普通蓄水池从所有已处理位置抽样，不会自动剔除过期位置。时间窗口的样本需要额外的过期处理与重新加权设计，不能只删除样本中过期项后继续用总历史 seen 作为分母。"
+          ]
+        }
+      ]
+    },
+    "4": {
+      "before": [
+        {
+          "type": "text",
+          "title": "4.1 欧几里得算法与最小负数",
+          "paragraphs": [
+            "若 a=qb+r，则同时整除 a、b 的数也整除 b、r，反之亦然，因此两对数的公因子集合相同，gcd(a,b)=gcd(b,r)。持续取余直到余数为 0，剩下的非零数就是最大公约数；本章约定 gcd(0,0)=0。",
+            "对有符号整数先取幅值时要小心：LLONG_MIN 的绝对值是 2^63，无法放入 long long。abs(LLONG_MIN) 或直接 -LLONG_MIN 都可能溢出。补充接口把幅值保存在 uint64_t 中，负数先安全计算 −(x+1)，再加 1。"
+          ]
+        },
+        {
+          "type": "table",
+          "title": "4.2 数值技巧与它们不能保证的事",
+          "columns": [
+            "写法 / 场景",
+            "能解决什么",
+            "仍需检查"
+          ],
+          "rows": [
+            [
+              "a/gcd(a,b)*b",
+              "减少乘法中间数",
+              "最终乘积仍可能超范围"
+            ],
+            [
+              "先转 long long 再相减 / 相乘",
+              "避免先在 int 中溢出",
+              "long long 自身也有上限"
+            ],
+            [
+              "x%=m；若 x<0 则 x+=m",
+              "规范化为 [0,m)",
+              "m 必须正，类型与范围需明确"
+            ],
+            [
+              "(a*b)%m",
+              "数学上可化简",
+              "机器先算乘积，可能已经溢出"
+            ],
+            [
+              "a/b 取模",
+              "普通整数除法",
+              "不等价于乘模逆元，逆元也未必存在"
+            ],
+            [
+              "p<=n/p",
+              "避免条件里的 p*p 溢出",
+              "p>0；分配 n+1 空间仍要可行"
+            ]
+          ],
+          "paragraphs": []
+        },
+        {
+          "type": "table",
+          "title": "4.3 模逆元存在条件",
+          "columns": [
+            "例子",
+            "gcd(a,m)",
+            "是否可逆",
+            "解释"
+          ],
+          "rows": [
+            [
+              "3 mod 7",
+              "1",
+              "可逆，逆元 5",
+              "3×5≡1 mod 7"
+            ],
+            [
+              "2 mod 6",
+              "2",
+              "不可逆",
+              "2 的倍数模 6 不会等于 1"
+            ],
+            [
+              "0 mod 7",
+              "7",
+              "不可逆",
+              "不能除以模数意义下的零"
+            ],
+            [
+              "2 mod 9",
+              "1",
+              "可逆，逆元 5",
+              "模数不必是质数"
+            ],
+            [
+              "a^(p−2) mod p",
+              "需 p 是质数且 a 不被 p 整除",
+              "满足前提才成立",
+              "不能对任意合数套费马公式"
+            ]
+          ],
+          "paragraphs": []
+        },
+        {
+          "type": "text",
+          "title": "4.4 从 p² 起筛，与线性最小质因子筛",
+          "paragraphs": [
+            "埃氏筛对质数 p 从 p² 开始标记，因为 p·2 到 p·(p−1) 已含更小质因子，之前已被处理。复杂度是 O(n log log n)，不应把遍历所有倍数误写成 O(n²)。LeetCode 204 问的是严格小于 n 的质数个数，而基础 primesUpTo(n) 包含 n，需要转换边界。",
+            "若需要多次分解不同整数，可预处理每个数的最小质因子 spf。线性筛让每个合数只由它的最小质因子生成一次；分解 x 时不断取 p=spf[x] 并除去它，得到质因子和指数。它仍需 O(n) 空间，不能用来直接筛到 10^12。"
+          ]
+        }
+      ],
+      "after": [
+        {
+          "type": "code",
+          "title": "4.5 有符号输入的 GCD / LCM：返回无符号幅值并检测溢出",
+          "file": "detail-safe-gcd-lcm.cpp",
+          "code": "uint64_t integerMagnitude(long long x) {\n    return x < 0 ? uint64_t(-(x+1))+1 : uint64_t(x);\n}\nuint64_t gcdMagnitude(long long a, long long b) {\n    uint64_t x = integerMagnitude(a), y = integerMagnitude(b);\n    while (y) { uint64_t r = x%y; x = y; y = r; }\n    return x;\n}\noptional<uint64_t> lcmMagnitude(long long a, long long b) {\n    uint64_t x = integerMagnitude(a), y = integerMagnitude(b);\n    if (x == 0 || y == 0) return uint64_t(0);\n    uint64_t reduced = x/gcdMagnitude(a,b);\n    if (reduced > UINT64_MAX/y) return nullopt;\n    return reduced*y;\n}",
+          "paragraphs": [
+            "结果非负，LCM 有值 0 与因溢出返回 nullopt 是两回事。LCM 采用 uint64_t 返回范围，可表示 2^63 等超出有符号 long long 的合法幅值；不要再未经检查转换回 long long。欧几里得 O(log(min(|a|,|b|)+1))，额外空间 O(1)，零参数立即按约定处理。"
+          ]
+        },
+        {
+          "type": "code",
+          "title": "4.6 不依赖 __int128 的模乘、模幂与小模数逆元",
+          "file": "detail-modular-arithmetic.cpp",
+          "code": "uint64_t addReducedMod(uint64_t a, uint64_t b, uint64_t mod) {\n    // 内部辅助：mod>0，a<mod，b<mod\n    return a >= mod-b ? a-(mod-b) : a+b;\n}\nuint64_t multiplyMod(uint64_t a, uint64_t b, uint64_t mod) {\n    if (mod == 0) throw invalid_argument(\"mod\");\n    a %= mod; b %= mod;\n    uint64_t answer = 0;\n    while (b) {\n        if (b&1U) answer = addReducedMod(answer,a,mod);\n        b >>= 1;\n        a = addReducedMod(a,a,mod);\n    }\n    return answer;\n}\nuint64_t powerMod(uint64_t base, uint64_t exponent, uint64_t mod) {\n    if (mod == 0) throw invalid_argument(\"mod\");\n    uint64_t answer = 1%mod;\n    base %= mod;\n    while (exponent) {\n        if (exponent&1U) answer = multiplyMod(answer,base,mod);\n        exponent >>= 1;\n        base = multiplyMod(base,base,mod);\n    }\n    return answer;\n}\noptional<long long> inverseModSmall(long long a, long long mod) {\n    if (mod < 2 || mod > 1000000000) throw invalid_argument(\"2 <= mod <= 1e9\");\n    a %= mod; if (a < 0) a += mod;\n    long long oldR = mod, r = a, oldT = 0, t = 1;\n    while (r) {\n        long long q = oldR/r;\n        long long nextR = oldR-q*r, nextT = oldT-q*t;\n        oldR = r; r = nextR; oldT = t; t = nextT;\n    }\n    if (oldR != 1) return nullopt;\n    oldT %= mod; if (oldT < 0) oldT += mod;\n    return oldT;\n}",
+          "paragraphs": [
+            "模乘通过二进制拆分和安全加法避免 a*b 溢出，支持整个 uint64_t 模数范围。两数均小于 mod 时，若 a≥mod−b 就算 a−(mod−b)，否则 a+b 一定小于 mod 且不溢出。模乘 O(log(mod+1))，模幂 O(log(exponent+1)·log(mod+1))，不是把乘法当常数后的普通快速幂界。",
+            "powerMod 定义 exponent=0 时返回 1 mod m，因此本接口把 0^0 约定为 1 mod m；m=1 始终为 0，m=0 非法。逆元使用扩展欧几里得并限制模数≤10^9，使系数运算处在 long long 安全范围；gcd≠1 返回 nullopt，不假定模数为质数。"
+          ]
+        },
+        {
+          "type": "code",
+          "title": "4.7 最小质因子表：多次分解整数",
+          "file": "detail-smallest-prime.cpp",
+          "code": "class SmallestPrimeTable {\n    int limit;\n    vector<int> spf, primeList;\npublic:\n    explicit SmallestPrimeTable(int n): limit(n) {\n        if (n < 0 || n > 1000000) throw invalid_argument(\"sieve limit\");\n        spf.assign(n+1,0);\n        for (int i = 2; i <= n; ++i) {\n            if (spf[i] == 0) { spf[i] = i; primeList.push_back(i); }\n            for (int p : primeList) {\n                if (p > spf[i] || 1LL*p*i > n) break;\n                spf[p*i] = p;\n            }\n        }\n    }\n    const vector<int>& primes() const { return primeList; }\n    bool isPrime(int x) const {\n        if (x < 0 || x > limit) throw out_of_range(\"x\");\n        return x >= 2 && spf[x] == x;\n    }\n    vector<pair<int,int>> factorize(int x) const {\n        if (x < 1 || x > limit) throw out_of_range(\"1 <= x <= limit\");\n        vector<pair<int,int>> factors;\n        while (x > 1) {\n            int p = spf[x], exponent = 0;\n            while (x%p == 0) { x /= p; ++exponent; }\n            factors.push_back({p,exponent});\n        }\n        return factors;\n    }\n};",
+          "paragraphs": [
+            "预处理 O(n) 时间与空间。每次分解至多做 O(log x) 次除法，返回升序的 {质因子,指数}；1 的分解为空，0 的质因数分解未定义，拒绝调用。primes() 返回表内只读引用，仅在对象存活期间使用。本例上限 10^6 是资源约定，不是筛法理论上限。"
+          ]
+        }
+      ],
+      "answers": [
+        {
+          "question": "先除后乘是否保证 LCM 不溢出？",
+          "answer": [
+            "不保证，只减少不必要的中间放大。互质的大数 a、b 的 LCM 仍是 a*b，可能超过输出类型。乘法前检查 reduced>MAX/b，满足时返回失败；事后看乘积是否变小已无法避免有符号溢出的未定义行为。"
+          ]
+        },
+        {
+          "question": "为什么 abs(LLONG_MIN) 是陷阱？",
+          "answer": [
+            "有符号范围负侧比正侧多一个值，最小负数的绝对值无法放回同一有符号类型。先对 x+1 取负再转无符号并加一，能得到 2^63 而不执行溢出的有符号取负。"
+          ]
+        },
+        {
+          "question": "模意义下能不能直接约掉同一因子？",
+          "answer": [
+            "只有该因子与模数互质、具有逆元时才能作为可逆乘法约去。例如 2x≡2 mod 6 有 x≡1 或 4 两种剩余类，直接除以 2 写成 x≡1 mod 6 会丢解。解同余方程与普通整数除法不同。"
+          ]
+        },
+        {
+          "question": "费马小定理求逆元有什么前提？",
+          "answer": [
+            "模数 p 必须为质数，且 a mod p 非零，才有 a^(p−1)≡1，从而逆元为 a^(p−2)。对一般模数只要 gcd(a,m)=1 也可逆，但应使用扩展欧几里得等适用方法，不能擅自用 m−2 指数。"
+          ]
+        },
+        {
+          "question": "无符号溢出定义为回绕，为什么仍不能直接模乘？",
+          "answer": [
+            "回绕相当于先对 2^64 取模，再对 m 取模，通常不等于对原精确乘积直接模 m。行为有定义不代表结果符合数学目标。安全模乘避免丢失那些高位信息。"
+          ]
+        },
+        {
+          "question": "为什么埃氏筛从 p² 而不是 2p 开始？",
+          "answer": [
+            "2p、3p 等小于 p² 的倍数都含有小于 p 的质因子，已在更早的轮次被标记。从 p² 开始跳过重复工作，不会遗漏合数。判断 p²≤n 时可用 p≤n/p，实际标记起点先在宽类型计算。"
+          ]
+        },
+        {
+          "question": "筛法、试除和最小质因子表如何选择？",
+          "answer": [
+            "只判少数不大的整数可试除；需要区间内全部质数用筛法；同一上界内大量分解用最小质因子表。上界过大时内存会成为瓶颈，可能需要分段筛或更专门的数论算法，不能只看单次查询很快。"
+          ]
+        }
+      ]
+    }
+  },
+  "outro": [
+    {
+      "type": "table",
+      "title": "综合训练路线：先说清接口语义再编码",
+      "columns": [
+        "方向",
+        "经典题 / 任务",
+        "不变量或证明",
+        "固定边界"
+      ],
+      "rows": [
+        [
+          "缓存与排名",
+          "146、460、347、215",
+          "映射与链表一致；桶内顺序；堆顶最差",
+          "容量 0、重复更新、同频平局"
+        ],
+        [
+          "时间区间",
+          "253、1094、56",
+          "事件点之间状态恒定；分配达到并发下界",
+          "相等端点、零长度、重复区间"
+        ],
+        [
+          "随机与数据流",
+          "380、381、384、382 / 蓄水池",
+          "位置等概率；后缀固定；历史样本平衡",
+          "空集、重复值、K=0、K>流长"
+        ],
+        [
+          "数论与安全",
+          "204、50、GCD/LCM、模逆元",
+          "公因子不变、位拆分、最小质因子",
+          "最小负数、模数 1、不可逆、溢出"
+        ]
+      ],
+      "paragraphs": []
+    },
+    {
+      "type": "text",
+      "title": "面试综合题的实现顺序",
+      "paragraphs": [
+        "先用自然语言列出每种操作要修改哪些字段，例如 LFU 命中需要动旧桶、新桶、key 节点与 minFrequency；再写一个慢但清楚的模型作为参照。正确性稳定后，再替换其中的热点查找与排序，而不是一开始同时调试所有结构。",
+        "对于随机题，分别验证结构正确与分布推导。样本必须来自当前集合、不能无故丢失实例；均匀性则来自算法证明，少量随机输出不构成统计结论。对于数值题，验证数学结果前也要确认机器中间运算没有越界。"
+      ]
+    },
+    {
+      "type": "qa",
+      "title": "章末自测：四个跨模型问题",
+      "items": [
+        {
+          "question": "平均 O(1) 的设计题为什么仍可能偶尔慢？",
+          "answer": [
+            "哈希碰撞与 rehash、vector 扩容、内存分配都可能使某次操作较慢。算法面试通常要求平均或均摊界，并非硬实时延迟。应准确说明复杂度类型，而不是把所有操作宣称为每次最坏常数。"
+          ]
+        },
+        {
+          "question": "怎样检查多个结构保存的同一份数据没有失配？",
+          "answer": [
+            "定义可遍历的不变量：缓存键集合一致且迭代器指向同 key；随机集合中每个位置在对应值的下标集合里且没有幽灵下标；分配方案中每条非空会议恰好有一个房号。测试中用小规模朴素模型逐操作比较，比仅看最后输出更容易定位错误。"
+          ]
+        },
+        {
+          "question": "数据流、在线与离线各意味着什么？",
+          "answer": [
+            "数据流强调逐项到达及可能受限的保存空间；在线要求当前答案不依赖未来输入；离线允许先拿到全部数据并排序或重排处理。大小 K 堆可以在线维护数值 Top K，但精确频率 Top K 的计数仍可能随不同值数增长；不能把“用了堆”直接等同于固定内存。"
+          ]
+        },
+        {
+          "question": "边界检查全部补齐，是否就能称为生产级组件？",
+          "answer": [
+            "不能。教学代码还可能缺少并发同步、崩溃恢复、容量治理、分配失败事务性和安全随机源。这里明确算法契约与测试范围；若要生产化，应按真实运行环境额外设计，而不是从面试复杂度结论直接推导可靠性。"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "code",
+      "title": "综合测试：慢模型、方案性质与数值边界",
+      "file": "detail-combined-tests.cpp",
+      "code": "#include \"detail-lru-optional.cpp\"\n#include \"detail-lfu-cache.cpp\"\n#include \"detail-topk-frequency.cpp\"\n#include \"detail-peak-intervals.cpp\"\n#include \"detail-room-assignment.cpp\"\n#include \"detail-car-pooling.cpp\"\n#include \"detail-randomized-multiset.cpp\"\n#include \"detail-reservoir.cpp\"\n#include \"detail-shuffle.cpp\"\n#include \"detail-safe-gcd-lcm.cpp\"\n#include \"detail-modular-arithmetic.cpp\"\n#include \"detail-smallest-prime.cpp\"\n#include \"01.cpp\"\n#include \"02.cpp\"\n#include \"03.cpp\"\n#include \"04.cpp\"\n\nclass SlowLRU {\n    size_t capacity;\n    vector<pair<int,int>> data; // 最近使用在前\npublic:\n    explicit SlowLRU(int cap): capacity(cap) {}\n    optional<int> get(int key) {\n        for (size_t i = 0; i < data.size(); ++i) if (data[i].first == key) {\n            auto item = data[i]; data.erase(data.begin()+i); data.insert(data.begin(),item);\n            return item.second;\n        }\n        return nullopt;\n    }\n    void put(int key, int value) {\n        erase(key);\n        if (capacity) data.insert(data.begin(),{key,value});\n        if (data.size() > capacity) data.pop_back();\n    }\n    bool erase(int key) {\n        for (size_t i = 0; i < data.size(); ++i) if (data[i].first == key) {\n            data.erase(data.begin()+i); return true;\n        }\n        return false;\n    }\n    void resize(int cap) { capacity = cap; if (data.size() > capacity) data.resize(capacity); }\n    size_t size() const { return data.size(); }\n};\nclass SlowLFU {\n    struct Item { int value, frequency, lastUse; };\n    int capacity, clock = 0;\n    unordered_map<int,Item> data;\npublic:\n    explicit SlowLFU(int cap): capacity(cap) {}\n    optional<int> get(int key) {\n        auto it = data.find(key);\n        if (it == data.end()) return nullopt;\n        ++it->second.frequency; it->second.lastUse = ++clock; return it->second.value;\n    }\n    void put(int key, int value) {\n        auto it = data.find(key);\n        if (it != data.end()) {\n            it->second.value = value; ++it->second.frequency; it->second.lastUse = ++clock; return;\n        }\n        if (!capacity) return;\n        if ((int)data.size() == capacity) {\n            auto victim = data.begin();\n            for (auto candidate = data.begin(); candidate != data.end(); ++candidate)\n                if (make_pair(candidate->second.frequency,candidate->second.lastUse) <\n                    make_pair(victim->second.frequency,victim->second.lastUse)) victim = candidate;\n            data.erase(victim);\n        }\n        data[key] = {value,1,++clock};\n    }\n    size_t size() const { return data.size(); }\n};\nPeakConcurrency brutePeak(const vector<pair<int,int>>& intervals) {\n    vector<int> points;\n    for (auto [l,r] : intervals) if (l < r) { points.push_back(l); points.push_back(r); }\n    sort(points.begin(),points.end()); points.erase(unique(points.begin(),points.end()),points.end());\n    PeakConcurrency result;\n    for (size_t i = 1; i < points.size(); ++i) {\n        int l = points[i-1], r = points[i], active = 0;\n        for (auto interval : intervals) if (interval.first <= l && l < interval.second) ++active;\n        if (active > result.count) { result.count = active; result.spans.clear(); }\n        if (active > 0 && active == result.count) {\n            if (!result.spans.empty() && result.spans.back().second == l) result.spans.back().second = r;\n            else result.spans.push_back({l,r});\n        }\n    }\n    return result;\n}\nbool bruteCarPool(const vector<array<int,3>>& trips, long long capacity) {\n    for (auto event : trips) {\n        int position = event[1]; long long passengers = 0;\n        for (auto trip : trips)\n            if (trip[1] <= position && position < trip[2]) passengers += trip[0];\n        if (passengers > capacity) return false;\n    }\n    return true;\n}\nvector<int> bruteTopK(const vector<int>& a, int k) {\n    unordered_map<int,int> counts;\n    for (int x : a) ++counts[x];\n    vector<int> values; for (auto item : counts) values.push_back(item.first);\n    sort(values.begin(),values.end(),[&](int x,int y) {\n        if (counts[x] != counts[y]) return counts[x] > counts[y];\n        return x < y;\n    });\n    values.resize(k); return values;\n}\nbool trialPrime(int x) {\n    if (x < 2) return false;\n    for (int divisor = 2; divisor <= x/divisor; ++divisor)\n        if (x%divisor == 0) return false;\n    return true;\n}\ntemplate<class Exception, class F> void expectException(F action) {\n    bool caught = false;\n    try { action(); } catch (const Exception&) { caught = true; }\n    assert(caught);\n}\nint main() {\n    OptionalLRU lru(2); lru.put(1,-1); lru.put(2,20);\n    assert(lru.get(1) == optional<int>(-1)); lru.put(3,30);\n    assert(!lru.get(2)); lru.resize(0); lru.put(4,40); assert(lru.size() == 0);\n    expectException<invalid_argument>([&] { lru.resize(-1); });\n    LFUCacheExample lfu(2); lfu.put(1,1); lfu.put(2,2);\n    assert(lfu.get(1) == optional<int>(1)); lfu.put(3,3);\n    assert(!lfu.get(2)); assert(lfu.get(3) == optional<int>(3));\n    lfu.put(4,4); assert(!lfu.get(1)); // 1、3 同频，1 更旧\n    LFUCacheExample disabled(0); disabled.put(1,1); assert(!disabled.get(1));\n    LRUCache basicLRU(1); basicLRU.put(1,2); basicLRU.put(3,4);\n    assert(basicLRU.get(1) == -1 && basicLRU.get(3) == 4);\n    assert(topKFrequentStable({2,1,2,1,3},2) == vector<int>({1,2}));\n    assert(topKFrequentStable({},0).empty());\n    expectException<invalid_argument>([] { topKFrequentStable({1},2); });\n    auto peak = peakConcurrency({{0,10},{5,10},{10,15}});\n    assert((peak.count == 2 && peak.spans == vector<pair<int,int>>({{5,10}})));\n    auto continuous = peakConcurrency({{0,1},{1,2}});\n    assert((continuous.spans == vector<pair<int,int>>({{0,2}})));\n    assert(peakConcurrency({{2,2}}).spans.empty());\n    assert(assignMeetingRooms({{1,1}}).roomForMeeting == vector<int>({-1}));\n    assert(canCarPool({{2,0,5},{2,5,10}},2));\n    expectException<invalid_argument>([] { peakConcurrency({{2,1}}); });\n    RandomizedMultisetExample multiset;\n    assert(!multiset.getRandom());\n    assert(multiset.insert(5) && !multiset.insert(5) && multiset.insert(7));\n    assert(multiset.eraseOne(7) && multiset.eraseOne(5) && multiset.count(5) == 1);\n    assert(multiset.getRandom() == optional<int>(5));\n    assert(multiset.eraseOne(5) && !multiset.eraseOne(5) && !multiset.getRandom());\n    RandomizedSet basicSet; assert(basicSet.insert(2) && !basicSet.insert(2));\n    assert(basicSet.getRandom() == 2 && basicSet.remove(2));\n    expectException<out_of_range>([&] { basicSet.getRandom(); });\n    ReservoirSample zero(0); zero.offer(1); assert(zero.processed() == 1 && zero.snapshot().empty());\n    expectException<invalid_argument>([] { ReservoirSample invalid(-1); });\n    assert(gcdMagnitude(0,0) == 0 && gcdMagnitude(-12,18) == 6);\n    assert(gcdMagnitude(LLONG_MIN,0) == (uint64_t(1) << 63));\n    assert(lcmMagnitude(LLONG_MIN,1) == optional<uint64_t>(uint64_t(1) << 63));\n    assert(lcmMagnitude(0,LLONG_MIN) == optional<uint64_t>(0));\n    assert(!lcmMagnitude(LLONG_MAX,LLONG_MAX-1));\n    assert(multiplyMod(UINT64_MAX-1,UINT64_MAX-1,UINT64_MAX) == 1);\n    assert(multiplyMod(UINT64_MAX-2,UINT64_MAX-3,UINT64_MAX) == 6);\n    assert(powerMod(UINT64_MAX-1,2,UINT64_MAX) == 1);\n    assert(powerMod(0,0,7) == 1 && powerMod(7,0,1) == 0);\n    assert(inverseModSmall(3,7) == optional<long long>(5));\n    assert(inverseModSmall(-2,9) == optional<long long>(4));\n    assert(!inverseModSmall(2,6) && !inverseModSmall(0,7));\n    expectException<invalid_argument>([] { multiplyMod(1,2,0); });\n    expectException<invalid_argument>([] { inverseModSmall(1,1); });\n\n    // 枚举抽取下标的选择路径，演示小规模均匀性，不是统计检验 PRNG。\n    unordered_map<string,int> permutations;\n    function<void(vector<int>,int)> enumerateShuffle = [&](vector<int> a,int remaining) {\n        if (remaining <= 1) {\n            string key; for (int x : a) key += to_string(x);\n            ++permutations[key]; return;\n        }\n        for (int j = 0; j < remaining; ++j) {\n            auto next = a; swap(next[remaining-1],next[j]);\n            enumerateShuffle(next,remaining-1);\n        }\n    };\n    enumerateShuffle({0,1,2},3);\n    assert(permutations.size() == 6);\n    for (auto item : permutations) assert(item.second == 1);\n    vector<int> subsetCounts(16);\n    for (int j3 = 0; j3 < 3; ++j3) for (int j4 = 0; j4 < 4; ++j4) {\n        vector<int> sample{0,1};\n        if (j3 < 2) sample[j3] = 2;\n        if (j4 < 2) sample[j4] = 3;\n        ++subsetCounts[(1 << sample[0]) | (1 << sample[1])];\n    }\n    for (int mask = 0; mask < 16; ++mask) {\n        int count = 0; for (int b = 0; b < 4; ++b) count += (mask >> b)&1;\n        assert(subsetCounts[mask] == (count == 2 ? 2 : 0));\n    }\n\n    mt19937 rng(20260922);\n    for (int trial = 0; trial < 80; ++trial) {\n        int cap = (int)(rng()%5);\n        OptionalLRU fastLRU(cap); SlowLRU slowLRU(cap);\n        LFUCacheExample fastLFU(cap); SlowLFU slowLFU(cap);\n        RandomizedMultisetExample randomBag((uint32_t)trial);\n        unordered_map<int,int> bag; int bagSize = 0;\n        for (int step = 0; step < 60; ++step) {\n            int key = (int)(rng()%7)-3, value = (int)(rng()%11)-5;\n            switch (rng()%4) {\n                case 0: fastLRU.put(key,value); slowLRU.put(key,value); break;\n                case 1: assert(fastLRU.get(key) == slowLRU.get(key)); break;\n                case 2: assert(fastLRU.erase(key) == slowLRU.erase(key)); break;\n                default: {\n                    int nextCap = (int)(rng()%5); fastLRU.resize(nextCap); slowLRU.resize(nextCap);\n                }\n            }\n            assert(fastLRU.size() == slowLRU.size());\n            if (rng()%2) { fastLFU.put(key,value); slowLFU.put(key,value); }\n            else assert(fastLFU.get(key) == slowLFU.get(key));\n            assert(fastLFU.size() == slowLFU.size());\n            // 固定顺序读一遍：两侧同样刷新，以核对所有逻辑键。\n            for (int probe = -3; probe <= 3; ++probe) {\n                assert(fastLRU.get(probe) == slowLRU.get(probe));\n                assert(fastLFU.get(probe) == slowLFU.get(probe));\n            }\n            if (rng()%2) { assert(randomBag.insert(key) == (bag[key] == 0)); ++bag[key]; ++bagSize; }\n            else {\n                bool exists = bag[key] > 0; assert(randomBag.eraseOne(key) == exists);\n                if (exists) { --bag[key]; --bagSize; }\n            }\n            assert(randomBag.size() == (size_t)bagSize);\n            for (int probe = -3; probe <= 3; ++probe) assert(randomBag.count(probe) == (size_t)bag[probe]);\n            auto draw = randomBag.getRandom();\n            assert(draw.has_value() == (bagSize > 0));\n            if (draw) assert(bag[*draw] > 0);\n        }\n        vector<int> a(rng()%20); for (int& x : a) x = (int)(rng()%7)-3;\n        int distinct = (int)unordered_set<int>(a.begin(),a.end()).size();\n        for (int k = 0; k <= distinct; ++k) assert(topKFrequentStable(a,k) == bruteTopK(a,k));\n        vector<pair<int,int>> intervals;\n        vector<array<int,3>> trips;\n        int count = (int)(rng()%9);\n        for (int i = 0; i < count; ++i) {\n            int l = (int)(rng()%9)-4, r = l+(int)(rng()%5);\n            intervals.push_back({l,r}); trips.push_back({(int)(rng()%5),l,r});\n        }\n        auto fastPeak = peakConcurrency(intervals), slowPeak = brutePeak(intervals);\n        assert(fastPeak.count == slowPeak.count && fastPeak.spans == slowPeak.spans);\n        assert(minMeetingRooms(intervals) == slowPeak.count);\n        auto assigned = assignMeetingRooms(intervals);\n        assert(assigned.rooms == slowPeak.count && assigned.roomForMeeting.size() == intervals.size());\n        for (int i = 0; i < count; ++i) {\n            if (intervals[i].first == intervals[i].second) assert(assigned.roomForMeeting[i] == -1);\n            else assert(assigned.roomForMeeting[i] >= 0 && assigned.roomForMeeting[i] < assigned.rooms);\n            for (int j = 0; j < i; ++j)\n                if (assigned.roomForMeeting[i] >= 0 && assigned.roomForMeeting[i] == assigned.roomForMeeting[j])\n                    assert(intervals[i].second <= intervals[j].first || intervals[j].second <= intervals[i].first);\n        }\n        long long capacity = rng()%12; assert(canCarPool(trips,capacity) == bruteCarPool(trips,capacity));\n        int k = (int)(rng()%25);\n        ReservoirSample sample(k,(uint32_t)trial), replay(k,(uint32_t)trial);\n        for (int i = 0; i < 20; ++i) { sample.offer(i); replay.offer(i); }\n        auto selected = sample.snapshot();\n        assert(sample.processed() == 20 && selected == replay.snapshot());\n        assert(selected.size() == (size_t)min(k,20));\n        unordered_set<int> unique(selected.begin(),selected.end()); assert(unique.size() == selected.size());\n        for (int x : selected) assert(x >= 0 && x < 20);\n        auto shuffled = a, duplicate = a;\n        mt19937 engine((uint32_t)trial), again((uint32_t)trial);\n        fisherYatesShuffle(shuffled,engine); fisherYatesShuffle(duplicate,again); assert(shuffled == duplicate);\n        sort(shuffled.begin(),shuffled.end()); sort(a.begin(),a.end()); assert(shuffled == a);\n        uint64_t x = rng()%1000000, y = rng()%1000000, mod = 1+rng()%1000;\n        assert(multiplyMod(x,y,mod) == (x*y)%mod);\n        uint64_t exponent = rng()%13, expectedPower = 1%mod;\n        for (uint64_t i = 0; i < exponent; ++i) expectedPower = expectedPower*(x%mod)%mod;\n        assert(powerMod(x,exponent,mod) == expectedPower);\n        uint64_t wide = (uint64_t(rng()) << 32) | rng(), reduced = wide%UINT64_MAX;\n        assert(multiplyMod(wide,UINT64_MAX-1,UINT64_MAX) == (reduced ? UINT64_MAX-reduced : 0));\n    }\n    for (long long a = -30; a <= 30; ++a) for (long long b = -30; b <= 30; ++b) {\n        assert(gcdMagnitude(a,b) == (uint64_t)gcd(a,b));\n        assert(lcmMagnitude(a,b) == optional<uint64_t>((uint64_t)lcm(a,b)));\n    }\n    for (long long mod = 2; mod <= 35; ++mod) for (long long a = -35; a <= 35; ++a) {\n        optional<long long> expected;\n        long long normalized = (a%mod+mod)%mod;\n        for (long long x = 0; x < mod; ++x) if (normalized*x%mod == 1) expected = x;\n        assert(inverseModSmall(a,mod) == expected);\n    }\n    for (int n = 0; n <= 120; ++n) {\n        SmallestPrimeTable table(n);\n        assert(table.primes() == primesUpTo(n));\n        for (int x = 0; x <= n; ++x) assert(table.isPrime(x) == trialPrime(x));\n        for (int x = 1; x <= n; ++x) {\n            auto factors = table.factorize(x); long long product = 1; int previous = 1;\n            for (auto [p,e] : factors) {\n                assert(p > previous && trialPrime(p) && e > 0); previous = p;\n                for (int i = 0; i < e; ++i) product *= p;\n            }\n            assert(product == x);\n        }\n    }\n    SmallestPrimeTable table(10);\n    expectException<out_of_range>([&] { table.factorize(0); });\n    cout << \"combined technique checks passed\\n\";\n}",
+      "paragraphs": [
+        "本入口引用同目录 12 份补充实现与 4 份基础模板。请保留完整 examples 目录，只编译 detail-combined-tests.cpp；命令为 g++ -std=c++17 -O2 -Wall -Wextra detail-combined-tests.cpp -o combined-tests，Windows 随后运行 .\\combined-tests.exe。不要定义 NDEBUG，部分测试操作写在 assert 内。",
+        "包含 80 轮固定种子操作与输入：LRU/LFU 慢模型、频率排序参照、按路段重数验证扫描线、会议室方案合法性、随机多重集合词频与样本来源、抽样和洗牌的种子复现、小整数精确算术参照，以及 GCD/LCM、逆元、质因子重建的穷举检查。",
+        "另外枚举 n=3 洗牌的全部选择路径和 n=4、K=2 蓄水池的全部选择路径，核对理想均匀选择下的结果次数；这不是对实际伪随机生成器进行统计认证。当前环境未发现 C++ 编译器，源码尚未编译运行，浏览器检查不等于算法运行测试。"
+      ]
+    }
+  ]
+}
