@@ -3,7 +3,7 @@
 <meta name="description" content="秋招算法手撕学习讲义：知识推导、经典考点、C++17 示例与面试训练。">
 <title>并查集与高级数据结构 · 算法手撕讲义</title><link rel="stylesheet" href="../assets/style.css"><script src="../assets/app.js" defer></script></head>
 <body><a class="skip" href="#main">跳到正文</a><header class="topbar"><a class="brand" href="../index.html"><span class="brand-mark">a[i]</span><span>算法手撕讲义<small>秋招学习工作区 / C++17</small></span></a><button type="button" class="nav-toggle" aria-expanded="false" aria-controls="chapter-nav">章节目录</button><a class="home-link" href="../index.html">全部章节 ↗</a></header>
-<div class="layout"><aside class="sidebar" id="chapter-nav" aria-label="章节导航"><p class="rail-label">LEARNING PATH · 学习路径</p><nav><a class="chapter-link"  href="../01-复杂度与解题方法/index.html"><span>01</span>复杂度与解题方法</a><a class="chapter-link"  href="../02-数组字符串与矩阵/index.html"><span>02</span>数组、字符串与矩阵</a><a class="chapter-link"  href="../03-链表/index.html"><span>03</span>链表</a><a class="chapter-link"  href="../04-栈队列与单调结构/index.html"><span>04</span>栈、队列与单调结构</a><a class="chapter-link"  href="../05-哈希集合与位运算/index.html"><span>05</span>哈希、集合与位运算</a><a class="chapter-link"  href="../06-排序与二分查找/index.html"><span>06</span>排序与二分查找</a><a class="chapter-link"  href="../07-树与二叉搜索树/index.html"><span>07</span>树与二叉搜索树</a><a class="chapter-link"  href="../08-堆与优先队列/index.html"><span>08</span>堆与优先队列</a><a class="chapter-link"  href="../09-递归回溯与分治/index.html"><span>09</span>递归、回溯与分治</a><a class="chapter-link"  href="../10-图论/index.html"><span>10</span>图论</a><a class="chapter-link"  href="../11-贪心/index.html"><span>11</span>贪心</a><a class="chapter-link"  href="../12-动态规划/index.html"><span>12</span>动态规划</a><a class="chapter-link active" aria-current=page href="../13-并查集与高级数据结构/index.html"><span>13</span>并查集与高级数据结构</a><a class="chapter-link"  href="../14-高频技巧与综合题型/index.html"><span>14</span>高频技巧与综合题型</a><a class="chapter-link"  href="../15-面试表达与训练计划/index.html"><span>15</span>面试表达与训练计划</a></nav><div class="sidebar-note">读懂不变量，独立写代码。<br>共 15 章 · 63 个小节<br>无需联网，浏览器直接打开。</div></aside><main id="main"><header class="chapter-header"><p class="eyebrow">CHAPTER 13 / 15</p><h1>并查集与高级数据结构</h1><p class="lead">先明确需要支持的操作，再选择结构。并查集维护集合合并，Trie 维护前缀，树状数组和线段树维护动态区间信息。</p><div class="chapter-meta"><span>4 个小节</span><span>C++17 示例</span><a href="README.md">原始知识摘要 ↗</a></div></header><div class="reading-guide"><strong>本章怎么学</strong><p>先读原理与不变量，遮住代码手推例子，再独立实现。最后用面试追问检查理解，按练习条目做变式。</p></div><details class="environment"><summary>代码使用说明与通用头文件</summary><p>示例统一采用 C++17。页面展示核心函数或类，下载的 .cpp 已包含以下头文件，可独立编译。不同小节可能重用类型名，应分别编译；含 main 的示例可直接运行，其余需自行补充调用与测试。复制按钮复制当前代码块。</p><div class="codebox"><div class="codebar"><span>C++17</span><div><button type="button" class="copy">复制代码</button></div></div><pre tabindex="0" aria-label="C++17 代码"><code>#include &lt;algorithm&gt;
+<div class="layout"><aside class="sidebar" id="chapter-nav" aria-label="章节导航"><p class="rail-label">LEARNING PATH · 学习路径</p><nav><a class="chapter-link"  href="../01-复杂度与解题方法/index.html"><span>01</span>复杂度与解题方法</a><a class="chapter-link"  href="../02-数组字符串与矩阵/index.html"><span>02</span>数组、字符串与矩阵</a><a class="chapter-link"  href="../03-链表/index.html"><span>03</span>链表</a><a class="chapter-link"  href="../04-栈队列与单调结构/index.html"><span>04</span>栈、队列与单调结构</a><a class="chapter-link"  href="../05-哈希集合与位运算/index.html"><span>05</span>哈希、集合与位运算</a><a class="chapter-link"  href="../06-排序与二分查找/index.html"><span>06</span>排序与二分查找</a><a class="chapter-link"  href="../07-树与二叉搜索树/index.html"><span>07</span>树与二叉搜索树</a><a class="chapter-link"  href="../08-堆与优先队列/index.html"><span>08</span>堆与优先队列</a><a class="chapter-link"  href="../09-递归回溯与分治/index.html"><span>09</span>递归、回溯与分治</a><a class="chapter-link"  href="../10-图论/index.html"><span>10</span>图论</a><a class="chapter-link"  href="../11-贪心/index.html"><span>11</span>贪心</a><a class="chapter-link"  href="../12-动态规划/index.html"><span>12</span>动态规划</a><a class="chapter-link active" aria-current=page href="../13-并查集与高级数据结构/index.html"><span>13</span>并查集与高级数据结构</a><a class="chapter-link"  href="../14-高频技巧与综合题型/index.html"><span>14</span>高频技巧与综合题型</a><a class="chapter-link"  href="../15-面试表达与训练计划/index.html"><span>15</span>面试表达与训练计划</a></nav><div class="sidebar-note">读懂不变量，独立写代码。<br>共 15 章 · 63 个小节<br>无需联网，浏览器直接打开。</div></aside><main id="main"><header class="chapter-header"><p class="eyebrow">CHAPTER 13 / 15</p><h1>并查集与高级数据结构</h1><p class="lead">先明确需要支持的操作，再选择结构。并查集维护集合合并，Trie 维护前缀，树状数组和线段树维护动态区间信息。</p><div class="chapter-meta"><span>4 个小节</span><span>C++17 示例</span><a href="README.md">原始知识摘要 ↗</a></div></header><div class="reading-guide"><strong>本章怎么学</strong><p>先读原理与不变量，遮住代码手推例子，再独立实现。最后用面试追问检查理解，按练习条目做变式。</p></div><div class="deep-intro"><div class="deep-block" id="guide-1"><h3>先列操作清单，再选择数据结构</h3><p>这些结构解决的不是同一种“高级题”。并查集回答合并后的集合关系，Trie 利用字符串前缀共享路径，树状数组维护可累加的前缀信息，线段树保存可结合的区间摘要。选择前先问：数据是否会变、更新是增量还是赋值、查询是单点还是区间、是否必须在线、删除会不会拆分原结构。</p><p>本章按四类结构展开，基础模板保留，补充实现明确索引、空输入与失败语义。先掌握普通并查集、Trie 和单点更新，再按需要学习回滚、频率第 K 小、双树状数组和组合懒标记，不要求把所有变式背成一个万能模板。</p></div><div class="deep-block" id="guide-2"><h3>操作需求速查：哪些能力不是免费获得的</h3><p class="table-hint">窄屏下可左右滑动表格，查看完整内容。</p><div class="study-table" tabindex="0" role="region" aria-label="操作需求速查：哪些能力不是免费获得的"><table><thead><tr><th scope="col">需求</th><th scope="col">优先结构</th><th scope="col">成本</th><th scope="col">限制</th></tr></thead><tbody><tr><td>只有加边的无向连通性</td><td>并查集</td><td>均摊 O(α(n))</td><td>不能直接删边拆分</td></tr><tr><td>字符串前缀与词频</td><td>计数 Trie</td><td>O(L)</td><td>通配符可能遍历多个分支</td></tr><tr><td>单点加、区间和</td><td>树状数组</td><td>O(log n)</td><td>任意区间 min 不能相减得到</td></tr><tr><td>非负频率的第 K 小</td><td>树状数组倍增</td><td>O(log n)</td><td>前缀必须单调，不能允许负频率</td></tr><tr><td>区间加、区间和</td><td>双树状数组或懒线段树</td><td>O(log n)</td><td>双树状数组依赖加法差分公式</td></tr><tr><td>区间赋值与加、区间和</td><td>懒线段树</td><td>O(log n)</td><td>标记合成次序必须正确</td></tr><tr><td>静态区间最小值</td><td>稀疏表</td><td>预处理 O(n log n)，查询 O(1)</td><td>不支持廉价动态修改；重叠查询依赖幂等性</td></tr></tbody></table></div></div><div class="deep-block" id="guide-3"><h3>代码契约与验证范围</h3><p>除基础模板特别约定外，补充数组接口对外统一使用 0 下标和半开区间 [l,r)，内部树状数组仍使用 1 下标。空区间和为 0；最小值、最大子数组等无空结果的查询用 optional 表示无答案。字符串 Trie 只接受小写 a-z，二进制 Trie 使用 uint32_t，避免有符号右移语义混淆。</p><p>示例通常不修改调用者输入；内部结构会随操作更新。所有 long long 加法、差值、节点总和、懒标记与长度乘积必须处于表示范围内，代码不是任意精度整数库。小规模随机与定向测试只覆盖有限输入，不替代这些前提。当前环境尚未发现 C++ 编译器，后续将区分页面验证与尚未运行的 C++ 测试源码。</p></div></div><nav class="chapter-outline" aria-label="本章阅读路线"><strong>直接跳到</strong><a href="#s1">01 并查集：路径压缩与按大小合并</a><a href="#s2">02 Trie：前缀与完整单词</a><a href="#s3">03 树状数组：动态前缀和</a><a href="#s4">04 线段树：可合并的区间信息</a><a href="#chapter-review">综合例题与自测答案</a></nav><details class="environment"><summary>代码使用说明与通用头文件</summary><p>示例统一采用 C++17。页面展示核心函数或类，下载的 .cpp 已包含以下头文件，可独立编译。不同小节可能重用类型名，应分别编译；含 main 的示例可直接运行，其余需自行补充调用与测试。复制按钮复制当前代码块。</p><div class="codebox"><div class="codebar"><span>C++17</span><div><button type="button" class="copy">复制代码</button></div></div><pre tabindex="0" aria-label="C++17 代码"><code>#include &lt;algorithm&gt;
 #include &lt;array&gt;
 #include &lt;cassert&gt;
 #include &lt;climits&gt;
@@ -27,7 +27,7 @@
 #include &lt;vector&gt;
 <span class="keyword">using</span> <span class="keyword">namespace</span> std;
 </code></pre></div><p>检查单个示例：<code>g++ -std=c++17 -Wall -Wextra -c sample.cpp</code>。这只检查编译；验证结果还需要调用函数并覆盖边界输入。代码按题目约束编写，各节明确其适用前提。</p></details><section class="lesson" id="s1"><div class="lesson-heading"><span class="lesson-number">13.01</span><h2>并查集：路径压缩与按大小合并</h2></div>
-<h3>知识与适用场景</h3><p>每个集合用一棵父指针树表示，根是代表元。find 找根，unite 连接两个根。路径压缩把沿途节点直接连到根；按大小合并让小树挂到大树上。</p><div class="invariant"><span>推导 / 不变量</span><p>只有根维护有效的集合大小。合并前先 find，若同根说明已连通，不应重复减少连通块数。两种优化一起使用时，均摊成本为反阿克曼函数 α(n)。</p></div>
+<h3>知识与适用场景</h3><p>每个集合用一棵父指针树表示，根是代表元。find 找根，unite 连接两个根。路径压缩把沿途节点直接连到根；按大小合并让小树挂到大树上。</p><div class="deep-block" id="s1-before-1"><h3>1.1 根节点是代表，不是图上的真正父亲</h3><p>并查集的 parent 描述集合森林，不是原图的路径。find(x) 返回代表元；同根表示连通，不同根表示尚未连通。把一条原图边加入结构时，连接的是两个集合的根，而不是把任意一个端点的 parent 改掉，否则可能只挪走一个子树并破坏集合。</p><p>路径压缩可把沿路所有节点直接连到根，因为它只改变集合内部表示，不改变哪些节点属于同一集合。size 只在根上有权威含义，非根遗留的 size 不能当作整个集合大小。代表元依赖合并顺序，不一定是最小编号；若业务需要最小值，应作为额外聚合信息合并。</p></div><div class="deep-block" id="s1-before-2"><h3>1.2 五个节点手推：只有成功合并才减少分量数</h3><p class="table-hint">窄屏下可左右滑动表格，查看完整内容。</p><div class="study-table" tabindex="0" role="region" aria-label="1.2 五个节点手推：只有成功合并才减少分量数"><table><thead><tr><th scope="col">操作</th><th scope="col">是否合并</th><th scope="col">分量数</th><th scope="col">集合大小查询</th></tr></thead><tbody><tr><td>初始化 0..4</td><td>—</td><td>5</td><td>每个集合为 1</td></tr><tr><td>unite(0,1)</td><td>true</td><td>4</td><td>size(0)=size(1)=2</td></tr><tr><td>unite(1,2)</td><td>true</td><td>3</td><td>0、1、2 同组，大小 3</td></tr><tr><td>unite(0,2)</td><td>false</td><td>3</td><td>不能再次累计大小</td></tr><tr><td>unite(3,4)</td><td>true</td><td>2</td><td>3、4 同组，大小 2</td></tr></tbody></table></div></div><div class="deep-block" id="s1-before-3"><h3>1.3 普通压缩与回滚版本的设计取舍</h3><p class="table-hint">窄屏下可左右滑动表格，查看完整内容。</p><div class="study-table" tabindex="0" role="region" aria-label="1.3 普通压缩与回滚版本的设计取舍"><table><thead><tr><th scope="col">项目</th><th scope="col">普通并查集</th><th scope="col">可回滚并查集</th></tr></thead><tbody><tr><td>find</td><td>可以路径压缩</td><td>不压缩，避免查询修改大量父指针</td></tr><tr><td>unite</td><td>按大小 / 秩合并</td><td>按大小合并，记录被改的字段</td></tr><tr><td>复杂度</td><td>两优化合用，均摊 α(n)</td><td>树高 O(log n)，查找 / 合并 O(log n)</td></tr><tr><td>恢复历史</td><td>默认不支持</td><td>按日志逆序撤销到有效快照</td></tr><tr><td>删除边</td><td>不能直接处理</td><td>结合离线时间区间，不是随便 undo 某条边</td></tr></tbody></table></div></div><div class="deep-block" id="s1-before-4"><h3>1.4 删除、离线与回滚的边界</h3><p>只增边时，连通关系只会合并；删除一条边却可能把集合拆成两块，普通并查集没有保存足够的替代路径信息。若操作可离线，纯删边有时可倒序转成加边；加删混合时，可把每条边的有效时间段放入时间线段树，DFS 进入节点时合并、退出时回滚。</p><p>回滚日志恢复的是最近一段状态变化，不能撤销任意历史边又保留依赖它的后续合并。按大小合并且不压缩时，每次深度增加意味着所属集合至少翻倍，故树高 O(log n)；不能再宣称它与带路径压缩版本一样均摊 α(n)。</p></div><div class="invariant"><span>推导 / 不变量</span><p>只有根维护有效的集合大小。合并前先 find，若同根说明已连通，不应重复减少连通块数。两种优化一起使用时，均摊成本为反阿克曼函数 α(n)。</p></div>
 <h3>手推一个例子</h3><p>先合并 0、1，再合并 1、2。find(2) 与 find(0) 相同；再次合并 0、2 返回 false，表示此边会在无向图中形成环。</p><div class="codebox"><div class="codebar"><span>C++17</span><div><a href="examples/01.cpp" download>下载 .cpp</a><button type="button" class="copy">复制代码</button></div></div><pre tabindex="0" aria-label="C++17 代码"><code><span class="keyword">class</span> UnionFind {
     vector&lt;<span class="keyword">int</span>&gt; parent,sz;
     <span class="keyword">int</span> components;
@@ -49,9 +49,113 @@
     <span class="keyword">int</span> count() <span class="keyword">const</span> { <span class="keyword">return</span> components; }
 };</code></pre></div>
 <dl class="analysis-grid"><div><dt>复杂度</dt><dd>初始化 O(n)，m 次操作 O(m·α(n))，空间 O(n)。</dd></div><div><dt>易错点与边界</dt><dd>并查集擅长合并，不直接支持一般删边。代表元不一定是集合最小元素，不应把它当成有业务含义的标识。</dd></div></dl>
-<div class="practice"><h3>经典考点与练习</h3><p>练习：LeetCode 547 省份数量、684 冗余连接、990 等式方程的可满足性。</p><details><summary>面试官可能继续问什么？</summary><p>如何维护每个集合大小？动态图含删边时为何需要离线或可回滚并查集？</p><p class="muted">先用自己的话回答，再回到本节的前提、不变量和边界检查论证。</p></details></div>
+<div class="deep-block" id="s1-after-1"><h3>1.5 带集合大小与边界检查的迭代并查集</h3><p>空集合 count=0，非法节点抛异常。find 也会压缩路径，因此不是 const 只读操作；结构不提供线程安全保证。初始化 O(n)，m 次合法操作 O(m·α(n))，空间 O(n)。</p><div class="codebox"><div class="codebar"><span>C++17</span><div><a href="examples/detail-dsu-checked.cpp" download>下载 .cpp</a><button type="button" class="copy">复制代码</button></div></div><pre tabindex="0" aria-label="C++17 代码"><code><span class="keyword">class</span> CheckedDSU {
+    vector&lt;<span class="keyword">int</span>&gt; parent, size;
+    <span class="keyword">int</span> groups = <span class="number">0</span>;
+    <span class="keyword">void</span> check(<span class="keyword">int</span> x) <span class="keyword">const</span> {
+        <span class="keyword">if</span> (x &lt; <span class="number">0</span> || x &gt;= (<span class="keyword">int</span>)parent.size()) <span class="keyword">throw</span> out_of_range(<span class="string">&quot;vertex&quot;</span>);
+    }
+<span class="keyword">public</span>:
+    <span class="keyword">explicit</span> CheckedDSU(<span class="keyword">int</span> n) {
+        <span class="keyword">if</span> (n &lt; <span class="number">0</span>) <span class="keyword">throw</span> invalid_argument(<span class="string">&quot;n&quot;</span>);
+        parent.resize(n); size.assign(n,<span class="number">1</span>); groups = n;
+        iota(parent.begin(),parent.end(),<span class="number">0</span>);
+    }
+    <span class="keyword">int</span> find(<span class="keyword">int</span> x) {
+        check(x);
+        <span class="keyword">int</span> root = x;
+        <span class="keyword">while</span> (parent[root] != root) root = parent[root];
+        <span class="keyword">while</span> (parent[x] != x) {
+            <span class="keyword">int</span> next = parent[x]; parent[x] = root; x = next;
+        }
+        <span class="keyword">return</span> root;
+    }
+    <span class="keyword">bool</span> unite(<span class="keyword">int</span> a, <span class="keyword">int</span> b) {
+        check(a); check(b);
+        a = find(a); b = find(b);
+        <span class="keyword">if</span> (a == b) <span class="keyword">return</span> <span class="keyword">false</span>;
+        <span class="keyword">if</span> (size[a] &lt; size[b]) swap(a,b);
+        parent[b] = a; size[a] += size[b]; --groups;
+        <span class="keyword">return</span> <span class="keyword">true</span>;
+    }
+    <span class="keyword">bool</span> connected(<span class="keyword">int</span> a, <span class="keyword">int</span> b) { check(a); check(b); <span class="keyword">return</span> find(a) == find(b); }
+    <span class="keyword">int</span> componentSize(<span class="keyword">int</span> x) { <span class="keyword">return</span> size[find(x)]; }
+    <span class="keyword">int</span> count() <span class="keyword">const</span> { <span class="keyword">return</span> groups; }
+};</code></pre></div></div><div class="deep-block" id="s1-after-2"><h3>1.6 动态添加陆地：重复添加不能重复计数</h3><p>内部 −1 表示尚未激活的水格，不能把所有格子一开始都算作岛屿。每次只检查四邻居：同一岛屿可能从两个方向接触新格子，必须只在不同根时减一。初始化 O(RC)，q 次添加 O(q·α(RC))，空间 O(RC+q)。格子数上限是教学资源限制；超大稀疏网格可用坐标映射。</p><div class="codebox"><div class="codebar"><span>C++17</span><div><a href="examples/detail-online-islands.cpp" download>下载 .cpp</a><button type="button" class="copy">复制代码</button></div></div><pre tabindex="0" aria-label="C++17 代码"><code>vector&lt;<span class="keyword">int</span>&gt; islandCountsAfterAdds(<span class="keyword">int</span> rows, <span class="keyword">int</span> cols,
+                                 <span class="keyword">const</span> vector&lt;pair&lt;<span class="keyword">int</span>,<span class="keyword">int</span>&gt;&gt;&amp; positions) {
+    <span class="keyword">if</span> (rows &lt; <span class="number">0</span> || cols &lt; <span class="number">0</span> || (<span class="keyword">long</span> <span class="keyword">long</span>)rows*cols &gt; <span class="number">1000000</span>)
+        <span class="keyword">throw</span> invalid_argument(<span class="string">&quot;grid size&quot;</span>);
+    <span class="keyword">for</span> (<span class="keyword">auto</span> [r,c] : positions)
+        <span class="keyword">if</span> (r &lt; <span class="number">0</span> || r &gt;= rows || c &lt; <span class="number">0</span> || c &gt;= cols) <span class="keyword">throw</span> out_of_range(<span class="string">&quot;cell&quot;</span>);
+    <span class="keyword">int</span> n = rows*cols;
+    vector&lt;<span class="keyword">int</span>&gt; parent(n,-<span class="number">1</span>), size(n,<span class="number">1</span>), answer;
+    <span class="keyword">auto</span> find = [&amp;](<span class="keyword">int</span> x) {
+        <span class="keyword">while</span> (parent[x] != x) {
+            parent[x] = parent[parent[x]]; x = parent[x];
+        }
+        <span class="keyword">return</span> x;
+    };
+    <span class="keyword">int</span> count = <span class="number">0</span>;
+    <span class="keyword">const</span> <span class="keyword">int</span> dr[] = {-<span class="number">1</span>,<span class="number">1</span>,<span class="number">0</span>,<span class="number">0</span>}, dc[] = {<span class="number">0</span>,<span class="number">0</span>,-<span class="number">1</span>,<span class="number">1</span>};
+    <span class="keyword">for</span> (<span class="keyword">auto</span> [r,c] : positions) {
+        <span class="keyword">int</span> id = r*cols+c;
+        <span class="keyword">if</span> (parent[id] == -<span class="number">1</span>) {
+            parent[id] = id; ++count;
+            <span class="keyword">for</span> (<span class="keyword">int</span> k = <span class="number">0</span>; k &lt; <span class="number">4</span>; ++k) {
+                <span class="keyword">int</span> nr = r+dr[k], nc = c+dc[k];
+                <span class="keyword">if</span> (nr &lt; <span class="number">0</span> || nr &gt;= rows || nc &lt; <span class="number">0</span> || nc &gt;= cols) continue;
+                <span class="keyword">int</span> other = nr*cols+nc;
+                <span class="keyword">if</span> (parent[other] == -<span class="number">1</span>) continue;
+                <span class="keyword">int</span> a = find(id), b = find(other);
+                <span class="keyword">if</span> (a == b) continue;
+                <span class="keyword">if</span> (size[a] &lt; size[b]) swap(a,b);
+                parent[b] = a; size[a] += size[b]; --count;
+            }
+        }
+        answer.push_back(count);
+    }
+    <span class="keyword">return</span> answer;
+}</code></pre></div></div><div class="deep-block" id="s1-after-3"><h3>1.7 可回滚并查集：快照是日志位置</h3><p>同根合并不写日志，因此 snapshot 不是操作次数。只能回到当前历史链上的有效快照；已被回滚丢弃的分支快照不可重用，数字检查不能识别这种语义错误。撤销 k 个成功合并 O(k)，find / unite 最坏 O(log n)，空间 O(n)，当前日志至多 n−1 项。</p><div class="codebox"><div class="codebar"><span>C++17</span><div><a href="examples/detail-rollback-dsu.cpp" download>下载 .cpp</a><button type="button" class="copy">复制代码</button></div></div><pre tabindex="0" aria-label="C++17 代码"><code><span class="keyword">class</span> RollbackDSU {
+    <span class="keyword">struct</span> Change { <span class="keyword">int</span> child, root, oldSize; };
+    vector&lt;<span class="keyword">int</span>&gt; parent, size;
+    vector&lt;Change&gt; history;
+    <span class="keyword">int</span> groups = <span class="number">0</span>;
+    <span class="keyword">void</span> check(<span class="keyword">int</span> x) <span class="keyword">const</span> {
+        <span class="keyword">if</span> (x &lt; <span class="number">0</span> || x &gt;= (<span class="keyword">int</span>)parent.size()) <span class="keyword">throw</span> out_of_range(<span class="string">&quot;vertex&quot;</span>);
+    }
+<span class="keyword">public</span>:
+    <span class="keyword">explicit</span> RollbackDSU(<span class="keyword">int</span> n) {
+        <span class="keyword">if</span> (n &lt; <span class="number">0</span>) <span class="keyword">throw</span> invalid_argument(<span class="string">&quot;n&quot;</span>);
+        parent.resize(n); size.assign(n,<span class="number">1</span>); groups = n;
+        iota(parent.begin(),parent.end(),<span class="number">0</span>);
+    }
+    <span class="keyword">int</span> find(<span class="keyword">int</span> x) <span class="keyword">const</span> {
+        check(x);
+        <span class="keyword">while</span> (x != parent[x]) x = parent[x];
+        <span class="keyword">return</span> x;
+    }
+    size_t snapshot() <span class="keyword">const</span> { <span class="keyword">return</span> history.size(); }
+    <span class="keyword">bool</span> unite(<span class="keyword">int</span> a, <span class="keyword">int</span> b) {
+        a = find(a); b = find(b);
+        <span class="keyword">if</span> (a == b) <span class="keyword">return</span> <span class="keyword">false</span>;
+        <span class="keyword">if</span> (size[a] &lt; size[b]) swap(a,b);
+        history.push_back({b,a,size[a]});
+        parent[b] = a; size[a] += size[b]; --groups;
+        <span class="keyword">return</span> <span class="keyword">true</span>;
+    }
+    <span class="keyword">void</span> rollback(size_t snap) {
+        <span class="keyword">if</span> (snap &gt; history.size()) <span class="keyword">throw</span> out_of_range(<span class="string">&quot;snapshot&quot;</span>);
+        <span class="keyword">while</span> (history.size() &gt; snap) {
+            <span class="keyword">auto</span> change = history.back(); history.pop_back();
+            parent[change.child] = change.child;
+            size[change.root] = change.oldSize; ++groups;
+        }
+    }
+    <span class="keyword">int</span> count() <span class="keyword">const</span> { <span class="keyword">return</span> groups; }
+    <span class="keyword">int</span> componentSize(<span class="keyword">int</span> x) <span class="keyword">const</span> { <span class="keyword">return</span> size[find(x)]; }
+};</code></pre></div></div><div class="practice"><h3>经典考点与练习</h3><p>练习：LeetCode 547 省份数量、684 冗余连接、990 等式方程的可满足性。</p><h3>面试追问：关键点完整解答</h3><dl class="answer-list"><div><dt>为什么合并前必须先 find？</dt><dd><p>只有根代表整个集合。直接令 parent[a]=b 可能把 a 所在集合的一部分搬走，而其他节点仍指向旧根。find 后连接两个根，才保证整个集合合并，且不会误连出父指针环。</p></dd></div><div><dt>路径压缩与按大小合并各解决什么？</dt><dd><p>按大小合并限制新形成树的深度，压缩利用查询把已有长路径变短。两者结合得到反阿克曼函数均摊界，不是每一次操作严格 O(1)。按秩中的秩在压缩后也不等于真实高度，不能随手重新计算它。</p></dd></div><div><dt>如何维护集合最小值、总和或大小？</dt><dd><p>把这些信息放在根上，每次成功合并时合并两个根的聚合值；查询时先找根。根编号本身不承担业务含义，路径压缩后也无需重算集合聚合值，因为集合成员没有改变。</p></dd></div><div><dt>冗余连接为何可用并查集，有向图也可以吗？</dt><dd><p>无向边的两端如果已经连通，新边加上已有路径就构成环。对有向图，忽略方向的连通不代表存在返回路径，例如 0→1、0→2、1→2 是 DAG。一般有向判环要用三色 DFS 或拓扑排序，不能直接套此条件。</p></dd></div><div><dt>等式与不等式约束为什么通常要分两轮？</dt><dd><p>先把全部等式合并，再检查每个不等式两端是否同根。若边读边只检查当前不等式，后面的等式可能让此前不同组的节点连起来，从而漏掉矛盾。相等传递可合并，不等关系不能直接合成一个“不同集合”。</p></dd></div><div><dt>回滚为什么不做路径压缩？</dt><dd><p>压缩会在每次 find 时改写沿途多个 parent，若要回滚都得额外记录，且复杂度分析更复杂。标准回滚模板用按大小合并控制高度，让一次成功 unite 只改固定几个字段，逆序恢复即可。</p></dd></div><div><dt>动态岛屿里一个格子接到同一个岛两次怎么办？</dt><dd><p>四邻接可能属于同一个集合。每次先 find，只有根不同才真正合并并减少岛数。重复添加已有陆地直接返回当前数量，不能增加岛数再依靠邻接合并修补。</p></dd></div></dl></div>
 <label class="learned"><input type="checkbox" data-progress="13-01">我能独立实现，并解释正确性与边界</label></section><section class="lesson" id="s2"><div class="lesson-heading"><span class="lesson-number">13.02</span><h2>Trie：前缀与完整单词</h2></div>
-<h3>知识与适用场景</h3><p>Trie 的边表示字符，根到节点的路径表示前缀。路径存在只说明前缀存在，还需要 terminal 标记区分完整单词。固定小写字母可用 26 路数组。</p><div class="invariant"><span>推导 / 不变量</span><p>插入逐字符寻找或创建孩子，最后标记结束。查询完整单词需 terminal=true，查询前缀只需路径存在。使用节点下标避免手写释放指针。</p></div>
+<h3>知识与适用场景</h3><p>Trie 的边表示字符，根到节点的路径表示前缀。路径存在只说明前缀存在，还需要 terminal 标记区分完整单词。固定小写字母可用 26 路数组。</p><div class="deep-block" id="s2-before-1"><h3>2.1 路径存在、单词结束、出现次数是三层语义</h3><p>插入 apple 只保证 a、ap、app 等路径存在，不表示 app 是完整单词。布尔 terminal 足以表示集合；若要支持同一个词插入多次并逐次删除，就需要终点计数 end，以及经过每个节点的词频 pass。</p><p>本节计数 Trie 的 pass[u] 表示以根到 u 的字符串为前缀的当前单词总次数，重复词重复计算；end[u] 表示恰好等于该字符串的次数。根也参与 pass，表示所有词的总次数，根的 end 则统计空字符串。</p></div><div class="deep-block" id="s2-before-2"><h3>2.2 插入 apple 两次、app 一次后的计数</h3><p class="table-hint">窄屏下可左右滑动表格，查看完整内容。</p><div class="study-table" tabindex="0" role="region" aria-label="2.2 插入 apple 两次、app 一次后的计数"><table><thead><tr><th scope="col">路径</th><th scope="col">pass</th><th scope="col">end</th><th scope="col">含义</th></tr></thead><tbody><tr><td>空前缀 / 根</td><td>3</td><td>0</td><td>所有单词共 3 次</td></tr><tr><td>app</td><td>3</td><td>1</td><td>三个词拥有该前缀，但完整 app 只有一次</td></tr><tr><td>apple</td><td>2</td><td>2</td><td>完整 apple 两次</td></tr><tr><td>删除一次 apple 后的 app</td><td>2</td><td>1</td><td>仍有 app 和一份 apple</td></tr><tr><td>再次删 apple 后的 apple</td><td>0</td><td>0</td><td>节点可保留，但逻辑上已没有该前缀</td></tr></tbody></table></div></div><div class="deep-block" id="s2-before-3"><h3>2.3 字符树和二进制树的相同结构、不同目标</h3><p class="table-hint">窄屏下可左右滑动表格，查看完整内容。</p><div class="study-table" tabindex="0" role="region" aria-label="2.3 字符树和二进制树的相同结构、不同目标"><table><thead><tr><th scope="col">结构</th><th scope="col">每层决策</th><th scope="col">终止信息</th><th scope="col">代价</th></tr></thead><tbody><tr><td>26 路单词 Trie</td><td>下一个小写字母</td><td>end 判断完整单词</td><td>O(L)，节点常数空间较大</td></tr><tr><td>通配符查询</td><td>普通字符一个孩子，点号所有有效孩子</td><td>必须刚好匹配到词尾</td><td>最坏访问大量前缀节点</td></tr><tr><td>32 位二进制 Trie</td><td>当前位 0 / 1</td><td>固定 32 层即可</td><td>每次插入 / 查询 O(32)</td></tr><tr><td>大字符集 Trie</td><td>映射字符到孩子</td><td>与字符编码模型一致</td><td>哈希平均查询；不再是固定 26 路</td></tr></tbody></table></div></div><div class="deep-block" id="s2-before-4"><h3>2.4 vector 扩容陷阱与逻辑删除</h3><p>不要写 Node&amp; node=nodes[u] 后调用 nodes.emplace_back() 再使用 node，因为扩容可能让引用失效。保存整数下标，扩容完成后重新用 nodes[u] 访问即可。也不要让 int&amp; child 指向数组元素并跨越扩容。</p><p>删除一个词前先确认终点 end&gt;0，再沿整条路径减少计数。共享前缀仍被别的词使用，不能整条删掉。下面保留历史节点不回收，空间取决于历史累计创建的不同前缀，而不是当前仍存在的词数；查询必须看计数，不能只看 next 是否存在。</p></div><div class="invariant"><span>推导 / 不变量</span><p>插入逐字符寻找或创建孩子，最后标记结束。查询完整单词需 terminal=true，查询前缀只需路径存在。使用节点下标避免手写释放指针。</p></div>
 <h3>手推一个例子</h3><p>插入 &quot;apple&quot; 后，&quot;app&quot; 的路径存在，但 search(&quot;app&quot;) 为 false；再插入 &quot;app&quot; 后才变为 true。</p><div class="codebox"><div class="codebar"><span>C++17</span><div><a href="examples/02.cpp" download>下载 .cpp</a><button type="button" class="copy">复制代码</button></div></div><pre tabindex="0" aria-label="C++17 代码"><code><span class="keyword">class</span> Trie {
     <span class="keyword">struct</span> Node {
         array&lt;<span class="keyword">int</span>,<span class="number">26</span>&gt; next;
@@ -92,9 +196,110 @@
     <span class="keyword">bool</span> startsWith(<span class="keyword">const</span> string&amp; s) <span class="keyword">const</span> { <span class="keyword">return</span> walk(s)!=-<span class="number">1</span>; }
 };</code></pre></div>
 <dl class="analysis-grid"><div><dt>复杂度</dt><dd>单次插入/查询 O(L)，最多 O(总字符数·字符集大小) 空间；本例字符集固定为 26。</dd></div><div><dt>易错点与边界</dt><dd>vector 扩容时元素引用失效，所以创建新节点前后不要持有 Node&amp;。删除单词若要回收节点需维护经过计数或引用数量。</dd></div></dl>
-<div class="practice"><h3>经典考点与练习</h3><p>练习：LeetCode 208 实现 Trie、211 添加与搜索单词、212 单词搜索 II。</p><details><summary>面试官可能继续问什么？</summary><p>通配符 &#x27;.&#x27; 查询为何可能产生多分支？字符集很大时如何节省空间？</p><p class="muted">先用自己的话回答，再回到本节的前提、不变量和边界检查论证。</p></details></div>
+<div class="deep-block" id="s2-after-1"><h3>2.5 计数 Trie：重复插入、删除一次、前缀统计与通配符</h3><p>词和前缀接口严格验证整个输入后再操作，不因中途找不到路径而忽略后面的非法字符。空词合法，matches(&quot;&quot;) 只匹配已插入的空词；点号恰匹配一个字母，不是任意长度。普通操作 O(L)，insert 的路径缓存 O(L)；通配符最坏访问可达前缀子树，不能写成总是 O(L)。节点总数须可用 int 表示，未提供内存耗尽时的事务保证。</p><div class="codebox"><div class="codebar"><span>C++17</span><div><a href="examples/detail-counting-trie.cpp" download>下载 .cpp</a><button type="button" class="copy">复制代码</button></div></div><pre tabindex="0" aria-label="C++17 代码"><code><span class="keyword">class</span> CountingTrie {
+    <span class="keyword">struct</span> Node {
+        array&lt;<span class="keyword">int</span>,<span class="number">26</span>&gt; next;
+        <span class="keyword">long</span> <span class="keyword">long</span> pass = <span class="number">0</span>, end = <span class="number">0</span>;
+        Node() { next.fill(-<span class="number">1</span>); }
+    };
+    vector&lt;Node&gt; nodes{Node{}};
+    static <span class="keyword">void</span> validate(<span class="keyword">const</span> string&amp; s, <span class="keyword">bool</span> wildcard = <span class="keyword">false</span>) {
+        <span class="keyword">for</span> (<span class="keyword">char</span> c : s)
+            <span class="keyword">if</span> (!(c &gt;= &#x27;a&#x27; &amp;&amp; c &lt;= &#x27;z&#x27;) &amp;&amp; !(wildcard &amp;&amp; c == &#x27;.&#x27;))
+                <span class="keyword">throw</span> invalid_argument(<span class="string">&quot;lowercase a-z, or dot in pattern&quot;</span>);
+    }
+    <span class="keyword">int</span> walk(<span class="keyword">const</span> string&amp; s) <span class="keyword">const</span> {
+        <span class="keyword">int</span> u = <span class="number">0</span>;
+        <span class="keyword">for</span> (<span class="keyword">char</span> c : s) {
+            u = nodes[u].next[c-&#x27;a&#x27;];
+            <span class="keyword">if</span> (u == -<span class="number">1</span>) <span class="keyword">return</span> -<span class="number">1</span>;
+        }
+        <span class="keyword">return</span> u;
+    }
+<span class="keyword">public</span>:
+    <span class="keyword">void</span> insert(<span class="keyword">const</span> string&amp; word) {
+        validate(word);
+        <span class="keyword">if</span> (nodes[<span class="number">0</span>].pass == LLONG_MAX) <span class="keyword">throw</span> overflow_error(<span class="string">&quot;word count&quot;</span>);
+        vector&lt;<span class="keyword">int</span>&gt; path{<span class="number">0</span>}; <span class="keyword">int</span> u = <span class="number">0</span>;
+        <span class="keyword">for</span> (<span class="keyword">char</span> c : word) {
+            <span class="keyword">int</span> k = c-&#x27;a&#x27;;
+            <span class="keyword">if</span> (nodes[u].next[k] == -<span class="number">1</span>) {
+                <span class="keyword">int</span> v = (<span class="keyword">int</span>)nodes.size(); nodes.emplace_back();
+                nodes[u].next[k] = v;
+            }
+            u = nodes[u].next[k]; path.push_back(u);
+        }
+        <span class="keyword">for</span> (<span class="keyword">int</span> v : path) ++nodes[v].pass;
+        ++nodes[u].end;
+    }
+    <span class="keyword">long</span> <span class="keyword">long</span> countWord(<span class="keyword">const</span> string&amp; word) <span class="keyword">const</span> {
+        validate(word); <span class="keyword">int</span> u = walk(word);
+        <span class="keyword">return</span> u == -<span class="number">1</span> ? <span class="number">0</span> : nodes[u].end;
+    }
+    <span class="keyword">long</span> <span class="keyword">long</span> countPrefix(<span class="keyword">const</span> string&amp; prefix) <span class="keyword">const</span> {
+        validate(prefix); <span class="keyword">int</span> u = walk(prefix);
+        <span class="keyword">return</span> u == -<span class="number">1</span> ? <span class="number">0</span> : nodes[u].pass;
+    }
+    <span class="keyword">bool</span> eraseOne(<span class="keyword">const</span> string&amp; word) {
+        validate(word);
+        <span class="keyword">int</span> u = walk(word);
+        <span class="keyword">if</span> (u == -<span class="number">1</span> || nodes[u].end == <span class="number">0</span>) <span class="keyword">return</span> <span class="keyword">false</span>;
+        --nodes[u].end;
+        u = <span class="number">0</span>; --nodes[u].pass;
+        <span class="keyword">for</span> (<span class="keyword">char</span> c : word) { u = nodes[u].next[c-&#x27;a&#x27;]; --nodes[u].pass; }
+        <span class="keyword">return</span> <span class="keyword">true</span>;
+    }
+    <span class="keyword">bool</span> matches(<span class="keyword">const</span> string&amp; pattern) <span class="keyword">const</span> {
+        validate(pattern,<span class="keyword">true</span>);
+        vector&lt;pair&lt;<span class="keyword">int</span>,size_t&gt;&gt; stack{{<span class="number">0</span>,<span class="number">0</span>}};
+        <span class="keyword">while</span> (!stack.empty()) {
+            <span class="keyword">auto</span> [u,pos] = stack.back(); stack.pop_back();
+            <span class="keyword">if</span> (nodes[u].pass == <span class="number">0</span>) continue;
+            <span class="keyword">if</span> (pos == pattern.size()) {
+                <span class="keyword">if</span> (nodes[u].end &gt; <span class="number">0</span>) <span class="keyword">return</span> <span class="keyword">true</span>;
+                continue;
+            }
+            <span class="keyword">if</span> (pattern[pos] == &#x27;.&#x27;) {
+                <span class="keyword">for</span> (<span class="keyword">int</span> v : nodes[u].next)
+                    <span class="keyword">if</span> (v != -<span class="number">1</span> &amp;&amp; nodes[v].pass &gt; <span class="number">0</span>) stack.push_back({v,pos+<span class="number">1</span>});
+            } <span class="keyword">else</span> {
+                <span class="keyword">int</span> v = nodes[u].next[pattern[pos]-&#x27;a&#x27;];
+                <span class="keyword">if</span> (v != -<span class="number">1</span>) stack.push_back({v,pos+<span class="number">1</span>});
+            }
+        }
+        <span class="keyword">return</span> <span class="keyword">false</span>;
+    }
+};</code></pre></div></div><div class="deep-block" id="s2-after-2"><h3>2.6 二进制 Trie：最高位优先最大化异或值</h3><p>返回 x 与已插入数的最大无符号异或值，不是对应元素本身。高位的 1 大于全部低位可能贡献之和，因此能选相反位就优先选；所有路径固定 32 位，包括前导零。空树返回 nullopt，重复插入不影响最大值，本接口不支持删除。空间 O(32n)，操作 O(32)。</p><div class="codebox"><div class="codebar"><span>C++17</span><div><a href="examples/detail-binary-trie.cpp" download>下载 .cpp</a><button type="button" class="copy">复制代码</button></div></div><pre tabindex="0" aria-label="C++17 代码"><code><span class="keyword">class</span> BinaryTrie32 {
+    <span class="keyword">struct</span> Node { array&lt;<span class="keyword">int</span>,<span class="number">2</span>&gt; next{{-<span class="number">1</span>,-<span class="number">1</span>}}; };
+    vector&lt;Node&gt; nodes{Node{}};
+    <span class="keyword">bool</span> nonempty = <span class="keyword">false</span>;
+<span class="keyword">public</span>:
+    <span class="keyword">void</span> insert(uint32_t x) {
+        <span class="keyword">int</span> u = <span class="number">0</span>;
+        <span class="keyword">for</span> (<span class="keyword">int</span> bit = <span class="number">31</span>; bit &gt;= <span class="number">0</span>; --bit) {
+            <span class="keyword">int</span> b = (x &gt;&gt; bit) &amp; 1U;
+            <span class="keyword">if</span> (nodes[u].next[b] == -<span class="number">1</span>) {
+                <span class="keyword">int</span> v = (<span class="keyword">int</span>)nodes.size(); nodes.emplace_back();
+                nodes[u].next[b] = v;
+            }
+            u = nodes[u].next[b];
+        }
+        nonempty = <span class="keyword">true</span>;
+    }
+    optional&lt;uint32_t&gt; maxXor(uint32_t x) <span class="keyword">const</span> {
+        <span class="keyword">if</span> (!nonempty) <span class="keyword">return</span> nullopt;
+        <span class="keyword">int</span> u = <span class="number">0</span>; uint32_t answer = <span class="number">0</span>;
+        <span class="keyword">for</span> (<span class="keyword">int</span> bit = <span class="number">31</span>; bit &gt;= <span class="number">0</span>; --bit) {
+            <span class="keyword">int</span> b = (x &gt;&gt; bit) &amp; 1U;
+            <span class="keyword">if</span> (nodes[u].next[b^<span class="number">1</span>] != -<span class="number">1</span>) {
+                answer |= uint32_t(<span class="number">1</span>) &lt;&lt; bit; u = nodes[u].next[b^<span class="number">1</span>];
+            } <span class="keyword">else</span> u = nodes[u].next[b];
+        }
+        <span class="keyword">return</span> answer;
+    }
+};</code></pre></div></div><div class="practice"><h3>经典考点与练习</h3><p>练习：LeetCode 208 实现 Trie、211 添加与搜索单词、212 单词搜索 II。</p><h3>面试追问：关键点完整解答</h3><dl class="answer-list"><div><dt>前缀 app 存在为何不等于单词 app 存在？</dt><dd><p>存在 apple 的路径就会有 app 节点，但只有在 app 节点标记终点或 end&gt;0，才表示词典确实包含 app。前缀查询与完整词查询是两个接口，不能复用同一个判断条件。</p></dd></div><div><dt>计数 Trie 删除一个不存在的词会怎样？</dt><dd><p>应返回 false，且任何 pass、end 都不变。必须先走到完整词终点并确认 end&gt;0，再做减少；不能边走边减，走到一半才发现不存在，否则会破坏其他词的前缀计数。</p></dd></div><div><dt>空字符串和空前缀如何定义？</dt><dd><p>空词对应根的 end，只有插入过才存在。计数接口 countPrefix(&quot;&quot;) 返回所有当前单词次数；如果词典为空则为 0。基础 startsWith(&quot;&quot;) 仅问根路径是否存在，通常仍为 true；两者语义不同，需按接口说明使用。</p></dd></div><div><dt>为什么有 k 个点号不能简单声明 O(L)？</dt><dd><p>一个点号可能扩展到 26 个孩子，多个点号可能产生大量分支。上界受 26^k、模式长度和实际已创建前缀数共同限制，通常表述为访问到的节点数乘固定字符集常数。实际只有少量有效分支时才会快。</p></dd></div><div><dt>Trie 查询一定比哈希表查完整单词更好吗？</dt><dd><p>不一定。哈希表也常能平均 O(L) 处理一个词，且空间常数可能更小。Trie 的优势是共享前缀、逐字符过滤、前缀计数和通配分支等结构性操作；固定 26 路数组在前缀稀疏时会浪费大量空指针槽。</p></dd></div><div><dt>最大异或为什么必须先看高位？</dt><dd><p>无符号数的第 b 位贡献是 2^b，而所有更低位的最大总和只有 2^b−1；只要能在当前位获得 1，就不该为低位机会牺牲它。这是严格的位权支配论证，不是随意局部选择。</p></dd></div><div><dt>删除后节点不释放，会导致查询错误吗？</dt><dd><p>只要查询依据 pass/end 的当前计数而非仅依据旧路径存在，就不会误认已删除词。但内存不会随删除下降，长期动态词典若需回收，应维护空子树并谨慎复用节点；共享前缀不能被误删。</p></dd></div></dl></div>
 <label class="learned"><input type="checkbox" data-progress="13-02">我能独立实现，并解释正确性与边界</label></section><section class="lesson" id="s3"><div class="lesson-heading"><span class="lesson-number">13.03</span><h2>树状数组：动态前缀和</h2></div>
-<h3>知识与适用场景</h3><p>树状数组把前缀分成若干长度为 2 的幂的区间。tree[i] 管理 (i-lowbit(i),i]，使用 1 下标。前缀查询沿 i-=lowbit(i) 汇总；更新沿 i+=lowbit(i) 通知所有包含该点的区间。</p><div class="invariant"><span>推导 / 不变量</span><p>它适合单点加法与区间和。区间和 [l,r] 等于 prefix(r)-prefix(l-1)。若接口是赋值而非增量，需要保存旧数组计算 delta。</p></div>
+<h3>知识与适用场景</h3><p>树状数组把前缀分成若干长度为 2 的幂的区间。tree[i] 管理 (i-lowbit(i),i]，使用 1 下标。前缀查询沿 i-=lowbit(i) 汇总；更新沿 i+=lowbit(i) 通知所有包含该点的区间。</p><div class="deep-block" id="s3-before-1"><h3>3.1 lowbit 不是魔法，它给出节点覆盖的长度</h3><p>正整数 i 的 lowbit(i)=i&amp;(-i)，保留最低的一个 1。内部节点 bit[i] 表示原数组的一基闭区间 [i−lowbit(i)+1,i] 的和。查询不断减 lowbit，将一个前缀拆成互不重叠的块；更新不断加 lowbit，沿包含该单点的祖先块传播。</p><p>例如 i=12（二进制 1100）时 lowbit=4，负责 [9,12]；i=8 负责 [1,8]。0 没有最低置位，lowbit(0)=0，所以更新从 0 出发不会推进。补充接口将外部 p 转成 p+1，避免让调用者记两种下标。</p></div><div class="deep-block" id="s3-before-2"><h3>3.2 查询与更新走不同的链</h3><p class="table-hint">窄屏下可左右滑动表格，查看完整内容。</p><div class="study-table" tabindex="0" role="region" aria-label="3.2 查询与更新走不同的链"><table><thead><tr><th scope="col">操作</th><th scope="col">内部下标链（n=16）</th><th scope="col">管理区间 / 含义</th></tr></thead><tbody><tr><td>prefix(13)</td><td>13→12→8→0</td><td>[13,13]、[9,12]、[1,8]，不重不漏</td></tr><tr><td>给外部下标 4 加值</td><td>5→6→8→16</td><td>覆盖第 5 项的祖先块</td></tr><tr><td>外部 query [2,5)</td><td>prefix(5)−prefix(2)</td><td>查询第 3、4、5 项</td></tr><tr><td>prefix(0)</td><td>不进循环，返回 0</td><td>合法空前缀，不同于 add(0) 内部死循环</td></tr></tbody></table></div></div><div class="deep-block" id="s3-before-3"><h3>3.3 区间加、区间和的双树公式</h3><p class="table-hint">窄屏下可左右滑动表格，查看完整内容。</p><div class="study-table" tabindex="0" role="region" aria-label="3.3 区间加、区间和的双树公式"><table><thead><tr><th scope="col">量</th><th scope="col">定义</th><th scope="col">用途</th></tr></thead><tbody><tr><td>D[i]</td><td>一基差分 A[i]−A[i−1]</td><td>区间加变成差分两点更新</td></tr><tr><td>B1 前缀</td><td>Σ D[i]</td><td>恢复某个位置的值</td></tr><tr><td>B2 前缀</td><td>Σ (i−1)D[i]</td><td>补偿不同差分的累计次数</td></tr><tr><td>前 x 项和</td><td>Σ(x−i+1)D[i]=x·sum(B1,x)−sum(B2,x)</td><td>两次树状前缀得到区间累计</td></tr><tr><td>外部 [l,r) 加 v</td><td>D[l+1]+=v；若 r&lt;n，D[r+1]−=v</td><td>右端点自身不在更新区间</td></tr></tbody></table></div></div><div class="deep-block" id="s3-before-4"><h3>3.4 离散化与第 K 小，各自依赖什么？</h3><p>排序去重后用排名替代原值，保留大小关系与相等关系，但不保留数值距离。扫描数组右侧已插入的频率，查询 rank(x) 之前的前缀，就得到严格小于 x 的数量；查询到 rank(x) 则会错误包含相等值。</p><p>频率非负时，累计频率单调，第 K 小可看成最小下标 p，使 prefix(p+1)≥K。用二分外加前缀查询是 O(log²n)，直接沿 Fenwick 节点倍增查找可到 O(log n)。若频率允许负数，累计值不单调，这种查找不再有保证。</p></div><div class="invariant"><span>推导 / 不变量</span><p>它适合单点加法与区间和。区间和 [l,r] 等于 prefix(r)-prefix(l-1)。若接口是赋值而非增量，需要保存旧数组计算 delta。</p></div>
 <h3>手推一个例子</h3><p>查询 prefix(13)：13→12→8→0，对应区间 [13,13]、[9,12]、[1,8]，恰好不重不漏覆盖前 13 项。</p><div class="codebox"><div class="codebar"><span>C++17</span><div><a href="examples/03.cpp" download>下载 .cpp</a><button type="button" class="copy">复制代码</button></div></div><pre tabindex="0" aria-label="C++17 代码"><code><span class="keyword">class</span> Fenwick {
     <span class="keyword">int</span> n;
     vector&lt;<span class="keyword">long</span> <span class="keyword">long</span>&gt; bit;
@@ -116,9 +321,117 @@
     }
 };</code></pre></div>
 <dl class="analysis-grid"><div><dt>复杂度</dt><dd>单次更新、查询 O(log n)，空间 O(n)。逐项初始化 O(n log n)，也存在线性建树方法。</dd></div><div><dt>易错点与边界</dt><dd>add(0,delta) 会因 lowbit(0)=0 死循环，所以必须避免 0 下标更新。值域很大时先排序去重并离散化。</dd></div></dl>
-<div class="practice"><h3>经典考点与练习</h3><p>练习：LeetCode 307 区域和检索—数组可修改、315 计算右侧小于当前元素的个数。</p><details><summary>面试官可能继续问什么？</summary><p>为什么普通前缀和不适合频繁更新？如何用树状数组统计逆序对？</p><p class="muted">先用自己的话回答，再回到本节的前提、不变量和边界检查论证。</p></details></div>
+<div class="deep-block" id="s3-after-1"><h3>3.5 零基接口与 O(n) 建树：更新增量和赋值都明确</h3><p>prefix(r) 是 [0,r) 的和，rangeSum(l,r) 是 [l,r)，空树仅能查询 [0,0)。线性建树先收集当前块，再向唯一父块传播，节点只处理一次。add、setValue、查询 O(log(n+1))；setValue 用新值减当前值，不能把新值直接当 delta。所有中间和与差须在 long long 范围内。</p><div class="codebox"><div class="codebar"><span>C++17</span><div><a href="examples/detail-fenwick-zero.cpp" download>下载 .cpp</a><button type="button" class="copy">复制代码</button></div></div><pre tabindex="0" aria-label="C++17 代码"><code><span class="keyword">class</span> FenwickZero {
+    <span class="keyword">int</span> n;
+    vector&lt;<span class="keyword">long</span> <span class="keyword">long</span>&gt; bit;
+<span class="keyword">public</span>:
+    <span class="keyword">explicit</span> FenwickZero(<span class="keyword">const</span> vector&lt;<span class="keyword">long</span> <span class="keyword">long</span>&gt;&amp; a): n((<span class="keyword">int</span>)a.size()) {
+        <span class="keyword">if</span> (a.size() &gt; <span class="number">1000000</span>) <span class="keyword">throw</span> invalid_argument(<span class="string">&quot;size limit&quot;</span>);
+        bit.assign(n+<span class="number">1</span>,<span class="number">0</span>);
+        <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">1</span>; i &lt;= n; ++i) {
+            bit[i] += a[i-<span class="number">1</span>];
+            <span class="keyword">int</span> parent = i+(i&amp;-i);
+            <span class="keyword">if</span> (parent &lt;= n) bit[parent] += bit[i];
+        }
+    }
+    <span class="keyword">void</span> add(<span class="keyword">int</span> p, <span class="keyword">long</span> <span class="keyword">long</span> delta) {
+        <span class="keyword">if</span> (p &lt; <span class="number">0</span> || p &gt;= n) <span class="keyword">throw</span> out_of_range(<span class="string">&quot;index&quot;</span>);
+        <span class="keyword">for</span> (<span class="keyword">int</span> i = p+<span class="number">1</span>; i &lt;= n; i += i&amp;-i) bit[i] += delta;
+    }
+    <span class="keyword">long</span> <span class="keyword">long</span> prefix(<span class="keyword">int</span> r) <span class="keyword">const</span> {
+        <span class="keyword">if</span> (r &lt; <span class="number">0</span> || r &gt; n) <span class="keyword">throw</span> out_of_range(<span class="string">&quot;prefix&quot;</span>);
+        <span class="keyword">long</span> <span class="keyword">long</span> result = <span class="number">0</span>;
+        <span class="keyword">for</span> (<span class="keyword">int</span> i = r; i &gt; <span class="number">0</span>; i -= i&amp;-i) result += bit[i];
+        <span class="keyword">return</span> result;
+    }
+    <span class="keyword">long</span> <span class="keyword">long</span> rangeSum(<span class="keyword">int</span> l, <span class="keyword">int</span> r) <span class="keyword">const</span> {
+        <span class="keyword">if</span> (l &lt; <span class="number">0</span> || r &lt; l || r &gt; n) <span class="keyword">throw</span> out_of_range(<span class="string">&quot;range&quot;</span>);
+        <span class="keyword">return</span> prefix(r)-prefix(l);
+    }
+    <span class="keyword">void</span> setValue(<span class="keyword">int</span> p, <span class="keyword">long</span> <span class="keyword">long</span> value) {
+        <span class="keyword">if</span> (p &lt; <span class="number">0</span> || p &gt;= n) <span class="keyword">throw</span> out_of_range(<span class="string">&quot;index&quot;</span>);
+        add(p,value-rangeSum(p,p+<span class="number">1</span>));
+    }
+};</code></pre></div></div><div class="deep-block" id="s3-after-2"><h3>3.6 离散化统计右侧严格较小元素</h3><p>先查询再插入当前元素；从右往左扫描保证树里恰好是当前位置右侧的元素。相同值映射为同一排名，不会计为严格逆序。结果之和就是逆序对数量，求和必须用 long long，最多可到 n(n−1)/2。时间 O(n log(n+1))，空间 O(n)。</p><div class="codebox"><div class="codebar"><span>C++17</span><div><a href="examples/detail-count-smaller.cpp" download>下载 .cpp</a><button type="button" class="copy">复制代码</button></div></div><pre tabindex="0" aria-label="C++17 代码"><code>vector&lt;<span class="keyword">int</span>&gt; countSmallerRight(<span class="keyword">const</span> vector&lt;<span class="keyword">int</span>&gt;&amp; a) {
+    <span class="keyword">if</span> (a.size() &gt; <span class="number">1000000</span>) <span class="keyword">throw</span> invalid_argument(<span class="string">&quot;size limit&quot;</span>);
+    vector&lt;<span class="keyword">int</span>&gt; values = a;
+    sort(values.begin(),values.end());
+    values.erase(unique(values.begin(),values.end()),values.end());
+    vector&lt;<span class="keyword">int</span>&gt; bit(values.size()+<span class="number">1</span>), answer(a.size());
+    <span class="keyword">for</span> (<span class="keyword">int</span> i = (<span class="keyword">int</span>)a.size()-<span class="number">1</span>; i &gt;= <span class="number">0</span>; --i) {
+        <span class="keyword">int</span> rank = (<span class="keyword">int</span>)(lower_bound(values.begin(),values.end(),a[i])-values.begin())+<span class="number">1</span>;
+        <span class="keyword">int</span> count = <span class="number">0</span>;
+        <span class="keyword">for</span> (<span class="keyword">int</span> j = rank-<span class="number">1</span>; j &gt; <span class="number">0</span>; j -= j&amp;-j) count += bit[j];
+        answer[i] = count;
+        <span class="keyword">for</span> (<span class="keyword">int</span> j = rank; j &lt; (<span class="keyword">int</span>)bit.size(); j += j&amp;-j) ++bit[j];
+    }
+    <span class="keyword">return</span> answer;
+}</code></pre></div></div><div class="deep-block" id="s3-after-3"><h3>3.7 双树状数组：区间加与区间和</h3><p>初始全零，半开区间。若需要从给定数组初始化，可逐项 add(i,i+1,a[i])，花 O(n log n)。常规区间更新与查询 O(log(n+1))，空间 O(n)。负增量合法，但 −delta、delta·(p−1)、所有树内和及前缀公式的中间值均须可由 long long 表示；它不是区间赋值接口。</p><div class="codebox"><div class="codebar"><span>C++17</span><div><a href="examples/detail-range-fenwick.cpp" download>下载 .cpp</a><button type="button" class="copy">复制代码</button></div></div><pre tabindex="0" aria-label="C++17 代码"><code><span class="keyword">class</span> RangeAddFenwick {
+    <span class="keyword">int</span> n;
+    vector&lt;<span class="keyword">long</span> <span class="keyword">long</span>&gt; first, second;
+    <span class="keyword">void</span> addBit(vector&lt;<span class="keyword">long</span> <span class="keyword">long</span>&gt;&amp; bit, <span class="keyword">int</span> p, <span class="keyword">long</span> <span class="keyword">long</span> delta) {
+        <span class="keyword">for</span> (<span class="keyword">int</span> i = p; i &lt;= n; i += i&amp;-i) bit[i] += delta;
+    }
+    <span class="keyword">long</span> <span class="keyword">long</span> sumBit(<span class="keyword">const</span> vector&lt;<span class="keyword">long</span> <span class="keyword">long</span>&gt;&amp; bit, <span class="keyword">int</span> p) <span class="keyword">const</span> {
+        <span class="keyword">long</span> <span class="keyword">long</span> sum = <span class="number">0</span>;
+        <span class="keyword">for</span> (<span class="keyword">int</span> i = p; i &gt; <span class="number">0</span>; i -= i&amp;-i) sum += bit[i];
+        <span class="keyword">return</span> sum;
+    }
+    <span class="keyword">void</span> difference(<span class="keyword">int</span> p, <span class="keyword">long</span> <span class="keyword">long</span> delta) {
+        <span class="keyword">if</span> (p &gt; n) <span class="keyword">return</span>;
+        addBit(first,p,delta); addBit(second,p,delta*(p-<span class="number">1</span>));
+    }
+    <span class="keyword">void</span> check(<span class="keyword">int</span> l, <span class="keyword">int</span> r) <span class="keyword">const</span> {
+        <span class="keyword">if</span> (l &lt; <span class="number">0</span> || r &lt; l || r &gt; n) <span class="keyword">throw</span> out_of_range(<span class="string">&quot;range&quot;</span>);
+    }
+<span class="keyword">public</span>:
+    <span class="keyword">explicit</span> RangeAddFenwick(<span class="keyword">int</span> size): n(size) {
+        <span class="keyword">if</span> (n &lt; <span class="number">0</span> || n &gt; <span class="number">1000000</span>) <span class="keyword">throw</span> invalid_argument(<span class="string">&quot;size&quot;</span>);
+        first.assign(n+<span class="number">1</span>,<span class="number">0</span>); second.assign(n+<span class="number">1</span>,<span class="number">0</span>);
+    }
+    <span class="keyword">void</span> add(<span class="keyword">int</span> l, <span class="keyword">int</span> r, <span class="keyword">long</span> <span class="keyword">long</span> delta) {
+        check(l,r); <span class="keyword">if</span> (l == r) <span class="keyword">return</span>;
+        difference(l+<span class="number">1</span>,delta); difference(r+<span class="number">1</span>,-delta);
+    }
+    <span class="keyword">long</span> <span class="keyword">long</span> prefix(<span class="keyword">int</span> r) <span class="keyword">const</span> {
+        check(<span class="number">0</span>,r);
+        <span class="keyword">return</span> (<span class="keyword">long</span> <span class="keyword">long</span>)r*sumBit(first,r)-sumBit(second,r);
+    }
+    <span class="keyword">long</span> <span class="keyword">long</span> rangeSum(<span class="keyword">int</span> l, <span class="keyword">int</span> r) <span class="keyword">const</span> {
+        check(l,r); <span class="keyword">return</span> prefix(r)-prefix(l);
+    }
+};</code></pre></div></div><div class="deep-block" id="s3-after-4"><h3>3.8 频率树状数组第 K 小：利用块和做倍增</h3><p>k 从 1 开始，返回零基位置而非第几个不同值。例如频率 [0,2,0,1] 的第 1、2 小都在位置 1，第 3 小在位置 3。非法 k 返回 nullopt；删除频率不可减到负数，异常发生前不修改状态。查询、更新 O(log(n+1))，空间 O(n)。</p><div class="codebox"><div class="codebar"><span>C++17</span><div><a href="examples/detail-fenwick-order.cpp" download>下载 .cpp</a><button type="button" class="copy">复制代码</button></div></div><pre tabindex="0" aria-label="C++17 代码"><code><span class="keyword">class</span> FrequencyFenwick {
+    <span class="keyword">int</span> n;
+    vector&lt;<span class="keyword">long</span> <span class="keyword">long</span>&gt; bit, frequency;
+    <span class="keyword">long</span> <span class="keyword">long</span> total = <span class="number">0</span>;
+<span class="keyword">public</span>:
+    <span class="keyword">explicit</span> FrequencyFenwick(<span class="keyword">int</span> size): n(size) {
+        <span class="keyword">if</span> (n &lt; <span class="number">0</span> || n &gt; <span class="number">1000000</span>) <span class="keyword">throw</span> invalid_argument(<span class="string">&quot;size&quot;</span>);
+        bit.assign(n+<span class="number">1</span>,<span class="number">0</span>); frequency.assign(n,<span class="number">0</span>);
+    }
+    <span class="keyword">void</span> add(<span class="keyword">int</span> p, <span class="keyword">long</span> <span class="keyword">long</span> delta) {
+        <span class="keyword">if</span> (p &lt; <span class="number">0</span> || p &gt;= n) <span class="keyword">throw</span> out_of_range(<span class="string">&quot;index&quot;</span>);
+        <span class="keyword">if</span> (delta &lt; <span class="number">0</span> &amp;&amp; delta &lt; -frequency[p]) <span class="keyword">throw</span> invalid_argument(<span class="string">&quot;negative frequency&quot;</span>);
+        <span class="keyword">if</span> (delta &gt; <span class="number">0</span> &amp;&amp; total &gt; LLONG_MAX-delta) <span class="keyword">throw</span> overflow_error(<span class="string">&quot;total&quot;</span>);
+        frequency[p] += delta; total += delta;
+        <span class="keyword">for</span> (<span class="keyword">int</span> i = p+<span class="number">1</span>; i &lt;= n; i += i&amp;-i) bit[i] += delta;
+    }
+    optional&lt;<span class="keyword">int</span>&gt; kth(<span class="keyword">long</span> <span class="keyword">long</span> k) <span class="keyword">const</span> {
+        <span class="keyword">if</span> (k &lt; <span class="number">1</span> || k &gt; total) <span class="keyword">return</span> nullopt;
+        <span class="keyword">int</span> index = <span class="number">0</span>, step = <span class="number">1</span>;
+        <span class="keyword">while</span> (step &lt;= n/<span class="number">2</span>) step *= <span class="number">2</span>;
+        <span class="keyword">for</span> (; step &gt; <span class="number">0</span>; step /= <span class="number">2</span>) {
+            <span class="keyword">int</span> next = index+step;
+            <span class="keyword">if</span> (next &lt;= n &amp;&amp; bit[next] &lt; k) {
+                index = next; k -= bit[next];
+            }
+        }
+        <span class="keyword">return</span> index; <span class="comment">// 已跳过 index 项，下一个一基位置对应零基 index</span>
+    }
+    <span class="keyword">long</span> <span class="keyword">long</span> count() <span class="keyword">const</span> { <span class="keyword">return</span> total; }
+};</code></pre></div></div><div class="practice"><h3>经典考点与练习</h3><p>练习：LeetCode 307 区域和检索—数组可修改、315 计算右侧小于当前元素的个数。</p><h3>面试追问：关键点完整解答</h3><dl class="answer-list"><div><dt>普通前缀和为什么不适合频繁修改？</dt><dd><p>修改 a[p] 后，所有终点大于 p 的前缀都改变，显式前缀数组可能要更新 O(n) 项。树状数组只维护按二进制分块的摘要，一次修改影响 O(log n) 个块；查询也用 O(log n) 个块拼起来。</p></dd></div><div><dt>树状数组能否直接把加法换成 min，仍做任意区间查询？</dt><dd><p>不能用 prefixMin(r)−prefixMin(l) 得到区间最小值，min 没有这种可逆性。某些单调更新的前缀 min 可以用专门 Fenwick 变式，但不等于支持任意赋值和任意区间 min；通常改用线段树。</p></dd></div><div><dt>离散化是否保留两点之间的真实距离？</dt><dd><p>不保留。10、1000、1001 可能变成排名 1、2、3，排名差相等而真实差不同。排名适合顺序、频率和比较；若计算坐标长度、面积或带权间隔，应另外保留原始坐标。</p></dd></div><div><dt>逆序对为何查询 rank−1，而不是 rank？</dt><dd><p>定义是严格大于或严格小于，相等不算逆序。右向左扫描时，prefix(rank−1) 只统计右侧更小值；prefix(rank) 会把相等值也算进去。重复元素多的用例最容易暴露这个错误。</p></dd></div><div><dt>双树状数组的第二棵树为什么乘 i−1？</dt><dd><p>一个差分 D[i] 会出现在前 x 项总和里的第 i 到 x 项，共 x−i+1 次。展开成 x·D[i]−(i−1)·D[i] 后，就需要分别累计 D[i] 和 (i−1)D[i]。公式来自累加次数，不能只记两个数组名称。</p></dd></div><div><dt>第 K 小为什么需要非负频率？</dt><dd><p>非负频率使前缀累计单调，可以根据一整块和判断目标在块内还是块后。负频率会造成跨过阈值后又跌回去，二分和倍增的排除判断失效。结构因此禁止减成负频率，不是任意数值前缀树都支持 kth。</p></dd></div><div><dt>赋值操作为什么不能直接 add(p,newValue)？</dt><dd><p>add 的语义是增量，直接传新值会在旧值上再次累加。应算 delta=newValue−oldValue，然后更新；oldValue 可从保存的原数组读取，或用单点区间和得到。</p></dd></div></dl></div>
 <label class="learned"><input type="checkbox" data-progress="13-03">我能独立实现，并解释正确性与边界</label></section><section class="lesson" id="s4"><div class="lesson-heading"><span class="lesson-number">13.04</span><h2>线段树：可合并的区间信息</h2></div>
-<h3>知识与适用场景</h3><p>线段树把区间二分，父节点信息由两个孩子合并。sum 用加法，max 用最大值。相比树状数组，它支持更广泛的可结合运算，但实现更复杂。</p><div class="invariant"><span>推导 / 不变量</span><p>下面采用迭代线段树，叶子放在 [n,2n)。查询半开区间 [l,r)：若 l 是右孩子，则先纳入它再向右；若 r 是右边界，则先减一纳入左侧末节点，然后共同上移。</p></div>
+<h3>知识与适用场景</h3><p>线段树把区间二分，父节点信息由两个孩子合并。sum 用加法，max 用最大值。相比树状数组，它支持更广泛的可结合运算，但实现更复杂。</p><div class="deep-block" id="s4-before-1"><h3>4.1 线段树存的是能合并的区间摘要</h3><p>父区间由左区间和右区间组成，要求摘要有一个结合的合并操作：merge(merge(A,B),C)=merge(A,merge(B,C))。加法、最小值、最大值满足；字符串拼接也满足结合律，但不满足交换律，因此左右顺序不能颠倒。</p><p>空区间需要正确的单位元：和为 0，最小值可用正无穷或显式空值，字符串为空串。最大非空子数组不能直接用 0 当所有摘要的初值，否则全负区间会被错误地允许选空段。后面的实现用 empty 标记隔离空摘要。</p></div><div class="deep-block" id="s4-before-2"><h3>4.2 最大子数组区间摘要：一个 best 不够</h3><p>跨中点的最优段必须由左后缀加右前缀组成；仅保存左右各自 best 无法计算跨界结果。这与第九章的分治摘要一致，只是现在把它组织成支持更新和查询的树。</p><p class="table-hint">窄屏下可左右滑动表格，查看完整内容。</p><div class="study-table" tabindex="0" role="region" aria-label="4.2 最大子数组区间摘要：一个 best 不够"><table><thead><tr><th scope="col">字段</th><th scope="col">含义</th><th scope="col">左右合并公式</th></tr></thead><tbody><tr><td>sum</td><td>整个区间的总和</td><td>L.sum+R.sum</td></tr><tr><td>prefix</td><td>从区间左端开始的最大非空前缀和</td><td>max(L.prefix,L.sum+R.prefix)</td></tr><tr><td>suffix</td><td>到区间右端结束的最大非空后缀和</td><td>max(R.suffix,R.sum+L.suffix)</td></tr><tr><td>best</td><td>区间内任意非空子数组最大和</td><td>max(L.best,R.best,L.suffix+R.prefix)</td></tr></tbody></table></div></div><div class="deep-block" id="s4-before-3"><h3>4.3 懒标记是延迟通知孩子，不是延迟更新本节点</h3><p>一个完全覆盖的区间加 d，当前节点 sum 立即增加 d·len，同时记下对孩子尚未执行的增量。不继续下探，才把一段很多元素的修改压成 O(log n) 个块。部分覆盖查询或更新前，先把标记按正确次序传给孩子，再继续递归。</p><p>若误以为 sum 也要等下传才更新，整段查询会返回旧值；若 sum 已更新却在下传时又重复加到父节点，会双重计数。下传只修改孩子并清空父标记，父节点 sum 本来已经正确。</p></div><div class="deep-block" id="s4-before-4"><h3>4.4 标记顺序：先做旧操作，再做新操作</h3><p class="table-hint">窄屏下可左右滑动表格，查看完整内容。</p><div class="study-table" tabindex="0" role="region" aria-label="4.4 标记顺序：先做旧操作，再做新操作"><table><thead><tr><th scope="col">旧待办</th><th scope="col">新操作</th><th scope="col">合成结果</th><th scope="col">原因</th></tr></thead><tbody><tr><td>加 a</td><td>加 b</td><td>加 a+b</td><td>增量累加</td></tr><tr><td>赋值 a</td><td>加 b</td><td>赋值 a+b</td><td>先覆盖，再平移</td></tr><tr><td>加 a</td><td>赋值 b</td><td>赋值 b</td><td>新赋值覆盖旧增量</td></tr><tr><td>赋值 a</td><td>赋值 b</td><td>赋值 b</td><td>只需最后的值</td></tr><tr><td>无标记</td><td>赋值 0</td><td>必须保留“有赋值”布尔位</td><td>0 是合法新值，不是无标记</td></tr></tbody></table></div></div><div class="deep-block" id="s4-before-5"><h3>4.5 静态查询与稀疏表</h3><p>如果数组建好后从不修改，而且操作是 min/max/gcd 这样的幂等运算，稀疏表可预处理长度为 2 的幂的区间。任意查询取左右两块，块可以重叠，因为 min(x,x)=x；这样查询是 O(1)。</p><p>求和不具幂等性，重叠会重复计数，不能照抄“两块 O(1)”公式。静态区间和直接前缀和更简单；有修改需求则重新选择 Fenwick 或线段树，不要把预处理结构伪装成动态结构。</p></div><div class="invariant"><span>推导 / 不变量</span><p>下面采用迭代线段树，叶子放在 [n,2n)。查询半开区间 [l,r)：若 l 是右孩子，则先纳入它再向右；若 r 是右边界，则先减一纳入左侧末节点，然后共同上移。</p></div>
 <h3>手推一个例子</h3><p>数组 [2,1,3,4] 查询 [1,3) 得到 1+3=4。把下标 2 赋为 5 后，同一区间变为 6。</p><div class="codebox"><div class="codebar"><span>C++17</span><div><a href="examples/04.cpp" download>下载 .cpp</a><button type="button" class="copy">复制代码</button></div></div><pre tabindex="0" aria-label="C++17 代码"><code><span class="keyword">class</span> SegmentTree {
     <span class="keyword">int</span> n;
     vector&lt;<span class="keyword">long</span> <span class="keyword">long</span>&gt; tree;
@@ -143,5 +456,410 @@
     }
 };</code></pre></div>
 <dl class="analysis-grid"><div><dt>复杂度</dt><dd>建树 O(n)，更新/查询 O(log(n+1))，空间 O(n)。</dd></div><div><dt>易错点与边界</dt><dd>本例只支持单点赋值。区间更新需懒标记：区间加 x 时节点和增加 x×区间长度，并保存待下传增量；赋值与加法混用时要特别定义标记组合顺序。</dd></div></dl>
-<div class="practice"><h3>经典考点与练习</h3><p>练习：LeetCode 307；进阶：区间加法与区间求和的懒标记线段树。</p><details><summary>面试官可能继续问什么？</summary><p>如果改成字符串拼接等非交换运算，为什么查询要分别保存左答案和右答案？</p><p class="muted">先用自己的话回答，再回到本节的前提、不变量和边界检查论证。</p></details></div>
-<label class="learned"><input type="checkbox" data-progress="13-04">我能独立实现，并解释正确性与边界</label></section><nav class="chapter-pager" aria-label="相邻章节"><a href="../12-动态规划/index.html"><small>上一章</small>← 动态规划</a><a href="../14-高频技巧与综合题型/index.html"><small>下一章</small>高频技巧与综合题型 →</a></nav><footer>秋招算法学习讲义 · C++17<br>例题编号供检索；难度与覆盖范围按学习顺序组织。</footer></main><aside class="toc" aria-label="本页目录"><p class="rail-label">本章小节</p><a href="#s1"><span>01</span>并查集：路径压缩与按大小合并</a><a href="#s2"><span>02</span>Trie：前缀与完整单词</a><a href="#s3"><span>03</span>树状数组：动态前缀和</a><a href="#s4"><span>04</span>线段树：可合并的区间信息</a></aside></div><div class="toast" role="status" aria-live="polite"></div></body></html>
+<div class="deep-block" id="s4-after-1"><h3>4.6 区间赋值、区间加、区间和：明确合成标记</h3><p>所有范围为 [l,r)，空范围更新无事发生，查询为 0。查询可能下传标记，虽然不改逻辑数组，也会修改内部表示，所以 sum 不是 const。建树 O(n)，更新/查询 O(log(n+1))，空间 O(n)，递归深度 O(log n)。调用者需保证节点和、标记累加与乘长度都不溢出。</p><div class="codebox"><div class="codebar"><span>C++17</span><div><a href="examples/detail-lazy-segment.cpp" download>下载 .cpp</a><button type="button" class="copy">复制代码</button></div></div><pre tabindex="0" aria-label="C++17 代码"><code><span class="keyword">class</span> LazyRangeSum {
+    <span class="keyword">struct</span> Node {
+        <span class="keyword">long</span> <span class="keyword">long</span> sum = <span class="number">0</span>, setValue = <span class="number">0</span>, addValue = <span class="number">0</span>;
+        <span class="keyword">bool</span> hasSet = <span class="keyword">false</span>;
+    };
+    <span class="keyword">int</span> n;
+    vector&lt;Node&gt; tree;
+    <span class="keyword">void</span> pull(<span class="keyword">int</span> p) { tree[p].sum = tree[p*<span class="number">2</span>].sum+tree[p*<span class="number">2</span>+<span class="number">1</span>].sum; }
+    <span class="keyword">void</span> applySet(<span class="keyword">int</span> p, <span class="keyword">int</span> len, <span class="keyword">long</span> <span class="keyword">long</span> value) {
+        tree[p].sum = value*len;
+        tree[p].hasSet = <span class="keyword">true</span>; tree[p].setValue = value; tree[p].addValue = <span class="number">0</span>;
+    }
+    <span class="keyword">void</span> applyAdd(<span class="keyword">int</span> p, <span class="keyword">int</span> len, <span class="keyword">long</span> <span class="keyword">long</span> delta) {
+        tree[p].sum += delta*len;
+        <span class="keyword">if</span> (tree[p].hasSet) tree[p].setValue += delta;
+        <span class="keyword">else</span> tree[p].addValue += delta;
+    }
+    <span class="keyword">void</span> push(<span class="keyword">int</span> p, <span class="keyword">int</span> l, <span class="keyword">int</span> r) {
+        <span class="keyword">if</span> (r-l == <span class="number">1</span>) <span class="keyword">return</span>;
+        <span class="keyword">int</span> mid = l+(r-l)/<span class="number">2</span>;
+        <span class="keyword">if</span> (tree[p].hasSet) {
+            applySet(p*<span class="number">2</span>,mid-l,tree[p].setValue);
+            applySet(p*<span class="number">2</span>+<span class="number">1</span>,r-mid,tree[p].setValue);
+            tree[p].hasSet = <span class="keyword">false</span>;
+        }
+        <span class="keyword">if</span> (tree[p].addValue != <span class="number">0</span>) {
+            applyAdd(p*<span class="number">2</span>,mid-l,tree[p].addValue);
+            applyAdd(p*<span class="number">2</span>+<span class="number">1</span>,r-mid,tree[p].addValue);
+            tree[p].addValue = <span class="number">0</span>;
+        }
+    }
+    <span class="keyword">void</span> build(<span class="keyword">int</span> p, <span class="keyword">int</span> l, <span class="keyword">int</span> r, <span class="keyword">const</span> vector&lt;<span class="keyword">long</span> <span class="keyword">long</span>&gt;&amp; a) {
+        <span class="keyword">if</span> (r-l == <span class="number">1</span>) { tree[p].sum = a[l]; <span class="keyword">return</span>; }
+        <span class="keyword">int</span> mid = l+(r-l)/<span class="number">2</span>;
+        build(p*<span class="number">2</span>,l,mid,a); build(p*<span class="number">2</span>+<span class="number">1</span>,mid,r,a); pull(p);
+    }
+    <span class="keyword">void</span> update(<span class="keyword">int</span> p, <span class="keyword">int</span> l, <span class="keyword">int</span> r, <span class="keyword">int</span> ql, <span class="keyword">int</span> qr, <span class="keyword">long</span> <span class="keyword">long</span> x, <span class="keyword">bool</span> assign) {
+        <span class="keyword">if</span> (ql &lt;= l &amp;&amp; r &lt;= qr) {
+            <span class="keyword">if</span> (assign) applySet(p,r-l,x); <span class="keyword">else</span> applyAdd(p,r-l,x);
+            <span class="keyword">return</span>;
+        }
+        push(p,l,r); <span class="keyword">int</span> mid = l+(r-l)/<span class="number">2</span>;
+        <span class="keyword">if</span> (ql &lt; mid) update(p*<span class="number">2</span>,l,mid,ql,qr,x,assign);
+        <span class="keyword">if</span> (qr &gt; mid) update(p*<span class="number">2</span>+<span class="number">1</span>,mid,r,ql,qr,x,assign);
+        pull(p);
+    }
+    <span class="keyword">long</span> <span class="keyword">long</span> query(<span class="keyword">int</span> p, <span class="keyword">int</span> l, <span class="keyword">int</span> r, <span class="keyword">int</span> ql, <span class="keyword">int</span> qr) {
+        <span class="keyword">if</span> (ql &lt;= l &amp;&amp; r &lt;= qr) <span class="keyword">return</span> tree[p].sum;
+        push(p,l,r); <span class="keyword">int</span> mid = l+(r-l)/<span class="number">2</span>; <span class="keyword">long</span> <span class="keyword">long</span> answer = <span class="number">0</span>;
+        <span class="keyword">if</span> (ql &lt; mid) answer += query(p*<span class="number">2</span>,l,mid,ql,qr);
+        <span class="keyword">if</span> (qr &gt; mid) answer += query(p*<span class="number">2</span>+<span class="number">1</span>,mid,r,ql,qr);
+        <span class="keyword">return</span> answer;
+    }
+    <span class="keyword">void</span> check(<span class="keyword">int</span> l, <span class="keyword">int</span> r) <span class="keyword">const</span> {
+        <span class="keyword">if</span> (l &lt; <span class="number">0</span> || r &lt; l || r &gt; n) <span class="keyword">throw</span> out_of_range(<span class="string">&quot;range&quot;</span>);
+    }
+<span class="keyword">public</span>:
+    <span class="keyword">explicit</span> LazyRangeSum(<span class="keyword">const</span> vector&lt;<span class="keyword">long</span> <span class="keyword">long</span>&gt;&amp; a): n((<span class="keyword">int</span>)a.size()) {
+        <span class="keyword">if</span> (a.size() &gt; <span class="number">1000000</span>) <span class="keyword">throw</span> invalid_argument(<span class="string">&quot;size limit&quot;</span>);
+        tree.resize(max(<span class="number">1</span>,<span class="number">4</span>*n));
+        <span class="keyword">if</span> (n) build(<span class="number">1</span>,<span class="number">0</span>,n,a);
+    }
+    <span class="keyword">void</span> add(<span class="keyword">int</span> l, <span class="keyword">int</span> r, <span class="keyword">long</span> <span class="keyword">long</span> delta) {
+        check(l,r); <span class="keyword">if</span> (l &lt; r) update(<span class="number">1</span>,<span class="number">0</span>,n,l,r,delta,<span class="keyword">false</span>);
+    }
+    <span class="keyword">void</span> assign(<span class="keyword">int</span> l, <span class="keyword">int</span> r, <span class="keyword">long</span> <span class="keyword">long</span> value) {
+        check(l,r); <span class="keyword">if</span> (l &lt; r) update(<span class="number">1</span>,<span class="number">0</span>,n,l,r,value,<span class="keyword">true</span>);
+    }
+    <span class="keyword">long</span> <span class="keyword">long</span> sum(<span class="keyword">int</span> l, <span class="keyword">int</span> r) {
+        check(l,r); <span class="keyword">return</span> l == r ? <span class="number">0</span> : query(<span class="number">1</span>,<span class="number">0</span>,n,l,r);
+    }
+};</code></pre></div></div><div class="deep-block" id="s4-after-2"><h3>4.7 非交换摘要：动态区间最大非空子数组和</h3><p>左侧答案向右追加，右侧答案向左追加，最后 left 接 right。若都写成向后追加，会打乱区间顺序，虽然 sum 可能相同，前缀、后缀与跨界 best 却会错误。空区间返回 nullopt，全负区间返回最大负数。int 元素、n≤10^6 下 long long 摘要安全。建树 O(n)，操作 O(log(n+1))，空间 O(n)。</p><div class="codebox"><div class="codebar"><span>C++17</span><div><a href="examples/detail-max-subarray-tree.cpp" download>下载 .cpp</a><button type="button" class="copy">复制代码</button></div></div><pre tabindex="0" aria-label="C++17 代码"><code><span class="keyword">class</span> MaxSubarrayTree {
+    <span class="keyword">struct</span> Info {
+        <span class="keyword">bool</span> empty = <span class="keyword">true</span>;
+        <span class="keyword">long</span> <span class="keyword">long</span> sum = <span class="number">0</span>, prefix = <span class="number">0</span>, suffix = <span class="number">0</span>, best = <span class="number">0</span>;
+    };
+    <span class="keyword">int</span> n, base = <span class="number">1</span>;
+    vector&lt;Info&gt; tree;
+    static Info single(<span class="keyword">long</span> <span class="keyword">long</span> x) { <span class="keyword">return</span> {<span class="keyword">false</span>,x,x,x,x}; }
+    static Info merge(<span class="keyword">const</span> Info&amp; left, <span class="keyword">const</span> Info&amp; right) {
+        <span class="keyword">if</span> (left.empty) <span class="keyword">return</span> right;
+        <span class="keyword">if</span> (right.empty) <span class="keyword">return</span> left;
+        <span class="keyword">return</span> {<span class="keyword">false</span>,left.sum+right.sum,
+            max(left.prefix,left.sum+right.prefix),
+            max(right.suffix,right.sum+left.suffix),
+            max({left.best,right.best,left.suffix+right.prefix})};
+    }
+<span class="keyword">public</span>:
+    <span class="keyword">explicit</span> MaxSubarrayTree(<span class="keyword">const</span> vector&lt;<span class="keyword">int</span>&gt;&amp; a): n((<span class="keyword">int</span>)a.size()) {
+        <span class="keyword">if</span> (a.size() &gt; <span class="number">1000000</span>) <span class="keyword">throw</span> invalid_argument(<span class="string">&quot;size limit&quot;</span>);
+        <span class="keyword">while</span> (base &lt; n) base *= <span class="number">2</span>;
+        tree.resize(<span class="number">2</span>*base);
+        <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; n; ++i) tree[base+i] = single(a[i]);
+        <span class="keyword">for</span> (<span class="keyword">int</span> p = base-<span class="number">1</span>; p &gt; <span class="number">0</span>; --p) tree[p] = merge(tree[p*<span class="number">2</span>],tree[p*<span class="number">2</span>+<span class="number">1</span>]);
+    }
+    <span class="keyword">void</span> setValue(<span class="keyword">int</span> index, <span class="keyword">int</span> value) {
+        <span class="keyword">if</span> (index &lt; <span class="number">0</span> || index &gt;= n) <span class="keyword">throw</span> out_of_range(<span class="string">&quot;index&quot;</span>);
+        <span class="keyword">int</span> p = base+index; tree[p] = single(value);
+        <span class="keyword">for</span> (p /= <span class="number">2</span>; p &gt; <span class="number">0</span>; p /= <span class="number">2</span>) tree[p] = merge(tree[p*<span class="number">2</span>],tree[p*<span class="number">2</span>+<span class="number">1</span>]);
+    }
+    optional&lt;<span class="keyword">long</span> <span class="keyword">long</span>&gt; best(<span class="keyword">int</span> l, <span class="keyword">int</span> r) <span class="keyword">const</span> {
+        <span class="keyword">if</span> (l &lt; <span class="number">0</span> || r &lt; l || r &gt; n) <span class="keyword">throw</span> out_of_range(<span class="string">&quot;range&quot;</span>);
+        Info left, right;
+        <span class="keyword">for</span> (l += base,r += base; l &lt; r; l /= <span class="number">2</span>,r /= <span class="number">2</span>) {
+            <span class="keyword">if</span> (l&amp;<span class="number">1</span>) left = merge(left,tree[l++]);
+            <span class="keyword">if</span> (r&amp;<span class="number">1</span>) right = merge(tree[--r],right);
+        }
+        Info result = merge(left,right);
+        <span class="keyword">if</span> (result.empty) <span class="keyword">return</span> nullopt;
+        <span class="keyword">return</span> result.best;
+    }
+};</code></pre></div></div><div class="deep-block" id="s4-after-3"><h3>4.8 静态 RMQ：稀疏表的重叠块为什么合法</h3><p>只支持静态数组，没有更新接口。查询半开区间，空区间返回 nullopt；无需浮点 log2，避免幂边界误差。两个 2^k 长度区间覆盖查询且允许重叠，min 的幂等性保证重复元素不影响结果。预处理 O(n log(n+1))，空间同阶，查询 O(1)。</p><div class="codebox"><div class="codebar"><span>C++17</span><div><a href="examples/detail-sparse-min.cpp" download>下载 .cpp</a><button type="button" class="copy">复制代码</button></div></div><pre tabindex="0" aria-label="C++17 代码"><code><span class="keyword">class</span> SparseMinimum {
+    <span class="keyword">int</span> n;
+    vector&lt;<span class="keyword">int</span>&gt; logs;
+    vector&lt;vector&lt;<span class="keyword">int</span>&gt;&gt; table;
+<span class="keyword">public</span>:
+    <span class="keyword">explicit</span> SparseMinimum(<span class="keyword">const</span> vector&lt;<span class="keyword">int</span>&gt;&amp; a): n((<span class="keyword">int</span>)a.size()) {
+        <span class="keyword">if</span> (a.size() &gt; <span class="number">1000000</span>) <span class="keyword">throw</span> invalid_argument(<span class="string">&quot;size limit&quot;</span>);
+        logs.assign(n+<span class="number">1</span>,<span class="number">0</span>);
+        <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">2</span>; i &lt;= n; ++i) logs[i] = logs[i/<span class="number">2</span>]+<span class="number">1</span>;
+        <span class="keyword">if</span> (!n) <span class="keyword">return</span>;
+        table.push_back(a);
+        <span class="keyword">for</span> (<span class="keyword">int</span> k = <span class="number">1</span>; k &lt;= logs[n]; ++k) {
+            <span class="keyword">int</span> length = <span class="number">1</span> &lt;&lt; k, half = length/<span class="number">2</span>;
+            table.push_back(vector&lt;<span class="keyword">int</span>&gt;(n-length+<span class="number">1</span>));
+            <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i+length &lt;= n; ++i)
+                table[k][i] = min(table[k-<span class="number">1</span>][i],table[k-<span class="number">1</span>][i+half]);
+        }
+    }
+    optional&lt;<span class="keyword">int</span>&gt; minimum(<span class="keyword">int</span> l, <span class="keyword">int</span> r) <span class="keyword">const</span> {
+        <span class="keyword">if</span> (l &lt; <span class="number">0</span> || r &lt; l || r &gt; n) <span class="keyword">throw</span> out_of_range(<span class="string">&quot;range&quot;</span>);
+        <span class="keyword">if</span> (l == r) <span class="keyword">return</span> nullopt;
+        <span class="keyword">int</span> k = logs[r-l], length = <span class="number">1</span> &lt;&lt; k;
+        <span class="keyword">return</span> min(table[k][l],table[k][r-length]);
+    }
+};</code></pre></div></div><div class="practice"><h3>经典考点与练习</h3><p>练习：LeetCode 307；进阶：区间加法与区间求和的懒标记线段树。</p><h3>面试追问：关键点完整解答</h3><dl class="answer-list"><div><dt>线段树只要求结合律，为什么查询还要关心左右顺序？</dt><dd><p>结合律只允许改变括号，不允许交换元素。例如字符串 ab 与 cd 拼接不能随意变成 cdab。迭代查询从右边取出的块是从右向左出现，所以应前插到 right；左侧取出的块则后接到 left。</p></dd></div><div><dt>区间加 d 为什么 sum 加 d×长度，而不是只加 d？</dt><dd><p>节点代表 len 个元素，每个都加 d，总和变化就是 d·len。若维护的是 max/min，整段统一加 d 才是摘要直接加 d；更新规则由摘要语义决定，不能通用套一行。</p></dd></div><div><dt>为什么赋值标记不能用 0 表示没有？</dt><dd><p>赋成 0 是完全合法的操作。如果把 setValue==0 当无标记，后续部分查询就读到尚未清零的孩子。必须额外用 hasSet，或用 optional 等方式区分“无赋值”与“赋成零”。</p></dd></div><div><dt>先加 3 再赋值 2，与先赋值 2 再加 3 一样吗？</dt><dd><p>不一样，前者最终全是 2，后者全是 5。新赋值覆盖旧加法；新加法则要叠到旧赋值后面。懒标记是函数复合，顺序是旧操作先执行、新操作后执行。</p></dd></div><div><dt>做部分更新前忘了 push，会出什么错？</dt><dd><p>父节点可能已经逻辑上给整段赋值，但孩子仍保存旧数据。直接进入孩子局部修改，再 pull 父节点，会把未下传的整段更新丢掉。只有完整覆盖时可以直接改父节点，不触碰孩子。</p></dd></div><div><dt>最大子数组摘要为什么不能只保存 best？</dt><dd><p>跨左右边界的最优子数组需要知道左边能提供的最大后缀与右边最大前缀，而它们可能不是各自内部 best。sum 又用于合成更大前缀和后缀。四项共同构成对外足够的信息。</p></dd></div><div><dt>稀疏表为何能重叠查询 min，却不能用同一方式求和？</dt><dd><p>min、max、gcd 对重复输入幂等，重叠部分算两次也不改变结果；sum 重复会多计。比如 3 个数用两个长度 2 的块求和，中间元素被加两次。静态和用前缀和，不能盲目替换运算符。</p></dd></div></dl></div>
+<label class="learned"><input type="checkbox" data-progress="13-04">我能独立实现，并解释正确性与边界</label></section><section class="chapter-review" id="chapter-review"><p class="eyebrow">PRACTICE / 把本章方法用起来</p><h2>综合例题与章末自测</h2><div class="deep-block" id="review-1"><h3>练习路线：先实现基本接口，再按操作组合升级</h3><p class="table-hint">窄屏下可左右滑动表格，查看完整内容。</p><div class="study-table" tabindex="0" role="region" aria-label="练习路线：先实现基本接口，再按操作组合升级"><table><thead><tr><th scope="col">阶段</th><th scope="col">经典题 / 任务</th><th scope="col">核心考点</th><th scope="col">应补的边界</th></tr></thead><tbody><tr><td>集合</td><td>547、684、990、305</td><td>同根跳过、聚合根信息、激活</td><td>重复边、自环、重复加点</td></tr><tr><td>字符串</td><td>208、211、212、421</td><td>终点计数、共享前缀、分支、位权</td><td>空词、重复词、删除、最高位</td></tr><tr><td>前缀</td><td>307、315、493（扩展）</td><td>增量、离散化、严格大小关系</td><td>重复值、负值、空范围</td></tr><tr><td>频率与区间</td><td>动态第 K 小、区间加和</td><td>单调频率、差分推导</td><td>k=0、总数不足、边界 r=n</td></tr><tr><td>摘要与懒标记</td><td>动态最大子段、区间赋值/加和</td><td>左右顺序、操作复合</td><td>全负、赋零、交错嵌套更新</td></tr></tbody></table></div></div><div class="deep-block" id="review-2"><h3>结构选择的口述练习</h3><p>若只有静态区间和，前缀和已经 O(1) 查询，无需线段树；如果有单点加和区间和，Fenwick 简洁；若出现任意区间赋值、区间最值或复杂摘要，再考虑线段树。若查询的是字符串前缀或连通性，问题就不属于区间树范畴。</p><p>每个接口都明确：下标范围、区间是闭还是半开、空输入是否允许、错误输入是否修改状态、计算用多宽的整数。尤其当同一章混用基础一基 Fenwick 与补充零基接口时，不要只复制调用代码而忽略契约。</p></div><div class="deep-block" id="review-3"><h3>章末自测：四个跨结构问题</h3><dl class="answer-list"><div><dt>回滚并查集与可持久化数据结构有什么区别？</dt><dd><p>回滚是沿当前修改栈撤销，通常按 DFS 顺序访问历史；可持久化允许多个版本同时存在并查询。这里的日志快照不是一个永久不可变版本对象，已丢弃分支的数字不能继续充当有效历史。</p></dd></div><div><dt>在数据结构里缓存摘要，怎样知道信息够不够？</dt><dd><p>尝试只用两个子区间摘要推导父区间结果，并检查所有可能跨界的情况。最大子数组的跨界答案需要左后缀和右前缀，所以只有 best 不够。若无法由摘要得出更新后的结果，也可能不能直接支持懒更新。</p></dd></div><div><dt>为何同一份随机操作必须与朴素模型逐步比较？</dt><dd><p>只比较最后一次结果可能让中间错误相互抵消。应在每次加、赋值、删除或回滚后，比较连通性、词频或全部小范围查询；再用定向用例覆盖赋值为零、重复元素、过期节点和非法 k。</p></dd></div><div><dt>算法复杂度中的平均、均摊和最坏能否互换？</dt><dd><p>不能。并查集 α(n) 是整段操作序列的均摊界；哈希通常说平均复杂度；回滚并查集按大小但不压缩可给单次 O(log n) 最坏界。Trie 通配符还依赖分支数。应写出所用实现和假设，而不是一律称近似常数。</p></dd></div></dl></div><div class="deep-block" id="review-4"><h3>综合测试：逐操作朴素模型与定向边界</h3><p>入口引用同目录 12 份补充实现与 4 份基础模板，请保留完整 examples 目录，只编译 detail-structure-tests.cpp，不要把其 include 的源文件再传给链接器。命令：g++ -std=c++17 -O2 -Wall -Wextra detail-structure-tests.cpp -o structure-tests；Windows 随后运行 .\structure-tests.exe。不要定义 NDEBUG，测试操作中使用了 assert。</p><p>提供 80 轮固定种子操作序列：集合标签模型对照并查集与回滚、重新 BFS 对照动态岛屿、词频字典对照 Trie、全部已插入数暴力异或、朴素数组对照 Fenwick 与线段树、枚举子数组对照复杂摘要、线性累计对照第 K 小。每轮包含多次操作和全部小区间查询，而非只核对最后状态。</p><p>定向检查空结构、重复添加与删除、空词、无效快照、最高无符号位、负频率拒绝、LLONG_MAX 频率总数、赋值为零及赋值/加法顺序。当前环境未发现 C++ 编译器，测试源码尚未编译运行；HTML 和下载检查不能替代编译与算法运行验证。</p><div class="codebox"><div class="codebar"><span>C++17</span><div><a href="examples/detail-structure-tests.cpp" download>下载 .cpp</a><button type="button" class="copy">复制代码</button></div></div><pre tabindex="0" aria-label="C++17 代码"><code>#include <span class="string">&quot;detail-dsu-checked.cpp&quot;</span>
+#include <span class="string">&quot;detail-online-islands.cpp&quot;</span>
+#include <span class="string">&quot;detail-rollback-dsu.cpp&quot;</span>
+#include <span class="string">&quot;detail-counting-trie.cpp&quot;</span>
+#include <span class="string">&quot;detail-binary-trie.cpp&quot;</span>
+#include <span class="string">&quot;detail-fenwick-zero.cpp&quot;</span>
+#include <span class="string">&quot;detail-count-smaller.cpp&quot;</span>
+#include <span class="string">&quot;detail-range-fenwick.cpp&quot;</span>
+#include <span class="string">&quot;detail-fenwick-order.cpp&quot;</span>
+#include <span class="string">&quot;detail-lazy-segment.cpp&quot;</span>
+#include <span class="string">&quot;detail-max-subarray-tree.cpp&quot;</span>
+#include <span class="string">&quot;detail-sparse-min.cpp&quot;</span>
+#include <span class="string">&quot;01.cpp&quot;</span>
+#include <span class="string">&quot;02.cpp&quot;</span>
+#include <span class="string">&quot;03.cpp&quot;</span>
+#include <span class="string">&quot;04.cpp&quot;</span>
+
+<span class="keyword">void</span> modelUnite(vector&lt;<span class="keyword">int</span>&gt;&amp; label, <span class="keyword">int</span> a, <span class="keyword">int</span> b) {
+    <span class="keyword">int</span> old = label[b], replacement = label[a];
+    <span class="keyword">for</span> (<span class="keyword">int</span>&amp; x : label) <span class="keyword">if</span> (x == old) x = replacement;
+}
+<span class="keyword">int</span> modelGroups(<span class="keyword">const</span> vector&lt;<span class="keyword">int</span>&gt;&amp; label) {
+    <span class="keyword">return</span> (<span class="keyword">int</span>)unordered_set&lt;<span class="keyword">int</span>&gt;(label.begin(),label.end()).size();
+}
+<span class="keyword">int</span> countIslandsModel(<span class="keyword">const</span> vector&lt;vector&lt;<span class="keyword">int</span>&gt;&gt;&amp; grid) {
+    <span class="keyword">int</span> rows = (<span class="keyword">int</span>)grid.size(), cols = (<span class="keyword">int</span>)grid[<span class="number">0</span>].size(), count = <span class="number">0</span>;
+    vector&lt;vector&lt;<span class="keyword">char</span>&gt;&gt; seen(rows,vector&lt;<span class="keyword">char</span>&gt;(cols,<span class="keyword">false</span>));
+    <span class="keyword">const</span> <span class="keyword">int</span> dr[] = {-<span class="number">1</span>,<span class="number">1</span>,<span class="number">0</span>,<span class="number">0</span>}, dc[] = {<span class="number">0</span>,<span class="number">0</span>,-<span class="number">1</span>,<span class="number">1</span>};
+    <span class="keyword">for</span> (<span class="keyword">int</span> r = <span class="number">0</span>; r &lt; rows; ++r) <span class="keyword">for</span> (<span class="keyword">int</span> c = <span class="number">0</span>; c &lt; cols; ++c) {
+        <span class="keyword">if</span> (!grid[r][c] || seen[r][c]) continue;
+        ++count; queue&lt;pair&lt;<span class="keyword">int</span>,<span class="keyword">int</span>&gt;&gt; q; q.push({r,c}); seen[r][c] = <span class="keyword">true</span>;
+        <span class="keyword">while</span> (!q.empty()) {
+            <span class="keyword">auto</span> [x,y] = q.front(); q.pop();
+            <span class="keyword">for</span> (<span class="keyword">int</span> k = <span class="number">0</span>; k &lt; <span class="number">4</span>; ++k) {
+                <span class="keyword">int</span> nx = x+dr[k], ny = y+dc[k];
+                <span class="keyword">if</span> (nx &lt; <span class="number">0</span> || nx &gt;= rows || ny &lt; <span class="number">0</span> || ny &gt;= cols) continue;
+                <span class="keyword">if</span> (grid[nx][ny] &amp;&amp; !seen[nx][ny]) { seen[nx][ny] = <span class="keyword">true</span>; q.push({nx,ny}); }
+            }
+        }
+    }
+    <span class="keyword">return</span> count;
+}
+<span class="keyword">bool</span> wordMatches(<span class="keyword">const</span> string&amp; word, <span class="keyword">const</span> string&amp; pattern) {
+    <span class="keyword">if</span> (word.size() != pattern.size()) <span class="keyword">return</span> <span class="keyword">false</span>;
+    <span class="keyword">for</span> (size_t i = <span class="number">0</span>; i &lt; word.size(); ++i)
+        <span class="keyword">if</span> (pattern[i] != &#x27;.&#x27; &amp;&amp; pattern[i] != word[i]) <span class="keyword">return</span> <span class="keyword">false</span>;
+    <span class="keyword">return</span> <span class="keyword">true</span>;
+}
+optional&lt;<span class="keyword">long</span> <span class="keyword">long</span>&gt; bruteBest(<span class="keyword">const</span> vector&lt;<span class="keyword">int</span>&gt;&amp; a, <span class="keyword">int</span> l, <span class="keyword">int</span> r) {
+    <span class="keyword">if</span> (l == r) <span class="keyword">return</span> nullopt;
+    <span class="keyword">long</span> <span class="keyword">long</span> best = LLONG_MIN;
+    <span class="keyword">for</span> (<span class="keyword">int</span> i = l; i &lt; r; ++i) {
+        <span class="keyword">long</span> <span class="keyword">long</span> sum = <span class="number">0</span>;
+        <span class="keyword">for</span> (<span class="keyword">int</span> j = i; j &lt; r; ++j) { sum += a[j]; best = max(best,sum); }
+    }
+    <span class="keyword">return</span> best;
+}
+template&lt;<span class="keyword">class</span> Exception, <span class="keyword">class</span> F&gt; <span class="keyword">void</span> expectException(F action) {
+    <span class="keyword">bool</span> caught = <span class="keyword">false</span>;
+    try { action(); } catch (<span class="keyword">const</span> Exception&amp;) { caught = <span class="keyword">true</span>; }
+    assert(caught);
+}
+<span class="keyword">int</span> main() {
+    assert(CheckedDSU(<span class="number">0</span>).count() == <span class="number">0</span> &amp;&amp; RollbackDSU(<span class="number">0</span>).count() == <span class="number">0</span>);
+    expectException&lt;invalid_argument&gt;([] { CheckedDSU bad(-<span class="number">1</span>); });
+    CheckedDSU isolated(<span class="number">2</span>);
+    expectException&lt;out_of_range&gt;([&amp;] { isolated.unite(<span class="number">0</span>,<span class="number">2</span>); });
+    assert(isolated.count() == <span class="number">2</span>);
+    RollbackDSU rollback(<span class="number">3</span>);
+    <span class="keyword">auto</span> empty = rollback.snapshot();
+    rollback.unite(<span class="number">0</span>,<span class="number">1</span>); <span class="keyword">auto</span> middle = rollback.snapshot();
+    assert(!rollback.unite(<span class="number">0</span>,<span class="number">1</span>) &amp;&amp; rollback.snapshot() == middle);
+    rollback.unite(<span class="number">1</span>,<span class="number">2</span>); rollback.rollback(middle);
+    assert(rollback.count() == <span class="number">2</span> &amp;&amp; rollback.find(<span class="number">0</span>) != rollback.find(<span class="number">2</span>));
+    rollback.rollback(empty); assert(rollback.count() == <span class="number">3</span>);
+    expectException&lt;out_of_range&gt;([&amp;] { rollback.rollback(<span class="number">1</span>); });
+    assert(islandCountsAfterAdds(<span class="number">2</span>,<span class="number">2</span>,{{<span class="number">0</span>,<span class="number">0</span>},{<span class="number">0</span>,<span class="number">1</span>},{<span class="number">1</span>,<span class="number">0</span>},{<span class="number">1</span>,<span class="number">1</span>},{<span class="number">1</span>,<span class="number">1</span>}}) ==
+           vector&lt;<span class="keyword">int</span>&gt;({<span class="number">1</span>,<span class="number">1</span>,<span class="number">1</span>,<span class="number">1</span>,<span class="number">1</span>}));
+    assert(islandCountsAfterAdds(<span class="number">0</span>,<span class="number">0</span>,{}).empty());
+
+    CountingTrie words;
+    words.insert(<span class="string">&quot;apple&quot;</span>); words.insert(<span class="string">&quot;apple&quot;</span>); words.insert(<span class="string">&quot;app&quot;</span>);
+    assert(words.countPrefix(<span class="string">&quot;app&quot;</span>) == <span class="number">3</span> &amp;&amp; words.countWord(<span class="string">&quot;app&quot;</span>) == <span class="number">1</span>);
+    assert(words.eraseOne(<span class="string">&quot;apple&quot;</span>) &amp;&amp; words.countWord(<span class="string">&quot;apple&quot;</span>) == <span class="number">1</span>);
+    assert(words.eraseOne(<span class="string">&quot;apple&quot;</span>) &amp;&amp; !words.matches(<span class="string">&quot;a....&quot;</span>));
+    assert(!words.eraseOne(<span class="string">&quot;apple&quot;</span>) &amp;&amp; words.countPrefix(<span class="string">&quot;app&quot;</span>) == <span class="number">1</span>);
+    words.insert(<span class="string">&quot;&quot;</span>); assert(words.matches(<span class="string">&quot;&quot;</span>) &amp;&amp; words.countPrefix(<span class="string">&quot;&quot;</span>) == <span class="number">2</span>);
+    assert(words.matches(<span class="string">&quot;...&quot;</span>) &amp;&amp; !words.matches(<span class="string">&quot;..&quot;</span>));
+    expectException&lt;invalid_argument&gt;([&amp;] { words.insert(<span class="string">&quot;ap!&quot;</span>); });
+    assert(words.countPrefix(<span class="string">&quot;&quot;</span>) == <span class="number">2</span>);
+    assert(words.eraseOne(<span class="string">&quot;&quot;</span>) &amp;&amp; !words.matches(<span class="string">&quot;&quot;</span>));
+    Trie basicWords; basicWords.insert(<span class="string">&quot;apple&quot;</span>);
+    assert(basicWords.startsWith(<span class="string">&quot;app&quot;</span>) &amp;&amp; !basicWords.search(<span class="string">&quot;app&quot;</span>));
+    basicWords.insert(<span class="string">&quot;app&quot;</span>); assert(basicWords.search(<span class="string">&quot;app&quot;</span>));
+    BinaryTrie32 binary;
+    assert(!binary.maxXor(<span class="number">0</span>));
+    binary.insert(<span class="number">0</span>); binary.insert(uint32_t(<span class="number">1</span>) &lt;&lt; <span class="number">31</span>);
+    assert(binary.maxXor(<span class="number">0</span>) == optional&lt;uint32_t&gt;(uint32_t(<span class="number">1</span>) &lt;&lt; <span class="number">31</span>));
+    binary.insert(UINT32_MAX); assert(binary.maxXor(<span class="number">0</span>) == optional&lt;uint32_t&gt;(UINT32_MAX));
+
+    FenwickZero zero(vector&lt;<span class="keyword">long</span> <span class="keyword">long</span>&gt;{});
+    assert(zero.rangeSum(<span class="number">0</span>,<span class="number">0</span>) == <span class="number">0</span>);
+    expectException&lt;out_of_range&gt;([&amp;] { zero.add(<span class="number">0</span>,<span class="number">1</span>); });
+    RangeAddFenwick noRange(<span class="number">0</span>); noRange.add(<span class="number">0</span>,<span class="number">0</span>,<span class="number">5</span>); assert(noRange.rangeSum(<span class="number">0</span>,<span class="number">0</span>) == <span class="number">0</span>);
+    LazyRangeSum noLazy(vector&lt;<span class="keyword">long</span> <span class="keyword">long</span>&gt;{}); noLazy.assign(<span class="number">0</span>,<span class="number">0</span>,<span class="number">2</span>);
+    assert(noLazy.sum(<span class="number">0</span>,<span class="number">0</span>) == <span class="number">0</span>);
+    MaxSubarrayTree noMax(vector&lt;<span class="keyword">int</span>&gt;{}); assert(!noMax.best(<span class="number">0</span>,<span class="number">0</span>));
+    SparseMinimum noMin(vector&lt;<span class="keyword">int</span>&gt;{}); assert(!noMin.minimum(<span class="number">0</span>,<span class="number">0</span>));
+    LazyRangeSum lazy({<span class="number">1</span>,<span class="number">2</span>,<span class="number">3</span>,<span class="number">4</span>});
+    lazy.add(<span class="number">0</span>,<span class="number">4</span>,<span class="number">3</span>); lazy.assign(<span class="number">1</span>,<span class="number">3</span>,<span class="number">0</span>); lazy.add(<span class="number">2</span>,<span class="number">4</span>,<span class="number">2</span>);
+    assert(lazy.sum(<span class="number">0</span>,<span class="number">4</span>) == <span class="number">15</span> &amp;&amp; lazy.sum(<span class="number">1</span>,<span class="number">3</span>) == <span class="number">2</span> &amp;&amp; lazy.sum(<span class="number">3</span>,<span class="number">4</span>) == <span class="number">9</span>);
+    lazy.assign(<span class="number">0</span>,<span class="number">4</span>,<span class="number">2</span>); lazy.add(<span class="number">0</span>,<span class="number">4</span>,<span class="number">3</span>); assert(lazy.sum(<span class="number">0</span>,<span class="number">4</span>) == <span class="number">20</span>);
+    lazy.add(<span class="number">0</span>,<span class="number">4</span>,<span class="number">3</span>); lazy.assign(<span class="number">0</span>,<span class="number">4</span>,<span class="number">2</span>); assert(lazy.sum(<span class="number">0</span>,<span class="number">4</span>) == <span class="number">8</span>);
+    assert(MaxSubarrayTree({-<span class="number">4</span>,-<span class="number">2</span>,-<span class="number">8</span>}).best(<span class="number">0</span>,<span class="number">3</span>) == optional&lt;<span class="keyword">long</span> <span class="keyword">long</span>&gt;(-<span class="number">2</span>));
+    assert(countSmallerRight({<span class="number">5</span>,<span class="number">2</span>,<span class="number">6</span>,<span class="number">1</span>}) == vector&lt;<span class="keyword">int</span>&gt;({<span class="number">2</span>,<span class="number">1</span>,<span class="number">1</span>,<span class="number">0</span>}));
+    assert(countSmallerRight({<span class="number">2</span>,<span class="number">2</span>,<span class="number">2</span>}) == vector&lt;<span class="keyword">int</span>&gt;({<span class="number">0</span>,<span class="number">0</span>,<span class="number">0</span>}));
+    FrequencyFenwick frequencies(<span class="number">4</span>);
+    frequencies.add(<span class="number">1</span>,<span class="number">2</span>); frequencies.add(<span class="number">3</span>,<span class="number">1</span>);
+    assert(!frequencies.kth(<span class="number">0</span>) &amp;&amp; !frequencies.kth(<span class="number">4</span>));
+    assert(frequencies.kth(<span class="number">1</span>) == optional&lt;<span class="keyword">int</span>&gt;(<span class="number">1</span>) &amp;&amp; frequencies.kth(<span class="number">2</span>) == optional&lt;<span class="keyword">int</span>&gt;(<span class="number">1</span>));
+    assert(frequencies.kth(<span class="number">3</span>) == optional&lt;<span class="keyword">int</span>&gt;(<span class="number">3</span>));
+    expectException&lt;invalid_argument&gt;([&amp;] { frequencies.add(<span class="number">1</span>,-<span class="number">3</span>); });
+    assert(frequencies.count() == <span class="number">3</span>);
+    FrequencyFenwick large(<span class="number">1</span>); large.add(<span class="number">0</span>,LLONG_MAX);
+    assert(large.kth(LLONG_MAX) == optional&lt;<span class="keyword">int</span>&gt;(<span class="number">0</span>));
+    expectException&lt;overflow_error&gt;([&amp;] { large.add(<span class="number">0</span>,<span class="number">1</span>); });
+    expectException&lt;invalid_argument&gt;([&amp;] { large.add(<span class="number">0</span>,LLONG_MIN); });
+    assert(large.count() == LLONG_MAX);
+
+    mt19937 rng(<span class="number">20260922</span>);
+    <span class="keyword">auto</span> randomWord = [&amp;]() {
+        string s; <span class="keyword">int</span> length = (<span class="keyword">int</span>)(rng()%<span class="number">5</span>);
+        <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; length; ++i) s.push_back(<span class="keyword">char</span>(&#x27;a&#x27;+rng()%<span class="number">3</span>));
+        <span class="keyword">return</span> s;
+    };
+    <span class="keyword">for</span> (<span class="keyword">int</span> trial = <span class="number">0</span>; trial &lt; <span class="number">80</span>; ++trial) {
+        <span class="keyword">int</span> n = <span class="number">1</span>+(<span class="keyword">int</span>)(rng()%<span class="number">8</span>);
+        CheckedDSU dsu(n); UnionFind basicDsu(n);
+        vector&lt;<span class="keyword">int</span>&gt; label(n); iota(label.begin(),label.end(),<span class="number">0</span>);
+        <span class="keyword">for</span> (<span class="keyword">int</span> step = <span class="number">0</span>; step &lt; <span class="number">40</span>; ++step) {
+            <span class="keyword">int</span> a = (<span class="keyword">int</span>)(rng()%n), b = (<span class="keyword">int</span>)(rng()%n);
+            <span class="keyword">bool</span> expected = label[a] != label[b];
+            assert(dsu.unite(a,b) == expected &amp;&amp; basicDsu.unite(a,b) == expected);
+            modelUnite(label,a,b);
+            assert(dsu.count() == modelGroups(label) &amp;&amp; basicDsu.count() == modelGroups(label));
+            <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; n; ++i) {
+                assert(dsu.componentSize(i) == count(label.begin(),label.end(),label[i]));
+                <span class="keyword">for</span> (<span class="keyword">int</span> j = <span class="number">0</span>; j &lt; n; ++j)
+                    assert(dsu.connected(i,j) == (label[i] == label[j]));
+            }
+        }
+        RollbackDSU history(n);
+        iota(label.begin(),label.end(),<span class="number">0</span>);
+        vector&lt;pair&lt;size_t,vector&lt;<span class="keyword">int</span>&gt;&gt;&gt; snapshots{{history.snapshot(),label}};
+        <span class="keyword">for</span> (<span class="keyword">int</span> step = <span class="number">0</span>; step &lt; <span class="number">50</span>; ++step) {
+            <span class="keyword">int</span> op = (<span class="keyword">int</span>)(rng()%<span class="number">4</span>);
+            <span class="keyword">if</span> (op == <span class="number">0</span>) snapshots.push_back({history.snapshot(),label});
+            <span class="keyword">else</span> <span class="keyword">if</span> (op == <span class="number">1</span>) {
+                size_t which = rng()%snapshots.size();
+                history.rollback(snapshots[which].first); label = snapshots[which].second;
+                snapshots.resize(which+<span class="number">1</span>);
+            } <span class="keyword">else</span> {
+                <span class="keyword">int</span> a = (<span class="keyword">int</span>)(rng()%n), b = (<span class="keyword">int</span>)(rng()%n);
+                assert(history.unite(a,b) == (label[a] != label[b]));
+                modelUnite(label,a,b);
+            }
+            assert(history.count() == modelGroups(label));
+            <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; n; ++i) {
+                assert(history.componentSize(i) == count(label.begin(),label.end(),label[i]));
+                <span class="keyword">for</span> (<span class="keyword">int</span> j = <span class="number">0</span>; j &lt; n; ++j)
+                    assert((history.find(i) == history.find(j)) == (label[i] == label[j]));
+            }
+        }
+        vector&lt;vector&lt;<span class="keyword">int</span>&gt;&gt; grid(<span class="number">3</span>,vector&lt;<span class="keyword">int</span>&gt;(<span class="number">4</span>,<span class="number">0</span>));
+        vector&lt;pair&lt;<span class="keyword">int</span>,<span class="keyword">int</span>&gt;&gt; positions; vector&lt;<span class="keyword">int</span>&gt; counts;
+        <span class="keyword">for</span> (<span class="keyword">int</span> step = <span class="number">0</span>; step &lt; <span class="number">20</span>; ++step) {
+            <span class="keyword">int</span> r = (<span class="keyword">int</span>)(rng()%<span class="number">3</span>), c = (<span class="keyword">int</span>)(rng()%<span class="number">4</span>);
+            positions.push_back({r,c}); grid[r][c] = <span class="number">1</span>; counts.push_back(countIslandsModel(grid));
+        }
+        assert(islandCountsAfterAdds(<span class="number">3</span>,<span class="number">4</span>,positions) == counts);
+
+        CountingTrie trie; unordered_map&lt;string,<span class="keyword">int</span>&gt; dictionary;
+        BinaryTrie32 xorTrie; vector&lt;uint32_t&gt; numbers;
+        <span class="keyword">for</span> (<span class="keyword">int</span> step = <span class="number">0</span>; step &lt; <span class="number">40</span>; ++step) {
+            string word = randomWord();
+            <span class="keyword">if</span> (rng()%<span class="number">2</span>) { trie.insert(word); ++dictionary[word]; }
+            <span class="keyword">else</span> {
+                <span class="keyword">bool</span> exists = dictionary[word] &gt; <span class="number">0</span>;
+                assert(trie.eraseOne(word) == exists);
+                <span class="keyword">if</span> (exists) --dictionary[word];
+            }
+            assert(trie.countWord(word) == dictionary[word]);
+            string prefix = word.substr(<span class="number">0</span>,word.size()/<span class="number">2</span>);
+            <span class="keyword">long</span> <span class="keyword">long</span> expectedPrefix = <span class="number">0</span>;
+            <span class="keyword">for</span> (<span class="keyword">const</span> <span class="keyword">auto</span>&amp; item : dictionary)
+                <span class="keyword">if</span> (item.first.compare(<span class="number">0</span>,prefix.size(),prefix) == <span class="number">0</span>) expectedPrefix += item.second;
+            assert(trie.countPrefix(prefix) == expectedPrefix);
+            string pattern = randomWord();
+            <span class="keyword">for</span> (<span class="keyword">char</span>&amp; c : pattern) <span class="keyword">if</span> (rng()%<span class="number">2</span>) c = &#x27;.&#x27;;
+            <span class="keyword">bool</span> expectedMatch = <span class="keyword">false</span>;
+            <span class="keyword">for</span> (<span class="keyword">const</span> <span class="keyword">auto</span>&amp; item : dictionary)
+                <span class="keyword">if</span> (item.second &gt; <span class="number">0</span> &amp;&amp; wordMatches(item.first,pattern)) expectedMatch = <span class="keyword">true</span>;
+            assert(trie.matches(pattern) == expectedMatch);
+            uint32_t x = (uint32_t)rng(); xorTrie.insert(x); numbers.push_back(x);
+            uint32_t query = (uint32_t)rng(), best = <span class="number">0</span>;
+            <span class="keyword">for</span> (uint32_t number : numbers) best = max(best,query^number);
+            assert(xorTrie.maxXor(query) == optional&lt;uint32_t&gt;(best));
+        }
+
+        vector&lt;<span class="keyword">long</span> <span class="keyword">long</span>&gt; values(n);
+        vector&lt;<span class="keyword">int</span>&gt; integerValues(n);
+        <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; n; ++i) values[i] = integerValues[i] = (<span class="keyword">int</span>)(rng()%<span class="number">21</span>)-<span class="number">10</span>;
+        FenwickZero fenwick(values); Fenwick basicFenwick(n);
+        <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; n; ++i) basicFenwick.add(i+<span class="number">1</span>,values[i]);
+        SegmentTree basicSegment(integerValues);
+        MaxSubarrayTree maxTree(integerValues);
+        SparseMinimum sparse(integerValues);
+        <span class="keyword">for</span> (<span class="keyword">int</span> l = <span class="number">0</span>; l &lt;= n; ++l) <span class="keyword">for</span> (<span class="keyword">int</span> r = l; r &lt;= n; ++r) {
+            optional&lt;<span class="keyword">int</span>&gt; want;
+            <span class="keyword">if</span> (l &lt; r) want = *min_element(integerValues.begin()+l,integerValues.begin()+r);
+            assert(sparse.minimum(l,r) == want);
+        }
+        RangeAddFenwick rangeTree(n); LazyRangeSum lazyTree(vector&lt;<span class="keyword">long</span> <span class="keyword">long</span>&gt;(n,<span class="number">0</span>));
+        vector&lt;<span class="keyword">long</span> <span class="keyword">long</span>&gt; rangeModel(n,<span class="number">0</span>);
+        FrequencyFenwick order(n); vector&lt;<span class="keyword">long</span> <span class="keyword">long</span>&gt; frequency(n,<span class="number">0</span>);
+        <span class="keyword">for</span> (<span class="keyword">int</span> step = <span class="number">0</span>; step &lt; <span class="number">40</span>; ++step) {
+            <span class="keyword">int</span> p = (<span class="keyword">int</span>)(rng()%n), value = (<span class="keyword">int</span>)(rng()%<span class="number">21</span>)-<span class="number">10</span>;
+            <span class="keyword">long</span> <span class="keyword">long</span> delta = value-values[p];
+            <span class="keyword">if</span> (rng()%<span class="number">2</span>) fenwick.setValue(p,value); <span class="keyword">else</span> fenwick.add(p,delta);
+            basicFenwick.add(p+<span class="number">1</span>,delta); basicSegment.setValue(p,value);
+            maxTree.setValue(p,value); values[p] = integerValues[p] = value;
+            <span class="keyword">int</span> l = (<span class="keyword">int</span>)(rng()%(n+<span class="number">1</span>)), r = (<span class="keyword">int</span>)(rng()%(n+<span class="number">1</span>));
+            <span class="keyword">if</span> (l &gt; r) swap(l,r);
+            <span class="keyword">long</span> <span class="keyword">long</span> change = (<span class="keyword">int</span>)(rng()%<span class="number">11</span>)-<span class="number">5</span>;
+            <span class="keyword">if</span> (rng()%<span class="number">2</span>) {
+                lazyTree.add(l,r,change); rangeTree.add(l,r,change);
+                <span class="keyword">for</span> (<span class="keyword">int</span> i = l; i &lt; r; ++i) rangeModel[i] += change;
+            } <span class="keyword">else</span> {
+                lazyTree.assign(l,r,change);
+                <span class="keyword">for</span> (<span class="keyword">int</span> i = l; i &lt; r; ++i) {
+                    rangeTree.add(i,i+<span class="number">1</span>,change-rangeModel[i]); rangeModel[i] = change;
+                }
+            }
+            <span class="keyword">for</span> (<span class="keyword">int</span> left = <span class="number">0</span>; left &lt;= n; ++left) <span class="keyword">for</span> (<span class="keyword">int</span> right = left; right &lt;= n; ++right) {
+                <span class="keyword">long</span> <span class="keyword">long</span> sum = accumulate(values.begin()+left,values.begin()+right,<span class="number">0LL</span>);
+                assert(fenwick.rangeSum(left,right) == sum &amp;&amp; basicSegment.query(left,right) == sum);
+                assert(basicFenwick.prefix(right)-basicFenwick.prefix(left) == sum);
+                assert(maxTree.best(left,right) == bruteBest(integerValues,left,right));
+                <span class="keyword">long</span> <span class="keyword">long</span> rangeSum = accumulate(rangeModel.begin()+left,rangeModel.begin()+right,<span class="number">0LL</span>);
+                assert(lazyTree.sum(left,right) == rangeSum &amp;&amp; rangeTree.rangeSum(left,right) == rangeSum);
+            }
+            <span class="keyword">int</span> index = (<span class="keyword">int</span>)(rng()%n);
+            <span class="keyword">long</span> <span class="keyword">long</span> amount = frequency[index] &gt; <span class="number">0</span> &amp;&amp; rng()%<span class="number">2</span> ? -<span class="number">1</span> : <span class="number">1</span>;
+            order.add(index,amount); frequency[index] += amount;
+            <span class="keyword">long</span> <span class="keyword">long</span> total = accumulate(frequency.begin(),frequency.end(),<span class="number">0LL</span>);
+            assert(order.count() == total &amp;&amp; !order.kth(<span class="number">0</span>) &amp;&amp; !order.kth(total+<span class="number">1</span>));
+            <span class="keyword">for</span> (<span class="keyword">long</span> <span class="keyword">long</span> k = <span class="number">1</span>; k &lt;= total; ++k) {
+                <span class="keyword">long</span> <span class="keyword">long</span> prefix = <span class="number">0</span>; <span class="keyword">int</span> expected = <span class="number">0</span>;
+                <span class="keyword">while</span> (prefix+frequency[expected] &lt; k) prefix += frequency[expected++];
+                assert(order.kth(k) == optional&lt;<span class="keyword">int</span>&gt;(expected));
+            }
+        }
+        <span class="keyword">auto</span> smaller = countSmallerRight(integerValues);
+        <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; n; ++i) {
+            <span class="keyword">int</span> expected = <span class="number">0</span>;
+            <span class="keyword">for</span> (<span class="keyword">int</span> j = i+<span class="number">1</span>; j &lt; n; ++j) expected += integerValues[j] &lt; integerValues[i];
+            assert(smaller[i] == expected);
+        }
+    }
+    cout &lt;&lt; <span class="string">&quot;advanced data structure checks passed\n&quot;</span>;
+}</code></pre></div></div></section><nav class="chapter-pager" aria-label="相邻章节"><a href="../12-动态规划/index.html"><small>上一章</small>← 动态规划</a><a href="../14-高频技巧与综合题型/index.html"><small>下一章</small>高频技巧与综合题型 →</a></nav><footer>秋招算法学习讲义 · C++17<br>例题编号供检索；难度与覆盖范围按学习顺序组织。</footer></main><aside class="toc" aria-label="本页目录"><p class="rail-label">本章小节</p><a href="#s1"><span>01</span>并查集：路径压缩与按大小合并</a><a href="#s2"><span>02</span>Trie：前缀与完整单词</a><a href="#s3"><span>03</span>树状数组：动态前缀和</a><a href="#s4"><span>04</span>线段树：可合并的区间信息</a><a href="#chapter-review"><span>练</span>综合例题与自测答案</a></aside></div><div class="toast" role="status" aria-live="polite"></div></body></html>

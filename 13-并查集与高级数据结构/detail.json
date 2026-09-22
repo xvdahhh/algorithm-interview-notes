@@ -1,0 +1,857 @@
+{
+  "intro": [
+    {
+      "type": "text",
+      "title": "先列操作清单，再选择数据结构",
+      "paragraphs": [
+        "这些结构解决的不是同一种“高级题”。并查集回答合并后的集合关系，Trie 利用字符串前缀共享路径，树状数组维护可累加的前缀信息，线段树保存可结合的区间摘要。选择前先问：数据是否会变、更新是增量还是赋值、查询是单点还是区间、是否必须在线、删除会不会拆分原结构。",
+        "本章按四类结构展开，基础模板保留，补充实现明确索引、空输入与失败语义。先掌握普通并查集、Trie 和单点更新，再按需要学习回滚、频率第 K 小、双树状数组和组合懒标记，不要求把所有变式背成一个万能模板。"
+      ]
+    },
+    {
+      "type": "table",
+      "title": "操作需求速查：哪些能力不是免费获得的",
+      "columns": [
+        "需求",
+        "优先结构",
+        "成本",
+        "限制"
+      ],
+      "rows": [
+        [
+          "只有加边的无向连通性",
+          "并查集",
+          "均摊 O(α(n))",
+          "不能直接删边拆分"
+        ],
+        [
+          "字符串前缀与词频",
+          "计数 Trie",
+          "O(L)",
+          "通配符可能遍历多个分支"
+        ],
+        [
+          "单点加、区间和",
+          "树状数组",
+          "O(log n)",
+          "任意区间 min 不能相减得到"
+        ],
+        [
+          "非负频率的第 K 小",
+          "树状数组倍增",
+          "O(log n)",
+          "前缀必须单调，不能允许负频率"
+        ],
+        [
+          "区间加、区间和",
+          "双树状数组或懒线段树",
+          "O(log n)",
+          "双树状数组依赖加法差分公式"
+        ],
+        [
+          "区间赋值与加、区间和",
+          "懒线段树",
+          "O(log n)",
+          "标记合成次序必须正确"
+        ],
+        [
+          "静态区间最小值",
+          "稀疏表",
+          "预处理 O(n log n)，查询 O(1)",
+          "不支持廉价动态修改；重叠查询依赖幂等性"
+        ]
+      ],
+      "paragraphs": []
+    },
+    {
+      "type": "text",
+      "title": "代码契约与验证范围",
+      "paragraphs": [
+        "除基础模板特别约定外，补充数组接口对外统一使用 0 下标和半开区间 [l,r)，内部树状数组仍使用 1 下标。空区间和为 0；最小值、最大子数组等无空结果的查询用 optional 表示无答案。字符串 Trie 只接受小写 a-z，二进制 Trie 使用 uint32_t，避免有符号右移语义混淆。",
+        "示例通常不修改调用者输入；内部结构会随操作更新。所有 long long 加法、差值、节点总和、懒标记与长度乘积必须处于表示范围内，代码不是任意精度整数库。小规模随机与定向测试只覆盖有限输入，不替代这些前提。当前环境尚未发现 C++ 编译器，后续将区分页面验证与尚未运行的 C++ 测试源码。"
+      ]
+    }
+  ],
+  "sections": {
+    "1": {
+      "before": [
+        {
+          "type": "text",
+          "title": "1.1 根节点是代表，不是图上的真正父亲",
+          "paragraphs": [
+            "并查集的 parent 描述集合森林，不是原图的路径。find(x) 返回代表元；同根表示连通，不同根表示尚未连通。把一条原图边加入结构时，连接的是两个集合的根，而不是把任意一个端点的 parent 改掉，否则可能只挪走一个子树并破坏集合。",
+            "路径压缩可把沿路所有节点直接连到根，因为它只改变集合内部表示，不改变哪些节点属于同一集合。size 只在根上有权威含义，非根遗留的 size 不能当作整个集合大小。代表元依赖合并顺序，不一定是最小编号；若业务需要最小值，应作为额外聚合信息合并。"
+          ]
+        },
+        {
+          "type": "table",
+          "title": "1.2 五个节点手推：只有成功合并才减少分量数",
+          "columns": [
+            "操作",
+            "是否合并",
+            "分量数",
+            "集合大小查询"
+          ],
+          "rows": [
+            [
+              "初始化 0..4",
+              "—",
+              "5",
+              "每个集合为 1"
+            ],
+            [
+              "unite(0,1)",
+              "true",
+              "4",
+              "size(0)=size(1)=2"
+            ],
+            [
+              "unite(1,2)",
+              "true",
+              "3",
+              "0、1、2 同组，大小 3"
+            ],
+            [
+              "unite(0,2)",
+              "false",
+              "3",
+              "不能再次累计大小"
+            ],
+            [
+              "unite(3,4)",
+              "true",
+              "2",
+              "3、4 同组，大小 2"
+            ]
+          ],
+          "paragraphs": []
+        },
+        {
+          "type": "table",
+          "title": "1.3 普通压缩与回滚版本的设计取舍",
+          "columns": [
+            "项目",
+            "普通并查集",
+            "可回滚并查集"
+          ],
+          "rows": [
+            [
+              "find",
+              "可以路径压缩",
+              "不压缩，避免查询修改大量父指针"
+            ],
+            [
+              "unite",
+              "按大小 / 秩合并",
+              "按大小合并，记录被改的字段"
+            ],
+            [
+              "复杂度",
+              "两优化合用，均摊 α(n)",
+              "树高 O(log n)，查找 / 合并 O(log n)"
+            ],
+            [
+              "恢复历史",
+              "默认不支持",
+              "按日志逆序撤销到有效快照"
+            ],
+            [
+              "删除边",
+              "不能直接处理",
+              "结合离线时间区间，不是随便 undo 某条边"
+            ]
+          ],
+          "paragraphs": []
+        },
+        {
+          "type": "text",
+          "title": "1.4 删除、离线与回滚的边界",
+          "paragraphs": [
+            "只增边时，连通关系只会合并；删除一条边却可能把集合拆成两块，普通并查集没有保存足够的替代路径信息。若操作可离线，纯删边有时可倒序转成加边；加删混合时，可把每条边的有效时间段放入时间线段树，DFS 进入节点时合并、退出时回滚。",
+            "回滚日志恢复的是最近一段状态变化，不能撤销任意历史边又保留依赖它的后续合并。按大小合并且不压缩时，每次深度增加意味着所属集合至少翻倍，故树高 O(log n)；不能再宣称它与带路径压缩版本一样均摊 α(n)。"
+          ]
+        }
+      ],
+      "after": [
+        {
+          "type": "code",
+          "title": "1.5 带集合大小与边界检查的迭代并查集",
+          "file": "detail-dsu-checked.cpp",
+          "code": "class CheckedDSU {\n    vector<int> parent, size;\n    int groups = 0;\n    void check(int x) const {\n        if (x < 0 || x >= (int)parent.size()) throw out_of_range(\"vertex\");\n    }\npublic:\n    explicit CheckedDSU(int n) {\n        if (n < 0) throw invalid_argument(\"n\");\n        parent.resize(n); size.assign(n,1); groups = n;\n        iota(parent.begin(),parent.end(),0);\n    }\n    int find(int x) {\n        check(x);\n        int root = x;\n        while (parent[root] != root) root = parent[root];\n        while (parent[x] != x) {\n            int next = parent[x]; parent[x] = root; x = next;\n        }\n        return root;\n    }\n    bool unite(int a, int b) {\n        check(a); check(b);\n        a = find(a); b = find(b);\n        if (a == b) return false;\n        if (size[a] < size[b]) swap(a,b);\n        parent[b] = a; size[a] += size[b]; --groups;\n        return true;\n    }\n    bool connected(int a, int b) { check(a); check(b); return find(a) == find(b); }\n    int componentSize(int x) { return size[find(x)]; }\n    int count() const { return groups; }\n};",
+          "paragraphs": [
+            "空集合 count=0，非法节点抛异常。find 也会压缩路径，因此不是 const 只读操作；结构不提供线程安全保证。初始化 O(n)，m 次合法操作 O(m·α(n))，空间 O(n)。"
+          ]
+        },
+        {
+          "type": "code",
+          "title": "1.6 动态添加陆地：重复添加不能重复计数",
+          "file": "detail-online-islands.cpp",
+          "code": "vector<int> islandCountsAfterAdds(int rows, int cols,\n                                 const vector<pair<int,int>>& positions) {\n    if (rows < 0 || cols < 0 || (long long)rows*cols > 1000000)\n        throw invalid_argument(\"grid size\");\n    for (auto [r,c] : positions)\n        if (r < 0 || r >= rows || c < 0 || c >= cols) throw out_of_range(\"cell\");\n    int n = rows*cols;\n    vector<int> parent(n,-1), size(n,1), answer;\n    auto find = [&](int x) {\n        while (parent[x] != x) {\n            parent[x] = parent[parent[x]]; x = parent[x];\n        }\n        return x;\n    };\n    int count = 0;\n    const int dr[] = {-1,1,0,0}, dc[] = {0,0,-1,1};\n    for (auto [r,c] : positions) {\n        int id = r*cols+c;\n        if (parent[id] == -1) {\n            parent[id] = id; ++count;\n            for (int k = 0; k < 4; ++k) {\n                int nr = r+dr[k], nc = c+dc[k];\n                if (nr < 0 || nr >= rows || nc < 0 || nc >= cols) continue;\n                int other = nr*cols+nc;\n                if (parent[other] == -1) continue;\n                int a = find(id), b = find(other);\n                if (a == b) continue;\n                if (size[a] < size[b]) swap(a,b);\n                parent[b] = a; size[a] += size[b]; --count;\n            }\n        }\n        answer.push_back(count);\n    }\n    return answer;\n}",
+          "paragraphs": [
+            "内部 −1 表示尚未激活的水格，不能把所有格子一开始都算作岛屿。每次只检查四邻居：同一岛屿可能从两个方向接触新格子，必须只在不同根时减一。初始化 O(RC)，q 次添加 O(q·α(RC))，空间 O(RC+q)。格子数上限是教学资源限制；超大稀疏网格可用坐标映射。"
+          ]
+        },
+        {
+          "type": "code",
+          "title": "1.7 可回滚并查集：快照是日志位置",
+          "file": "detail-rollback-dsu.cpp",
+          "code": "class RollbackDSU {\n    struct Change { int child, root, oldSize; };\n    vector<int> parent, size;\n    vector<Change> history;\n    int groups = 0;\n    void check(int x) const {\n        if (x < 0 || x >= (int)parent.size()) throw out_of_range(\"vertex\");\n    }\npublic:\n    explicit RollbackDSU(int n) {\n        if (n < 0) throw invalid_argument(\"n\");\n        parent.resize(n); size.assign(n,1); groups = n;\n        iota(parent.begin(),parent.end(),0);\n    }\n    int find(int x) const {\n        check(x);\n        while (x != parent[x]) x = parent[x];\n        return x;\n    }\n    size_t snapshot() const { return history.size(); }\n    bool unite(int a, int b) {\n        a = find(a); b = find(b);\n        if (a == b) return false;\n        if (size[a] < size[b]) swap(a,b);\n        history.push_back({b,a,size[a]});\n        parent[b] = a; size[a] += size[b]; --groups;\n        return true;\n    }\n    void rollback(size_t snap) {\n        if (snap > history.size()) throw out_of_range(\"snapshot\");\n        while (history.size() > snap) {\n            auto change = history.back(); history.pop_back();\n            parent[change.child] = change.child;\n            size[change.root] = change.oldSize; ++groups;\n        }\n    }\n    int count() const { return groups; }\n    int componentSize(int x) const { return size[find(x)]; }\n};",
+          "paragraphs": [
+            "同根合并不写日志，因此 snapshot 不是操作次数。只能回到当前历史链上的有效快照；已被回滚丢弃的分支快照不可重用，数字检查不能识别这种语义错误。撤销 k 个成功合并 O(k)，find / unite 最坏 O(log n)，空间 O(n)，当前日志至多 n−1 项。"
+          ]
+        }
+      ],
+      "answers": [
+        {
+          "question": "为什么合并前必须先 find？",
+          "answer": [
+            "只有根代表整个集合。直接令 parent[a]=b 可能把 a 所在集合的一部分搬走，而其他节点仍指向旧根。find 后连接两个根，才保证整个集合合并，且不会误连出父指针环。"
+          ]
+        },
+        {
+          "question": "路径压缩与按大小合并各解决什么？",
+          "answer": [
+            "按大小合并限制新形成树的深度，压缩利用查询把已有长路径变短。两者结合得到反阿克曼函数均摊界，不是每一次操作严格 O(1)。按秩中的秩在压缩后也不等于真实高度，不能随手重新计算它。"
+          ]
+        },
+        {
+          "question": "如何维护集合最小值、总和或大小？",
+          "answer": [
+            "把这些信息放在根上，每次成功合并时合并两个根的聚合值；查询时先找根。根编号本身不承担业务含义，路径压缩后也无需重算集合聚合值，因为集合成员没有改变。"
+          ]
+        },
+        {
+          "question": "冗余连接为何可用并查集，有向图也可以吗？",
+          "answer": [
+            "无向边的两端如果已经连通，新边加上已有路径就构成环。对有向图，忽略方向的连通不代表存在返回路径，例如 0→1、0→2、1→2 是 DAG。一般有向判环要用三色 DFS 或拓扑排序，不能直接套此条件。"
+          ]
+        },
+        {
+          "question": "等式与不等式约束为什么通常要分两轮？",
+          "answer": [
+            "先把全部等式合并，再检查每个不等式两端是否同根。若边读边只检查当前不等式，后面的等式可能让此前不同组的节点连起来，从而漏掉矛盾。相等传递可合并，不等关系不能直接合成一个“不同集合”。"
+          ]
+        },
+        {
+          "question": "回滚为什么不做路径压缩？",
+          "answer": [
+            "压缩会在每次 find 时改写沿途多个 parent，若要回滚都得额外记录，且复杂度分析更复杂。标准回滚模板用按大小合并控制高度，让一次成功 unite 只改固定几个字段，逆序恢复即可。"
+          ]
+        },
+        {
+          "question": "动态岛屿里一个格子接到同一个岛两次怎么办？",
+          "answer": [
+            "四邻接可能属于同一个集合。每次先 find，只有根不同才真正合并并减少岛数。重复添加已有陆地直接返回当前数量，不能增加岛数再依靠邻接合并修补。"
+          ]
+        }
+      ]
+    },
+    "2": {
+      "before": [
+        {
+          "type": "text",
+          "title": "2.1 路径存在、单词结束、出现次数是三层语义",
+          "paragraphs": [
+            "插入 apple 只保证 a、ap、app 等路径存在，不表示 app 是完整单词。布尔 terminal 足以表示集合；若要支持同一个词插入多次并逐次删除，就需要终点计数 end，以及经过每个节点的词频 pass。",
+            "本节计数 Trie 的 pass[u] 表示以根到 u 的字符串为前缀的当前单词总次数，重复词重复计算；end[u] 表示恰好等于该字符串的次数。根也参与 pass，表示所有词的总次数，根的 end 则统计空字符串。"
+          ]
+        },
+        {
+          "type": "table",
+          "title": "2.2 插入 apple 两次、app 一次后的计数",
+          "columns": [
+            "路径",
+            "pass",
+            "end",
+            "含义"
+          ],
+          "rows": [
+            [
+              "空前缀 / 根",
+              "3",
+              "0",
+              "所有单词共 3 次"
+            ],
+            [
+              "app",
+              "3",
+              "1",
+              "三个词拥有该前缀，但完整 app 只有一次"
+            ],
+            [
+              "apple",
+              "2",
+              "2",
+              "完整 apple 两次"
+            ],
+            [
+              "删除一次 apple 后的 app",
+              "2",
+              "1",
+              "仍有 app 和一份 apple"
+            ],
+            [
+              "再次删 apple 后的 apple",
+              "0",
+              "0",
+              "节点可保留，但逻辑上已没有该前缀"
+            ]
+          ],
+          "paragraphs": []
+        },
+        {
+          "type": "table",
+          "title": "2.3 字符树和二进制树的相同结构、不同目标",
+          "columns": [
+            "结构",
+            "每层决策",
+            "终止信息",
+            "代价"
+          ],
+          "rows": [
+            [
+              "26 路单词 Trie",
+              "下一个小写字母",
+              "end 判断完整单词",
+              "O(L)，节点常数空间较大"
+            ],
+            [
+              "通配符查询",
+              "普通字符一个孩子，点号所有有效孩子",
+              "必须刚好匹配到词尾",
+              "最坏访问大量前缀节点"
+            ],
+            [
+              "32 位二进制 Trie",
+              "当前位 0 / 1",
+              "固定 32 层即可",
+              "每次插入 / 查询 O(32)"
+            ],
+            [
+              "大字符集 Trie",
+              "映射字符到孩子",
+              "与字符编码模型一致",
+              "哈希平均查询；不再是固定 26 路"
+            ]
+          ],
+          "paragraphs": []
+        },
+        {
+          "type": "text",
+          "title": "2.4 vector 扩容陷阱与逻辑删除",
+          "paragraphs": [
+            "不要写 Node& node=nodes[u] 后调用 nodes.emplace_back() 再使用 node，因为扩容可能让引用失效。保存整数下标，扩容完成后重新用 nodes[u] 访问即可。也不要让 int& child 指向数组元素并跨越扩容。",
+            "删除一个词前先确认终点 end>0，再沿整条路径减少计数。共享前缀仍被别的词使用，不能整条删掉。下面保留历史节点不回收，空间取决于历史累计创建的不同前缀，而不是当前仍存在的词数；查询必须看计数，不能只看 next 是否存在。"
+          ]
+        }
+      ],
+      "after": [
+        {
+          "type": "code",
+          "title": "2.5 计数 Trie：重复插入、删除一次、前缀统计与通配符",
+          "file": "detail-counting-trie.cpp",
+          "code": "class CountingTrie {\n    struct Node {\n        array<int,26> next;\n        long long pass = 0, end = 0;\n        Node() { next.fill(-1); }\n    };\n    vector<Node> nodes{Node{}};\n    static void validate(const string& s, bool wildcard = false) {\n        for (char c : s)\n            if (!(c >= 'a' && c <= 'z') && !(wildcard && c == '.'))\n                throw invalid_argument(\"lowercase a-z, or dot in pattern\");\n    }\n    int walk(const string& s) const {\n        int u = 0;\n        for (char c : s) {\n            u = nodes[u].next[c-'a'];\n            if (u == -1) return -1;\n        }\n        return u;\n    }\npublic:\n    void insert(const string& word) {\n        validate(word);\n        if (nodes[0].pass == LLONG_MAX) throw overflow_error(\"word count\");\n        vector<int> path{0}; int u = 0;\n        for (char c : word) {\n            int k = c-'a';\n            if (nodes[u].next[k] == -1) {\n                int v = (int)nodes.size(); nodes.emplace_back();\n                nodes[u].next[k] = v;\n            }\n            u = nodes[u].next[k]; path.push_back(u);\n        }\n        for (int v : path) ++nodes[v].pass;\n        ++nodes[u].end;\n    }\n    long long countWord(const string& word) const {\n        validate(word); int u = walk(word);\n        return u == -1 ? 0 : nodes[u].end;\n    }\n    long long countPrefix(const string& prefix) const {\n        validate(prefix); int u = walk(prefix);\n        return u == -1 ? 0 : nodes[u].pass;\n    }\n    bool eraseOne(const string& word) {\n        validate(word);\n        int u = walk(word);\n        if (u == -1 || nodes[u].end == 0) return false;\n        --nodes[u].end;\n        u = 0; --nodes[u].pass;\n        for (char c : word) { u = nodes[u].next[c-'a']; --nodes[u].pass; }\n        return true;\n    }\n    bool matches(const string& pattern) const {\n        validate(pattern,true);\n        vector<pair<int,size_t>> stack{{0,0}};\n        while (!stack.empty()) {\n            auto [u,pos] = stack.back(); stack.pop_back();\n            if (nodes[u].pass == 0) continue;\n            if (pos == pattern.size()) {\n                if (nodes[u].end > 0) return true;\n                continue;\n            }\n            if (pattern[pos] == '.') {\n                for (int v : nodes[u].next)\n                    if (v != -1 && nodes[v].pass > 0) stack.push_back({v,pos+1});\n            } else {\n                int v = nodes[u].next[pattern[pos]-'a'];\n                if (v != -1) stack.push_back({v,pos+1});\n            }\n        }\n        return false;\n    }\n};",
+          "paragraphs": [
+            "词和前缀接口严格验证整个输入后再操作，不因中途找不到路径而忽略后面的非法字符。空词合法，matches(\"\") 只匹配已插入的空词；点号恰匹配一个字母，不是任意长度。普通操作 O(L)，insert 的路径缓存 O(L)；通配符最坏访问可达前缀子树，不能写成总是 O(L)。节点总数须可用 int 表示，未提供内存耗尽时的事务保证。"
+          ]
+        },
+        {
+          "type": "code",
+          "title": "2.6 二进制 Trie：最高位优先最大化异或值",
+          "file": "detail-binary-trie.cpp",
+          "code": "class BinaryTrie32 {\n    struct Node { array<int,2> next{{-1,-1}}; };\n    vector<Node> nodes{Node{}};\n    bool nonempty = false;\npublic:\n    void insert(uint32_t x) {\n        int u = 0;\n        for (int bit = 31; bit >= 0; --bit) {\n            int b = (x >> bit) & 1U;\n            if (nodes[u].next[b] == -1) {\n                int v = (int)nodes.size(); nodes.emplace_back();\n                nodes[u].next[b] = v;\n            }\n            u = nodes[u].next[b];\n        }\n        nonempty = true;\n    }\n    optional<uint32_t> maxXor(uint32_t x) const {\n        if (!nonempty) return nullopt;\n        int u = 0; uint32_t answer = 0;\n        for (int bit = 31; bit >= 0; --bit) {\n            int b = (x >> bit) & 1U;\n            if (nodes[u].next[b^1] != -1) {\n                answer |= uint32_t(1) << bit; u = nodes[u].next[b^1];\n            } else u = nodes[u].next[b];\n        }\n        return answer;\n    }\n};",
+          "paragraphs": [
+            "返回 x 与已插入数的最大无符号异或值，不是对应元素本身。高位的 1 大于全部低位可能贡献之和，因此能选相反位就优先选；所有路径固定 32 位，包括前导零。空树返回 nullopt，重复插入不影响最大值，本接口不支持删除。空间 O(32n)，操作 O(32)。"
+          ]
+        }
+      ],
+      "answers": [
+        {
+          "question": "前缀 app 存在为何不等于单词 app 存在？",
+          "answer": [
+            "存在 apple 的路径就会有 app 节点，但只有在 app 节点标记终点或 end>0，才表示词典确实包含 app。前缀查询与完整词查询是两个接口，不能复用同一个判断条件。"
+          ]
+        },
+        {
+          "question": "计数 Trie 删除一个不存在的词会怎样？",
+          "answer": [
+            "应返回 false，且任何 pass、end 都不变。必须先走到完整词终点并确认 end>0，再做减少；不能边走边减，走到一半才发现不存在，否则会破坏其他词的前缀计数。"
+          ]
+        },
+        {
+          "question": "空字符串和空前缀如何定义？",
+          "answer": [
+            "空词对应根的 end，只有插入过才存在。计数接口 countPrefix(\"\") 返回所有当前单词次数；如果词典为空则为 0。基础 startsWith(\"\") 仅问根路径是否存在，通常仍为 true；两者语义不同，需按接口说明使用。"
+          ]
+        },
+        {
+          "question": "为什么有 k 个点号不能简单声明 O(L)？",
+          "answer": [
+            "一个点号可能扩展到 26 个孩子，多个点号可能产生大量分支。上界受 26^k、模式长度和实际已创建前缀数共同限制，通常表述为访问到的节点数乘固定字符集常数。实际只有少量有效分支时才会快。"
+          ]
+        },
+        {
+          "question": "Trie 查询一定比哈希表查完整单词更好吗？",
+          "answer": [
+            "不一定。哈希表也常能平均 O(L) 处理一个词，且空间常数可能更小。Trie 的优势是共享前缀、逐字符过滤、前缀计数和通配分支等结构性操作；固定 26 路数组在前缀稀疏时会浪费大量空指针槽。"
+          ]
+        },
+        {
+          "question": "最大异或为什么必须先看高位？",
+          "answer": [
+            "无符号数的第 b 位贡献是 2^b，而所有更低位的最大总和只有 2^b−1；只要能在当前位获得 1，就不该为低位机会牺牲它。这是严格的位权支配论证，不是随意局部选择。"
+          ]
+        },
+        {
+          "question": "删除后节点不释放，会导致查询错误吗？",
+          "answer": [
+            "只要查询依据 pass/end 的当前计数而非仅依据旧路径存在，就不会误认已删除词。但内存不会随删除下降，长期动态词典若需回收，应维护空子树并谨慎复用节点；共享前缀不能被误删。"
+          ]
+        }
+      ]
+    },
+    "3": {
+      "before": [
+        {
+          "type": "text",
+          "title": "3.1 lowbit 不是魔法，它给出节点覆盖的长度",
+          "paragraphs": [
+            "正整数 i 的 lowbit(i)=i&(-i)，保留最低的一个 1。内部节点 bit[i] 表示原数组的一基闭区间 [i−lowbit(i)+1,i] 的和。查询不断减 lowbit，将一个前缀拆成互不重叠的块；更新不断加 lowbit，沿包含该单点的祖先块传播。",
+            "例如 i=12（二进制 1100）时 lowbit=4，负责 [9,12]；i=8 负责 [1,8]。0 没有最低置位，lowbit(0)=0，所以更新从 0 出发不会推进。补充接口将外部 p 转成 p+1，避免让调用者记两种下标。"
+          ]
+        },
+        {
+          "type": "table",
+          "title": "3.2 查询与更新走不同的链",
+          "columns": [
+            "操作",
+            "内部下标链（n=16）",
+            "管理区间 / 含义"
+          ],
+          "rows": [
+            [
+              "prefix(13)",
+              "13→12→8→0",
+              "[13,13]、[9,12]、[1,8]，不重不漏"
+            ],
+            [
+              "给外部下标 4 加值",
+              "5→6→8→16",
+              "覆盖第 5 项的祖先块"
+            ],
+            [
+              "外部 query [2,5)",
+              "prefix(5)−prefix(2)",
+              "查询第 3、4、5 项"
+            ],
+            [
+              "prefix(0)",
+              "不进循环，返回 0",
+              "合法空前缀，不同于 add(0) 内部死循环"
+            ]
+          ],
+          "paragraphs": []
+        },
+        {
+          "type": "table",
+          "title": "3.3 区间加、区间和的双树公式",
+          "columns": [
+            "量",
+            "定义",
+            "用途"
+          ],
+          "rows": [
+            [
+              "D[i]",
+              "一基差分 A[i]−A[i−1]",
+              "区间加变成差分两点更新"
+            ],
+            [
+              "B1 前缀",
+              "Σ D[i]",
+              "恢复某个位置的值"
+            ],
+            [
+              "B2 前缀",
+              "Σ (i−1)D[i]",
+              "补偿不同差分的累计次数"
+            ],
+            [
+              "前 x 项和",
+              "Σ(x−i+1)D[i]=x·sum(B1,x)−sum(B2,x)",
+              "两次树状前缀得到区间累计"
+            ],
+            [
+              "外部 [l,r) 加 v",
+              "D[l+1]+=v；若 r<n，D[r+1]−=v",
+              "右端点自身不在更新区间"
+            ]
+          ],
+          "paragraphs": []
+        },
+        {
+          "type": "text",
+          "title": "3.4 离散化与第 K 小，各自依赖什么？",
+          "paragraphs": [
+            "排序去重后用排名替代原值，保留大小关系与相等关系，但不保留数值距离。扫描数组右侧已插入的频率，查询 rank(x) 之前的前缀，就得到严格小于 x 的数量；查询到 rank(x) 则会错误包含相等值。",
+            "频率非负时，累计频率单调，第 K 小可看成最小下标 p，使 prefix(p+1)≥K。用二分外加前缀查询是 O(log²n)，直接沿 Fenwick 节点倍增查找可到 O(log n)。若频率允许负数，累计值不单调，这种查找不再有保证。"
+          ]
+        }
+      ],
+      "after": [
+        {
+          "type": "code",
+          "title": "3.5 零基接口与 O(n) 建树：更新增量和赋值都明确",
+          "file": "detail-fenwick-zero.cpp",
+          "code": "class FenwickZero {\n    int n;\n    vector<long long> bit;\npublic:\n    explicit FenwickZero(const vector<long long>& a): n((int)a.size()) {\n        if (a.size() > 1000000) throw invalid_argument(\"size limit\");\n        bit.assign(n+1,0);\n        for (int i = 1; i <= n; ++i) {\n            bit[i] += a[i-1];\n            int parent = i+(i&-i);\n            if (parent <= n) bit[parent] += bit[i];\n        }\n    }\n    void add(int p, long long delta) {\n        if (p < 0 || p >= n) throw out_of_range(\"index\");\n        for (int i = p+1; i <= n; i += i&-i) bit[i] += delta;\n    }\n    long long prefix(int r) const {\n        if (r < 0 || r > n) throw out_of_range(\"prefix\");\n        long long result = 0;\n        for (int i = r; i > 0; i -= i&-i) result += bit[i];\n        return result;\n    }\n    long long rangeSum(int l, int r) const {\n        if (l < 0 || r < l || r > n) throw out_of_range(\"range\");\n        return prefix(r)-prefix(l);\n    }\n    void setValue(int p, long long value) {\n        if (p < 0 || p >= n) throw out_of_range(\"index\");\n        add(p,value-rangeSum(p,p+1));\n    }\n};",
+          "paragraphs": [
+            "prefix(r) 是 [0,r) 的和，rangeSum(l,r) 是 [l,r)，空树仅能查询 [0,0)。线性建树先收集当前块，再向唯一父块传播，节点只处理一次。add、setValue、查询 O(log(n+1))；setValue 用新值减当前值，不能把新值直接当 delta。所有中间和与差须在 long long 范围内。"
+          ]
+        },
+        {
+          "type": "code",
+          "title": "3.6 离散化统计右侧严格较小元素",
+          "file": "detail-count-smaller.cpp",
+          "code": "vector<int> countSmallerRight(const vector<int>& a) {\n    if (a.size() > 1000000) throw invalid_argument(\"size limit\");\n    vector<int> values = a;\n    sort(values.begin(),values.end());\n    values.erase(unique(values.begin(),values.end()),values.end());\n    vector<int> bit(values.size()+1), answer(a.size());\n    for (int i = (int)a.size()-1; i >= 0; --i) {\n        int rank = (int)(lower_bound(values.begin(),values.end(),a[i])-values.begin())+1;\n        int count = 0;\n        for (int j = rank-1; j > 0; j -= j&-j) count += bit[j];\n        answer[i] = count;\n        for (int j = rank; j < (int)bit.size(); j += j&-j) ++bit[j];\n    }\n    return answer;\n}",
+          "paragraphs": [
+            "先查询再插入当前元素；从右往左扫描保证树里恰好是当前位置右侧的元素。相同值映射为同一排名，不会计为严格逆序。结果之和就是逆序对数量，求和必须用 long long，最多可到 n(n−1)/2。时间 O(n log(n+1))，空间 O(n)。"
+          ]
+        },
+        {
+          "type": "code",
+          "title": "3.7 双树状数组：区间加与区间和",
+          "file": "detail-range-fenwick.cpp",
+          "code": "class RangeAddFenwick {\n    int n;\n    vector<long long> first, second;\n    void addBit(vector<long long>& bit, int p, long long delta) {\n        for (int i = p; i <= n; i += i&-i) bit[i] += delta;\n    }\n    long long sumBit(const vector<long long>& bit, int p) const {\n        long long sum = 0;\n        for (int i = p; i > 0; i -= i&-i) sum += bit[i];\n        return sum;\n    }\n    void difference(int p, long long delta) {\n        if (p > n) return;\n        addBit(first,p,delta); addBit(second,p,delta*(p-1));\n    }\n    void check(int l, int r) const {\n        if (l < 0 || r < l || r > n) throw out_of_range(\"range\");\n    }\npublic:\n    explicit RangeAddFenwick(int size): n(size) {\n        if (n < 0 || n > 1000000) throw invalid_argument(\"size\");\n        first.assign(n+1,0); second.assign(n+1,0);\n    }\n    void add(int l, int r, long long delta) {\n        check(l,r); if (l == r) return;\n        difference(l+1,delta); difference(r+1,-delta);\n    }\n    long long prefix(int r) const {\n        check(0,r);\n        return (long long)r*sumBit(first,r)-sumBit(second,r);\n    }\n    long long rangeSum(int l, int r) const {\n        check(l,r); return prefix(r)-prefix(l);\n    }\n};",
+          "paragraphs": [
+            "初始全零，半开区间。若需要从给定数组初始化，可逐项 add(i,i+1,a[i])，花 O(n log n)。常规区间更新与查询 O(log(n+1))，空间 O(n)。负增量合法，但 −delta、delta·(p−1)、所有树内和及前缀公式的中间值均须可由 long long 表示；它不是区间赋值接口。"
+          ]
+        },
+        {
+          "type": "code",
+          "title": "3.8 频率树状数组第 K 小：利用块和做倍增",
+          "file": "detail-fenwick-order.cpp",
+          "code": "class FrequencyFenwick {\n    int n;\n    vector<long long> bit, frequency;\n    long long total = 0;\npublic:\n    explicit FrequencyFenwick(int size): n(size) {\n        if (n < 0 || n > 1000000) throw invalid_argument(\"size\");\n        bit.assign(n+1,0); frequency.assign(n,0);\n    }\n    void add(int p, long long delta) {\n        if (p < 0 || p >= n) throw out_of_range(\"index\");\n        if (delta < 0 && delta < -frequency[p]) throw invalid_argument(\"negative frequency\");\n        if (delta > 0 && total > LLONG_MAX-delta) throw overflow_error(\"total\");\n        frequency[p] += delta; total += delta;\n        for (int i = p+1; i <= n; i += i&-i) bit[i] += delta;\n    }\n    optional<int> kth(long long k) const {\n        if (k < 1 || k > total) return nullopt;\n        int index = 0, step = 1;\n        while (step <= n/2) step *= 2;\n        for (; step > 0; step /= 2) {\n            int next = index+step;\n            if (next <= n && bit[next] < k) {\n                index = next; k -= bit[next];\n            }\n        }\n        return index; // 已跳过 index 项，下一个一基位置对应零基 index\n    }\n    long long count() const { return total; }\n};",
+          "paragraphs": [
+            "k 从 1 开始，返回零基位置而非第几个不同值。例如频率 [0,2,0,1] 的第 1、2 小都在位置 1，第 3 小在位置 3。非法 k 返回 nullopt；删除频率不可减到负数，异常发生前不修改状态。查询、更新 O(log(n+1))，空间 O(n)。"
+          ]
+        }
+      ],
+      "answers": [
+        {
+          "question": "普通前缀和为什么不适合频繁修改？",
+          "answer": [
+            "修改 a[p] 后，所有终点大于 p 的前缀都改变，显式前缀数组可能要更新 O(n) 项。树状数组只维护按二进制分块的摘要，一次修改影响 O(log n) 个块；查询也用 O(log n) 个块拼起来。"
+          ]
+        },
+        {
+          "question": "树状数组能否直接把加法换成 min，仍做任意区间查询？",
+          "answer": [
+            "不能用 prefixMin(r)−prefixMin(l) 得到区间最小值，min 没有这种可逆性。某些单调更新的前缀 min 可以用专门 Fenwick 变式，但不等于支持任意赋值和任意区间 min；通常改用线段树。"
+          ]
+        },
+        {
+          "question": "离散化是否保留两点之间的真实距离？",
+          "answer": [
+            "不保留。10、1000、1001 可能变成排名 1、2、3，排名差相等而真实差不同。排名适合顺序、频率和比较；若计算坐标长度、面积或带权间隔，应另外保留原始坐标。"
+          ]
+        },
+        {
+          "question": "逆序对为何查询 rank−1，而不是 rank？",
+          "answer": [
+            "定义是严格大于或严格小于，相等不算逆序。右向左扫描时，prefix(rank−1) 只统计右侧更小值；prefix(rank) 会把相等值也算进去。重复元素多的用例最容易暴露这个错误。"
+          ]
+        },
+        {
+          "question": "双树状数组的第二棵树为什么乘 i−1？",
+          "answer": [
+            "一个差分 D[i] 会出现在前 x 项总和里的第 i 到 x 项，共 x−i+1 次。展开成 x·D[i]−(i−1)·D[i] 后，就需要分别累计 D[i] 和 (i−1)D[i]。公式来自累加次数，不能只记两个数组名称。"
+          ]
+        },
+        {
+          "question": "第 K 小为什么需要非负频率？",
+          "answer": [
+            "非负频率使前缀累计单调，可以根据一整块和判断目标在块内还是块后。负频率会造成跨过阈值后又跌回去，二分和倍增的排除判断失效。结构因此禁止减成负频率，不是任意数值前缀树都支持 kth。"
+          ]
+        },
+        {
+          "question": "赋值操作为什么不能直接 add(p,newValue)？",
+          "answer": [
+            "add 的语义是增量，直接传新值会在旧值上再次累加。应算 delta=newValue−oldValue，然后更新；oldValue 可从保存的原数组读取，或用单点区间和得到。"
+          ]
+        }
+      ]
+    },
+    "4": {
+      "before": [
+        {
+          "type": "text",
+          "title": "4.1 线段树存的是能合并的区间摘要",
+          "paragraphs": [
+            "父区间由左区间和右区间组成，要求摘要有一个结合的合并操作：merge(merge(A,B),C)=merge(A,merge(B,C))。加法、最小值、最大值满足；字符串拼接也满足结合律，但不满足交换律，因此左右顺序不能颠倒。",
+            "空区间需要正确的单位元：和为 0，最小值可用正无穷或显式空值，字符串为空串。最大非空子数组不能直接用 0 当所有摘要的初值，否则全负区间会被错误地允许选空段。后面的实现用 empty 标记隔离空摘要。"
+          ]
+        },
+        {
+          "type": "table",
+          "title": "4.2 最大子数组区间摘要：一个 best 不够",
+          "columns": [
+            "字段",
+            "含义",
+            "左右合并公式"
+          ],
+          "rows": [
+            [
+              "sum",
+              "整个区间的总和",
+              "L.sum+R.sum"
+            ],
+            [
+              "prefix",
+              "从区间左端开始的最大非空前缀和",
+              "max(L.prefix,L.sum+R.prefix)"
+            ],
+            [
+              "suffix",
+              "到区间右端结束的最大非空后缀和",
+              "max(R.suffix,R.sum+L.suffix)"
+            ],
+            [
+              "best",
+              "区间内任意非空子数组最大和",
+              "max(L.best,R.best,L.suffix+R.prefix)"
+            ]
+          ],
+          "paragraphs": [
+            "跨中点的最优段必须由左后缀加右前缀组成；仅保存左右各自 best 无法计算跨界结果。这与第九章的分治摘要一致，只是现在把它组织成支持更新和查询的树。"
+          ]
+        },
+        {
+          "type": "text",
+          "title": "4.3 懒标记是延迟通知孩子，不是延迟更新本节点",
+          "paragraphs": [
+            "一个完全覆盖的区间加 d，当前节点 sum 立即增加 d·len，同时记下对孩子尚未执行的增量。不继续下探，才把一段很多元素的修改压成 O(log n) 个块。部分覆盖查询或更新前，先把标记按正确次序传给孩子，再继续递归。",
+            "若误以为 sum 也要等下传才更新，整段查询会返回旧值；若 sum 已更新却在下传时又重复加到父节点，会双重计数。下传只修改孩子并清空父标记，父节点 sum 本来已经正确。"
+          ]
+        },
+        {
+          "type": "table",
+          "title": "4.4 标记顺序：先做旧操作，再做新操作",
+          "columns": [
+            "旧待办",
+            "新操作",
+            "合成结果",
+            "原因"
+          ],
+          "rows": [
+            [
+              "加 a",
+              "加 b",
+              "加 a+b",
+              "增量累加"
+            ],
+            [
+              "赋值 a",
+              "加 b",
+              "赋值 a+b",
+              "先覆盖，再平移"
+            ],
+            [
+              "加 a",
+              "赋值 b",
+              "赋值 b",
+              "新赋值覆盖旧增量"
+            ],
+            [
+              "赋值 a",
+              "赋值 b",
+              "赋值 b",
+              "只需最后的值"
+            ],
+            [
+              "无标记",
+              "赋值 0",
+              "必须保留“有赋值”布尔位",
+              "0 是合法新值，不是无标记"
+            ]
+          ],
+          "paragraphs": []
+        },
+        {
+          "type": "text",
+          "title": "4.5 静态查询与稀疏表",
+          "paragraphs": [
+            "如果数组建好后从不修改，而且操作是 min/max/gcd 这样的幂等运算，稀疏表可预处理长度为 2 的幂的区间。任意查询取左右两块，块可以重叠，因为 min(x,x)=x；这样查询是 O(1)。",
+            "求和不具幂等性，重叠会重复计数，不能照抄“两块 O(1)”公式。静态区间和直接前缀和更简单；有修改需求则重新选择 Fenwick 或线段树，不要把预处理结构伪装成动态结构。"
+          ]
+        }
+      ],
+      "after": [
+        {
+          "type": "code",
+          "title": "4.6 区间赋值、区间加、区间和：明确合成标记",
+          "file": "detail-lazy-segment.cpp",
+          "code": "class LazyRangeSum {\n    struct Node {\n        long long sum = 0, setValue = 0, addValue = 0;\n        bool hasSet = false;\n    };\n    int n;\n    vector<Node> tree;\n    void pull(int p) { tree[p].sum = tree[p*2].sum+tree[p*2+1].sum; }\n    void applySet(int p, int len, long long value) {\n        tree[p].sum = value*len;\n        tree[p].hasSet = true; tree[p].setValue = value; tree[p].addValue = 0;\n    }\n    void applyAdd(int p, int len, long long delta) {\n        tree[p].sum += delta*len;\n        if (tree[p].hasSet) tree[p].setValue += delta;\n        else tree[p].addValue += delta;\n    }\n    void push(int p, int l, int r) {\n        if (r-l == 1) return;\n        int mid = l+(r-l)/2;\n        if (tree[p].hasSet) {\n            applySet(p*2,mid-l,tree[p].setValue);\n            applySet(p*2+1,r-mid,tree[p].setValue);\n            tree[p].hasSet = false;\n        }\n        if (tree[p].addValue != 0) {\n            applyAdd(p*2,mid-l,tree[p].addValue);\n            applyAdd(p*2+1,r-mid,tree[p].addValue);\n            tree[p].addValue = 0;\n        }\n    }\n    void build(int p, int l, int r, const vector<long long>& a) {\n        if (r-l == 1) { tree[p].sum = a[l]; return; }\n        int mid = l+(r-l)/2;\n        build(p*2,l,mid,a); build(p*2+1,mid,r,a); pull(p);\n    }\n    void update(int p, int l, int r, int ql, int qr, long long x, bool assign) {\n        if (ql <= l && r <= qr) {\n            if (assign) applySet(p,r-l,x); else applyAdd(p,r-l,x);\n            return;\n        }\n        push(p,l,r); int mid = l+(r-l)/2;\n        if (ql < mid) update(p*2,l,mid,ql,qr,x,assign);\n        if (qr > mid) update(p*2+1,mid,r,ql,qr,x,assign);\n        pull(p);\n    }\n    long long query(int p, int l, int r, int ql, int qr) {\n        if (ql <= l && r <= qr) return tree[p].sum;\n        push(p,l,r); int mid = l+(r-l)/2; long long answer = 0;\n        if (ql < mid) answer += query(p*2,l,mid,ql,qr);\n        if (qr > mid) answer += query(p*2+1,mid,r,ql,qr);\n        return answer;\n    }\n    void check(int l, int r) const {\n        if (l < 0 || r < l || r > n) throw out_of_range(\"range\");\n    }\npublic:\n    explicit LazyRangeSum(const vector<long long>& a): n((int)a.size()) {\n        if (a.size() > 1000000) throw invalid_argument(\"size limit\");\n        tree.resize(max(1,4*n));\n        if (n) build(1,0,n,a);\n    }\n    void add(int l, int r, long long delta) {\n        check(l,r); if (l < r) update(1,0,n,l,r,delta,false);\n    }\n    void assign(int l, int r, long long value) {\n        check(l,r); if (l < r) update(1,0,n,l,r,value,true);\n    }\n    long long sum(int l, int r) {\n        check(l,r); return l == r ? 0 : query(1,0,n,l,r);\n    }\n};",
+          "paragraphs": [
+            "所有范围为 [l,r)，空范围更新无事发生，查询为 0。查询可能下传标记，虽然不改逻辑数组，也会修改内部表示，所以 sum 不是 const。建树 O(n)，更新/查询 O(log(n+1))，空间 O(n)，递归深度 O(log n)。调用者需保证节点和、标记累加与乘长度都不溢出。"
+          ]
+        },
+        {
+          "type": "code",
+          "title": "4.7 非交换摘要：动态区间最大非空子数组和",
+          "file": "detail-max-subarray-tree.cpp",
+          "code": "class MaxSubarrayTree {\n    struct Info {\n        bool empty = true;\n        long long sum = 0, prefix = 0, suffix = 0, best = 0;\n    };\n    int n, base = 1;\n    vector<Info> tree;\n    static Info single(long long x) { return {false,x,x,x,x}; }\n    static Info merge(const Info& left, const Info& right) {\n        if (left.empty) return right;\n        if (right.empty) return left;\n        return {false,left.sum+right.sum,\n            max(left.prefix,left.sum+right.prefix),\n            max(right.suffix,right.sum+left.suffix),\n            max({left.best,right.best,left.suffix+right.prefix})};\n    }\npublic:\n    explicit MaxSubarrayTree(const vector<int>& a): n((int)a.size()) {\n        if (a.size() > 1000000) throw invalid_argument(\"size limit\");\n        while (base < n) base *= 2;\n        tree.resize(2*base);\n        for (int i = 0; i < n; ++i) tree[base+i] = single(a[i]);\n        for (int p = base-1; p > 0; --p) tree[p] = merge(tree[p*2],tree[p*2+1]);\n    }\n    void setValue(int index, int value) {\n        if (index < 0 || index >= n) throw out_of_range(\"index\");\n        int p = base+index; tree[p] = single(value);\n        for (p /= 2; p > 0; p /= 2) tree[p] = merge(tree[p*2],tree[p*2+1]);\n    }\n    optional<long long> best(int l, int r) const {\n        if (l < 0 || r < l || r > n) throw out_of_range(\"range\");\n        Info left, right;\n        for (l += base,r += base; l < r; l /= 2,r /= 2) {\n            if (l&1) left = merge(left,tree[l++]);\n            if (r&1) right = merge(tree[--r],right);\n        }\n        Info result = merge(left,right);\n        if (result.empty) return nullopt;\n        return result.best;\n    }\n};",
+          "paragraphs": [
+            "左侧答案向右追加，右侧答案向左追加，最后 left 接 right。若都写成向后追加，会打乱区间顺序，虽然 sum 可能相同，前缀、后缀与跨界 best 却会错误。空区间返回 nullopt，全负区间返回最大负数。int 元素、n≤10^6 下 long long 摘要安全。建树 O(n)，操作 O(log(n+1))，空间 O(n)。"
+          ]
+        },
+        {
+          "type": "code",
+          "title": "4.8 静态 RMQ：稀疏表的重叠块为什么合法",
+          "file": "detail-sparse-min.cpp",
+          "code": "class SparseMinimum {\n    int n;\n    vector<int> logs;\n    vector<vector<int>> table;\npublic:\n    explicit SparseMinimum(const vector<int>& a): n((int)a.size()) {\n        if (a.size() > 1000000) throw invalid_argument(\"size limit\");\n        logs.assign(n+1,0);\n        for (int i = 2; i <= n; ++i) logs[i] = logs[i/2]+1;\n        if (!n) return;\n        table.push_back(a);\n        for (int k = 1; k <= logs[n]; ++k) {\n            int length = 1 << k, half = length/2;\n            table.push_back(vector<int>(n-length+1));\n            for (int i = 0; i+length <= n; ++i)\n                table[k][i] = min(table[k-1][i],table[k-1][i+half]);\n        }\n    }\n    optional<int> minimum(int l, int r) const {\n        if (l < 0 || r < l || r > n) throw out_of_range(\"range\");\n        if (l == r) return nullopt;\n        int k = logs[r-l], length = 1 << k;\n        return min(table[k][l],table[k][r-length]);\n    }\n};",
+          "paragraphs": [
+            "只支持静态数组，没有更新接口。查询半开区间，空区间返回 nullopt；无需浮点 log2，避免幂边界误差。两个 2^k 长度区间覆盖查询且允许重叠，min 的幂等性保证重复元素不影响结果。预处理 O(n log(n+1))，空间同阶，查询 O(1)。"
+          ]
+        }
+      ],
+      "answers": [
+        {
+          "question": "线段树只要求结合律，为什么查询还要关心左右顺序？",
+          "answer": [
+            "结合律只允许改变括号，不允许交换元素。例如字符串 ab 与 cd 拼接不能随意变成 cdab。迭代查询从右边取出的块是从右向左出现，所以应前插到 right；左侧取出的块则后接到 left。"
+          ]
+        },
+        {
+          "question": "区间加 d 为什么 sum 加 d×长度，而不是只加 d？",
+          "answer": [
+            "节点代表 len 个元素，每个都加 d，总和变化就是 d·len。若维护的是 max/min，整段统一加 d 才是摘要直接加 d；更新规则由摘要语义决定，不能通用套一行。"
+          ]
+        },
+        {
+          "question": "为什么赋值标记不能用 0 表示没有？",
+          "answer": [
+            "赋成 0 是完全合法的操作。如果把 setValue==0 当无标记，后续部分查询就读到尚未清零的孩子。必须额外用 hasSet，或用 optional 等方式区分“无赋值”与“赋成零”。"
+          ]
+        },
+        {
+          "question": "先加 3 再赋值 2，与先赋值 2 再加 3 一样吗？",
+          "answer": [
+            "不一样，前者最终全是 2，后者全是 5。新赋值覆盖旧加法；新加法则要叠到旧赋值后面。懒标记是函数复合，顺序是旧操作先执行、新操作后执行。"
+          ]
+        },
+        {
+          "question": "做部分更新前忘了 push，会出什么错？",
+          "answer": [
+            "父节点可能已经逻辑上给整段赋值，但孩子仍保存旧数据。直接进入孩子局部修改，再 pull 父节点，会把未下传的整段更新丢掉。只有完整覆盖时可以直接改父节点，不触碰孩子。"
+          ]
+        },
+        {
+          "question": "最大子数组摘要为什么不能只保存 best？",
+          "answer": [
+            "跨左右边界的最优子数组需要知道左边能提供的最大后缀与右边最大前缀，而它们可能不是各自内部 best。sum 又用于合成更大前缀和后缀。四项共同构成对外足够的信息。"
+          ]
+        },
+        {
+          "question": "稀疏表为何能重叠查询 min，却不能用同一方式求和？",
+          "answer": [
+            "min、max、gcd 对重复输入幂等，重叠部分算两次也不改变结果；sum 重复会多计。比如 3 个数用两个长度 2 的块求和，中间元素被加两次。静态和用前缀和，不能盲目替换运算符。"
+          ]
+        }
+      ]
+    }
+  },
+  "outro": [
+    {
+      "type": "table",
+      "title": "练习路线：先实现基本接口，再按操作组合升级",
+      "columns": [
+        "阶段",
+        "经典题 / 任务",
+        "核心考点",
+        "应补的边界"
+      ],
+      "rows": [
+        [
+          "集合",
+          "547、684、990、305",
+          "同根跳过、聚合根信息、激活",
+          "重复边、自环、重复加点"
+        ],
+        [
+          "字符串",
+          "208、211、212、421",
+          "终点计数、共享前缀、分支、位权",
+          "空词、重复词、删除、最高位"
+        ],
+        [
+          "前缀",
+          "307、315、493（扩展）",
+          "增量、离散化、严格大小关系",
+          "重复值、负值、空范围"
+        ],
+        [
+          "频率与区间",
+          "动态第 K 小、区间加和",
+          "单调频率、差分推导",
+          "k=0、总数不足、边界 r=n"
+        ],
+        [
+          "摘要与懒标记",
+          "动态最大子段、区间赋值/加和",
+          "左右顺序、操作复合",
+          "全负、赋零、交错嵌套更新"
+        ]
+      ],
+      "paragraphs": []
+    },
+    {
+      "type": "text",
+      "title": "结构选择的口述练习",
+      "paragraphs": [
+        "若只有静态区间和，前缀和已经 O(1) 查询，无需线段树；如果有单点加和区间和，Fenwick 简洁；若出现任意区间赋值、区间最值或复杂摘要，再考虑线段树。若查询的是字符串前缀或连通性，问题就不属于区间树范畴。",
+        "每个接口都明确：下标范围、区间是闭还是半开、空输入是否允许、错误输入是否修改状态、计算用多宽的整数。尤其当同一章混用基础一基 Fenwick 与补充零基接口时，不要只复制调用代码而忽略契约。"
+      ]
+    },
+    {
+      "type": "qa",
+      "title": "章末自测：四个跨结构问题",
+      "items": [
+        {
+          "question": "回滚并查集与可持久化数据结构有什么区别？",
+          "answer": [
+            "回滚是沿当前修改栈撤销，通常按 DFS 顺序访问历史；可持久化允许多个版本同时存在并查询。这里的日志快照不是一个永久不可变版本对象，已丢弃分支的数字不能继续充当有效历史。"
+          ]
+        },
+        {
+          "question": "在数据结构里缓存摘要，怎样知道信息够不够？",
+          "answer": [
+            "尝试只用两个子区间摘要推导父区间结果，并检查所有可能跨界的情况。最大子数组的跨界答案需要左后缀和右前缀，所以只有 best 不够。若无法由摘要得出更新后的结果，也可能不能直接支持懒更新。"
+          ]
+        },
+        {
+          "question": "为何同一份随机操作必须与朴素模型逐步比较？",
+          "answer": [
+            "只比较最后一次结果可能让中间错误相互抵消。应在每次加、赋值、删除或回滚后，比较连通性、词频或全部小范围查询；再用定向用例覆盖赋值为零、重复元素、过期节点和非法 k。"
+          ]
+        },
+        {
+          "question": "算法复杂度中的平均、均摊和最坏能否互换？",
+          "answer": [
+            "不能。并查集 α(n) 是整段操作序列的均摊界；哈希通常说平均复杂度；回滚并查集按大小但不压缩可给单次 O(log n) 最坏界。Trie 通配符还依赖分支数。应写出所用实现和假设，而不是一律称近似常数。"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "code",
+      "title": "综合测试：逐操作朴素模型与定向边界",
+      "file": "detail-structure-tests.cpp",
+      "code": "#include \"detail-dsu-checked.cpp\"\n#include \"detail-online-islands.cpp\"\n#include \"detail-rollback-dsu.cpp\"\n#include \"detail-counting-trie.cpp\"\n#include \"detail-binary-trie.cpp\"\n#include \"detail-fenwick-zero.cpp\"\n#include \"detail-count-smaller.cpp\"\n#include \"detail-range-fenwick.cpp\"\n#include \"detail-fenwick-order.cpp\"\n#include \"detail-lazy-segment.cpp\"\n#include \"detail-max-subarray-tree.cpp\"\n#include \"detail-sparse-min.cpp\"\n#include \"01.cpp\"\n#include \"02.cpp\"\n#include \"03.cpp\"\n#include \"04.cpp\"\n\nvoid modelUnite(vector<int>& label, int a, int b) {\n    int old = label[b], replacement = label[a];\n    for (int& x : label) if (x == old) x = replacement;\n}\nint modelGroups(const vector<int>& label) {\n    return (int)unordered_set<int>(label.begin(),label.end()).size();\n}\nint countIslandsModel(const vector<vector<int>>& grid) {\n    int rows = (int)grid.size(), cols = (int)grid[0].size(), count = 0;\n    vector<vector<char>> seen(rows,vector<char>(cols,false));\n    const int dr[] = {-1,1,0,0}, dc[] = {0,0,-1,1};\n    for (int r = 0; r < rows; ++r) for (int c = 0; c < cols; ++c) {\n        if (!grid[r][c] || seen[r][c]) continue;\n        ++count; queue<pair<int,int>> q; q.push({r,c}); seen[r][c] = true;\n        while (!q.empty()) {\n            auto [x,y] = q.front(); q.pop();\n            for (int k = 0; k < 4; ++k) {\n                int nx = x+dr[k], ny = y+dc[k];\n                if (nx < 0 || nx >= rows || ny < 0 || ny >= cols) continue;\n                if (grid[nx][ny] && !seen[nx][ny]) { seen[nx][ny] = true; q.push({nx,ny}); }\n            }\n        }\n    }\n    return count;\n}\nbool wordMatches(const string& word, const string& pattern) {\n    if (word.size() != pattern.size()) return false;\n    for (size_t i = 0; i < word.size(); ++i)\n        if (pattern[i] != '.' && pattern[i] != word[i]) return false;\n    return true;\n}\noptional<long long> bruteBest(const vector<int>& a, int l, int r) {\n    if (l == r) return nullopt;\n    long long best = LLONG_MIN;\n    for (int i = l; i < r; ++i) {\n        long long sum = 0;\n        for (int j = i; j < r; ++j) { sum += a[j]; best = max(best,sum); }\n    }\n    return best;\n}\ntemplate<class Exception, class F> void expectException(F action) {\n    bool caught = false;\n    try { action(); } catch (const Exception&) { caught = true; }\n    assert(caught);\n}\nint main() {\n    assert(CheckedDSU(0).count() == 0 && RollbackDSU(0).count() == 0);\n    expectException<invalid_argument>([] { CheckedDSU bad(-1); });\n    CheckedDSU isolated(2);\n    expectException<out_of_range>([&] { isolated.unite(0,2); });\n    assert(isolated.count() == 2);\n    RollbackDSU rollback(3);\n    auto empty = rollback.snapshot();\n    rollback.unite(0,1); auto middle = rollback.snapshot();\n    assert(!rollback.unite(0,1) && rollback.snapshot() == middle);\n    rollback.unite(1,2); rollback.rollback(middle);\n    assert(rollback.count() == 2 && rollback.find(0) != rollback.find(2));\n    rollback.rollback(empty); assert(rollback.count() == 3);\n    expectException<out_of_range>([&] { rollback.rollback(1); });\n    assert(islandCountsAfterAdds(2,2,{{0,0},{0,1},{1,0},{1,1},{1,1}}) ==\n           vector<int>({1,1,1,1,1}));\n    assert(islandCountsAfterAdds(0,0,{}).empty());\n\n    CountingTrie words;\n    words.insert(\"apple\"); words.insert(\"apple\"); words.insert(\"app\");\n    assert(words.countPrefix(\"app\") == 3 && words.countWord(\"app\") == 1);\n    assert(words.eraseOne(\"apple\") && words.countWord(\"apple\") == 1);\n    assert(words.eraseOne(\"apple\") && !words.matches(\"a....\"));\n    assert(!words.eraseOne(\"apple\") && words.countPrefix(\"app\") == 1);\n    words.insert(\"\"); assert(words.matches(\"\") && words.countPrefix(\"\") == 2);\n    assert(words.matches(\"...\") && !words.matches(\"..\"));\n    expectException<invalid_argument>([&] { words.insert(\"ap!\"); });\n    assert(words.countPrefix(\"\") == 2);\n    assert(words.eraseOne(\"\") && !words.matches(\"\"));\n    Trie basicWords; basicWords.insert(\"apple\");\n    assert(basicWords.startsWith(\"app\") && !basicWords.search(\"app\"));\n    basicWords.insert(\"app\"); assert(basicWords.search(\"app\"));\n    BinaryTrie32 binary;\n    assert(!binary.maxXor(0));\n    binary.insert(0); binary.insert(uint32_t(1) << 31);\n    assert(binary.maxXor(0) == optional<uint32_t>(uint32_t(1) << 31));\n    binary.insert(UINT32_MAX); assert(binary.maxXor(0) == optional<uint32_t>(UINT32_MAX));\n\n    FenwickZero zero(vector<long long>{});\n    assert(zero.rangeSum(0,0) == 0);\n    expectException<out_of_range>([&] { zero.add(0,1); });\n    RangeAddFenwick noRange(0); noRange.add(0,0,5); assert(noRange.rangeSum(0,0) == 0);\n    LazyRangeSum noLazy(vector<long long>{}); noLazy.assign(0,0,2);\n    assert(noLazy.sum(0,0) == 0);\n    MaxSubarrayTree noMax(vector<int>{}); assert(!noMax.best(0,0));\n    SparseMinimum noMin(vector<int>{}); assert(!noMin.minimum(0,0));\n    LazyRangeSum lazy({1,2,3,4});\n    lazy.add(0,4,3); lazy.assign(1,3,0); lazy.add(2,4,2);\n    assert(lazy.sum(0,4) == 15 && lazy.sum(1,3) == 2 && lazy.sum(3,4) == 9);\n    lazy.assign(0,4,2); lazy.add(0,4,3); assert(lazy.sum(0,4) == 20);\n    lazy.add(0,4,3); lazy.assign(0,4,2); assert(lazy.sum(0,4) == 8);\n    assert(MaxSubarrayTree({-4,-2,-8}).best(0,3) == optional<long long>(-2));\n    assert(countSmallerRight({5,2,6,1}) == vector<int>({2,1,1,0}));\n    assert(countSmallerRight({2,2,2}) == vector<int>({0,0,0}));\n    FrequencyFenwick frequencies(4);\n    frequencies.add(1,2); frequencies.add(3,1);\n    assert(!frequencies.kth(0) && !frequencies.kth(4));\n    assert(frequencies.kth(1) == optional<int>(1) && frequencies.kth(2) == optional<int>(1));\n    assert(frequencies.kth(3) == optional<int>(3));\n    expectException<invalid_argument>([&] { frequencies.add(1,-3); });\n    assert(frequencies.count() == 3);\n    FrequencyFenwick large(1); large.add(0,LLONG_MAX);\n    assert(large.kth(LLONG_MAX) == optional<int>(0));\n    expectException<overflow_error>([&] { large.add(0,1); });\n    expectException<invalid_argument>([&] { large.add(0,LLONG_MIN); });\n    assert(large.count() == LLONG_MAX);\n\n    mt19937 rng(20260922);\n    auto randomWord = [&]() {\n        string s; int length = (int)(rng()%5);\n        for (int i = 0; i < length; ++i) s.push_back(char('a'+rng()%3));\n        return s;\n    };\n    for (int trial = 0; trial < 80; ++trial) {\n        int n = 1+(int)(rng()%8);\n        CheckedDSU dsu(n); UnionFind basicDsu(n);\n        vector<int> label(n); iota(label.begin(),label.end(),0);\n        for (int step = 0; step < 40; ++step) {\n            int a = (int)(rng()%n), b = (int)(rng()%n);\n            bool expected = label[a] != label[b];\n            assert(dsu.unite(a,b) == expected && basicDsu.unite(a,b) == expected);\n            modelUnite(label,a,b);\n            assert(dsu.count() == modelGroups(label) && basicDsu.count() == modelGroups(label));\n            for (int i = 0; i < n; ++i) {\n                assert(dsu.componentSize(i) == count(label.begin(),label.end(),label[i]));\n                for (int j = 0; j < n; ++j)\n                    assert(dsu.connected(i,j) == (label[i] == label[j]));\n            }\n        }\n        RollbackDSU history(n);\n        iota(label.begin(),label.end(),0);\n        vector<pair<size_t,vector<int>>> snapshots{{history.snapshot(),label}};\n        for (int step = 0; step < 50; ++step) {\n            int op = (int)(rng()%4);\n            if (op == 0) snapshots.push_back({history.snapshot(),label});\n            else if (op == 1) {\n                size_t which = rng()%snapshots.size();\n                history.rollback(snapshots[which].first); label = snapshots[which].second;\n                snapshots.resize(which+1);\n            } else {\n                int a = (int)(rng()%n), b = (int)(rng()%n);\n                assert(history.unite(a,b) == (label[a] != label[b]));\n                modelUnite(label,a,b);\n            }\n            assert(history.count() == modelGroups(label));\n            for (int i = 0; i < n; ++i) {\n                assert(history.componentSize(i) == count(label.begin(),label.end(),label[i]));\n                for (int j = 0; j < n; ++j)\n                    assert((history.find(i) == history.find(j)) == (label[i] == label[j]));\n            }\n        }\n        vector<vector<int>> grid(3,vector<int>(4,0));\n        vector<pair<int,int>> positions; vector<int> counts;\n        for (int step = 0; step < 20; ++step) {\n            int r = (int)(rng()%3), c = (int)(rng()%4);\n            positions.push_back({r,c}); grid[r][c] = 1; counts.push_back(countIslandsModel(grid));\n        }\n        assert(islandCountsAfterAdds(3,4,positions) == counts);\n\n        CountingTrie trie; unordered_map<string,int> dictionary;\n        BinaryTrie32 xorTrie; vector<uint32_t> numbers;\n        for (int step = 0; step < 40; ++step) {\n            string word = randomWord();\n            if (rng()%2) { trie.insert(word); ++dictionary[word]; }\n            else {\n                bool exists = dictionary[word] > 0;\n                assert(trie.eraseOne(word) == exists);\n                if (exists) --dictionary[word];\n            }\n            assert(trie.countWord(word) == dictionary[word]);\n            string prefix = word.substr(0,word.size()/2);\n            long long expectedPrefix = 0;\n            for (const auto& item : dictionary)\n                if (item.first.compare(0,prefix.size(),prefix) == 0) expectedPrefix += item.second;\n            assert(trie.countPrefix(prefix) == expectedPrefix);\n            string pattern = randomWord();\n            for (char& c : pattern) if (rng()%2) c = '.';\n            bool expectedMatch = false;\n            for (const auto& item : dictionary)\n                if (item.second > 0 && wordMatches(item.first,pattern)) expectedMatch = true;\n            assert(trie.matches(pattern) == expectedMatch);\n            uint32_t x = (uint32_t)rng(); xorTrie.insert(x); numbers.push_back(x);\n            uint32_t query = (uint32_t)rng(), best = 0;\n            for (uint32_t number : numbers) best = max(best,query^number);\n            assert(xorTrie.maxXor(query) == optional<uint32_t>(best));\n        }\n\n        vector<long long> values(n);\n        vector<int> integerValues(n);\n        for (int i = 0; i < n; ++i) values[i] = integerValues[i] = (int)(rng()%21)-10;\n        FenwickZero fenwick(values); Fenwick basicFenwick(n);\n        for (int i = 0; i < n; ++i) basicFenwick.add(i+1,values[i]);\n        SegmentTree basicSegment(integerValues);\n        MaxSubarrayTree maxTree(integerValues);\n        SparseMinimum sparse(integerValues);\n        for (int l = 0; l <= n; ++l) for (int r = l; r <= n; ++r) {\n            optional<int> want;\n            if (l < r) want = *min_element(integerValues.begin()+l,integerValues.begin()+r);\n            assert(sparse.minimum(l,r) == want);\n        }\n        RangeAddFenwick rangeTree(n); LazyRangeSum lazyTree(vector<long long>(n,0));\n        vector<long long> rangeModel(n,0);\n        FrequencyFenwick order(n); vector<long long> frequency(n,0);\n        for (int step = 0; step < 40; ++step) {\n            int p = (int)(rng()%n), value = (int)(rng()%21)-10;\n            long long delta = value-values[p];\n            if (rng()%2) fenwick.setValue(p,value); else fenwick.add(p,delta);\n            basicFenwick.add(p+1,delta); basicSegment.setValue(p,value);\n            maxTree.setValue(p,value); values[p] = integerValues[p] = value;\n            int l = (int)(rng()%(n+1)), r = (int)(rng()%(n+1));\n            if (l > r) swap(l,r);\n            long long change = (int)(rng()%11)-5;\n            if (rng()%2) {\n                lazyTree.add(l,r,change); rangeTree.add(l,r,change);\n                for (int i = l; i < r; ++i) rangeModel[i] += change;\n            } else {\n                lazyTree.assign(l,r,change);\n                for (int i = l; i < r; ++i) {\n                    rangeTree.add(i,i+1,change-rangeModel[i]); rangeModel[i] = change;\n                }\n            }\n            for (int left = 0; left <= n; ++left) for (int right = left; right <= n; ++right) {\n                long long sum = accumulate(values.begin()+left,values.begin()+right,0LL);\n                assert(fenwick.rangeSum(left,right) == sum && basicSegment.query(left,right) == sum);\n                assert(basicFenwick.prefix(right)-basicFenwick.prefix(left) == sum);\n                assert(maxTree.best(left,right) == bruteBest(integerValues,left,right));\n                long long rangeSum = accumulate(rangeModel.begin()+left,rangeModel.begin()+right,0LL);\n                assert(lazyTree.sum(left,right) == rangeSum && rangeTree.rangeSum(left,right) == rangeSum);\n            }\n            int index = (int)(rng()%n);\n            long long amount = frequency[index] > 0 && rng()%2 ? -1 : 1;\n            order.add(index,amount); frequency[index] += amount;\n            long long total = accumulate(frequency.begin(),frequency.end(),0LL);\n            assert(order.count() == total && !order.kth(0) && !order.kth(total+1));\n            for (long long k = 1; k <= total; ++k) {\n                long long prefix = 0; int expected = 0;\n                while (prefix+frequency[expected] < k) prefix += frequency[expected++];\n                assert(order.kth(k) == optional<int>(expected));\n            }\n        }\n        auto smaller = countSmallerRight(integerValues);\n        for (int i = 0; i < n; ++i) {\n            int expected = 0;\n            for (int j = i+1; j < n; ++j) expected += integerValues[j] < integerValues[i];\n            assert(smaller[i] == expected);\n        }\n    }\n    cout << \"advanced data structure checks passed\\n\";\n}",
+      "paragraphs": [
+        "入口引用同目录 12 份补充实现与 4 份基础模板，请保留完整 examples 目录，只编译 detail-structure-tests.cpp，不要把其 include 的源文件再传给链接器。命令：g++ -std=c++17 -O2 -Wall -Wextra detail-structure-tests.cpp -o structure-tests；Windows 随后运行 .\\structure-tests.exe。不要定义 NDEBUG，测试操作中使用了 assert。",
+        "提供 80 轮固定种子操作序列：集合标签模型对照并查集与回滚、重新 BFS 对照动态岛屿、词频字典对照 Trie、全部已插入数暴力异或、朴素数组对照 Fenwick 与线段树、枚举子数组对照复杂摘要、线性累计对照第 K 小。每轮包含多次操作和全部小区间查询，而非只核对最后状态。",
+        "定向检查空结构、重复添加与删除、空词、无效快照、最高无符号位、负频率拒绝、LLONG_MAX 频率总数、赋值为零及赋值/加法顺序。当前环境未发现 C++ 编译器，测试源码尚未编译运行；HTML 和下载检查不能替代编译与算法运行验证。"
+      ]
+    }
+  ]
+}
